@@ -1,0 +1,142 @@
+**** COMPASS
+item btm_
+dest resources/mesh/compass_needle.btm
+srca resources/compass_needle.obj
+<<<<
+item btt_
+dest resources/txtr/gui_red.btt
+srca resources/red.tga
+<<<<
+**** FOR DEBUG DISPLAY
+item btm_
+dest resources/mesh/debug_cell.btm
+srca resources/debug_cell.obj
+<<<<
+**** SHADOW
+item btm_
+dest resources/mesh/ent_shadow.btm
+srca resources/shadow.obj
+<<<<
+item btt_
+dest resources/txtr/ent_shadow.btt
+srca resources/shadow.tga
+<<<<
+****------------------------------------------------------------------------------------
+**** CHARACTER TEXTURES
+item btt_
+dest resources/txtr/chr_skin_01.btt
+srca resources/character_palette_p1.tga
+<<<<
+item btt_
+dest resources/txtr/chr_skin_02.btt
+srca resources/character_palette_p2.tga
+<<<<
+item btt_
+dest resources/txtr/atlas_equip.btt
+srca resources/txtr_apparel_atlas.tga
+<<<<
+**** CHARACTER MODELS
+item btmb
+dest resources/mesh/chr_legs.btmb
+srca resources/char_legs_idle.obj
+srcb resources/char_legs_step_L.obj
+<<<<
+item btmb
+dest resources/mesh/chr_legs_run.btmb
+srca resources/char_legs_idle.obj
+srcb resources/char_legs_run_L.obj
+<<<<
+item btmb
+dest resources/mesh/chr_arms_cast.btmb
+srca resources/char_arms_idle.obj
+srcb resources/char_arms_cast.obj
+<<<<
+item btmb
+dest resources/mesh/chr_head.btmb
+srca resources/char_head.obj
+srcb resources/char_head_blink.obj
+<<<<
+**** FLOWER PICKERS PITH HELMET
+item btm_
+dest resources/mesh/equip_head_pickers_01.btm
+srca resources/equip_head_pickers_01.obj
+<<<<
+**** FLOWER PICKERS LONG GAMBESON
+item btmb
+dest resources/mesh/equip_body_pickers_01_step.btmb
+srca resources/char_eqip_cloak_01_idle.obj
+srcb resources/char_eqip_cloak_01_step.obj
+<<<<
+item btmb
+dest resources/mesh/equip_body_pickers_01_run.btmb
+srca resources/char_eqip_cloak_01_idle.obj
+srcb resources/char_eqip_cloak_01_run.obj
+<<<<
+****------------------------------------------------------------------------------------
+**** ITEMS
+****------------------------------------------------------------------------------------
+**** MATCHLOCK GUN
+item btm_
+dest resources/mesh/item_matchlock_01.btm
+srca resources/item_matchlock_01.obj
+<<<<
+item btmb
+dest resources/mesh/item_matchlock_01_lever.btmb
+srca resources/item_matchlock_01_lever.obj
+srcb resources/item_matchlock_01_lever_pull.obj
+<<<<
+item btmb
+dest resources/mesh/item_matchlock_01_rod.btmb
+srca resources/item_matchlock_01_rod_ready.obj
+srcb resources/item_matchlock_01_rod_in.obj
+<<<<
+item btmb
+dest resources/mesh/item_matchlock_01_pan.btmb
+srca resources/item_matchlock_01_pan.obj
+srcb resources/item_matchlock_01_pan_open.obj
+<<<<
+item btmb
+dest resources/mesh/item_matchlock_01_pan_full.btmb
+srca resources/item_matchlock_01_pan.obj
+srcb resources/item_matchlock_01_pan_open_full.obj
+<<<<
+item btt_
+dest resources/txtr/item_matchlock_01.btt
+srca resources/item_matchlock_01.tga
+<<<<
+****------------------------------------------------------------------------------------
+**** OTHER STUFF
+****------------------------------------------------------------------------------------
+**** BEACHBALL FOR SOME REASON
+item btm_
+dest resources/mesh/obj_beachball.btm
+srca resources/object/beachball.obj
+<<<<
+item btt_
+dest resources/txtr/obj_beachball.btt
+srca resources/object/beachball_palette.tga
+<<<<
+**** PROJECTILE
+item btm_
+dest resources/mesh/proj_default.btm
+srca resources/projectile/projectile_basic.obj
+<<<<
+item btt_
+dest resources/txtr/prj_magic_fire.btt
+srca resources/proj_refl.tga
+<<<<
+**** ENVIRONMENT
+item btm_
+dest resources/mesh/kit_floor_0000.btm
+srca resources/kit_floor.obj
+<<<<
+item btt_
+dest resources/txtr/t_marshmud_01.btt
+srca resources/t_marshmud_01.tga
+<<<<
+**** GUI
+item btt_
+dest resources/gui/gui_bar_red.btt
+srca resources/ui_hp.tga
+<<<<
+eof_

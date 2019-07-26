@@ -1,0 +1,41 @@
+TODO --------------------------------------------------------------------
+X. fix caterpillar buffer bug
+X. form animator struct and add new one for upper body
+X. enclose character data in a struct (semi-OO shift)
+X. fix the any type vector (varbuf)
+X. switch to use buffer of pointers to entity/chara structs
+X. phase in indexed resources
+X. add metadata to animations (eg. fire projectile on step X, or on complete...)
+X. follow npc will path to the nearest player, not just player 0
+X. fix vector error with pathfinding
+X. button to enter 'aiming mode'
+X. finish implementing tick function pointer array
+*. finish implementing draw function pointer array
+X. add local transformations to Transform3D
+?. add parented matrices to Transform3D
+X. fix X flipped 3d models
+*. fix X flipped 3d models more properly
+*. implementation of aiming mode via lowerAni animation (character rotates to view direction, walking exits animation)
+X. add operable matchlock gun
+*. Make matchlock into an isolated object (tick function, draw function...)
+~. individualize matchlock input
+~. train AI to use matchlock
+*. animate arms mesh
+*. new gambeson model
+*. assign upper animator to arms
+*. if during aim animation chara can enter attack animation, which utilizes the fire on step animeta
+*. follow npc shoots at nearest player when they come within a range (utilize already implemented faction system)
+*. set character's bodies to align with their view direction when the difference angle is sufficiently large (owl neck prevention)
+*. get rid of object oriented draw functions on graphics::newmesh and modelblend
+*. set resources getBTX to return gl index instead of object reference
+*. get rid of the above classes entirely (?)
+~. add different behaviour types
+~. add a third type of character
+~. new data for levels that spawns a character template on level load
+~. place spawn points around the map
+~. add text renderer
+~. remove pRes & resources object
+~. add btm3 (blend mesh with 3rd 'intermediate' mesh)
+~. character inventory?
+~. character equipped items?
+?. return to object oriented style
