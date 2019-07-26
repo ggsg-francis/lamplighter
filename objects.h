@@ -30,6 +30,24 @@ void DrawMeshAtTransform(res::assetid MODEL, res::assetid TEXTURE, Shader& SHADE
 //void DrawBlendMeshAtTransform(ModelBlend& MODEL, float BLENDSTATE, Texture& TEXTURE, Shader& SHADER, Transform3D TRANSFORM);
 void DrawBlendMeshAtTransform(res::assetid MODEL, btf32 BLENDSTATE, res::assetid TEXTURE, Shader& SHADER, Transform3D TRANSFORM);
 
+//duplicate struct (of what?)
+struct CellCoord
+{
+	btui8 x = 0, y = 0;
+	CellCoord(btui8 _x, btui8 _y) {	x = _x; y = _y;	}
+};
+// Collection of 4 cells relevant to an entity
+struct CellGroup
+{
+	CellCoord c[4u]{ CellCoord(0ui8,0ui8), CellCoord(0ui8,0ui8), CellCoord(0ui8,0ui8), CellCoord(0ui8,0ui8) };
+};
+// Collection of 4 cells and XY offsets relevant to an entity
+struct CellSpaceInfo
+{
+	CellCoord c[4u]{ CellCoord(0ui8,0ui8), CellCoord(0ui8,0ui8), CellCoord(0ui8,0ui8), CellCoord(0ui8,0ui8) };
+	fw::Vector2 offset;
+};
+
 //transform
 class Transform2D
 {
@@ -107,12 +125,13 @@ struct Entity
 	};
 
 	// Variables
-	//type::fntype type22[BUF_SIZE]; // what type of entity is this?
 	fac::faction faction;
 	ent_state state;
-	float radius = 0.5f; // Radius of the entity (no larger than .5)
+	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
 	Transform2D t;
 	m::Angle yaw;
+
+	CellGroup group;
 
 	enum etype : btui8
 	{

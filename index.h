@@ -10,6 +10,9 @@ class Transform2D;
 class Texture;
 class Transform3D;
 
+struct CellGroup;
+struct CellSpaceInfo;
+
 namespace index
 {
 	#ifdef DEF_EDITOR
@@ -34,21 +37,8 @@ namespace index
 	// Removes this entity from the local vector of this cell
 	void RemoveEntityCell(int X, int Y, btID ENTITY);
 
-	//duplicate struct
-	struct cellcoord
-	{
-		int x = 0, y = 0;
-		cellcoord(int _x, int _y)
-		{
-			x = _x; y = _y;
-		}
-	};
-	struct cell_group
-	{
-		cellcoord c[4]{ cellcoord(0,0),cellcoord(0,0),cellcoord(0,0),cellcoord(0,0) };
-	};
-
-	cell_group GetCollisionCells(fw::Vector2 vec);
+	void GetCollisionCells(fw::Vector2 vec, CellGroup& cg);
+	void GetCellSpaceInfo(fw::Vector2 vec, CellSpaceInfo& csi);
 
 	bool ProjectileDoesIntersectEnv(btID id);
 }

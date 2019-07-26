@@ -42,8 +42,8 @@ namespace index
 	{
 		env::LoadBin();
 
-		players[0] = SpawnEntity(Entity::prefab_player, fw::Vector2(5.f, 2.f), 0.f);
-		players[1] = SpawnEntity(Entity::prefab_player, fw::Vector2(6.f, 2.f), 0.f);
+		players[0] = SpawnEntity(Entity::prefab_player, fw::Vector2(5.1f, 2.1f), 0.f);
+		players[1] = SpawnEntity(Entity::prefab_player, fw::Vector2(6.1f, 2.1f), 0.f);
 		#ifndef DEF_EDITOR
 		SpawnEntity(Entity::prefab_npc, fw::Vector2(4.f, 4.f), 0.f);
 		//SpawnEntity(ent::type::npc, fw::Vector2(7.f, 5.f), 0.f);
@@ -59,7 +59,6 @@ namespace index
 		fac::SetAllegiance(fac::playerhunter, fac::playerhunter, fac::allied);
 
 		#endif
-
 	}
 	//destroy all data
 	void End()
@@ -299,7 +298,7 @@ namespace index
 	{
 		//btID id;
 		btID id = block_entity.add();
-		CHARA2[id] = new Chara();
+		ENTITY[id] = new Chara();
 
 		if (type == Entity::prefab_npc)
 			prefab_npc(id, pos, dir);
@@ -329,7 +328,7 @@ namespace index
 	void DestroyEntity(btID id)
 	{
 		RemoveAllReferences(id);
-		delete CHARA2[id];
+		delete ENTITY[id];
 		block_entity.remove(id);
 		std::cout << "Destroyed entity " << id << std::endl;
 	}
@@ -518,15 +517,16 @@ namespace index
 				eCellX = x; eCellY = y;
 
 				// optimize this $hit
-				index::cell_group group = index::GetCollisionCells(oldpos);
+				//CellGroup group;
+				index::GetCollisionCells(oldpos, ENTITY[index]->group);
 				for (int i = 0; i < 4; i++)
 				{
-					index::RemoveEntityCell(group.c[i].x, group.c[i].y, i);
+					index::RemoveEntityCell(ENTITY[index]->group.c[i].x, ENTITY[index]->group.c[i].y, i);
 				}
-				group = index::GetCollisionCells(ENTITY[index]->t.position);
+				index::GetCollisionCells(ENTITY[index]->t.position, ENTITY[index]->group);
 				for (int i = 0; i < 4; i++)
 				{
-					index::AddEntityCell(group.c[i].x, group.c[i].y, i);
+					index::AddEntityCell(ENTITY[index]->group.c[i].x, ENTITY[index]->group.c[i].y, i);
 				}
 			}
 
@@ -760,7 +760,8 @@ namespace index
 			if (block_proj.used[index])
 			{
 				//cell_group cg = GetCollisionCells(GetPrj(p)->t.position);
-				cell_group cg = GetCollisionCells(proj[index].t.position);
+				CellGroup cg;
+				GetCollisionCells(proj[index].t.position, cg);
 				for (int i = 0; i < 4; i++)
 				{
 					#define X cg.c[i].x

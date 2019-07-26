@@ -11,9 +11,7 @@ namespace index
 
 	// errrr
 	#define CHARA GetChara
-	#define CHARA2 _entities
 	#define ENTITY _entities
-	//#define CHARA_INDEX ((Chara*)_chara[index]) // set 1 underscore to test
 
 	void EntRunAI(btID index)
 	{
@@ -101,7 +99,7 @@ namespace index
 	{
 		btf32 offsetx, offsety;
 		bool overlapN, overlapS, overlapE, overlapW;
-		cell_group cg;
+		CellGroup cg;
 
 		for (btID index = start; index < end; index++)
 		{
@@ -117,7 +115,7 @@ namespace index
 			overlapE = offsetx > 0;
 			overlapW = offsetx < 0;
 
-			if (env::Get(eCellX, eCellY, env::eflag::eSurfN) && overlapN) // N
+			if ((env::Get(eCellX, eCellY, env::eflag::eSurfN) || env::nodes[eCellX][eCellY + 1u].height > env::nodes[eCellX][eCellY].height + 1u) && overlapN) // N
 			{
 				ePos.y = eCellY; // + (1 - radius)
 				if (aViewYaw.Deg() < 180.f)
@@ -125,7 +123,7 @@ namespace index
 				else
 					eYaw.RotateTowards(270.f, rotdeg);
 			}
-			if (env::Get(eCellX, eCellY, env::eflag::eSurfS) && overlapS) // S
+			if ((env::Get(eCellX, eCellY, env::eflag::eSurfS) || env::nodes[eCellX][eCellY - 1u].height > env::nodes[eCellX][eCellY].height + 1u) && overlapS) // S
 			{
 				ePos.y = eCellY; // - (1 - radius)
 				if (aViewYaw.Deg() < 180.f)
@@ -133,7 +131,7 @@ namespace index
 				else
 					eYaw.RotateTowards(270.f, rotdeg);
 			}
-			if (env::Get(eCellX, eCellY, env::eflag::eSurfE) && overlapE) // E
+			if ((env::Get(eCellX, eCellY, env::eflag::eSurfE) || env::nodes[eCellX + 1u][eCellY].height > env::nodes[eCellX][eCellY].height + 1u) && overlapE) // E
 			{
 				ePos.x = eCellX; // + (1 - radius)
 				if (aViewYaw.Deg() > 90.f && aViewYaw.Deg() < 270.f)
@@ -141,7 +139,7 @@ namespace index
 				else
 					eYaw.RotateTowards(0.f, rotdeg);
 			}
-			if (env::Get(eCellX, eCellY, env::eflag::eSurfW) && overlapW) // W
+			if ((env::Get(eCellX, eCellY, env::eflag::eSurfW) || env::nodes[eCellX - 1u][eCellY].height > env::nodes[eCellX][eCellY].height + 1u) && overlapW) // W
 			{
 				ePos.x = eCellX; // - (1 - radius)
 				if (aViewYaw.Deg() > 90.f && aViewYaw.Deg() < 270.f)
@@ -177,9 +175,7 @@ namespace index
 
 			//******************************** ACTOR COLLISION CHECK
 
-			///*
-
-			cg = GetCollisionCells(ePos);
+			GetCollisionCells(ePos, cg);
 
 			for (int cell_group = 0; cell_group < 4; cell_group++)
 			{
@@ -222,8 +218,6 @@ namespace index
 					} // End for each entity in cell
 				} // End if entity count of this cell is bigger than zero
 			} // End for each cell group
-
-			//*/
 
 			//******************************** C2 COLLISION CHECK
 
@@ -410,56 +404,63 @@ namespace index
 
 	enum gcg_dir : btui8 { n = 1u, e = 2u };
 
-	cell_group gcg_ne(btui8 x, btui8 y)
+	void GetCgNE(btui8 x, btui8 y, CellCoord* cc)
 	{
-		cell_group cg;
-		cg.c[0] = cellcoord(x, y);			// this
-		cg.c[1] = cellcoord(x, y + 1);		// n
-		cg.c[2] = cellcoord(x + 1, y);		// e
-		cg.c[3] = cellcoord(x + 1, y + 1);	// ne
-		return cg;
+		cc[0].x = x; cc[0].y = y;					// This
+		cc[1].x = x; cc[1].y = y + 1ui8;			// N
+		cc[2].x = x + 1ui8; cc[2].y = y;			// E
+		cc[3].x = x + 1ui8; cc[3].y = y + 1ui8;		// NE
 	};
-	cell_group gcg_nw(btui8 x, btui8 y)
+	void GetCgNW(btui8 x, btui8 y, CellCoord* cc)
 	{
-		cell_group cg;
-		cg.c[0] = cellcoord(x, y);			// this
-		cg.c[1] = cellcoord(x, y + 1);		// n
-		cg.c[2] = cellcoord(x - 1, y);		// w
-		cg.c[3] = cellcoord(x - 1, y + 1);	// nw
-		return cg;
+		cc[0].x = x; cc[0].y = y;					// This
+		cc[1].x = x; cc[1].y = y + 1ui8;			// N
+		cc[2].x = x - 1ui8; cc[2].y = y;			// W
+		cc[3].x = x - 1ui8; cc[3].y = y + 1ui8;		// NW
 	};
-	cell_group gcg_se(btui8 x, btui8 y)
+	void GetCgSE(btui8 x, btui8 y, CellCoord* cc)
 	{
-		cell_group cg;
-		cg.c[0] = cellcoord(x, y);			// this
-		cg.c[1] = cellcoord(x, y - 1);		// s
-		cg.c[2] = cellcoord(x + 1, y);		// e
-		cg.c[3] = cellcoord(x + 1, y - 1);	// se
-		return cg;
+		cc[0].x = x; cc[0].y = y;					// This
+		cc[1].x = x; cc[1].y = y - 1ui8;			// S
+		cc[2].x = x + 1ui8; cc[2].y = y;			// E
+		cc[3].x = x + 1ui8; cc[3].y = y - 1ui8;		// SE
 	};
-	cell_group gcg_sw(btui8 x, btui8 y)
+	void GetCgSW(btui8 x, btui8 y, CellCoord* cc)
 	{
-		cell_group cg;
-		cg.c[0] = cellcoord(x, y);			// this
-		cg.c[1] = cellcoord(x, y - 1);		// s
-		cg.c[2] = cellcoord(x - 1, y);		// w
-		cg.c[3] = cellcoord(x - 1, y - 1);	// sw
-		return cg;
+		cc[0].x = x; cc[0].y = y;					// This
+		cc[1].x = x; cc[1].y = y - 1ui8;			// S
+		cc[2].x = x - 1ui8; cc[2].y = y;			// W
+		cc[3].x = x - 1ui8; cc[3].y = y - 1ui8;		// SW
 	};
 
-	// Function pointers for the various offsets necessary for collision checking
-	cell_group(*gcg_fn[])(btui8, btui8) = { gcg_sw, gcg_nw, gcg_se, gcg_ne };
+	void(*GetCg[])(btui8, btui8, CellCoord*) = { GetCgSW, GetCgNW, GetCgSE, GetCgNE };
 
-	// Get the group of 4 cells applicable to [vector] position
-	cell_group GetCollisionCells(fw::Vector2 vec)
+	void GetCollisionCells(fw::Vector2 vec, CellGroup& cg)
 	{
-		btui8 dir = 0; // Represents fast direction of offset (char for speed)
+		btui8 dir = 0ui8; // Represents direction of offset
+
 		btui8 x = (btui8)roundf(vec.x); // X cell coordinate
 		btui8 y = (btui8)roundf(vec.y); // Y cell coordinate
-		if (vec.y - y > 0.f)	// Check North offset direction from center
-			dir = n;			// Set direction bit N
-		if (vec.x - x > 0.f)	// Check East offset direction from center
-			dir |= e;			// Add direction bit E
-		return gcg_fn[dir](x, y); // Return calls the function pointer corresponding to DIR
+
+		dir = n * vec.y - y > 0.f; // Set direction bit N
+		dir |= e * vec.x - x > 0.f; // Add direction bit E
+
+		GetCg[dir](x, y, cg.c); // Get cell group from direction
+	}
+
+	void GetCellSpaceInfo(fw::Vector2 vec, CellSpaceInfo& csi)
+	{
+		btui8 dir = 0ui8; // Represents direction of offset
+
+		csi.c[0u].x = (btui8)roundf(vec.x); // X cell coordinate
+		csi.c[0u].y = (btui8)roundf(vec.y); // Y cell coordinate
+
+		csi.offset.y = vec.y - csi.c[0u].y; // X offset
+		csi.offset.x = vec.x - csi.c[0u].x; // Y offset
+
+		dir = n * csi.offset.y > 0.f; // Set direction bit N
+		dir |= e * csi.offset.x > 0.f; // Add direction bit E
+
+		GetCg[dir](csi.c[0u].x, csi.c[0u].y, csi.c); // Get cell group from direction
 	}
 }
