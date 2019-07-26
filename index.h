@@ -34,8 +34,6 @@ namespace index
 	// Removes this entity from the local vector of this cell
 	void RemoveEntityCell(int X, int Y, btID ENTITY);
 
-	btID GetClosestEntityWeighted(btID ID);
-
 	//duplicate struct
 	struct cellcoord
 	{

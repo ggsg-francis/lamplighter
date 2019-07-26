@@ -23,12 +23,12 @@ namespace index
 	void SetViewFocus(btID index)
 	{
 		active_player_view = index;
-		viewpos = ent::t[active_player_view].position * -1.f;
+		viewpos = ENTITY[active_player_view]->t.position * -1.f;
 
 		//1.6 is normal height
 		//#define h ent::t[i].height + fw::Lerp(r_step.height_start, r_step.height_end, fAniTime / r_step.time)
 		#define h 1.6f + fw::Lerp(resAniStep.height_start, resAniStep.height_end, aniLower.aniTime / resAniStep.time)
-		graphics::SetMatProj(viewpos.x, viewpos.y, h + ent::t[active_player_view].height, CHARA(active_player_view)->viewYaw.Rad(), CHARA(active_player_view)->viewPitch.Rad());
+		graphics::SetMatProj(viewpos.x, viewpos.y, h + ENTITY[active_player_view]->t.height, CHARA(active_player_view)->viewYaw.Rad(), CHARA(active_player_view)->viewPitch.Rad());
 		#undef h
 		graphics::SetMatView(0.f, 0.f, 0.f, 0.f); // eventually we can try and break setmatproj into 2 so setmatproj only has to be called once ever
 	}
@@ -42,10 +42,10 @@ namespace index
 	{
 		env::LoadBin();
 
-		players[0] = SpawnEntity(ent::type::prefab_player, fw::Vector2(5.f, 2.f), 0.f);
-		players[1] = SpawnEntity(ent::type::prefab_player, fw::Vector2(6.f, 2.f), 0.f);
+		players[0] = SpawnEntity(Entity::prefab_player, fw::Vector2(5.f, 2.f), 0.f);
+		players[1] = SpawnEntity(Entity::prefab_player, fw::Vector2(6.f, 2.f), 0.f);
 		#ifndef DEF_EDITOR
-		//SpawnEntity(ent::type::prefab_npc, fw::Vector2(4.f, 4.f), 0.f);
+		SpawnEntity(Entity::prefab_npc, fw::Vector2(4.f, 4.f), 0.f);
 		//SpawnEntity(ent::type::npc, fw::Vector2(7.f, 5.f), 0.f);
 
 		// This is going to blow up extremely fast if I don't automate it somehow
@@ -120,10 +120,10 @@ namespace index
 			ptemp.id = network::nid;
 			//set positions
 			//ptemp.px = actor_sphere->getGlobalPose().p.x;
-			ptemp.px = ent::t[players[0]].position.x;
-			ptemp.py = ent::t[players[0]].position.y;
+			ptemp.px = ENTITY[players[0]]->t.position.x;
+			ptemp.py = ENTITY[players[0]]->t.position.y;
 			//set rotations
-			ptemp.yaw = ent::yaw[players[0]].Deg();
+			ptemp.yaw = ENTITY[players[0]]->yaw.Deg();
 			//ptemp.vh = actor::viewYaw[players[0]].Deg();
 			//ptemp.vv = actor::viewPitch[players[0]].Deg();
 			network::SendMsg(SET_UNIT_POSE, &ptemp);
@@ -138,16 +138,16 @@ namespace index
 		#endif
 
 		btui32 drawrange = 8u; // Create min/max draw coordinates
-		bti32 cxs = ent::t[active_player_view].cellx - drawrange;
+		bti32 cxs = ENTITY[active_player_view]->t.cellx - drawrange;
 		if (cxs < 0)
 			cxs = 0;
-		bti32 cxe = ent::t[active_player_view].cellx + drawrange;
+		bti32 cxe = ENTITY[active_player_view]->t.cellx + drawrange;
 		if (cxe > WORLD_SIZE - 1)
 			cxe = WORLD_SIZE - 1;
-		bti32 cys = ent::t[active_player_view].celly - drawrange;
+		bti32 cys = ENTITY[active_player_view]->t.celly - drawrange;
 		if (cys < 0)
 			cys = 0;
-		bti32 cye = ent::t[active_player_view].celly + drawrange;
+		bti32 cye = ENTITY[active_player_view]->t.celly + drawrange;
 		if (cye > WORLD_SIZE - 1)
 			cye = WORLD_SIZE - 1;
 
@@ -240,9 +240,9 @@ namespace index
 	void SetPose(void* msg)
 	{
 		msg::set_unit_pose* msg22 = (msg::set_unit_pose*)msg;
-		ent::t[players[msg22->id]].position.x = msg22->px;
-		ent::t[players[msg22->id]].position.y = msg22->py;
-		ent::yaw[players[msg22->id]] = msg22->yaw;
+		ENTITY[players[msg22->id]]->t.position.x = msg22->px;
+		ENTITY[players[msg22->id]]->t.position.y = msg22->py;
+		ENTITY[players[msg22->id]]->yaw = msg22->yaw;
 		//actor::viewYaw[players[msg22->id]] = msg22->vh;
 		//actor::viewPitch[players[msg22->id]] = msg22->vv;
 	}
@@ -295,17 +295,17 @@ namespace index
 	#define DEF_INDEX
 	#ifdef DEF_INDEX
 
-	btID SpawnEntity(ent::type::prefabtype type, fw::Vector2 pos, float dir)
+	btID SpawnEntity(Entity::prefabtype type, fw::Vector2 pos, float dir)
 	{
 		//btID id;
 		btID id = block_entity.add();
 		CHARA2[id] = new Chara();
 
-		if (type == ent::type::prefab_npc)
+		if (type == Entity::prefab_npc)
 			prefab_npc(id, pos, dir);
-		else if (type == ent::type::prefab_inanimate_bb)
+		else if (type == Entity::prefab_inanimate_bb)
 			prefab_item_bb(id, pos, dir);
-		else if (type == ent::type::prefab_player)
+		else if (type == Entity::prefab_player)
 			prefab_pc(id, pos, dir);
 
 		bti32 x = roundf(pos.x);
@@ -336,7 +336,7 @@ namespace index
 
 	inline void EntityCastProj(btID i)
 	{
-		SpawnProjectile(0, ent::t[i].position + (fw::AngToVec2(ent::yaw[i].Rad()) * 0.55f), ent::yaw[i].Rad(), 10.f);
+		SpawnProjectile(0, ENTITY[i]->t.position + (fw::AngToVec2(ENTITY[i]->yaw.Rad()) * 0.55f), ENTITY[i]->yaw.Rad(), 10.f);
 	}
 
 	inline void EntityReceiveDamage(btID i)
@@ -351,7 +351,7 @@ namespace index
 
 	void TickChara(btf32 dt, btID index)
 	{
-		if (ent::state[index].alive)
+		if (ENTITY[index]->state.alive)
 		{
 			//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 			//------------- ANIMATION SET ------------------------------------
@@ -361,8 +361,8 @@ namespace index
 			case actor::anim_player::eNOEVENT:
 				if (iAniID == res::knockback)
 				{
-					ent::t[index].velocity = ent::t[index].velocity * 0.8f;
-					if (fw::Length(ent::t[index].velocity) < 0.01f) // If not sliding anymore
+					ENTITY[index]->t.velocity = ENTITY[index]->t.velocity * 0.8f;
+					if (fw::Length(ENTITY[index]->t.velocity) < 0.01f) // If not sliding anymore
 						aniLower.setAnim(res::idle); // Reset to idle
 				}
 				else if (resAniStep.Flag(res::f::can_start_moving))
@@ -442,8 +442,8 @@ namespace index
 					break;
 
 				case res::knockback:
-					ent::t[index].velocity = ent::t[index].velocity * 0.8f;
-					if (fw::Length(ent::t[index].velocity) < 0.01f) // If not sliding anymore
+					ENTITY[index]->t.velocity = ENTITY[index]->t.velocity * 0.8f;
+					if (fw::Length(ENTITY[index]->t.velocity) < 0.01f) // If not sliding anymore
 						aniLower.setAnim(res::idle); // Reset to idle
 					break;
 				}
@@ -475,7 +475,7 @@ namespace index
 
 				//if (resAniStep.can_turn && aniLower.aniID != res::anims::idle) // If can turn and is not idle
 				if (resAniStep.Flag(res::f::can_turn)) // If can turn and is not idle
-					aYaw.RotateTowards(movang.Deg(), 5.f); // Rotate body towards the target direction
+					eYaw.RotateTowards(movang.Deg(), 5.f); // Rotate body towards the target direction
 
 				#ifdef DEF_PIVOT_OFFSET
 				fw::Vector2 offset2 = fw::AngToVec2(aYaw.Rad()); // new offset dir
@@ -489,24 +489,24 @@ namespace index
 
 				//******************************** SET ENTITY VELOCITY
 
-				ent::t[index].velocity = (fw::AngToVec2(aYaw.Rad()) * resAniStep.move_offset * dt / resAniStep.time) * fSpeed;
+				ENTITY[index]->t.velocity = (fw::AngToVec2(eYaw.Rad()) * resAniStep.move_offset * dt / resAniStep.time) * fSpeed;
 			}
 
 			//******************************** APPLY MOVEMENT
 
-			bMoving = (fw::Length(ent::t[index].velocity) > 0.016f);
-			fw::Vector2 oldpos = ent::t[index].position;
-			ent::t[index].position += ent::t[index].velocity; // Apply velocity
+			bMoving = (fw::Length(ENTITY[index]->t.velocity) > 0.016f);
+			fw::Vector2 oldpos = ENTITY[index]->t.position;
+			ENTITY[index]->t.position += ENTITY[index]->t.velocity; // Apply velocity
 
-			bti32 x = roundf(ent::t[index].position.x);
+			bti32 x = roundf(ENTITY[index]->t.position.x);
 			if (x < 0 || x >= WORLD_SIZE)
 				x = 0;
-			bti32 y = roundf(ent::t[index].position.y);
+			bti32 y = roundf(ENTITY[index]->t.position.y);
 			if (y < 0 || y >= WORLD_SIZE)
 				y = 0;
 
 			//I don't want this to be here
-			if (x != iCellX || y != iCellY)
+			if (x != eCellX || y != eCellY)
 			{
 				// Old way ( one reference )
 				//index::RemoveEntityCell(cellx, celly, id);
@@ -515,7 +515,7 @@ namespace index
 
 				// New way ( four references )
 
-				iCellX = x; iCellY = y;
+				eCellX = x; eCellY = y;
 
 				// optimize this $hit
 				index::cell_group group = index::GetCollisionCells(oldpos);
@@ -523,14 +523,14 @@ namespace index
 				{
 					index::RemoveEntityCell(group.c[i].x, group.c[i].y, i);
 				}
-				group = index::GetCollisionCells(ent::t[index].position);
+				group = index::GetCollisionCells(ENTITY[index]->t.position);
 				for (int i = 0; i < 4; i++)
 				{
 					index::AddEntityCell(group.c[i].x, group.c[i].y, i);
 				}
 			}
 
-			ent::t[index].height = (btf32)env::nodes[x][y].height / TERRAIN_HEIGHT_DIVISION;
+			ENTITY[index]->t.height = (btf32)env::nodes[x][y].height / TERRAIN_HEIGHT_DIVISION;
 
 			//******************************** RUN AI
 
@@ -611,8 +611,8 @@ namespace index
 			{
 				Transform3D t_body, t_head, t_item;
 
-				t_body.SetPosition(fw::Vector3(ent::t[index].position.x, ent::t[index].height + fw::Lerp(resAniStep.height_start, resAniStep.height_end, aniLower.aniTime / resAniStep.time), ent::t[index].position.y));
-				t_body.Rotate(aYaw.Rad(), fw::Vector3(0, 1, 0));
+				t_body.SetPosition(fw::Vector3(ENTITY[index]->t.position.x, ENTITY[index]->t.height + fw::Lerp(resAniStep.height_start, resAniStep.height_end, aniLower.aniTime / resAniStep.time), ENTITY[index]->t.position.y));
+				t_body.Rotate(eYaw.Rad(), fw::Vector3(0, 1, 0));
 
 				#ifndef DEF_EDITOR
 				if (resAniStep.Flag(res::f::flip_lr))
@@ -648,7 +648,7 @@ namespace index
 
 				// draw item
 				t_item.SetPosition(t_body.GetPosition());
-				t_item.Rotate(aYaw.Rad(), fw::Vector3(0, 1, 0));
+				t_item.Rotate(eYaw.Rad(), fw::Vector3(0, 1, 0));
 
 				#ifndef DEF_EDITOR
 
@@ -769,10 +769,10 @@ namespace index
 					for (int e = 0; e < cells[X][Y].ents.size(); e++)
 					{
 						#define ID cells[X][Y].ents[e]
-						if (block_entity.used[ID] && ent::state[ID].alive)
+						if (block_entity.used[ID] && ENTITY[ID]->state.alive)
 						{
 							//get difference between positions
-							fw::Vector2 vec = proj[index].t.position - ent::t[ID].position;
+							fw::Vector2 vec = proj[index].t.position - ENTITY[ID]->t.position;
 							//get distance
 							float dist = fw::Length(vec);
 							if (dist < 0.5f)

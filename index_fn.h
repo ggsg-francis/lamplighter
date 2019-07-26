@@ -12,6 +12,7 @@ namespace index
 	// errrr
 	#define CHARA GetChara
 	#define CHARA2 _entities
+	#define ENTITY _entities
 	//#define CHARA_INDEX ((Chara*)_chara[index]) // set 1 underscore to test
 
 	void EntRunAI(btID index)
@@ -31,11 +32,11 @@ namespace index
 				{
 					aiPath.clear();
 
-					env::node_coord current(ent::t[aiTarget].cellx, ent::t[aiTarget].celly);
-					while (current.x != iCellX || current.y != iCellY) // If the tile is not the one I'm standing on
+					env::node_coord current(ENTITY[aiTarget]->t.cellx, ENTITY[aiTarget]->t.celly);
+					while (current.x != eCellX || current.y != eCellY) // If the tile is not the one I'm standing on
 					{
 						aiPath.push_back(current);
-						current = env::get_node_from(iCellX, iCellY, current.x, current.y);
+						current = env::get_node_from(eCellX, eCellY, current.x, current.y);
 					}
 					if (aiPath.size() > 0) // Failsafe against trying to path to where it already is standing
 					{
@@ -48,20 +49,14 @@ namespace index
 			float distance = 0.f;
 			if (aiPath.size() > 0) // Failsafe against trying to path to where it already is standing
 			{
-				distance = fw::Length(fw::Vector2(aiPath[aiNode].x, aiPath[aiNode].y) - tPos); // replace 0 with target id
+				distance = fw::Length(fw::Vector2(aiPath[aiNode].x, aiPath[aiNode].y) - ePos); // replace 0 with target id
 			}
-
-			// Replace this with 'if we're collided with another character', somehow
-			//if (cells[iAiPath[ai::node[i]].x][iAiPath[ai::node[i]].y].ents.size() > 1)
-			//	actor::running[i] = true;
-			//else
-			//	actor::running[i] = false;
 
 			if (aiNode != 0 && distance > 0.5f)
 			{
 				//compute rotation
-				float offset = fw::Dot(fw::AngToVec2(glm::radians(aViewYaw.Deg() + 90.f)), fw::Vector2(aiPath[aiNode].x, aiPath[aiNode].y) - tPos);
-				float forwards = fw::Dot(fw::AngToVec2(glm::radians(aViewYaw.Deg())), fw::Vector2(aiPath[aiNode].x, aiPath[aiNode].y) - tPos);
+				float offset = fw::Dot(fw::AngToVec2(glm::radians(aViewYaw.Deg() + 90.f)), fw::Vector2(aiPath[aiNode].x, aiPath[aiNode].y) - ePos);
+				float forwards = fw::Dot(fw::AngToVec2(glm::radians(aViewYaw.Deg())), fw::Vector2(aiPath[aiNode].x, aiPath[aiNode].y) - ePos);
 
 				if (forwards < 0.f && offset < 0.4f && offset > -0.4f) // If moving backwards,
 				{ // And the rotation amount to walk backwards to the target is small
@@ -97,8 +92,8 @@ namespace index
 	{
 		for (btID i = start; i < end; i++)
 		{
-			if (ent::state[i].hp <= 0.f) // Death
-				ent::state[i].alive = false;
+			if (ENTITY[i]->state.hp <= 0.f) // Death
+				ENTITY[i]->state.alive = false;
 		}
 	}
 
@@ -114,75 +109,77 @@ namespace index
 
 			//******************************** ENVIRONMENTAL COLLISION CHECK
 
-			offsetx = tPos.x - iCellX;
-			offsety = tPos.y - iCellY;
+			offsetx = ePos.x - eCellX;
+			offsety = ePos.y - eCellY;
 
 			overlapN = offsety > 0;
 			overlapS = offsety < 0;
 			overlapE = offsetx > 0;
 			overlapW = offsetx < 0;
 
-			if (env::Get(iCellX, iCellY, env::eflag::eSurfN) && overlapN) // N
+			if (env::Get(eCellX, eCellY, env::eflag::eSurfN) && overlapN) // N
 			{
-				tPos.y = iCellY; // + (1 - radius)
+				ePos.y = eCellY; // + (1 - radius)
 				if (aViewYaw.Deg() < 180.f)
-					aYaw.RotateTowards(90.f, rotdeg);
+					eYaw.RotateTowards(90.f, rotdeg);
 				else
-					aYaw.RotateTowards(270.f, rotdeg);
+					eYaw.RotateTowards(270.f, rotdeg);
 			}
-			if (env::Get(iCellX, iCellY, env::eflag::eSurfS) && overlapS) // S
+			if (env::Get(eCellX, eCellY, env::eflag::eSurfS) && overlapS) // S
 			{
-				tPos.y = iCellY; // - (1 - radius)
+				ePos.y = eCellY; // - (1 - radius)
 				if (aViewYaw.Deg() < 180.f)
-					aYaw.RotateTowards(90.f, rotdeg);
+					eYaw.RotateTowards(90.f, rotdeg);
 				else
-					aYaw.RotateTowards(270.f, rotdeg);
+					eYaw.RotateTowards(270.f, rotdeg);
 			}
-			if (env::Get(iCellX, iCellY, env::eflag::eSurfE) && overlapE) // E
+			if (env::Get(eCellX, eCellY, env::eflag::eSurfE) && overlapE) // E
 			{
-				tPos.x = iCellX; // + (1 - radius)
+				ePos.x = eCellX; // + (1 - radius)
 				if (aViewYaw.Deg() > 90.f && aViewYaw.Deg() < 270.f)
-					aYaw.RotateTowards(180.f, rotdeg);
+					eYaw.RotateTowards(180.f, rotdeg);
 				else
-					aYaw.RotateTowards(0.f, rotdeg);
+					eYaw.RotateTowards(0.f, rotdeg);
 			}
-			if (env::Get(iCellX, iCellY, env::eflag::eSurfW) && overlapW) // W
+			if (env::Get(eCellX, eCellY, env::eflag::eSurfW) && overlapW) // W
 			{
-				tPos.x = iCellX; // - (1 - radius)
+				ePos.x = eCellX; // - (1 - radius)
 				if (aViewYaw.Deg() > 90.f && aViewYaw.Deg() < 270.f)
-					aYaw.RotateTowards(180.f, rotdeg);
+					eYaw.RotateTowards(180.f, rotdeg);
 				else
-					aYaw.RotateTowards(0.f, rotdeg);
+					eYaw.RotateTowards(0.f, rotdeg);
 			}
 
-			if (env::Get(iCellX, iCellY, env::eflag::eCorOutNE) && overlapN && overlapE) // NE
+			if (env::Get(eCellX, eCellY, env::eflag::eCorOutNE) && overlapN && overlapE) // NE
 			{
 				fw::Vector2 offset = fw::Vector2(offsetx, offsety) - fw::Vector2(0.5f, 0.5f);
 				if (fw::Length(offset) < 0.5f)
-					tPos += fw::Normalize(offset) * (0.5f - fw::Length(offset));
+					ePos += fw::Normalize(offset) * (0.5f - fw::Length(offset));
 			}
-			if (env::Get(iCellX, iCellY, env::eflag::eCorOutNW) && overlapN && overlapW) // NW
+			if (env::Get(eCellX, eCellY, env::eflag::eCorOutNW) && overlapN && overlapW) // NW
 			{
 				fw::Vector2 offset = fw::Vector2(offsetx, offsety) - fw::Vector2(-0.5f, 0.5f);
 				if (fw::Length(offset) < 0.5f)
-					tPos += fw::Normalize(offset) * (0.5f - fw::Length(offset));
+					ePos += fw::Normalize(offset) * (0.5f - fw::Length(offset));
 			}
-			if (env::Get(iCellX, iCellY, env::eflag::eCorOutSE) && overlapS && overlapE) // SE
+			if (env::Get(eCellX, eCellY, env::eflag::eCorOutSE) && overlapS && overlapE) // SE
 			{
 				fw::Vector2 offset = fw::Vector2(offsetx, offsety) - fw::Vector2(0.5f, -0.5f);
 				if (fw::Length(offset) < 0.5f)
-					tPos += fw::Normalize(offset) * (0.5f - fw::Length(offset));
+					ePos += fw::Normalize(offset) * (0.5f - fw::Length(offset));
 			}
-			if (env::Get(iCellX, iCellY, env::eflag::eCorOutSW) && overlapS && overlapW) // SW
+			if (env::Get(eCellX, eCellY, env::eflag::eCorOutSW) && overlapS && overlapW) // SW
 			{
 				fw::Vector2 offset = fw::Vector2(offsetx, offsety) - fw::Vector2(-0.5f, -0.5f);
 				if (fw::Length(offset) < 0.5f)
-					tPos += fw::Normalize(offset) * (0.5f - fw::Length(offset));
+					ePos += fw::Normalize(offset) * (0.5f - fw::Length(offset));
 			}
 
 			//******************************** ACTOR COLLISION CHECK
 
-			cg = GetCollisionCells(tPos);
+			///*
+
+			cg = GetCollisionCells(ePos);
 
 			for (int cell_group = 0; cell_group < 4; cell_group++)
 			{
@@ -192,37 +189,31 @@ namespace index
 					for (int e = 0; e < cells[cg.c[cell_group].x][cg.c[cell_group].y].ents.size(); e++)
 					{
 						#define ID cells[cg.c[cell_group].x][cg.c[cell_group].y].ents[e]
-						//if (block_entity.filled[ID] && GETENT(ID)->alive)
-						if (ent::state[ID].alive)
+						if (block_entity.used[ID] && ENTITY[ID]->state.alive)
 						{
-							fw::Vector2 vec = tPos - ent::t[ID].position;
+							fw::Vector2 vec = ePos - ENTITY[ID]->t.position;
 							float dist = fw::Length(vec);
 							if (dist < 0.8f && dist > 0.f)
 							{
-								tPos += fw::Normalize(vec) * (0.8f - dist);
+								ePos += fw::Normalize(vec) * (0.8f - dist);
 								//massively slow collide callback (we'll speed it up later k?)
 								collision::hit_info hit;
 								hit.depenetrate = fw::Normalize(vec) * (0.8f - dist);
 								hit.hit = true;
 								hit.surface = fw::Normalize(vec);
-								hit.inheritedVelocity = ent::t[ID].velocity;
+								hit.inheritedVelocity = ENTITY[ID]->t.velocity;
 								//entity->Collide(hit);
 								collision::hit_info hit2;
 								hit2.depenetrate = fw::Normalize(vec * -1.f) * (0.8f - dist);
 								hit2.hit = true;
 								hit2.surface = fw::Normalize(vec * -1.f);
-								hit2.inheritedVelocity = tVel;
-								//GETENT(ID)->Collide(hit2);
-								//EntitySetAnim(i, res::step_l);
-
-								//tVel = hit.surface * 0.2f; // set our velocity
-								//EntitySetAnim(i, res::knockback); // set our animation
+								hit2.inheritedVelocity = eVel;
 
 								if (resAniStep.Flag(res::f::inflict_knockback))
 								{
-									ent::t[index].velocity = hit2.surface * -0.1f; // set their velocity
+									ENTITY[index]->t.velocity = hit2.surface * -0.1f; // set their velocity
 									CHARA(index)->ani_Lower.setAnim(res::knockback);
-									ent::t[ID].velocity = hit2.surface * 0.2f; // set their velocity
+									ENTITY[ID]->t.velocity = hit2.surface * 0.2f; // set their velocity
 									CHARA(ID)->ani_Lower.setAnim(res::knockback);
 								}
 							}
@@ -231,6 +222,8 @@ namespace index
 					} // End for each entity in cell
 				} // End if entity count of this cell is bigger than zero
 			} // End for each cell group
+
+			//*/
 
 			//******************************** C2 COLLISION CHECK
 
@@ -248,7 +241,7 @@ namespace index
 			c2MakePoly(&poly);
 
 			c2Circle circle;
-			circle.p = c2V(tPos.x, tPos.y);
+			circle.p = c2V(ePos.x, ePos.y);
 			circle.r = 0.5f;
 
 			c2Circle circle2;
@@ -280,42 +273,42 @@ namespace index
 				{
 					float ofx = manifold.n.x * -manifold.depths[0];
 					float ofy = manifold.n.y * -manifold.depths[0];
-					tPos += fw::Vector2(ofx, ofy);
+					ePos += fw::Vector2(ofx, ofy);
 				}
 			}
 		}
 	}
 
-	void RemoveAllReferences(btID id)
+	void RemoveAllReferences(btID index)
 	{
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			// If used, not me, and is targeting me
-			if (block_entity.used[i] && i != id && CHARA(i)->target_ent == id) // and type is entity?
+			if (block_entity.used[i] && i != index && CHARA(i)->target_ent == index) // and type is entity?
 				CHARA(i)->target_ent = BUF_NULL; // Reset it's target
 		}
 	}
 
-	btID GetClosestPlayer(btID id, btf32 dist)
+	btID GetClosestPlayer(btID index, btf32 dist)
 	{
-		btf32 check_distance_0 = fw::Length(ent::t[players[0]].position - ent::t[id].position);
-		btf32 check_distance_1 = fw::Length(ent::t[players[1]].position - ent::t[id].position);
+		btf32 check_distance_0 = fw::Length(ENTITY[players[0]]->t.position - ENTITY[index]->t.position);
+		btf32 check_distance_1 = fw::Length(ENTITY[players[1]]->t.position - ENTITY[index]->t.position);
 		if (check_distance_1 > check_distance_0) // Which player is closer to me
 			return players[1];
 		else
 			return players[0];
 	}
 
-	btID GetClosestEntity(btID id, btf32 dist)
+	btID GetClosestEntity(btID index, btf32 dist)
 	{
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != id && ent::state[i].alive)
+			if (block_entity.used[i] && i != index && ENTITY[i]->state.alive)
 			{
-				btf32 check_distance = fw::Length(ent::t[i].position - ent::t[id].position);
+				btf32 check_distance = fw::Length(ENTITY[i]->t.position - ENTITY[index]->t.position);
 				if (check_distance < closest_distance)
 				{
 					current_closest = i;
@@ -326,19 +319,19 @@ namespace index
 		return current_closest;
 	}
 
-	btID GetClosestEntityAlleg(btID id, btf32 dist, fac::facalleg allegiance)
+	btID GetClosestEntityAlleg(btID index, btf32 dist, fac::facalleg allegiance)
 	{
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != id && ent::state[i].alive)
+			if (block_entity.used[i] && i != index && ENTITY[i]->state.alive)
 			{
 				// do I like THEM
-				if (fac::GetAllegiance(ent::faction[id], ent::faction[i]) == allegiance)
+				if (fac::GetAllegiance(ENTITY[index]->faction, ENTITY[i]->faction) == allegiance)
 				{
-					btf32 check_distance = fw::Length(ent::t[i].position - ent::t[id].position);
+					btf32 check_distance = fw::Length(ENTITY[i]->t.position - ENTITY[index]->t.position);
 					if (check_distance < closest_distance)
 					{
 						current_closest = i;
@@ -350,20 +343,20 @@ namespace index
 		return current_closest;
 	}
 
-	btID GetClosestEntityWeighted(btID id, btf32 dist, fac::facalleg weight)
+	btID GetClosestEntityWeighted(btID index, btf32 dist, fac::facalleg weight)
 	{
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
-			if (block_entity.used[i] && i != id && ent::state[i].alive)
+			if (block_entity.used[i] && i != index && ENTITY[i]->state.alive)
 			{
 				// Calculate the distance between this entity and the other
-				btf32 check_distance = fw::Length(ent::t[i].position - ent::t[id].position);
+				btf32 check_distance = fw::Length(ENTITY[i]->t.position - ENTITY[index]->t.position);
 				// Weight
 				if (check_distance < dist)
 				{
-					if (fac::GetAllegiance(ent::faction[id], ent::faction[i]) == weight) // do I like THEM
+					if (fac::GetAllegiance(ENTITY[index]->faction, ENTITY[i]->faction) == weight) // do I like THEM
 					{
 						check_distance *= 0.5f;
 					}
@@ -379,16 +372,16 @@ namespace index
 		return current_closest;
 	}
 
-	inline void spawn_setup_t(btID id, fw::Vector2 pos, btf32 dir)
+	inline void spawn_setup_t(btID index, fw::Vector2 pos, btf32 dir)
 	{
-		ent::t[id].position = pos;
-		ent::yaw[id].Set(dir);
+		ePos = pos;
+		eYaw.Set(dir);
 	}
 
 	void prefab_pc(btID id, fw::Vector2 pos, btf32 dir)
 	{
 		spawn_setup_t(id, pos, dir);
-		ent::faction[id] = fac::faction::player;
+		ENTITY[id]->faction = fac::faction::player;
 		CHARA(id)->aiControlled = false;
 		#ifdef DEF_EDITOR
 		CHARA(id)->speed = 5.f;
@@ -400,7 +393,7 @@ namespace index
 	void prefab_npc(btID id, fw::Vector2 pos, btf32 dir)
 	{
 		spawn_setup_t(id, pos, dir);
-		ent::faction[id] = fac::faction::playerhunter;
+		ENTITY[id]->faction = fac::faction::playerhunter;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 0.7f;
 	}
@@ -408,7 +401,7 @@ namespace index
 	void prefab_item_bb(btID id, fw::Vector2 pos, btf32 dir)
 	{
 		spawn_setup_t(id, pos, dir);
-		ent::faction[id] = fac::faction::none;
+		ENTITY[id]->faction = fac::faction::none;
 	}
 
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

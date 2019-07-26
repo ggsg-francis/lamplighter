@@ -42,15 +42,6 @@ public:
 	btui8 celly = 0ui8;
 };
 
-//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//--------------------------- ENTITY VARIABLES (TO BE PHASED OUT!) ---------------------------------------------------------------
-//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-namespace index
-{
-
-}
-
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //------------- ITEM STUFF ---------------------------------------
 
@@ -100,8 +91,29 @@ struct Musket : public Item
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //------------- ENTITY STRUCTS -----------------------------------
 
+struct ent_state
+{
+	bool alive = true;
+	btf32 hp = 1.f;
+};
+
 struct Entity
 {
+	enum prefabtype : btui8
+	{
+		prefab_player,
+		prefab_npc,
+		prefab_inanimate_bb,
+	};
+
+	// Variables
+	//type::fntype type22[BUF_SIZE]; // what type of entity is this?
+	fac::faction faction;
+	ent_state state;
+	float radius = 0.5f; // Radius of the entity (no larger than .5)
+	Transform2D t;
+	m::Angle yaw;
+
 	enum etype : btui8
 	{
 		entity,

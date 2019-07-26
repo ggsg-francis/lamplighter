@@ -11,32 +11,32 @@ namespace index
 	//--------------------------- FUCKING TEMPORARY AS, MOVE TO OBJECTS.H ASAP -------------------------------------------------------
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	namespace ent
-	{
-		namespace type
-		{
-			enum prefabtype : btui8
-			{
-				prefab_player,
-				prefab_npc,
-				prefab_inanimate_bb,
-			};
-		}
+	//namespace ent
+	//{
+	//	namespace type
+	//	{
+	//		enum prefabtype : btui8
+	//		{
+	//			prefab_player,
+	//			prefab_npc,
+	//			prefab_inanimate_bb,
+	//		};
+	//	}
 
-		struct ent_state
-		{
-			bool alive = true;
-			btf32 hp = 1.f;
-		};
+	//	struct ent_state
+	//	{
+	//		bool alive = true;
+	//		btf32 hp = 1.f;
+	//	};
 
-		// Variables
-		//type::fntype type22[BUF_SIZE]; // what type of entity is this?
-		fac::faction faction[BUF_SIZE];
-		ent_state state[BUF_SIZE];
-		float radius[BUF_SIZE]{ 0.5f }; // Radius of the entity (no larger than .5)
-		Transform2D t[BUF_SIZE];
-		m::Angle yaw[BUF_SIZE];
-	};
+	//	// Variables
+	//	//type::fntype type22[BUF_SIZE]; // what type of entity is this?
+	//	fac::faction faction[BUF_SIZE];
+	//	ent_state state[BUF_SIZE];
+	//	float radius[BUF_SIZE]{ 0.5f }; // Radius of the entity (no larger than .5)
+	//	Transform2D t[BUF_SIZE];
+	//	m::Angle yaw[BUF_SIZE];
+	//};
 	// Actor variables
 	namespace actor
 	{
@@ -180,12 +180,18 @@ namespace index
 	{
 		btui8 index = 0ui8; // waste of a byte
 
-		#define tPos ent::t[index].position
-		#define tHgt ent::t[index].height
-		#define tVel ent::t[index].velocity
-		#define iCellX ent::t[index].cellx
-		#define iCellY ent::t[index].celly
-		#define aYaw ent::yaw[index]
+		//#define tPos ent::t[index].position
+		//#define tHgt ent::t[index].height
+		//#define tVel ent::t[index].velocity
+		//#define iCellX ent::t[index].cellx
+		//#define iCellY ent::t[index].celly
+		//#define aYaw ent::yaw[index]
+		#define ePos ((Entity*)_entities[index])->t.position
+		#define eHgt ((Entity*)_entities[index])->t.height
+		#define eVel ((Entity*)_entities[index])->t.velocity
+		#define eCellX ((Entity*)_entities[index])->t.cellx
+		#define eCellY ((Entity*)_entities[index])->t.celly
+		#define eYaw ((Entity*)_entities[index])->yaw
 		// Animation
 		#define aniLower ((Chara*)_entities[index])->ani_Lower
 		#define iAniID ((Chara*)_entities[index])->ani_Lower.aniID
@@ -219,7 +225,7 @@ namespace index
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	// Creates an Entity instance, adds it to the index and allocates it an ID
-	btID SpawnEntity(ent::type::prefabtype TYPE, fw::Vector2 pos, float dir);
+	btID SpawnEntity(Entity::prefabtype TYPE, fw::Vector2 pos, float dir);
 	// Removes a given Entity from the index
 	void DestroyEntity(btID ID);
 
