@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bt_archiver.cpp" />
+    <ClCompile Include="serializer.cpp" />
+    <ClCompile Include="serializer-graphics.cpp" />
+    <ClCompile Include="tga_reader.cpp" />
+    <ClCompile Include="resources-archive.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="serializer.h" />
+    <ClInclude Include="global.h" />
+    <ClInclude Include="serializer-graphics.h" />
+    <ClInclude Include="tga_reader.h" />
+    <ClInclude Include="resources-archive.h" />
+    <ClInclude Include="global-archiver.h" />
+  </ItemGroup>
+</Project>

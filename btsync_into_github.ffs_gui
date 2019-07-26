@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FreeFileSync XmlType="GUI" XmlFormat="9">
+    <MainConfig>
+        <Comparison>
+            <Variant>TimeAndSize</Variant>
+            <Symlinks>Exclude</Symlinks>
+            <IgnoreTimeShift/>
+        </Comparison>
+        <SyncConfig>
+            <Variant>Mirror</Variant>
+            <DetectMovedFiles>false</DetectMovedFiles>
+            <DeletionPolicy>RecycleBin</DeletionPolicy>
+            <VersioningFolder Style="Replace"/>
+        </SyncConfig>
+        <GlobalFilter>
+            <Include>
+                <Item>*</Item>
+            </Include>
+            <Exclude>
+                <Item>\System Volume Information\</Item>
+                <Item>\$Recycle.Bin\</Item>
+                <Item>\RECYCLER\</Item>
+                <Item>\RECYCLED\</Item>
+                <Item>*\desktop.ini</Item>
+                <Item>*\thumbs.db</Item>
+                <Item>.gitignore</Item>
+                <Item>LICENSE</Item>
+                <Item>README.md</Item>
+                <Item>.git\</Item>
+            </Exclude>
+            <TimeSpan Type="None">0</TimeSpan>
+            <SizeMin Unit="None">0</SizeMin>
+            <SizeMax Unit="None">0</SizeMax>
+        </GlobalFilter>
+        <FolderPairs>
+            <Pair>
+                <Left>C:\Users\User\Documents\Shared\GAMES\Source\bt3d_tsoa</Left>
+                <Right>C:\Users\User\Documents\GitHub\bt3d</Right>
+            </Pair>
+        </FolderPairs>
+        <IgnoreErrors>false</IgnoreErrors>
+        <PostSyncCommand Condition="Completion"/>
+    </MainConfig>
+    <GuiConfig>
+        <MiddleGridView>Action</MiddleGridView>
+    </GuiConfig>
+</FreeFileSync>

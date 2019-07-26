@@ -39,6 +39,8 @@
 #define FRAME_TIME 1. / 30.
 //#define FRAME_TIME 1. / 60.
 
+#define TERRAIN_HEIGHT_DIVISION 8.f
+
 //versioning: 0x + hex number eg. 0x04f0a7
 #define VERSION_MAJOR 0x0
 #define VERSION_MINOR 0x9

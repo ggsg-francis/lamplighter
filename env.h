@@ -176,9 +176,9 @@ namespace env
 		btui8 num_08 = 0;
 
 		btui8 num_09 = 0;
-		btui8 foodlevel = 0;
+		btui8 num_10 = 0;
 		btui8 num_11 = 0;
-		btui8 meatlevel = 0;
+		btui8 num_12 = 0;
 	};
 
 	struct path_node

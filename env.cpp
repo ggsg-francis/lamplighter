@@ -287,41 +287,7 @@ namespace env
 	
 	void Tick()
 	{
-		for (int x = 0; x <= 16; x++)
-		{
-			for (int y = 0; y <= 16; y++)
-			{
-				if (env::Get(x, y, eflag::EF_PROPAGATES_MEAT))
-				{
-					if (env::nodes[x + 1][y].meatlevel < 3.f && !env::Get(x + 1, y, eflag::eIMPASSABLE))
-						env::nodes[x + 1][y].meatlevel += 0.01f;
-					env::Set(x + 1, y, eflag::EF_CONTAINS_MEAT);
-
-					if (x > 0)
-					{
-						if (env::nodes[x - 1][y].meatlevel < 3.f && !env::Get(x - 1, y, eflag::eIMPASSABLE))
-							env::nodes[x - 1][y].meatlevel += 0.01f;
-						env::Set(x - 1, y, eflag::EF_CONTAINS_MEAT);
-					}
-
-					if (env::nodes[x][y + 1].meatlevel < 3.f && !env::Get(x, y + 1, eflag::eIMPASSABLE))
-						env::nodes[x][y + 1].meatlevel += 0.01f;
-					env::Set(x, y + 1, eflag::EF_CONTAINS_MEAT);
-
-					if (y > 0)
-					{
-						if (env::nodes[x][y - 1].meatlevel < 3.f && !env::Get(x, y - 1, eflag::eIMPASSABLE))
-							env::nodes[x][y - 1].meatlevel += 0.01f;
-						env::Set(x, y - 1, eflag::EF_CONTAINS_MEAT);
-					}
-
-				}
-				if (env::nodes[x][y].meatlevel >= 1)
-				{
-					env::Set(x, y, eflag::EF_PROPAGATES_MEAT);
-				}
-			}
-		}
+		//
 	}
 
 	void SaveBin()

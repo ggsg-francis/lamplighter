@@ -11,14 +11,14 @@ namespace serializer
 	btID get_id_from_fn(char* fn, archive::types::asset_type type)
 	{
 		btID retid;
-		for (int i = 0; i < archive::fn_index_OBSOLETE; i++)			// Check all currently registered filenames
-			if (strcmp(fn, archive::filenames_OBSOLETE[i]) == 0)		// If this filename is already registered
-				return (btID)i;								// Return ID of matching filename
-		strcpy(archive::filenames_OBSOLETE[archive::fn_index_OBSOLETE], fn);	// Else, this filename is new, so copy into it
+		for (int i = 0; i < archive::fn_index_OBSOLETE; i++) // Check all currently registered filenames
+			if (strcmp(fn, archive::filenames_OBSOLETE[i]) == 0) // If this filename is already registered
+				return (btID)i; // Return ID of matching filename
+		strcpy(archive::filenames_OBSOLETE[archive::fn_index_OBSOLETE], fn); // Else, this filename is new, so copy into it
 		retid = archive::fn_index_OBSOLETE;
-		archive::fn_types_OBSOLETE[archive::fn_index_OBSOLETE] = type;		// Set file type, for loading
+		archive::fn_types_OBSOLETE[archive::fn_index_OBSOLETE] = type; // Set file type, for loading
 		archive::fn_index_OBSOLETE++;
-		return retid;										// Return ID of new filename
+		return retid; // Return ID of new filename
 	}
 
 	void debug_output()
@@ -101,14 +101,12 @@ namespace serializer
 						oper = fgetc(file); // Get character
 						if (oper == '\n')
 						{
-							//fgetpos(file, &end);
 							break;
 						}
 					}
 				}
 				else
 				{
-
 					//....................................... GET ITEM TYPE
 
 					oper = fgetc(file); // Advance past equals sign

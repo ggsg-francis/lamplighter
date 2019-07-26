@@ -28,7 +28,7 @@ namespace index
 		//1.6 is normal height
 		//#define h ent::t[i].height + fw::Lerp(r_step.height_start, r_step.height_end, fAniTime / r_step.time)
 		#define h 1.6f + fw::Lerp(resAniStep.height_start, resAniStep.height_end, aniLower.aniTime / resAniStep.time)
-		graphics::SetMatProj(viewpos.x, viewpos.y, h, CHARA(active_player_view)->viewYaw.Rad(), CHARA(active_player_view)->viewPitch.Rad());
+		graphics::SetMatProj(viewpos.x, viewpos.y, h + ent::t[active_player_view].height, CHARA(active_player_view)->viewYaw.Rad(), CHARA(active_player_view)->viewPitch.Rad());
 		#undef h
 		graphics::SetMatView(0.f, 0.f, 0.f, 0.f); // eventually we can try and break setmatproj into 2 so setmatproj only has to be called once ever
 	}
@@ -70,18 +70,9 @@ namespace index
 				DestroyEntity(i);
 		}
 	}
-	int ticker_temp;
 
 	void Tick(btf32 dt)
 	{
-		//ticker_temp++;
-		//if (ticker_temp == 1000)
-		//{
-		//	Character* chr = (Character*)SpawnEntity(ENT_ZOMBIE);
-		//	chr->SetSkin(&pRes->tex_zpc);
-		//	ticker_temp = 0;
-		//}
-
 		//******************************** ITERATE THROUGH ENTITIES
 
 		#ifndef DEF_EDITOR
@@ -118,7 +109,7 @@ namespace index
 		*/
 
 		//******************************** NETCODE TICK
-		///*
+
 		networkTimerTemp += time_delta;
 		//put in network file uwu
 		if (networkTimerTemp > 1.f / cfg::fSyncTimer)
@@ -136,13 +127,15 @@ namespace index
 			//ptemp.vh = actor::viewYaw[players[0]].Deg();
 			//ptemp.vv = actor::viewPitch[players[0]].Deg();
 			network::SendMsg(SET_UNIT_POSE, &ptemp);
-		}//*/
+		}
 	}
 
 	void Draw()
 	{
 		EntityDraw();
+		#ifndef DEF_EDITOR
 		ProjectileDraw();
+		#endif
 
 		btui32 drawrange = 8u; // Create min/max draw coordinates
 		bti32 cxs = ent::t[active_player_view].cellx - drawrange;
@@ -169,7 +162,7 @@ namespace index
 			{
 				if (!env::Get(x, y, env::eflag::eIMPASSABLE))
 				{
-					line_transform.SetPosition(fw::Vector3(x, 0, y));
+					line_transform.SetPosition(fw::Vector3(x, env::nodes[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
 					env::nbit::node_bit bit = env::get_node_bit(GetCellX(), GetCellY(), x, y);
 					switch (bit)
 					{
@@ -204,23 +197,12 @@ namespace index
 				{
 					if (!env::Get(x, y, env::eflag::eIMPASSABLE))
 					{
-						line_transform.SetPosition(fw::Vector3(x, 0, y));
+						line_transform.SetPosition(fw::Vector3(x, (btf32)env::nodes[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
 						DrawMeshAtTransform(res::m_kitfloor, res::t_marshmud, pRes->shader_solid, line_transform);
 					}
 				}
 			}
 		}
-
-		#ifndef DEF_EDITOR
-		//line_transform.SetPosition(fw::Vector3( ai::pathnodes[ai::node].x, 0.f, ai::pathnodes[ai::node].y));
-		//DrawMeshAtTransform(pRes->mdl_beachball, pRes->tex_bball, pRes->shader_solid, line_transform);
-		#endif
-
-		//*/
-
-		//line_transform.SetPosition(fw::Vector3(players[0]->cellx, 0, players[0]->celly));
-		//line_transform.SetScale(fw::Vector3(1.2, 1.2, 1.2));
-		//DrawMeshAtTransform(pRes->mdl_debug_cell, pRes->tex_red, pRes->shader_solid, line_transform);
 
 		#ifdef DEF_DEBUG_DISPLAY
 		graphics::SetFrontFaceInverse();
@@ -548,6 +530,8 @@ namespace index
 				}
 			}
 
+			ent::t[index].height = (btf32)env::nodes[x][y].height / TERRAIN_HEIGHT_DIVISION;
+
 			//******************************** RUN AI
 
 			if (CHARA(index)->aiControlled)
@@ -598,7 +582,6 @@ namespace index
 			CHARA(index)->musket.lever = fw::Lerp(CHARA(index)->musket.lever, (btf32)CHARA(index)->musket.bvMusketState.get(Musket::musket_state::latch_pulled), 0.2f);
 
 			if (CHARA(index)->musket.lever > 0.95f 
-				//&& CHARA(index)->musket.bvMusketState.get(Musket::get_can_fire))
 				&& CHARA(index)->musket.bvMusketState.get(Musket::barrel_armed)
 				&& CHARA(index)->musket.bvMusketState.get(Musket::fpan_hatch_open)
 				&& CHARA(index)->musket.bvMusketState.get(Musket::fpan_powder_in))
@@ -607,12 +590,10 @@ namespace index
 				EntityCastProj(index);
 			}
 			else if (CHARA(index)->musket.lever > 0.95f
-				//&& CHARA(index)->musket.bvMusketState.get(Musket::get_can_fire))
 				&& CHARA(index)->musket.bvMusketState.get(Musket::fpan_hatch_open)
 				&& CHARA(index)->musket.bvMusketState.get(Musket::fpan_powder_in))
 			{
 				CHARA(index)->musket.bvMusketState.unset(Musket::unset_fire); // unset
-				//EntityCastProj(index);
 			}
 		} // End if alive
 	}
@@ -633,6 +614,7 @@ namespace index
 				t_body.SetPosition(fw::Vector3(ent::t[index].position.x, ent::t[index].height + fw::Lerp(resAniStep.height_start, resAniStep.height_end, aniLower.aniTime / resAniStep.time), ent::t[index].position.y));
 				t_body.Rotate(aYaw.Rad(), fw::Vector3(0, 1, 0));
 
+				#ifndef DEF_EDITOR
 				if (resAniStep.Flag(res::f::flip_lr))
 				{
 					graphics::SetFrontFaceInverse();
@@ -642,19 +624,20 @@ namespace index
 				{
 					t_body.SetScale(fw::Vector3(1.f, 1.f, 1.f));
 				}
-
 				DrawBlendMeshAtTransform(pRes->mesh_chara_legs.models[iAniID], fw::Lerp(resAniStep.blend_start, resAniStep.blend_end, aniLower.aniTime / resAniStep.time), res::t_skin1, pRes->shader_blend, t_body);
 				DrawBlendMeshAtTransform(pRes->mesh_cloak.models[iAniID], fw::Lerp(resAniStep.blend_start, resAniStep.blend_end, aniLower.aniTime / resAniStep.time), res::t_equip_atlas, pRes->shader_blend, t_body);
+				#endif
 
 				graphics::SetFrontFace();
 
 				// draw arms
 				t_body.SetScale(fw::Vector3(1.f, 1.f, 1.f));
+				#ifndef DEF_EDITOR
 				DrawBlendMeshAtTransform(res::m_armscast, 0, res::t_skin1, pRes->shader_blend, t_body);
+				#endif
 
 				// Set head transform
 				t_head.SetPosition(t_body.GetPosition());
-				//t_head.SetRotation(t_body.rot_glm_temp);
 				t_head.Rotate(aViewYaw.Rad(), fw::Vector3(0, 1, 0));
 				t_head.Rotate(aViewPitch.Rad(), fw::Vector3(1, 0, 0));
 				t_head.Translate(glm::vec3(0.f,1.45f,0.f));
@@ -666,6 +649,8 @@ namespace index
 				// draw item
 				t_item.SetPosition(t_body.GetPosition());
 				t_item.Rotate(aYaw.Rad(), fw::Vector3(0, 1, 0));
+
+				#ifndef DEF_EDITOR
 
 				switch ((CHARA(index)->musket.eMusketHoldState))
 				{
@@ -701,6 +686,8 @@ namespace index
 
 				if (CHARA(index)->musket.eMusketHoldState == Musket::inspect_barrel || CHARA(index)->musket.bvMusketState.get(Musket::musket_state::barrel_rod_in)) // IF BARREL
 					DrawBlendMeshAtTransform(res::mb_item_matchlock_01_rod, CHARA(index)->musket.rod, res::t_item_matchlock_01, pRes->shader_blend, t_item);
+
+				#endif
 
 				//draw compass needle (temp until done with a GUI element)
 				t_body.Translate(glm::vec3(0.f, 1.4f, 0.f));
@@ -767,7 +754,6 @@ namespace index
 	// Iterates through all active projectiles and handles their collision
 	void ProjectileHitCheck()
 	{
-	///*
 		//for every projectile
 		for (int index = 0; index < block_proj.index_last; index++)
 		{

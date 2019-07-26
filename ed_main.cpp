@@ -230,6 +230,14 @@ bool StepTick(double dt)
 				env::Set(index::GetCellX(), index::GetCellY(), env::eflag::eIMPASSABLE);
 			}
 		}
+		if (input::Get(input::key::action_b_hit))
+		{
+			++env::nodes[index::GetCellX()][index::GetCellY()].height;
+		}
+		if (input::Get(input::key::action_c_hit))
+		{
+			--env::nodes[index::GetCellX()][index::GetCellY()].height;
+		}
 
 		//do stuff
 		index::Tick(FRAME_TIME);
@@ -243,14 +251,6 @@ bool StepTick(double dt)
 	{
 		return false;
 	}
-}
-
-void SetTitle(unsigned int id)
-{
-	if (id == 0)
-		SDL_SetWindowTitle(sdl_window, "GGSG Player 0");
-	if (id == 1)
-		SDL_SetWindowTitle(sdl_window, "GGSG Player 1");
 }
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -272,27 +272,6 @@ void SetTitle(btui8 id)
 
 int main(int argc, char * argv[])
 {
-	//mem::ptrbuf buf;
-
-	//int i1 = 1;
-	//int i2 = 2;
-	//int i3 = 3;
-	//int i4 = 4;
-	//int i5 = 5;
-	//int i6 = 6;
-
-	//buf.add(&i1);
-	//buf.add(&i2);
-	//buf.add(&i3);
-	//buf.add(&i4);
-	//buf.add(&i5);
-	//buf.add(&i6);
-
-	//buf.remove(&i6);
-	//buf.remove(&i6);
-
-	//int i7 = *(int*)buf[2];
-
 	cfg::LoadCfg();
 
 	//....................................... CONNECT TO SERVER
