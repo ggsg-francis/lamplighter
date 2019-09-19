@@ -1,0 +1,45 @@
+item wpon
+name Coolweapon Longname
+radi 1.0
+wght 1.1
+muns 123456
+held twohandpierce
+dmg1 1000
+dmg2 0.0
+dmg3 0.0
+srcm Mmatchlc
+srct Tmatchlc
+icon TIcoMtch
+<<<<
+item wpon
+name Beachball
+radi 0.5
+wght 1.4
+muns 20
+held twohandslash
+dmg1 6.5
+dmg2 2.0
+dmg3 1.8
+srcm MdebugBB
+srct TdebugBB
+icon TIcoBBal
+<<<<
+item pton
+name My Strongest Potion
+radi 0.5
+wght 0.1
+muns 10
+srcm MNFern01
+srct TNFern01
+icon TdebugBB
+<<<<
+item pton
+name My Strongest Potion
+radi 0.5
+wght 0.1
+muns 10
+srcm MNFern01
+srct TNFern01
+icon TdebugBB
+<<<<
+eof_

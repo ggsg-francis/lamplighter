@@ -1,0 +1,279 @@
+**** DEBUG STUFF
+item mesh
+hndl MdebugBB
+srca resources/object/beachball.obj
+<<<<
+item txtr
+hndl TdebugBB
+srca resources/object/beachball_palette.tga
+tfil linearmip
+tedg repeat
+<<<<
+item mesh
+hndl Mdebgcel
+srca resources/debug_cell.obj
+<<<<
+**** COMPASS NEEDLE
+item mesh
+hndl Mcmpnedl
+srca resources/compass_needle.obj
+<<<<
+item txtr
+hndl Tcmpnedl
+srca resources/red.tga
+<<<<
+**** SHADOW
+item mesh
+hndl M_shadow
+srca resources/shadow.obj
+<<<<
+item txtr
+hndl T_shadow
+srca resources/shadow.tga
+<<<<
+**** SKY
+item mesh
+hndl MSkyDome
+srca resources/skydome.obj
+<<<<
+item mesh
+hndl MSkyStar
+srca resources/skystars.obj
+<<<<
+item txtr
+hndl TSkyTime
+srca resources/sky_clear_time.tga
+tfil linear
+tedg repeatclamp
+<<<<
+item mesh
+hndl MSkyMoon
+****srca resources/skymoon.fbx
+srca resources/skymoon.obj
+<<<<
+item txtr
+hndl TSkyMoon
+srca resources/sky_moon.tga
+tfil linearmip
+tedg clamp
+<<<<
+**** TERRAIN
+item mesh
+hndl MTerNear
+srca resources/Terrain_Near.obj
+<<<<
+item mesh
+hndl MTerrOOB
+srca resources/Terrain_LOD.obj
+<<<<
+**** ------------------------------------------------------------------------------------ CHARACTER TEXTURES
+item txtr
+**** character skin 1
+hndl Tchrskn1
+srca resources/character_palette_p1.tga
+<<<<
+item txtr
+**** character skin 2
+hndl Tchrskn2
+srca resources/character_palette_p2.tga
+<<<<
+item txtr
+**** equipement atlas
+hndl Teqipatl
+srca resources/txtr_apparel_atlas.tga
+<<<<
+**** CHARACTER MODELS
+item mshb
+**** body base step
+hndl MBbase_s
+srca resources/char_legs_idle.obj
+srcb resources/char_legs_step_L.obj
+<<<<
+item mshb
+**** body base run
+hndl MBbase_r
+srca resources/char_legs_idle.obj
+srcb resources/char_legs_run_L.obj
+<<<<
+item mshb
+**** arms cast
+hndl MAbase_c
+srca resources/char_arms_idle.obj
+srcb resources/char_arms_cast.obj
+<<<<
+item mshb
+**** head
+hndl MHbase_b
+srca resources/char_head.obj
+srcb resources/char_head_blink.obj
+<<<<
+**** FLOWER PICKERS PITH HELMET (MEqH = MESH EQUIP HEAD)
+item mesh
+hndl MEqHpith
+srca resources/equip_head_pickers_01.obj
+<<<<
+**** FLOWER PICKERS LONG GAMBESON (MEqB = MESH EQUIP BODY)
+item mshb
+hndl MEqBfpgs
+srca resources/char_eqip_cloak_01_idle.obj
+srcb resources/char_eqip_cloak_01_step.obj
+<<<<
+item mshb
+hndl MEqBfpgr
+srca resources/char_eqip_cloak_01_idle.obj
+srcb resources/char_eqip_cloak_01_run.obj
+<<<<
+**** ------------------------------------------------------------------------------------ ITEMS
+**** MATCHLOCK GUN
+item mesh
+hndl Mmatchlc
+srca resources/item_matchlock_01.obj
+<<<<
+item mshb
+**** matchlock lever
+hndl Mmtchlev
+srca resources/item_matchlock_01_lever.obj
+srcb resources/item_matchlock_01_lever_pull.obj
+<<<<
+item mshb
+**** matchlock rod
+hndl Mmtchrod
+srca resources/item_matchlock_01_rod_ready.obj
+srcb resources/item_matchlock_01_rod_in.obj
+<<<<
+item mshb
+**** matchlock flashpan open
+hndl Mmtcfpan
+srca resources/item_matchlock_01_pan.obj
+srcb resources/item_matchlock_01_pan_open.obj
+<<<<
+item mshb
+**** matchlock flashpan full (temp?)
+hndl Mmtcfpfu
+srca resources/item_matchlock_01_pan.obj
+srcb resources/item_matchlock_01_pan_open_full.obj
+<<<<
+item txtr
+hndl Tmatchlc
+srca resources/item_matchlock_01.tga
+<<<<
+**** ------------------------------------------------------------------------------------ OTHER STUFF
+**** PROJECTILE
+item mesh
+hndl Mprjctil
+srca resources/projectile/projectile_basic.fbx
+<<<<
+item txtr
+hndl Tprjctil
+srca resources/projectile/projectile_basic.tga
+tfil linearmip
+tedg clamp
+<<<<
+item mshb
+hndl MBSmkSeg
+srca resources/projectile/smoke_trail_segment_0.obj
+srcb resources/projectile/smoke_trail_segment_1.obj
+<<<<
+item txtr
+hndl MSmokeTr
+srca resources/projectile/smoke_trail.tga
+tfil linear
+tedg clamp
+<<<<
+**** ENVIRONMENT
+item mesh
+hndl Mkitflor
+srca resources/kit_floor.obj
+<<<<
+item txtr
+hndl TTSndDrt
+**** srca resources/t_marshmud_01.tga
+srca resources/t_dirt_01.tga
+tfil linearmip
+tedg repeat
+<<<<
+item txtr
+hndl TTScorch
+srca resources/t_dirt_02.tga
+tfil linearmip
+tedg repeat
+<<<<
+**** GUI
+item txtr
+hndl TGUIcros
+srca resources/gui_crosshairs.tga
+<<<<
+item txtr
+hndl TGUIFont
+srca resources/gui/font_default.tga
+<<<<
+item txtr
+hndl TGUIbarR
+srca resources/gui_hp.tga
+<<<<
+item txtr
+hndl TGUIbarY
+srca resources/gui_hp_enemy.tga
+<<<<
+item txtr
+hndl TGUI_Box
+srca resources/gui_box.tga
+<<<<
+item txtr
+hndl TGUI_SBx
+srca resources/gui_select_box.tga
+<<<<
+item txtr
+hndl TGUI_ISl
+srca resources/gui_inv_slot.tga
+<<<<
+**** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+**** ASSETS BEYOND THIS POINT ARE NOT DIRECTLY REFERENCED WITHIN THE GAME CODE ----------
+**** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+**** TERRAIN (ADD 'MODT' TAG FOR MODIFIABLE TEXTURE)
+****item txtr
+****hndl TTerrain
+****srca resources/Terrain_HMAP.tga
+****<<<<
+**** NATURE
+item mesh
+hndl MNTree01
+srca resources/environment/nature/dry_tree_large_01.obj
+<<<<
+item txtr
+hndl TNTree01
+srca resources/environment/nature/dry_tree_large_01.tga
+tfil linearmip
+tedg clamp
+<<<<
+item mesh
+hndl MNFern01
+srca resources/environment/nature/marsh_fern_01.obj
+<<<<
+item txtr
+hndl TNFern01
+srca resources/environment/nature/marsh_fern_01.tga
+tfil linearmip
+tedg clamp
+<<<<
+**** ROCKS
+item mesh
+hndl MTRcks01
+srca resources/environment/terrain/rocks_01.obj
+<<<<
+item txtr
+hndl TTRcks01
+srca resources/environment/terrain/rocks_01.tga
+tfil linearmip
+tedg clamp
+<<<<
+**** ICONS
+item txtr
+hndl TIcoMtch
+srca resources/gui_invicon_matchlock.tga
+<<<<
+item txtr
+hndl TIcoBBal
+srca resources/gui_invicon_beachball.tga
+<<<<
+eof_
