@@ -8,8 +8,9 @@
 
 namespace m
 {
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- ANGLE --------------------------------------------
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	#define CONV_RAD 0.01745329251994329576923690768489
 	#define CONV_DEG 57.295779513082320876798154814105
@@ -33,9 +34,7 @@ namespace m
 			if (deg < 0.f)
 				deg += 360.f;
 			else if (deg >= 360.f)
-			{
 				deg -= 360.f;
-			}
 		}
 		inline void Rotate(btf32 other)
 		{
@@ -51,31 +50,27 @@ namespace m
 		}
 		inline void RotateTowards(btf32 other, btf32 amt)
 		{
-			//start complicated, get simple over time
+			// Sometimes the angles are jacked and stacked, so put them within range
+			while (other < 0.f)
+				other += 360.f;
+			while (other >= 360.f)
+				other -= 360.f;
+			// Is there any way to optimize this?
 			if (fabsf(other - deg) <= amt) // are we close enough to just set the angle
 				Set(other);
-			// otherwise, we have to move closer by amt
-			else if (fabsf(deg - other) < 180.f) // no seam
+			else if (fabsf(other - deg) < 180.f) // If we don't have to cross the seam
 			{
 				if (other > deg)
-				{
 					Rotate(amt);
-				}
 				else if (other < deg)
-				{
 					Rotate(-amt);
-				}
 			}
-			else // we have to cross the seam
+			else // Otherwise, we have to cross the seam
 			{
 				if (other < deg)
-				{
-					Rotate(amt * 2);
-				}
+					Rotate(amt);
 				else if (other > deg)
-				{
-					Rotate(-amt * 2);
-				}
+					Rotate(-amt);
 			}
 		}
 		inline btf32 Deg()
@@ -96,18 +91,19 @@ namespace m
 	#undef CONV_RAD
 	#undef CONV_DEG
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- VECTOR2 ------------------------------------------
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	// 2 dimensional vector used for stuff like mouse delta
 	class Vector2
 	{
 	public:
-		//******************************** VARIABLES
+		//-------------------------------- VARIABLES
 		float x, y;
-		//******************************** CONSTRUCTOR
+		//-------------------------------- CONSTRUCTOR
 		Vector2(float X = 0.f, float Y = 0.f) : x{ X }, y{ Y } {};
-		//******************************** OPERATORS
+		//-------------------------------- OPERATORS
 		Vector2 operator+(Vector2);
 		Vector2 operator-(Vector2);
 		Vector2 operator*(Vector2);
@@ -126,19 +122,20 @@ namespace m
 		Vector2 operator/=(float);
 	};
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- VECTOR3 ------------------------------------------
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	// Class type representing a normal or 3D co-ordinates
 	class Vector3
 	{
 	public:
-		//******************************** VARIABLES
+		//-------------------------------- VARIABLES
 		float x, y, z;
-		//******************************** CONSTRUCTORS
+		//-------------------------------- CONSTRUCTORS
 		Vector3(float X = 0.f, float Y = 0.f, float Z = 0.f) : x{ X }, y{ Y }, z{ Z } {};
 		Vector3(glm::vec3 V) : x{ V.x }, y{ V.y }, z{ V.z } {};
-		//******************************** OPERATORS
+		//-------------------------------- OPERATORS
 		Vector3 operator*(const float FLOAT);
 		Vector3 operator*(const Vector3& VECTOR);
 		Vector3 operator+(const Vector3& VECTOR);
@@ -152,28 +149,35 @@ namespace m
 
 	Vector3 operator*(const btf32 FLOAT, const Vector3& VECTOR);
 
+	Vector3 operator+(const Vector3& VECTOR_A, const Vector3& VECTOR_B);
+	Vector3 operator-(const Vector3& VECTOR_A, const Vector3& VECTOR_B);
+
 	glm::vec3 operator+(const glm::vec3& VECTOR_A, const Vector3& VECTOR_B);
 	glm::vec3 operator*(const glm::vec3& VECTOR_A, const Vector3& VECTOR_B);
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- QUATERNION ---------------------------------------
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	// Class type for handling rotations that I don't understand
 	class Quaternion
 	{
 	public:
-		//******************************** VARIABLES
+		//-------------------------------- VARIABLES
 		float x, y, z, w;
-		//******************************** CONSTRUCTORS
+		//-------------------------------- CONSTRUCTORS
 		Quaternion(float X = 0.f, float Y = 0.f, float Z = 0.f, float W = 0.f) : x{ X }, y{ Y }, z{ Z }, w{ W } {};
 		Quaternion(glm::quat Q) : x{ Q.x }, y{ Q.y }, z{ Q.z }, w{ Q.w } {};
-		//******************************** OPERATORS
+		//-------------------------------- OPERATORS
 		Quaternion operator*(const Quaternion& QUATERNION);
 		// Stub
 	};
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- UTILITY FUNCTIONS --------------------------------
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+	char* ToString(int num, char* str, int base);
 
 	// Linear interpolate
 	btf32 Lerp(btf32 A, btf32 B, btf32 T);
@@ -235,6 +239,16 @@ namespace m
 	Vector3 RotateVector(const Vector3& VECTOR, const Quaternion& QUATERNION);
 	// Rotate a quaternion around an axis by so many degrees
 	Quaternion Rotate(const Quaternion& QUATERNION, const float& ANGLE, const Vector3& AXIS);
+}
+
+namespace collision
+{
+	struct hit_info {
+		bool hit = false;
+		m::Vector2 surface = m::Vector2(0.f, 0.f);
+		m::Vector2 depenetrate = m::Vector2(0.f, 0.f);
+		m::Vector2 inheritedVelocity = m::Vector2(0.f, 0.f);
+	};
 }
 
 #endif // !MATHS_H

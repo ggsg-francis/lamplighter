@@ -31,7 +31,7 @@ wght 0.1
 muns 10
 srcm MNFern01
 srct TNFern01
-icon TdebugBB
+icon T_______
 <<<<
 item pton
 name My Strongest Potion
@@ -41,5 +41,18 @@ muns 10
 srcm MNFern01
 srct TNFern01
 icon TdebugBB
+<<<<
+item wpon
+name Single Use Boomerang
+radi 1.0
+wght 1.1
+muns 14
+held twohandpierce
+dmg1 1000
+dmg2 0.0
+dmg3 0.0
+srcm Mmatchlc
+srct Tmatchlc
+icon TIcoMtch
 <<<<
 eof_

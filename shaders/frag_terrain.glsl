@@ -99,17 +99,24 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 
 		// circle pattern
 		///*
-		float offsetamt = 1.6f * texelSize.x;
-		float offsetamtdiag = 1.13137f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
+		float offsetamt = 1.f * texelSize.x;
+		float offsetamtdiag = 0.707107f * texelSize.x;
 		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		shadow /= 9;
+		if (shadow < 4.f && shadow > 0.f)
+		{
+			shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
+			shadow /= 9;
+		}
+		else
+		{
+			shadow /= 5;
+		}
 		//*/
 		
 		//hex pattern
@@ -177,8 +184,7 @@ void main()
 		vec3 litcol = texture(ts, vec2(ft, 29.5f / 32.f)).rgb * 4.f;
 		
 		
-		//float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 1.f, 0.f, 1.f); // Sharpened
-		float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened
+		float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
 		//float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
 		
 		//FragColor.rgb = vec3(shadow_heightmap.g); // test
@@ -191,16 +197,32 @@ void main()
 		
 		// Ambient
 		// max: if the sky is lighter than the sun, override it
-		//if (shadow_heightmap.g < 0.5f)
-			FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl * shadow_terrain) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
-		//else
-		//	FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
+		// with heightmap shadows
+		FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl * shadow_terrain) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
+		// no heightmap shadows
+		//FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
 		
-
+		// Mirages
+		/*
+		vec3 vd = Pos - pcam;
+		if (clamp(length((Pos.xz - pcam.xz) * 0.005f) - 0.2f, 0, 1)
+			* clamp(dot(normalize(Normal), normalize(vd)) * 32.f + 1.f, 0, 1) > 0.9f)
+			FragColor.rgb = texture(ts, vec2(ft, 13.f / 32.f)).rgb;
+		//*/
 		
 		// Add fog
 		//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos - pcam) * 0.1f) - 0.2f), 0.f, 1.f));
 		//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos.xz - pcam.xz) * 0.1f) - 0.2f), 0.f, 1.f));
 		FragColor.rgb = mix(FragColor.rgb, fogcol, clamp((length((Pos.xz - pcam.xz) * 0.0015f) - 0.2f), 0.f, 1.f));
+		
+		// Dither
+		/*
+		int dx = int(mod(gl_FragCoord.x, 4));
+		int dy = int(mod(gl_FragCoord.y, 4));
+		float rndBy = 12.f;
+		FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
+		// Posterize
+		FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
+		*/
 	}
 }

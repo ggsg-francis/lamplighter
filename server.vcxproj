@@ -148,14 +148,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="server.cpp" />
+    <ClCompile Include="network_server.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="meta.h" />
-    <ClInclude Include="networking-common.h" />
+    <ClInclude Include="network_common.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

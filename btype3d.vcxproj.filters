@@ -20,13 +20,13 @@
     <Filter Include="0global">
       <UniqueIdentifier>{c7908f46-388d-4d76-b263-5b44cbeb8eaf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="framework\network">
+      <UniqueIdentifier>{682ba685-4453-4889-b854-a77b88276eb3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cfg.h" />
     <ClInclude Include="input.h" />
-    <ClInclude Include="resources.h">
-      <Filter>gamework</Filter>
-    </ClInclude>
     <ClInclude Include="env.h" />
     <ClInclude Include="entity.h">
       <Filter>gamework</Filter>
@@ -38,12 +38,6 @@
     <ClInclude Include="global.h">
       <Filter>0global</Filter>
     </ClInclude>
-    <ClInclude Include="serializer-graphics.h">
-      <Filter>gamework</Filter>
-    </ClInclude>
-    <ClInclude Include="serializer.h">
-      <Filter>gamework</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="audio.h" />
     <ClInclude Include="memory.hpp">
@@ -53,9 +47,6 @@
       <Filter>framework</Filter>
     </ClInclude>
     <ClInclude Include="graphics.hpp">
-      <Filter>framework</Filter>
-    </ClInclude>
-    <ClInclude Include="collision.hpp">
       <Filter>framework</Filter>
     </ClInclude>
     <ClInclude Include="Transform.h">
@@ -77,9 +68,6 @@
       <Filter>gamework\index</Filter>
     </ClInclude>
     <ClInclude Include="test_zone.h" />
-    <ClInclude Include="resources-archive.h">
-      <Filter>gamework</Filter>
-    </ClInclude>
     <ClInclude Include="objects_fn_array.h">
       <Filter>gamework\index</Filter>
     </ClInclude>
@@ -91,6 +79,18 @@
     </ClInclude>
     <ClInclude Include="time.hpp">
       <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="archive.hpp">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="serializer.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="network_common.h">
+      <Filter>framework\network</Filter>
+    </ClInclude>
+    <ClInclude Include="network_client.h">
+      <Filter>framework\network</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -111,9 +111,6 @@
       <Filter>framework</Filter>
     </ClCompile>
     <ClCompile Include="engine-main.cpp" />
-    <ClCompile Include="resources.cpp">
-      <Filter>gamework</Filter>
-    </ClCompile>
     <ClCompile Include="env.cpp" />
     <ClCompile Include="entity.cpp">
       <Filter>gamework</Filter>
@@ -123,12 +120,6 @@
     </ClCompile>
     <ClCompile Include="factions.cpp" />
     <ClCompile Include="input.cpp" />
-    <ClCompile Include="serializer.cpp">
-      <Filter>gamework</Filter>
-    </ClCompile>
-    <ClCompile Include="serializer-graphics.cpp">
-      <Filter>gamework</Filter>
-    </ClCompile>
     <ClCompile Include="audio.cpp" />
     <ClCompile Include="Transform.cpp">
       <Filter>framework</Filter>
@@ -140,14 +131,20 @@
       <Filter>gamework\index</Filter>
     </ClCompile>
     <ClCompile Include="test_zone.cpp" />
-    <ClCompile Include="resources-archive.cpp">
-      <Filter>gamework</Filter>
-    </ClCompile>
     <ClCompile Include="objects_fn.cpp">
       <Filter>gamework\index</Filter>
     </ClCompile>
     <ClCompile Include="time.cpp">
       <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="archive.cpp">
+      <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="serializer.cpp">
+      <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="network_client.cpp">
+      <Filter>framework\network</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

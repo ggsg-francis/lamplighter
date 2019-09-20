@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec2 TexCoords;
 in vec3 Normal;
 in vec3 Pos;
+in vec4 Col;
 in vec4 LightSpacePos;
 
 uniform uint id; // identity
@@ -93,23 +94,33 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 		ivec2 tsize = textureSize(tshadow, 0);
 		vec2 texelSize = 1.0 / textureSize(tshadow, 0);
 		
-		shadow = GetShadowBilinear(projCoords, tsize, texelSize);
-
+		//shadow = GetShadowBilinear(projCoords, tsize, texelSize);
+		
 		// circle pattern
 		///*
-		float offsetamt = 1.6f * texelSize.x;
-		float offsetamtdiag = 1.13137f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
+		float offsetamt = 1.f * texelSize.x;
+		float offsetamtdiag = 0.707107f * texelSize.x;
 		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		shadow /= 9;
+		if (shadow < 3.5f && shadow > 0.5f)
+		{
+			shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
+			
+			shadow /= 9;
+		}
+		else
+		{
+			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
+			shadow /= 5;
+			//shadow = 1;
+		}
 		//*/
-		
 		//hex pattern
 		/*
 		float oHexA = 1.5f * texelSize.x;
@@ -122,6 +133,26 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
 		shadow /= 7;
+		//*/
+		
+		// double hex pattern
+		/*
+		float oHexA = 1.5f * texelSize.x;
+		float oHexB = 1.29904f * texelSize.x;
+		float oHexC = 0.75f * texelSize.x;
+		shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
+		shadow /= 13;
 		//*/
 		
 		// Blend into clip distance
@@ -185,7 +216,7 @@ void main()
 			vec3 litcol = texture(ts, vec2(ft, 29.5f / 32.f)).rgb * 4.f;
 			
 			
-			float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 1.f, 0.f, 1.f); // Sharpened
+			float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
 			//float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened
 			//float shadow = clamp(round(ShadowCalculation(LightSpacePos) - 0.25), 0.f, 1.f); // Rounded
 			//float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
@@ -203,6 +234,31 @@ void main()
 			//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos - pcam) * 0.1f) - 0.2f), 0.f, 1.f));
 			//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos.xz - pcam.xz) * 0.1f) - 0.2f), 0.f, 1.f));
 			FragColor.rgb = mix(FragColor.rgb, fogcol, clamp((length((Pos.xz - pcam.xz) * 0.0015f) - 0.2f), 0.f, 1.f));
+			
+			
+			//fres test
+			//FragColor.rgb = vec3(dot(normalize(ViewDir), Normal)) + 1;
+			
+			//phong
+			//vec3 reflectDir = reflect(vsun, Normal);
+			//FragColor.rgb += suncol * (pow(max(dot(normalize(ViewDir), reflectDir), 0.0), 8.0));
+			
+			//blinnphong
+			/*
+			vec3 vd = Pos - pcam;
+			vec3 halfwayDir = normalize(vsun - normalize(vd));
+			FragColor.rgb += suncol * pow(max(dot(normalize(Normal), halfwayDir), 0.0), 16.0) * shadow * shadow_terrain;
+			//*/
+			
+			// Dither
+			/*
+			int dx = int(mod(gl_FragCoord.x, 4));
+			int dy = int(mod(gl_FragCoord.y, 4));
+			float rndBy = 12.f;
+			FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
+			// Posterize
+			FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
+			*/
 		}
 		else
 		{

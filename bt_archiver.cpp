@@ -1,5 +1,5 @@
 #include "serializer.h"
-#include "resources-archive.h"
+#include "archive.hpp"
 
 int main(int argc, char * argv[])
 {

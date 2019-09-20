@@ -1,8 +1,6 @@
 // Included in index.cpp
 
 #include "index_decl.cpp"
-//temp proly
-#include "resources-archive.h"
 
 namespace index
 {
@@ -27,23 +25,25 @@ namespace index
 
 		for (btui16 i = 0; i < 10; i++)
 		{
-			graphics::DrawGUITexture(&res::GetBTT(res::t_gui_inv_slot), &graphics::shader_gui, i * 32, -240 + 16, 32, 32);
+			graphics::DrawGUITexture(&res::GetTexture(res::t_gui_inv_slot), &graphics::shader_gui, i * 32, -240 + 16, 32, 32);
 			if (i < items->invSize)
 			{
-				graphics::DrawGUITexture(&res::GetBTT(archive::items[items->items[i]]->id_icon), &graphics::shader_gui, i * 32, -240 + 16, 32, 32);
+				graphics::DrawGUITexture(&res::GetTexture(archive::items[items->items[i]]->id_icon), &graphics::shader_gui, i * 32, -240 + 16, 32, 32);
 				char* ctest = new char[6];
 				_itoa(items->itemCounts[i], ctest, 10);
-				invtext.ReGen(ctest, strlen(ctest), i * 32 - 14, i * 32 + 30, -210);
-				invtext.Draw(&graphics::shader_gui, &res::GetBTT(res::t_gui_font));
+				text_inventory_temp.ReGen(ctest, i * 32 - 14, i * 32 + 30, -210);
+				text_inventory_temp.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_font));
 				if (i == inv_active_slot)
 				{
 					guibox_selection.ReGen((i * 32) - 8, (i * 32) + 8, -240 + 8, -240 + 24, 8, 8);
-					guibox_selection.Draw(&graphics::shader_gui, &res::GetBTT(res::t_gui_select_box));
+					guibox_selection.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_select_box));
 				}
 				delete ctest;
 			}
 		}
 	}
+
+	#define HEAD_TURN_SPEED 8.f
 
 	void ActorRunAI(btID id)
 	{
@@ -52,113 +52,177 @@ namespace index
 		actor->input.y = 1.f;
 		actor->input.x = -1.f;
 
-		actor->target_ent = GetClosestEntityAlleg(id, 10.f, fac::enemy); // Find the closest target
+		//actor->target_ent = GetClosestEntityAlleg(id, 10.f, fac::enemy); // Find the closest enemy
+		actor->target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
 
-
-		if (actor->target_ent == BUF_NULL)
+		// find new ally if necessary
+		if (actor->ally_ent == BUF_NULL)
 		{
-			actor->input.y = 0.f;
-			actor->input.x = 0.f;
-			actor->inputbv.unset(Actor::in_atk);
+			actor->ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
+			if (actor->ally_ent == BUF_NULL) actor->ai_pointman = true;
+		}
+		else if (!ENTITY(actor->ally_ent)->state.properties.get(ActiveState::eALIVE))
+		{
+			actor->ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
+			if (actor->ally_ent == BUF_NULL) actor->ai_pointman = true;
 		}
 		else
 		{
-			float mov = 0.f;
+			ACTOR(actor->ally_ent)->ai_pointman = true;
+			actor->ai_pointman = false;
+		}
 
-			//find new path
-			if (!actor->haspath || !ENTITY(actor->target_ent)->state.properties.get(ActiveState::eALIVE))
+		if (actor->target_ent == BUF_NULL)
+		{
+			if (actor->ally_ent == BUF_NULL)
 			{
-				//actor->target_ent = GetClosestEntity(id, 10.f); // Find the closest target
-				//actor->target_ent = GetClosestPlayer(id); // Find the closest target
-				actor->target_ent = GetClosestEntityAlleg(id, 10.f, fac::enemy); // Find the closest target
-
-				if (actor->target_ent != BUF_NULL) // If its not null
-				{
-					actor->pathnodes.clear();
-
-					env::node_coord current(ENTITY(actor->target_ent)->t.cellx, ENTITY(actor->target_ent)->t.celly);
-					while (current.x != actor->t.cellx || current.y != actor->t.celly) // If the tile is not the one I'm standing on
-					{
-						actor->pathnodes.push_back(current);
-						//current = env::get_node_from(actor->t.cellx, actor->t.celly, current.x, current.y);
-					}
-					if (actor->pathnodes.size() > 0) // Failsafe against trying to path to where it already is standing
-					{
-						actor->haspath = true;
-						actor->node = (btui32)actor->pathnodes.size() - 1ui32; // bad don't use vector stupid baka
-					}
-				}
+				actor->input.y = 0.f;
+				actor->input.x = 0.f;
+				actor->inputbv.unset(Actor::in_atk);
 			}
-
-			float distance = 0.f;
-			float distance_to_target = 0.f;
-			if (actor->pathnodes.size() > 0) // Failsafe against trying to path to where it already is standing
+			else // if we have an ally, follow it
 			{
-				distance = m::Length(m::Vector2(actor->pathnodes[actor->node].x, actor->pathnodes[actor->node].y) - actor->t.position); // replace 0 with target id
+				m::Vector2 TargetVector = ENTITY(actor->ally_ent)->t.position - actor->t.position;
+				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+				float distance_to_target = m::Length(TargetVector);
+
+				//actor->viewYaw.Set(angle2);
+				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+				actor->ai_vy_target = angle2;
+
+				if (distance_to_target > 5.f) // if ally is far away
+					actor->input.y = 1.f;
+				else
+					actor->input.y = 0.f;
+				actor->input.x = 0.f;
+				actor->inputbv.unset(Actor::in_atk);
 			}
-			distance_to_target = m::Length(ENTITY(actor->target_ent)->t.position - actor->t.position);
+		}
+		//else if (actor->ai_pointman)
+		else
+		{
+			//find new target if ours is dead (obsolete right now)
+			//if (!ENTITY(actor->target_ent)->state.properties.get(ActiveState::eALIVE))
+			//{
+			//	//actor->target_ent = GetClosestEntity(id, 10.f); // Find the closest entity
+			//	//actor->target_ent = GetClosestPlayer(id); // Find the closest player
+			//	actor->target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
+			//}
+
+			m::Vector2 TargetVector = ENTITY(actor->target_ent)->t.position - actor->t.position;
+			m::Vector2 TargetVectorVertical = m::Vector2(m::Length(TargetVector), ENTITY(actor->target_ent)->t.height - actor->t.height);
+			float distance_to_target = m::Length(TargetVector);
 
 			actor->inputbv.unset(Actor::in_atk);
 
-			if (distance_to_target < 4.f) // if enemy is close enough to shoot at
+			if (distance_to_target < 20.f) // if enemy is close enough to shoot at
 			{
 				//compute rotation
-				float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
-				float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
+				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
+				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
 
-				if (forwards < 0.f && offset < 0.4f && offset > -0.4f) // If moving backwards,
-				{ // And the rotation amount to walk backwards to the target is small
-					mov = -1.f; // Walk backwards
-					if (offset < 0.1f) actor->viewYaw.Rotate(5.f);
-					else if (offset > -0.1f) actor->viewYaw.Rotate(-5.f);
-				}
-				else // Else, navigate normally (forwards)
-				{
-					mov = 1.f; // Walk forwards
-					if (offset > 0.1f) actor->viewYaw.Rotate(5.f);
-					else if (offset < -0.1f) actor->viewYaw.Rotate(-5.f);
-					if (offset > 0.4f || offset < -0.4f) mov = 0.f; // If the angle difference is too great, stop moving forward but keep turning
-				}
-
-				//actor->input.y = mov;
 				actor->input.y = 0.f;
-				actor->input.x = 0.f;
-				actor->inputbv.set(Actor::in_atk);
-			}
-			else if (actor->node != 0 && distance > 0.5f)
-			{
-				//compute rotation
-				float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), m::Vector2(actor->pathnodes[actor->node].x, actor->pathnodes[actor->node].y) - actor->t.position);
-				float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), m::Vector2(actor->pathnodes[actor->node].x, actor->pathnodes[actor->node].y) - actor->t.position);
 
-				if (forwards < 0.f && offset < 0.4f && offset > -0.4f) // If moving backwards,
-				{ // And the rotation amount to walk backwards to the target is small
-					mov = -1.f; // Walk backwards
-					if (offset < 0.1f) actor->viewYaw.Rotate(5.f);
-					else if (offset > -0.1f) actor->viewYaw.Rotate(-5.f);
-				}
-				else // Else, navigate normally (forwards)
+				if (actor->ally_ent != BUF_NULL)
 				{
-					mov = 1.f; // Walk forwards
-					if (offset > 0.1f) actor->viewYaw.Rotate(5.f);
-					else if (offset < -0.1f) actor->viewYaw.Rotate(-5.f);
-					if (offset > 0.4f || offset < -0.4f) mov = 0.f; // If the angle difference is too great, stop moving forward but keep turning
+					m::Vector2 AllyVector = ENTITY(actor->ally_ent)->t.position - actor->t.position;
+					float distance_to_ally = m::Length(AllyVector);
+					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
+
+					if (distance_to_ally < 10.f) // if ally is close, spread
+						if (offsetLR_ally > 0.5f) actor->input.x = -1.f;
+						else if (offsetLR_ally < -0.5f) actor->input.x = 1.f;
+						else actor->input.x = 0.f;
+					else if (actor->state.hp > 0.6f) // if ally is far and hitpoints high, move in
+						if (offsetLR_ally > 0.5f) { actor->input.x = -0.5f; actor->input.y = 1.f; }
+						else if (offsetLR_ally < -0.5f) { actor->input.x = 0.5f; actor->input.y = 1.f; }
+						else actor->input.x = 1.f;
+					else // if low on hp, retreat
+						if (offsetLR_ally > 0.5f) { actor->input.x = 1.f; actor->input.y = -1.f; }
+						else if (offsetLR_ally < -0.5f) { actor->input.x = -1.f; actor->input.y = -1.f; }
+						else actor->input.x = -1.f;
+				}
+				else
+				{
+					actor->input.x = 0.f;
 				}
 
-				actor->input.y = mov;
-				actor->input.x = 0.f;
-			}
-			else if (actor->node != 0)
-			{
-				--actor->node;
+				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+				btf32 angle22 = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(TargetVectorVertical)));
+
+				//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
+
+				//actor->viewYaw.Set(angle2);
+				//actor->viewPitch.Set(angle22);
+				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+				//actor->viewPitch.RotateTowards(angle22, HEAD_TURN_SPEED);
+				actor->ai_vy_target = angle2;
+				actor->ai_vp_target = angle22;
+
+				//actor->input.y = 0.f; actor->input.x = 1.f;
+
+				actor->inputbv.set(Actor::in_atk);
 			}
 			else
 			{
-				actor->haspath = false;
-				actor->input.y = 0.f;
-				actor->input.x = 0.f;
+				//compute rotation
+				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
+				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
+
+				if (actor->ally_ent != BUF_NULL)
+				{
+					m::Vector2 AllyVector = ENTITY(actor->ally_ent)->t.position - actor->t.position;
+					float distance_to_ally = m::Length(AllyVector);
+					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
+
+					// if ally is closer than enemy
+					if (distance_to_ally > distance_to_target || distance_to_ally < 4.f)
+					{
+						if (distance_to_ally > 2.f)
+							if (offsetLR_ally > 0.5f) actor->input.x = 1.f;
+							else if (offsetLR_ally < -0.5f) actor->input.x = -1.f;
+							else actor->input.x = 0.f;
+						else actor->input.x = 0.f;
+
+						btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+						//actor->viewYaw.Set(angle2);
+						//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+						actor->ai_vy_target = angle2;
+
+						actor->input.y = 1.f;
+					}
+					else
+					{
+						if (distance_to_ally > 2.f) actor->input.y = 1.f;
+						else actor->input.y = 0.f;
+						actor->input.x = 0.f;
+
+						btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(AllyVector)));
+
+						//actor->viewYaw.Set(angle2);
+						//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+						actor->ai_vy_target = angle2;
+
+					}
+				}
+				else
+				{
+					btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+					//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
+
+					//actor->viewYaw.Set(angle2);
+					//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+					actor->ai_vy_target = angle2;
+
+					actor->input.y = 1.f;// actor->input.x = 0.f;
+
+					actor->input.x = 0.f;
+				}
 			}
 		}
+
+		actor->viewYaw.RotateTowards(actor->ai_vy_target, HEAD_TURN_SPEED);
+		actor->viewPitch.RotateTowards(actor->ai_vp_target, HEAD_TURN_SPEED);
 	}
 
 	void EntCheckDeath(btID start, btID end)
@@ -170,14 +234,14 @@ namespace index
 		}
 	}
 
-	void EntDeintersect(Entity* ent, CellSpaceInfo& csi, btf32 rot, bool knockback)
+	void EntDeintersect(Entity* ent, CellSpace& csi, btf32 rot, bool knockback)
 	{
 		btf32 offsetx, offsety;
 		bool overlapN, overlapS, overlapE, overlapW, touchNS = false, touchEW = false;
 
 		//if (actor::moving[i]) // Add if moving check?
 
-		//******************************** ENVIRONMENTAL COLLISION CHECK
+		//-------------------------------- ENVIRONMENTAL COLLISION CHECK
 
 		offsetx = ent->t.position.x - ent->t.cellx;
 		offsety = ent->t.position.y - ent->t.celly;
@@ -253,8 +317,57 @@ namespace index
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
 
-		//******************************** ACTOR COLLISION CHECK
+		//-------------------------------- ACTOR COLLISION CHECK
 
+		for (int x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; x++)
+			for (int y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; y++)
+			{
+				//de-intersect entities
+				if (cells[x][y].ents.size() > 0)
+				{
+					for (int e = 0; e < cells[x][y].ents.size(); e++)
+					{
+						#define ID cells[x][y].ents[e]
+						if (block_entity.used[ID] && ENTITY(ID)->properties.get(Entity::eCOLLIDE_ENT))
+						{
+							m::Vector2 vec = ent->t.position - ENTITY(ID)->t.position;
+							float dist = m::Length(vec);
+							if (dist < 0.8f && dist > 0.f)
+							{
+								ent->t.position += m::Normalize(vec) * (0.8f - dist);
+								//massively slow collide callback (we'll speed it up later k?)
+								collision::hit_info hit;
+								hit.depenetrate = m::Normalize(vec) * (0.8f - dist);
+								hit.hit = true;
+								hit.surface = m::Normalize(vec);
+								hit.inheritedVelocity = ENTITY(ID)->t.velocity;
+								//entity->Collide(hit);
+								collision::hit_info hit2;
+								hit2.depenetrate = m::Normalize(vec * -1.f) * (0.8f - dist);
+								hit2.hit = true;
+								hit2.surface = m::Normalize(vec * -1.f);
+								hit2.inheritedVelocity = ent->t.velocity;
+
+								if (knockback)
+								{
+									if (ent->Type() == etype::chara)
+									{
+										ent->t.velocity = hit2.surface * -0.1f; // set their velocity
+									}
+									if (ENTITY(ID)->Type() == etype::chara)
+									{
+										ENTITY(ID)->t.velocity = hit2.surface * 0.2f; // set their velocity
+									}
+								}
+							}
+						}
+						#undef ID
+					} // End for each entity in cell
+				} // End if entity count of this cell is bigger than zero
+			} // End for each cell group
+
+
+		/*
 		for (int cell_group = 0; cell_group < 4; cell_group++)
 		{
 			//de-intersect entities
@@ -302,6 +415,7 @@ namespace index
 				} // End for each entity in cell
 			} // End if entity count of this cell is bigger than zero
 		} // End for each cell group
+		*/
 	}
 
 	void RemoveAllReferences(btID index)
@@ -417,14 +531,11 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		CHARA(id)->t_skin = res::t_skin1;
 		CHARA(id)->aiControlled = false;
-		#ifdef DEF_EDITOR
-		CHARA(id)->speed = 5.f;
-		#else
-		CHARA(id)->speed = 1.3f;
-		//CHARA(id)->speed = 2.f;
+		//CHARA(id)->speed = 1.3f;
+		//CHARA(id)->speed = 3.f;
+		CHARA(id)->speed = 6.f;
 		//CHARA(id)->speed = 0.25f;
 		//CHARA(id)->speed = 8.f;
-		#endif // DEF_EDITOR
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
@@ -436,7 +547,7 @@ namespace index
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = res::t_skin1;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 1.3f;
+		CHARA(id)->speed = 6.f;
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
@@ -446,9 +557,9 @@ namespace index
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = res::t_skin2;
+		CHARA(id)->t_skin = res::t_skin4;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 0.7f;
+		CHARA(id)->speed = 5.f;
 	}
 
 	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)
@@ -458,16 +569,16 @@ namespace index
 		ENTITY(id)->faction = fac::faction::undead;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = res::t_gui_bar_red;
+		CHARA(id)->t_skin = res::t_skin3;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 0.35f;
+		CHARA(id)->speed = 2.f;
 	}
 
 	void(*PrefabEntity[])(btID, m::Vector2, btf32) = { prefab_pc, prefab_aipc, prefab_npc, prefab_zombie };
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- CELL STUFF -----------------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	enum gcg_dir : btui8 { eN = 1u, eE = 2u };
 
@@ -475,61 +586,57 @@ namespace index
 
 	void GetCgNE(btcoord x, btcoord y, CellCoord* cc)
 	{
-		cc[0].x = x; cc[0].y = y;               // This
-		cc[1].x = x + 1ui8; cc[1].y = y;        // E (X)
-		cc[2].x = x; cc[2].y = y + 1ui8;        // N (Y)
-		cc[3].x = x + 1ui8; cc[3].y = y + 1ui8; // NE
+		cc[eCELL_X].x = x + 1ui8; cc[eCELL_X].y = y;          // E (X)
+		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y + 1ui8;          // N (Y)
+		cc[eCELL_XY].x = x + 1ui8; cc[eCELL_XY].y = y + 1ui8; // NE
 	};
 	void GetCgNW(btcoord x, btcoord y, CellCoord* cc)
 	{
-		cc[0].x = x; cc[0].y = y;               // This
-		cc[1].x = x - 1ui8; cc[1].y = y;        // W (X)
-		cc[2].x = x; cc[2].y = y + 1ui8;        // N (Y)
-		cc[3].x = x - 1ui8; cc[3].y = y + 1ui8; // NW
+		cc[eCELL_X].x = x - 1ui8; cc[eCELL_X].y = y;          // W (X)
+		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y + 1ui8;          // N (Y)
+		cc[eCELL_XY].x = x - 1ui8; cc[eCELL_XY].y = y + 1ui8; // NW
 	};
 	void GetCgSE(btcoord x, btcoord y, CellCoord* cc)
 	{
-		cc[0].x = x; cc[0].y = y;               // This
-		cc[1].x = x + 1ui8; cc[1].y = y;        // E (X)
-		cc[2].x = x; cc[2].y = y - 1ui8;        // S (Y)
-		cc[3].x = x + 1ui8; cc[3].y = y - 1ui8; // SE
+		cc[eCELL_X].x = x + 1ui8; cc[eCELL_X].y = y;          // E (X)
+		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y - 1ui8;          // S (Y)
+		cc[eCELL_XY].x = x + 1ui8; cc[eCELL_XY].y = y - 1ui8; // SE
 	};
 	void GetCgSW(btcoord x, btcoord y, CellCoord* cc)
 	{
-		cc[0].x = x; cc[0].y = y;               // This
-		cc[1].x = x - 1ui8; cc[1].y = y;        // W (X)
-		cc[2].x = x; cc[2].y = y - 1ui8;        // S (Y)
-		cc[3].x = x - 1ui8; cc[3].y = y - 1ui8; // SW
+		cc[eCELL_X].x = x - 1ui8; cc[eCELL_X].y = y;          // W (X)
+		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y - 1ui8;          // S (Y)
+		cc[eCELL_XY].x = x - 1ui8; cc[eCELL_XY].y = y - 1ui8; // SW
 	};
 
-	void(*GetCg[])(btcoord, btcoord, CellCoord*) = { GetCgSW, GetCgNW, GetCgSE, GetCgNE };
+	void(*GetCellNeighbors[])(btcoord, btcoord, CellCoord*) = { GetCgSW, GetCgNW, GetCgSE, GetCgNE };
 
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg)
 	{
 		btui8 dir = 0ui8; // Represents direction of offset
 
-		btcoord x = (btcoord)roundf(vec.x); // X cell coordinate
-		btcoord y = (btcoord)roundf(vec.y); // Y cell coordinate
+		cg.c[eCELL_I].x = (btcoord)roundf(vec.x); // X cell coordinate
+		cg.c[eCELL_I].y = (btcoord)roundf(vec.y); // Y cell coordinate
 
-		dir = eN * (vec.y - y > 0.f);  // Set direction bit N
-		dir |= eE * (vec.x - x > 0.f); // Add direction bit E
+		dir = eN * (vec.y - (btf32)cg.c[eCELL_I].y > 0.f);  // Set direction bit N
+		dir |= eE * (vec.x - (btf32)cg.c[eCELL_I].x > 0.f); // Add direction bit E
 
-		GetCg[dir](x, y, cg.c); // Get cell group from direction
+		GetCellNeighbors[dir](cg.c[eCELL_I].x, cg.c[eCELL_I].y, cg.c); // Get cell group from direction
 	}
 
-	void GetCellSpaceInfo(m::Vector2 vec, CellSpaceInfo& csi)
+	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& cs)
 	{
 		btui8 dir = 0ui8; // Represents direction of offset
 
-		csi.c[0u].x = (btcoord)roundf(vec.x); // X cell coordinate
-		csi.c[0u].y = (btcoord)roundf(vec.y); // Y cell coordinate
+		cs.c[eCELL_I].x = (btcoord)roundf(vec.x); // X cell coordinate
+		cs.c[eCELL_I].y = (btcoord)roundf(vec.y); // Y cell coordinate
 
-		csi.offsety = vec.y - csi.c[0u].y; // X offset
-		csi.offsetx = vec.x - csi.c[0u].x; // Y offset
+		cs.offsety = vec.y - (btf32)cs.c[eCELL_I].y; // X offset
+		cs.offsetx = vec.x - (btf32)cs.c[eCELL_I].x; // Y offset
 
-		dir = eN * (csi.offsety > 0.f);  // Set direction bit N
-		dir |= eE * (csi.offsetx > 0.f); // Add direction bit E
+		dir = eN * (cs.offsety > 0.f);  // Set direction bit N
+		dir |= eE * (cs.offsetx > 0.f); // Add direction bit E
 
-		GetCg[dir](csi.c[0u].x, csi.c[0u].y, csi.c); // Get cell group from direction
+		GetCellNeighbors[dir](cs.c[eCELL_I].x, cs.c[eCELL_I].y, cs.c); // Get cell group from direction
 	}
 }

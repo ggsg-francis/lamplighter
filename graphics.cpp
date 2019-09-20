@@ -90,10 +90,10 @@ namespace graphics
 
 		shader_solid = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
 		shader_scroll = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_scr.glsl");
-		shader_blend = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
+		shader_blend = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
 		shader_terrain = graphics::Shader("shaders/vert_3d_terrain.glsl", "shaders/frag_terrain.glsl");
 		shader_shadow = graphics::Shader("shaders/vert_shadow.glsl", "shaders/frag_shadow.glsl");
-		shader_sky = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_sky.glsl");
+		shader_sky = graphics::Shader("shaders/vert_3d_sky.glsl", "shaders/frag_sky.glsl");
 		shader_gui = graphics::Shader("shaders/gui.vs", "shaders/gui_h.fs");
 		shader_post = graphics::Shader("shaders/fb.vs", "shaders/fb.fs");
 	}
@@ -154,29 +154,25 @@ namespace graphics
 		return Result;
 	}
 
-	Matrix4x4 MatrixPointDirection(Matrix4x4 const& matrix, m::Vector3 const& dir, m::Vector3 const& up)
+	Matrix4x4 MatrixLookAt(Matrix4x4 const& matrix, m::Vector3 const& src, m::Vector3 const& targ, m::Vector3 const& up)
 	{
-		// glm ver.
-		//Result[2] = -direction;
-		//Result[0] = normalize(cross(up, Result[2]));
-		//Result[1] = cross(Result[2], Result[0]);
+		m::Vector3 f = m::Normalize(targ - src);
+		m::Vector3 s = m::Normalize(m::Cross(f, up));
+		m::Vector3 u = m::Cross(s, f);
 
-		Matrix4x4 matr = matrix;
-
-		matr[2][0] = dir.x;
-		matr[2][1] = dir.y;
-		matr[2][2] = dir.z;
-
-		m::Vector3 side = Cross(dir, up);
-		matr[0][0] = side.x;
-		matr[0][1] = side.y;
-		matr[0][2] = side.z;
-
-		m::Vector3 un = Cross(dir, side);
-		matr[1][0] = un.x;
-		matr[1][1] = un.y;
-		matr[1][2] = un.z;
-
+		Matrix4x4 matr;
+		matr[0][0] = s.x;
+		matr[1][0] = s.y;
+		matr[2][0] = s.z;
+		matr[0][1] = u.x;
+		matr[1][1] = u.y;
+		matr[2][1] = u.z;
+		matr[0][2] = -f.x;
+		matr[1][2] = -f.y;
+		matr[2][2] = -f.z;
+		matr[3][0] = -m::Dot(s, src);
+		matr[3][1] = -m::Dot(u, src);
+		matr[3][2] = m::Dot(f, src);
 		return matr;
 	}
 
@@ -219,16 +215,59 @@ namespace graphics
 		matrix[2] = m[1] * -s + m[2] * c;
 	}
 
+	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
+	{
+		// Translate matrix
+		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
+
+		// Rotate matrix
+		// Generate forward, right, up vectors for use in the matrix
+		m::Vector3 vForw = m::Normalize(dir);
+		m::Vector3 vSide = m::Normalize(m::Cross(up, dir));
+		// We need to make sure we have a local up vector at right angles with forwards, so cross side and forward
+		m::Vector3 vLoUp = m::Normalize(m::Cross(vForw, vSide));
+
+		// The 3 direction vectors translate directly into the matrix
+		// The third values are inverted for some reason beyond me.
+		// (Don't know why forward must be inverted but will leave for now)
+		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = -vSide.z;
+		matrix[1][0] = vLoUp.x; matrix[1][1] = vLoUp.y; matrix[1][2] = -vLoUp.z;
+		matrix[2][0] = vForw.x; matrix[2][1] = vForw.y; matrix[2][2] = -vForw.z;
+	}
+	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
+	{
+		// Translate matrix
+		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
+
+		// Rotate matrix
+		// Generate forward, right, up vectors for use in the matrix
+		m::Vector3 vForw = m::Normalize(dir);
+		m::Vector3 vSide = m::Normalize(m::Cross(up, dir));
+		// We need to make sure we have a local up vector at right angles with forwards, so cross side and forward
+		m::Vector3 vLoUp = m::Normalize(m::Cross(vForw, vSide));
+
+		// The 3 direction vectors translate directly into the matrix
+		// The third values are inverted for some reason beyond me.
+		// (Don't know why forward must be inverted but will leave for now)
+		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = -vSide.z;
+		matrix[1][0] = vLoUp.x; matrix[1][1] = vLoUp.y; matrix[1][2] = -vLoUp.z;
+		matrix[2][0] = vForw.x; matrix[2][1] = vForw.y; matrix[2][2] = -vForw.z;
+
+		matrix[0] = matrix[0] * -1.f;
+	}
+
 	void SetMatProj(btf32 fovMult)
 	{
-		mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), ((float)cfg::iWinX / 2.f) / (float)cfg::iWinY, cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult);
+		cfg::bEditMode ?
+			mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), (float)cfg::iWinX  / (float)cfg::iWinY, cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult) :
+			mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), ((float)cfg::iWinX / 2.f) / (float)cfg::iWinY, cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult);
 	}
 	void SetMatView(void* t)
 	{
 		// this is not.... good.....
 		#define T ((Transform3D*)t)
 		mat_view = glm::lookAt((T->pos_glm + (T->GetUp() * 0.2f + T->GetForward() * 0.3f)) * glm::vec3(1.f, 1.f, -1.f),
-			(T->pos_glm + (T->GetForward())) * glm::vec3(1.f, 1.f, -1.f),
+			(T->pos_glm + (T->GetUp() * 0.2f + T->GetForward() * 1.3f)) * glm::vec3(1.f, 1.f, -1.f),
 			(glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
 		#undef T
 	}
@@ -249,6 +288,16 @@ namespace graphics
 		//mat_view = glm::lookAt(T->pos_glm + glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f, 4.0f, -.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
+	void SetMatViewEditor(void* t)
+	{
+		// this is not.... good.....
+		#define T ((Transform3D*)t)
+		mat_view = glm::lookAt((T->pos_glm + (T->GetForward() * -5.f)) * glm::vec3(1.f, 1.f, -1.f),
+			T->pos_glm * glm::vec3(1.f, 1.f, -1.f),
+			(glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
+		#undef T
+	}
+
 	glm::mat4 GetMatProj()
 	{
 		return mat_proj;
@@ -267,7 +316,7 @@ namespace graphics
 		glFrontFace(GL_CCW);
 	}
 
-	// good, but replace the vectors
+	// good, but replace the std::vectors
 	void BindBuffers(std::vector<vert> &vertices, std::vector<btui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO)
 	{
 		glBindVertexArray(VAO); // Bind this vertex array
@@ -294,9 +343,9 @@ namespace graphics
 		guibmp.Draw(x, y, w, h);
 	}
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- SHADER ---------------------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	Shader::Shader()
 	{
@@ -437,9 +486,9 @@ namespace graphics
 		}
 	}
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- TEXTURE --------------------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	ModifiableTexture::~ModifiableTexture()
 	{
@@ -605,32 +654,22 @@ namespace graphics
 		glGenTextures(1, &glID);
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 		#ifdef DEF_MULTISAMPLE // Multisampled
-			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, glID); // "Bind" the newly created texture : all future texture functions will modify this texture
-			#ifdef DEF_HDR // HDR Texture
-			glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, DEF_MULTISAMPLE_DEPTH, GL_RGBA16F, x, y, GL_TRUE); //create a blank image
-			#else // Not HDR Texture
-			glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, DEF_MULTISAMPLE_DEPTH, GL_RGBA, x, y, GL_TRUE); //create a blank image
-			#endif
-		#else // Not Multisampled
-			glBindTexture(GL_TEXTURE_2D, glID); // "Bind" the newly created texture : all future texture functions will modify this texture
-			#ifdef DEF_HDR // HDR Texture
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, x, y, 0, GL_RGBA, GL_FLOAT, NULL); //create a blank image
-			#else // Not HDR Texture
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); //create a blank image
-			#endif
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, glID); // "Bind" the newly created texture : all future texture functions will modify this texture
+		#ifdef DEF_HDR // HDR Texture
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, DEF_MULTISAMPLE_DEPTH, GL_RGBA16F, x, y, GL_TRUE); //create a blank image
+		#else // Not HDR Texture
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, DEF_MULTISAMPLE_DEPTH, GL_RGBA, x, y, GL_TRUE); //create a blank image
 		#endif
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		if (linear)
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		}
-		else
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		}
+		#else // Not Multisampled
+		glBindTexture(GL_TEXTURE_2D, glID); // "Bind" the newly created texture : all future texture functions will modify this texture
+		#ifdef DEF_HDR // HDR Texture
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, x, y, 0, GL_RGBA, GL_FLOAT, NULL); //create a blank image
+		#else // Not HDR Texture
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); //create a blank image
+		#endif
+		#endif
+		EMClamp();
+		linear ? FMLinear() : FMNearest();
 		//attach this texture to the framebuffer
 		#ifdef DEF_MULTISAMPLE
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, glID, 0);
@@ -700,7 +739,7 @@ namespace graphics
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 	}
-	void Texture::InitRenderBuffer(int x, int y, bool linear)
+	void Texture::InitDepthBuffer(int x, int y, bool linear)
 	{
 		width = x;
 		height = y;
@@ -722,9 +761,9 @@ namespace graphics
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, glID);
 	}
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- MESH -----------------------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	void Mesh::Draw(unsigned int tex, unsigned int shd)
 	{
@@ -739,7 +778,7 @@ namespace graphics
 	{
 		std::cout << "Loading " << fn << "... ";
 
-		//******************************** OPEN FILE
+		//-------------------------------- OPEN FILE
 
 		FILE* in = fopen(fn, "rb");
 		if (in != NULL)
@@ -752,13 +791,13 @@ namespace graphics
 			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
 			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
 
-			//******************************** READ VERTICES
+			//-------------------------------- READ VERTICES
 
 			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
 			vces = (vert*)malloc(sizeof(vert) * vces_size); // Allocate buffer to hold our vertices
 			fread(&vces[0], sizeof(vert), vces_size, in); // Read vertices
 
-			//******************************** READ INDICES
+			//-------------------------------- READ INDICES
 
 			fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
 			ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
@@ -768,7 +807,7 @@ namespace graphics
 
 			glID = (GLuint)ices_size; // Set number of indices used in Draw()
 
-			//******************************** INITIALIZE OPENGL BUFFER
+			//-------------------------------- INITIALIZE OPENGL BUFFER
 
 			glGenVertexArrays(1, &vao); // Create vertex buffer
 			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
@@ -796,9 +835,9 @@ namespace graphics
 		}
 	}
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- MESHBLEND ------------------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	void MeshBlend::Draw(unsigned int tex, unsigned int shd)
 	{
@@ -820,7 +859,7 @@ namespace graphics
 	{
 		std::cout << "Loading " << fn << "... ";
 
-		//******************************** OPEN FILE
+		//-------------------------------- OPEN FILE
 
 		FILE* in = fopen(fn, "rb");
 		if (in != NULL)
@@ -833,13 +872,13 @@ namespace graphics
 			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
 			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
 
-			//******************************** READ VERTICES
+			//-------------------------------- READ VERTICES
 
 			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
 			vces = (vert_blend*)malloc(sizeof(vert_blend) * vces_size); // Allocate buffer to hold our vertices
 			fread(&vces[0], sizeof(vert_blend), vces_size, in); // Read vertices
 
-			//******************************** READ INDICES
+			//-------------------------------- READ INDICES
 
 			fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
 			ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
@@ -849,7 +888,7 @@ namespace graphics
 
 			glID = (GLuint)ices_size; // Set number of indices used in Draw()
 
-			//******************************** INITIALIZE OPENGL BUFFER
+			//-------------------------------- INITIALIZE OPENGL BUFFER
 
 			glGenVertexArrays(1, &vao); // Create vertex buffer
 			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
@@ -881,9 +920,9 @@ namespace graphics
 		}
 	}
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- GUIBITMAP ------------------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	GUIBitmap::GUIBitmap()
 	{
@@ -1037,10 +1076,10 @@ namespace graphics
 		indices.push_back(2 + index); // -
 	}
 
-	//***********************************************************************************************************
-	//***********************************************************************************************************
-	//***********************************************************************************************************
-	//***********************************************************************************************************
+	//--------------------------------***************************************************************************
+	//--------------------------------***************************************************************************
+	//--------------------------------***************************************************************************
+	//--------------------------------***************************************************************************
 
 	void GUIBox::Init()
 	{
@@ -1125,7 +1164,10 @@ namespace graphics
 
 	}
 
-	void GUIText::ReGen(char* c, unsigned int stringlength, bti16 _xa, bti16 _xb, bti16 _y)
+	//backup
+	//void GUIText::ReGen(char* c, unsigned int stringlength, bti16 _xa, bti16 _xb, bti16 _y)
+
+	void GUIText::ReGen(char* c, bti16 _xa, bti16 _xb, bti16 _y)
 	{
 		if (!initialized) Init();
 
@@ -1154,6 +1196,8 @@ namespace graphics
 
 		sizex = sizey = 0u;
 		sizey += ch;
+
+		btui32 stringlength = strlen(c);
 
 		//print text
 		if (stringlength > 0)

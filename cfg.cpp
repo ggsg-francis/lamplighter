@@ -8,27 +8,29 @@
 
 namespace cfg
 {
-	//is fullscreen
+	// Is fullscreen
 	bool bFullscreen = false;
-	//show output console
+	// Show output console
 	bool bShowConsole = false;
+	// Run as editor
+	bool bEditMode = false;
 
-	//ip address variables
+	// IP address variables
 	unsigned int iIPA = 0;
 	unsigned int iIPB = 0;
 	unsigned int iIPC = 0;
 	unsigned int iIPD = 0;
 	unsigned short iIPPORT = 0;
 
-	//config variables loaded from a file
-	//window size
+	// Config variables loaded from a file
+	// Window size
 	unsigned int iWinX = 640;
 	unsigned int iWinY = 480;
-	//render size
+	// Render size
 	unsigned int iRenX = 640;
 	unsigned int iRenY = 480;
 
-	//camera stuff
+	// Camera stuff
 	float fCameraFOV = 80.f;
 	float fCameraSensitivity = 0.f;
 	float fCameraNearClip = 0.1f;
@@ -40,7 +42,7 @@ namespace cfg
 	{
 		//temporary pointers used for this function only
 		//(although, they could be made global in the case that they become useful?)
-		bool* bptr[] = { &bFullscreen, &bShowConsole };
+		bool* bptr[] = { &bFullscreen, &bShowConsole, &bEditMode };
 		unsigned int* iptr[] = { &iIPA, &iIPB, &iIPC, &iIPD, &iWinX, &iWinY, &iRenX, &iRenY };
 		unsigned short* sptr[] = { &iIPPORT };
 		//std::string* sptr[] = { &sIP };

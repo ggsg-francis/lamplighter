@@ -13,10 +13,12 @@ out vec4 LightSpacePos;
 
 uniform float blendState = 0.5f;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 matm;
+uniform mat4 matv;
+uniform mat4 matp;
 uniform mat4 lightProj;
+
+uniform vec3 pcam;
 
 //uniform int vert_precision = 256;
 uniform int vert_precision = 192;
@@ -32,16 +34,18 @@ void main()
 {
 	TexCoords = aTexCoords;
 	
-	Normal = normalize(vec3(model * vec4(aNor1, 0.0)));
+	//Normal = normalize(vec3(matm * vec4(aNor1, 0.0)));
+	Normal = normalize(vec3(matm * vec4(mix(aNor1, aNor2, blendState), 0.0)));
+	//Normal = normalize(vec3(matm * vec4(mix(aNor1, aNor1, blendState), 1.0)));
 	
 	//Height = clamp((model * vec4(aPos, 1.0)).y + 0.25, 0, 1);
 	
 	//precise projection
 	//apos2 halved only temporarily
-	vec4 pos2 = model * vec4(mix(aPos1, aPos2, blendState), 1.0);
+	vec4 pos2 = matm * vec4(mix(aPos1, aPos2, blendState), 1.0);
 	Pos = pos2.xyz;
 	
-    gl_Position = projection * view * pos2;
+    gl_Position = matp * matv * pos2;
 	
 	//gl_Position.xy = round(gl_Position.xy * 128) / 128;
 	//gl_Position.xyz = clamp(gl_Position.xyz * gl_Position.w, 0, 1024);

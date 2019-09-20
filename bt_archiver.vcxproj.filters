@@ -9,16 +9,16 @@
   <ItemGroup>
     <ClCompile Include="bt_archiver.cpp" />
     <ClCompile Include="serializer.cpp" />
-    <ClCompile Include="serializer-graphics.cpp" />
     <ClCompile Include="tga_reader.cpp" />
-    <ClCompile Include="resources-archive.cpp" />
+    <ClCompile Include="archiver_graphics_convert.cpp" />
+    <ClCompile Include="archive.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="serializer.h" />
     <ClInclude Include="global.h" />
-    <ClInclude Include="serializer-graphics.h" />
     <ClInclude Include="tga_reader.h" />
-    <ClInclude Include="resources-archive.h" />
     <ClInclude Include="global-archiver.h" />
+    <ClInclude Include="archiver_graphics_convert.h" />
+    <ClInclude Include="archive.hpp" />
   </ItemGroup>
 </Project>

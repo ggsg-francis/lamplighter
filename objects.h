@@ -3,12 +3,11 @@
 #include "objects_fn_array.h"
 
 // Inherited from index.cpp
-#include "resources.h"
+#include "archive.hpp"
 #include "cfg.h"
 #include "factions.h"
 #include "env.h"
 #include "time.hpp"
-#include "collision.hpp"
 #include "input.h"
 #include "memory.h"
 #include "Transform.h"
@@ -140,11 +139,12 @@ namespace inv
 }
 
 //could just send a gl index for the texture value, but i'd rather future-proof it in case I need to store more metadata in the texture class
-void DrawMeshAtTransform(btID ID, res::assetid MODEL, res::assetid TEXTURE, graphics::Shader& SHADER, Transform3D TRANSFORM);
-void DrawMesh(btID ID, res::assetid MODEL, res::assetid TEXTURE, graphics::Shader& SHADER, glm::mat4 MATRIX);
-void DrawMesh(btID ID, res::assetid MODEL, res::assetid TEXTURE, graphics::Shader& SHADER, graphics::Matrix4x4 MATRIX);
-void DrawBlendMeshAtTransform(btID ID, res::assetid MODEL, btf32 BLENDSTATE, res::assetid TEXTURE, graphics::Shader& SHADER, Transform3D TRANSFORM);
-void DrawBlendMesh(btID ID, res::assetid MODEL, btf32 BLENDSTATE, res::assetid TEXTURE, graphics::Shader& SHADER, graphics::Matrix4x4 MATRIX);
+void DrawMeshAtTransform(btID ID, assetID MODEL, assetID TEXTURE, graphics::Shader& SHADER, Transform3D TRANSFORM);
+void DrawMesh(btID ID, assetID MODEL, assetID TEXTURE, graphics::Shader& SHADER, glm::mat4 MATRIX);
+void DrawMesh(btID ID, assetID MODEL, assetID TEXTURE, graphics::Shader& SHADER, graphics::Matrix4x4 MATRIX);
+void DrawMesh(btID ID, assetID MODEL, graphics::Shader& SHADER, graphics::Matrix4x4 MATRIX);
+void DrawBlendMeshAtTransform(btID ID, assetID MODEL, btf32 BLENDSTATE, assetID TEXTURE, graphics::Shader& SHADER, Transform3D TRANSFORM);
+void DrawBlendMesh(btID ID, assetID MODEL, btf32 BLENDSTATE, assetID TEXTURE, graphics::Shader& SHADER, graphics::Matrix4x4 MATRIX);
 
 //transform
 class Transform2D
@@ -159,14 +159,21 @@ public:
 	btui8 celly = 0ui8;
 };
 
-//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//------------- ITEM STUFF ---------------------------------------
+class TransformEntity
+{
+	Transform2D t;
+	CellSpace cs;
+};
 
-struct Item_DEPRECATED
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+//------------- ITEM STUFF ---------------------------------------
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+struct HeldItem
 {
 
 };
-struct Musket : public Item_DEPRECATED
+struct HeldGun : public HeldItem
 {
 	// GUN STUFF (will eventually end up elsewhere)
 	enum musket_hold_state : btui8
@@ -174,8 +181,9 @@ struct Musket : public Item_DEPRECATED
 		aim,
 		inspect_pan,
 		inspect_barrel,
+		eHOLD_STATE_COUNT,
 	};
-	musket_hold_state eMusketHoldState = inspect_pan;
+	musket_hold_state eMusketHoldState = aim;
 
 	enum musket_state : btui16
 	{
@@ -192,6 +200,8 @@ struct Musket : public Item_DEPRECATED
 	};
 	mem::bv<btui16, musket_state> bvMusketState;
 
+	Transform3D t_item;
+
 	btf32 fpan;
 	btf32 lever;
 	btf32 rod;
@@ -202,11 +212,12 @@ struct Musket : public Item_DEPRECATED
 	btf32 yaw;
 
 	void Tick();
-	void Draw(m::Vector2 pos, btf32 height, m::Angle ang);
+	void Draw(m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
 };
 
-//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //------------- ENTITY STRUCTS -----------------------------------
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 struct ActiveState
 {
@@ -223,6 +234,8 @@ struct ActiveState
 
 struct Entity
 {
+	virtual etype::etype Type() { return etype::entity; };
+
 	enum eprop : btui8
 	{
 		// Basic properties
@@ -248,20 +261,25 @@ struct Entity
 
 	bool freeTurn;
 	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
-	btf32 height = 1.f; // Height of the entity cylinder
+	btf32 height = 1.9f; // Height of the entity cylinder
 	Transform2D t;
 	m::Angle yaw;
 
-	CellSpaceInfo csi; // Where we are in cell space
+	CellSpace csi; // Where we are in cell space
 
-	virtual etype::etype Type() { return etype::entity; };
+	virtual void Tick();
+	virtual void Draw();
 };
 // Entity type representing placed items
 struct EItem : public Entity
 {
 	virtual etype::etype Type() { return etype::eitem; };
+
 	btID itemid;
 	Transform3D t_item;
+
+	virtual void Tick();
+	virtual void Draw();
 };
 struct Actor : public Entity
 {
@@ -274,7 +292,7 @@ struct Actor : public Entity
 		in_atk = (0x1ui8 << 0x2ui8),
 	};
 
-	//******************************** Actor stuff
+	//-------------------------------- Actor stuff
 
 	m::Vector2 input; // Input vector, might be temporary
 	m::Angle viewYaw;
@@ -283,22 +301,106 @@ struct Actor : public Entity
 	bool moving = false;
 	mem::bv<btui8, actor_input> inputbv;
 
-	res::assetid t_skin; // The texture we use for drawing the character
-	res::AnimMeshSet* ams_apparel;
+	res::AssetConstantID t_skin; // The texture we use for drawing the character
 
 	btf32 speed = 2.3f;
 	btf32 agility = 0.f; // 0?? use agility to determine turning speed?
 
 	inv::Inventory inventory;
 
-	//******************************** AI stuff
+	btf64 attack_time = 0.f;
 
+	//-------------------------------- AI stuff
+
+	bool ai_pointman = false;
+	btf32 ai_vy_target = 0.f;
+	btf32 ai_vp_target = 0.f;
 	btui32 target_ent = BUF_NULL;
+	btui32 ally_ent = BUF_NULL;
 	bool aiControlled = false;
-	btui32 node = 0u;
-	bool haspath = false;
-	std::vector<env::node_coord> pathnodes;
 
 	void PickUpItem(btID ID);
 	void DropItem(btID SLOT);
+	virtual void Tick();
+	virtual void Draw();
+};
+struct Chara : public Actor
+{
+	virtual etype::etype Type() { return etype::chara; };
+
+	enum equipmode : btui8
+	{
+		spell,
+		weapon,
+	};
+	enum chara_state : btui8
+	{
+		ani_right_foot = (0x1ui8 << 0x0ui8),
+		reloading = (0x1ui8 << 0x1ui8),
+	};
+	// Inventory stuff
+	btID equipped_item = BUF_NULL; // Everything that moves can hold an item
+	equipmode equip_mode;
+	// Animation stuff
+	bool aniStepR = false; // Which foot is forwards right now
+	mem::bv<btui8, chara_state> charastatebv;
+	btID lookTarget = BUF_NULL; // What it's looking at
+
+	HeldGun heldItem;
+
+	Transform3D t_body, t_head;
+
+	m::Vector3 foot_pos_l, foot_pos_r, foot_pos_l_interp, foot_pos_r_interp;
+	enum foot_state : btui8
+	{
+		eL_DOWN,
+		eR_DOWN,
+		eBOTH_DOWN,
+	};
+	foot_state foot_state = eBOTH_DOWN;
+
+	m::Vector2 ani_body_lean;
+
+	virtual void Tick();
+	virtual void Draw();
+};
+struct EditorPawn : public Actor
+{
+	virtual etype::etype Type() { return etype::chara; };
+
+	enum equipmode : btui8
+	{
+		spell,
+		weapon,
+	};
+	enum chara_state : btui8
+	{
+		ani_right_foot = (0x1ui8 << 0x0ui8),
+		reloading = (0x1ui8 << 0x1ui8),
+	};
+	// Inventory stuff
+	btID equipped_item = BUF_NULL; // Everything that moves can hold an item
+	equipmode equip_mode;
+	// Animation stuff
+	bool aniStepR = false; // Which foot is forwards right now
+	mem::bv<btui8, chara_state> charastatebv;
+	btID lookTarget = BUF_NULL; // What it's looking at
+
+	HeldGun heldItem;
+
+	Transform3D t_body, t_head;
+
+	m::Vector3 foot_pos_l, foot_pos_r, foot_pos_l_interp, foot_pos_r_interp;
+	enum foot_state : btui8
+	{
+		eL_DOWN,
+		eR_DOWN,
+		eBOTH_DOWN,
+	};
+	foot_state foot_state = eBOTH_DOWN;
+
+	m::Vector2 ani_body_lean;
+
+	virtual void Tick();
+	virtual void Draw();
 };

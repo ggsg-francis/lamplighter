@@ -10,10 +10,12 @@ out vec3 Pos;
 out vec4 Col;
 out vec4 LightSpacePos;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 matm;
+uniform mat4 matv;
+uniform mat4 matp;
 uniform mat4 lightProj;
+
+uniform vec3 pcam;
 
 //uniform int vert_precision = 256;
 uniform int vert_precision = 192;
@@ -29,11 +31,11 @@ void main()
 {
 	TexCoords = aTexCoords;
 	
-	Normal = normalize(vec3(model * vec4(aNormal, 0.0)));
+	Normal = normalize(vec3(matm * vec4(aNormal, 0.0)));
 	
     //gl_Position = projection * view * model * vec4(aPos, 1.0);
 
-	vec4 pos2 = model * vec4(aPos, 1.0);
+	vec4 pos2 = matm * vec4(aPos, 1.0);
 	
 	float f = texture(thm, vec2(-pos2.z + 0.5f, pos2.x + 0.5f) / 2048.f).r * 64.f;
 	//float f = texture(thm, vec2(-pos2.z - 0.5f, pos2.x - 0.5f) / 128.f).r * 32.f;
@@ -41,10 +43,22 @@ void main()
 	pos2.y += f;
 	
 	Pos = pos2.xyz;
-	//pos2.z *= 0.75f;
-	//pos2.z -= pos2.y * z_offset_mult;
-    //gl_Position = projection * view * pos2;
-    gl_Position = projection * view * pos2;
+	
+	float fx = texture(thm, vec2(-pos2.z + 1.5f, pos2.x + 0.5f) / 2048.f).r * 64.f;
+	float fx2 = texture(thm, vec2(-pos2.z - 0.5f, pos2.x + 0.5f) / 2048.f).r * 64.f;
+	
+	float fz = texture(thm, vec2(-pos2.z + 0.5f, pos2.x + 1.5f) / 2048.f).r * 64.f;
+	float fz2 = texture(thm, vec2(-pos2.z + 0.5f, pos2.x - 0.5f) / 2048.f).r * 64.f;
+	Normal.x = (f - fz) + (fz2 - f);
+	Normal.x /= 2.f; // terrain height division is 4
+	
+	Normal.z = (fx - f) + (f - fx2);
+	Normal.z /= 2.f; // terrain height division is 4
+	
+	Normal.y = 1;
+	
+
+    gl_Position = matp * matv * pos2;
 	
 	Col = aCol;
 	

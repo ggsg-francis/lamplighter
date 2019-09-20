@@ -15,114 +15,9 @@ namespace index
 	// R: Shadow Crest | G: Bounced Light Level | B: Heightmap | A: Unused
 	graphics::ModifiableTexture t_envShadowMap;
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	//--------------------------- FUCKING TEMPORARY AS, MOVE TO OBJECTS.H ASAP -------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-	// Actor variables
-	namespace actor
-	{
-		namespace equipmode
-		{
-			enum equipmode : btui8
-			{
-				spell,
-				weapon,
-			};
-		}
-
-		struct AnimPlayer
-		{
-			btui8 aniID = 0u; // Which animation to play
-			btui8 aniStep = 0u; // which step in the animation
-			btf32 aniTime = 0.f; // how far through this animation step are we
-
-			enum advstate : btui8
-			{
-				eNOEVENT,
-				eADVSTEP,
-				eENDOFANIM,
-			};
-
-			advstate AdvanceAnim(btf32 amount)
-			{
-				aniTime += amount;
-				if (aniTime > res::animations[aniID].steps[aniStep].time) // Check time overflow (end of step)
-				{
-					++aniStep; // Iterate step
-					aniTime = 0.f; // Reset timer
-					if (aniStep == res::animations[aniID].size) // Check step overflow (end of animation)
-					{
-						aniStep = 0ui8;
-						return eENDOFANIM;
-					}
-					return eADVSTEP;
-				}
-				return eNOEVENT;
-			}
-			void setAnim(res::aniarr anim)
-			{
-				aniTime = 0.f; // Reset timer
-				aniStep = 0ui8; // Reset step
-				aniID = anim; // Set current animation
-			}
-			btf32 GetCurve()
-			{
-				/*
-					btf32 normalTime = aniTime / res::animations[aniID].steps[aniStep].time;
-					//std::cout << "normaltime: " << normalTime << std::endl;
-					//std::cout << "anitime: " << aniTime << std::endl;
-
-					btui32 lower = (btui32)floorf(normalTime * 16.f);
-					btui32 upper = lower + 1u;
-					btf32 remainder = normalTime - (lower / 16.f);
-					//if (upper == 16) return res::anim_curve[lower];
-					//else return m::Lerp(res::anim_curve[lower], res::anim_curve[upper], remainder);
-
-					//btui32 lower = (btui32)floorf(aniTime * 16.f);
-					//btui32 upper = (btui32)ceilf(aniTime * 16.f) + 1u;
-					//btf32 remainder = (aniTime * 16.f) - lower;
-					////return res::anim_curve[(int)roundf(time * 16.f)];
-					//return res::anim_curve[lower];
-					//return m::Lerp(res::anim_curve[lower], res::anim_curve[upper], remainder) / res::animations[aniID].steps[aniStep].time;
-					*/
-
-				return aniTime / res::animations[aniID].steps[aniStep].time; // working linear result
-			}
-		};
-	};
-	struct Chara : public Actor
-	{
-		virtual etype::etype Type() { return etype::chara; };
-		//Chara(btID ID) : Actor(ID) {};
-
-		enum equipmode : btui8
-		{
-			spell,
-			weapon,
-		};
-		enum chara_state : btui8
-		{
-			ani_right_foot = (0x1ui8 << 0x0ui8),
-			reloading = (0x1ui8 << 0x1ui8),
-		};
-		// Inventory stuff
-		btID equipped_item = BUF_NULL; // Everything that moves can hold an item
-		equipmode equip_mode;
-		// Animation stuff
-		bool aniStepR = false; // Which foot is forwards right now
-		mem::bv<btui8, chara_state> charastatebv;
-		index::actor::AnimPlayer animPlayer; // Leg animation
-		btID lookTarget = BUF_NULL; // What it's looking at
-
-		Musket musket;
-
-		Transform3D t_body, t_head;
-	};
-
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- GLOBAL VARIABLES -----------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	float networkTimerTemp;
 
@@ -130,8 +25,6 @@ namespace index
 	m::Vector2 viewpos;
 
 	btID activeplayer;
-
-	Transform3D line_transform;
 
 	struct cell
 	{
@@ -143,13 +36,15 @@ namespace index
 	// inventory stuff
 	graphics::GUIBox guibox;
 	graphics::GUIBox guibox_selection;
-	graphics::GUIText text;
-	graphics::GUIText invtext;
+	graphics::GUIText text_temp;
+	graphics::GUIText text_inventory_temp;
+	graphics::GUIText text_version;
+	graphics::GUIText text_fps;
 	btui16 inv_active_slot = 0u;
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- ENTITY BUFFERS -------------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	//block of IDs in memory, tracks the numbers and IDs of any type of object
 	mem::objbuf block_entity; // Entity buffer
@@ -164,6 +59,7 @@ namespace index
 	{
 		Transform2D t;
 		btf64 ttd = 0.f;
+		fac::faction faction = fac::none;
 		graphics::Matrix4x4 smokePoints[PROJ_TRAIL_NUM];
 		btf32 smokePointTime[PROJ_TRAIL_NUM] { 0.f };
 		btui8 smokePointIndex = 0ui8;
@@ -171,8 +67,9 @@ namespace index
 	};
 	Proj proj[BUF_SIZE];
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- DEFINES FOR 'EASY ACCESS' ;3 ---------------------
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	namespace def
 	{
@@ -189,8 +86,10 @@ namespace index
 		#define ePos ((Entity*)_entities[index])->t.position
 		#define eHgt ((Entity*)_entities[index])->t.height
 		#define eVel ((Entity*)_entities[index])->t.velocity
-		#define eCellX ((Entity*)_entities[index])->t.cellx
-		#define eCellY ((Entity*)_entities[index])->t.celly
+		//#define eCellX ((Entity*)_entities[index])->t.cellx
+		//#define eCellY ((Entity*)_entities[index])->t.celly
+		#define eCellX ((Entity*)_entities[index])->csi.c[eCELL_I].x
+		#define eCellY ((Entity*)_entities[index])->csi.c[eCELL_I].y
 		#define eYaw2 ((Entity*)_entities[index])->yaw
 		#define eYaw(a) ((Entity*)_entities[a])->yaw
 		// Animation
@@ -221,9 +120,9 @@ namespace index
 		#define rotdeg 4.f // Rotation in degrees per frame when we hit a wall
 	}
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- PREFABS --------------------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	namespace prefab
 	{
@@ -236,9 +135,9 @@ namespace index
 		};
 	}
 
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- FUNCTION DECLARATIONS ------------------------------------------------------------------------------
-	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	// Creates an Entity instance, adds it to the index and allocates it an ID
 	btID SpawnEntity(prefab::prefabtype TYPE, m::Vector2 pos, float dir);

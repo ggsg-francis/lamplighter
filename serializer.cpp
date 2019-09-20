@@ -1,7 +1,9 @@
 #include "serializer.h"
-#include "serializer-graphics.h"
+#ifdef DEF_ARCHIVER
+#include "archiver_graphics_convert.h"
+#endif
 #include "graphics.hpp"
-#include "resources-archive.h"
+#include "archive.hpp"
 
 #include <fstream>
 #include <vector>
@@ -75,6 +77,7 @@ namespace serializer
 		}
 	}
 
+	#ifdef DEF_ARCHIVER
 	void convert_files_src(char* fn)
 	{
 		std::cout <<
@@ -242,6 +245,7 @@ namespace serializer
 			fclose(file); // Close file
 		}
 	}
+	#endif
 
 	void interpret_archive_src(char* fn)
 	{

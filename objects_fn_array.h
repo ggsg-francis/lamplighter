@@ -25,16 +25,4 @@ namespace index // Move all this stuff out of index namespace plz
 		TickChara,
 		TickItem,
 	};
-
-	// Draw forward declarations
-	void DrawChara(btID);
-	void DrawItem(btID);
-
-	// Function pointers for different entity types
-	void(*const draw[])(btID) = {
-		DrawChara, // Entity
-		DrawChara, // Actor
-		DrawChara, // Chara
-		DrawItem,
-	};
 }

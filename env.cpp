@@ -23,31 +23,12 @@ namespace env
 		mem::bvunset((uint32_t&)eCells[x][y].flags, (uint32_t)bit);
 	}
 
-	void GetHeight(btf32& out_height, CellSpaceInfo& csinf)
+	void GetHeight(btf32& out_height, CellSpace& csinf)
 	{
 		out_height = m::Lerp(
-			m::Lerp((btf32)eCells[csinf.c[0u].x][csinf.c[0u].y].height, (btf32)eCells[csinf.c[1u].x][csinf.c[1u].y].height, abs(csinf.offsetx)),
-			m::Lerp((btf32)eCells[csinf.c[2u].x][csinf.c[2u].y].height, (btf32)eCells[csinf.c[3u].x][csinf.c[3u].y].height, abs(csinf.offsetx)),
+			m::Lerp((btf32)eCells[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y].height, (btf32)eCells[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y].height, abs(csinf.offsetx)),
+			m::Lerp((btf32)eCells[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y].height, (btf32)eCells[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y].height, abs(csinf.offsetx)),
 			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
-	}
-
-	void GetAngles(btf32& out_angx, btf32& out_angy, CellSpaceInfo& csinf)
-	{
-		#define run 1.f
-
-		btf32 rise_x = m::Lerp(
-			((btf32)eCells[csinf.c[0u].x][csinf.c[0u].y].height - (btf32)eCells[csinf.c[1u].x][csinf.c[1u].y].height),
-			((btf32)eCells[csinf.c[2u].x][csinf.c[2u].y].height - (btf32)eCells[csinf.c[3u].x][csinf.c[3u].y].height),
-			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
-		btf32 rise_y = m::Lerp(
-			((btf32)eCells[csinf.c[0u].x][csinf.c[0u].y].height - (btf32)eCells[csinf.c[2u].x][csinf.c[2u].y].height),
-			((btf32)eCells[csinf.c[1u].x][csinf.c[1u].y].height - (btf32)eCells[csinf.c[3u].x][csinf.c[3u].y].height),
-			abs(csinf.offsetx)) / TERRAIN_HEIGHT_DIVISION;
-
-		out_angx = atanf(rise_x / run);
-		out_angy = atanf(rise_y / run);
-
-		#undef run
 	}
 
 	void Tick()
@@ -154,65 +135,4 @@ namespace env
 			}
 		}
 	}
-
-	void GenerateModelTypes()
-	{
-		//generate tile flags from binary info
-		//probably temporary, we'll see.
-		for (int x = 1; x < WORLD_SIZE - 1; x++)
-		{
-			for (int y = 1; y < WORLD_SIZE - 1; y++)
-			{
-				//only draw models if its on an impassable tile (for now)
-				if (env::Get(x, y, eflag::eIMPASSABLE))
-				{
-					bool face_n = false, face_s = false, face_e = false, face_w = false;
-
-					//wall facing up
-					if (!env::Get(x, y + 1, eflag::eIMPASSABLE))
-					{
-						face_n = true;
-						//env::nodes[x][y].model_type = EMT_WALL_STR_N;
-					}
-					//wall facing down
-					if (!env::Get(x, y - 1, eflag::eIMPASSABLE))
-					{
-						face_s = true;
-						//env::nodes[x][y].model_type = EMT_WALL_STR_S;
-					}
-					//wall facing right
-					if (!env::Get(x + 1, y, eflag::eIMPASSABLE))
-					{
-						face_e = true;
-						//env::nodes[x][y].model_type = EMT_WALL_STR_E;
-					}
-					//wall facing left
-					if (!env::Get(x - 1, y, eflag::eIMPASSABLE))
-					{
-						face_w = true;
-						//env::nodes[x][y].model_type = EMT_WALL_STR_W;
-					}
-				}
-			}
-		}
-	}
-}
-
-namespace ltr
-{
-	//layers contain cells which contain tiles
-
-	//obviously doesnt belong in this file but who cares right now
-	//eventuall encapsulate in class
-	unsigned int tilesTemplate[8][8]
-	{
-		{	1,	1,	1,	1,	1,	1,	1,	1, },
-		{	1,	0,	0,	0,	1,	0,	0,	1, },
-		{	1,	1,	0,	0,	1,	0,	0,	1, },
-		{	1,	0,	0,	0,	0,	0,	0,	1, }, //top side here for some reason
-		{	1,	1,	0,	0,	0,	0,	0,	0, },
-		{	1,	1,	0,	0,	1,	0,	0,	1, },
-		{	1,	1,	0,	0,	0,	0,	0,	1, },
-		{	1,	1,	1,	1,	1,	1,	1,	1, },
-	};
 }

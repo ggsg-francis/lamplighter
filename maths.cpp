@@ -15,7 +15,7 @@ float angleFromVector = Atan2( angleVector.X, -angleVector.Y );
 
 namespace m
 {
-	//******************************** VECTOR2 OPERATORS
+	//-------------------------------- VECTOR2 OPERATORS
 
 	Vector2 Vector2::operator+(Vector2 f) { return Vector2(x + f.x, y + f.y); }
 	Vector2 Vector2::operator-(Vector2 f) { return Vector2(x - f.x, y - f.y); }
@@ -37,22 +37,25 @@ namespace m
 	Vector2 Vector2::operator*=(float f) { return Vector2(x *= f, y *= f); }
 	Vector2 Vector2::operator/=(float f) { return Vector2(x /= f, y /= f); }
 
-	//******************************** VECTOR3 OPERATORS
+	//-------------------------------- VECTOR3 OPERATORS
 
 	Vector3 Vector3::operator*(const float f) { return Vector3(x * f, y * f, z * f); }
 	Vector3 Vector3::operator*(const Vector3 & v) { return Vector3(x * v.x, y * v.y, z * v.z); }
 	Vector3 Vector3::operator+(const Vector3& v) { return Vector3(x + v.x, y + v.y, z + v.z); }
-	Vector3 Vector3::operator-(const Vector3& v) { return Vector3(x - v.x, y - v.y, z = v.z); }
+	Vector3 Vector3::operator-(const Vector3& v) { return Vector3(x - v.x, y - v.y, z - v.z); }
 	Vector3 Vector3::operator+=(const Vector3& v) { x += v.x; y += v.y; z += v.z; return Vector3(x + v.x, y + v.y, z + z); }
 	Vector3 Vector3::operator-=(const Vector3& v) { return Vector3(x -= v.x, y -= v.y, z -= v.z); }
 	Vector3 Vector3::operator=(const glm::vec3& v) { return Vector3(v.x, v.y, v.z); }
 
 	Vector3 operator*(const btf32 f, const Vector3& v) { return Vector3(v.x * f, v.y * f, v.z * f); }
 
+	Vector3 operator+(const Vector3 & va, const Vector3 & vb) { return Vector3(va.x + vb.x, va.y + vb.y, va.z + vb.z); }
+	Vector3 operator-(const Vector3 & va, const Vector3 & vb) { return Vector3(va.x - vb.x, va.y - vb.y, va.z - vb.z); }
+
 	glm::vec3 operator+(const glm::vec3& va, const Vector3& vb) { return glm::vec3(va.x + vb.x, va.y + vb.y, va.z + vb.z); }
 	glm::vec3 operator*(const glm::vec3& va, const Vector3& vb) { return glm::vec3(va.x * vb.x, va.y * vb.y, va.z * vb.z); }
 
-	//******************************** QUATERNION OPERATOR
+	//-------------------------------- QUATERNION OPERATOR
 
 	Quaternion Quaternion::operator*(const Quaternion& q)
 	{
@@ -65,7 +68,7 @@ namespace m
 		);
 	}
 
-	//******************************** LERP
+	//-------------------------------- LERP
 
 	btf32 Lerp(btf32 a, btf32 b, btf32 t)
 	{
@@ -80,7 +83,7 @@ namespace m
 		return a * (1 - t) + b * t;
 	}
 
-	//******************************** DOT
+	//-------------------------------- DOT
 
 	float Dot(const Vector2 & va, const Vector2 & vb)
 	{
@@ -95,7 +98,7 @@ namespace m
 		return qa.x * qb.x + qa.y * qb.y + qa.z * qb.z + qa.w * qb.w;
 	}
 
-	//******************************** CROSS
+	//-------------------------------- CROSS
 
 	double Cross(Vector2 a, Vector2 b)
 	{
@@ -114,7 +117,7 @@ namespace m
 			qa.w * qb.w - qa.x * qb.x - qa.y * qb.y - qa.z * qb.z);
 	}
 
-	//******************************** LENGTH
+	//-------------------------------- LENGTH
 
 	float Length(const Vector2& v)
 	{
@@ -127,7 +130,7 @@ namespace m
 		return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 	}
 
-	//******************************** NORMALIZE
+	//-------------------------------- NORMALIZE
 
 	Vector2 Normalize(const Vector2 & v)
 	{
@@ -156,7 +159,7 @@ namespace m
 		return Quaternion(q.x * f, q.y * f, q.z * f, q.w * f);
 	}
 
-	//******************************** ANGLE / VECTOR2 CONVERSION
+	//-------------------------------- ANGLE / VECTOR2 CONVERSION
 
 	Vector2 AngToVec2(float angle)
 	{
@@ -181,7 +184,62 @@ namespace m
 			return -(float)acos(vec.x);
 	}
 
-	//******************************** MISC FUNCTIONS
+	//-------------------------------- MISC FUNCTIONS
+
+	/* A utility function to reverse a string  */
+	//void reverse(char str[], int length)
+	//{
+	//	int start = 0;
+	//	int end = length - 1;
+	//	while (start < end)
+	//	{
+	//		swap(*(str + start), *(str + end));
+	//		start++;
+	//		end--;
+	//	}
+	//}
+
+	// Implementation of itoa() 
+	char* ToString(int num, char* str, int base)
+	{
+		int i = 0;
+		bool isNegative = false;
+
+		/* Handle 0 explicitely, otherwise empty string is printed for 0 */
+		if (num == 0)
+		{
+			str[i++] = '0';
+			str[i] = '\0';
+			return str;
+		}
+
+		// In standard itoa(), negative numbers are handled only with  
+		// base 10. Otherwise numbers are considered unsigned. 
+		if (num < 0 && base == 10)
+		{
+			isNegative = true;
+			num = -num;
+		}
+
+		// Process individual digits 
+		while (num != 0)
+		{
+			int rem = num % base;
+			str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+			num = num / base;
+		}
+
+		// If number is negative, append '-' 
+		if (isNegative)
+			str[i++] = '-';
+
+		str[i] = '\0'; // Append string terminator 
+
+		// Reverse the string 
+		//reverse(str, i);
+
+		return str;
+	}
 
 	/*
 	void makeRotationDir(const Vec3& direction, const Vec3& up = Vec3(0, 1, 0))
@@ -305,7 +363,7 @@ namespace m
 		return Cross(q, Quaternion(norm.x * s, norm.y * s, norm.z * s, cos(angle * 0.5f)));
 	}
 
-	//******************************** TOXIC SIN ZONE
+	//-------------------------------- TOXIC SIN ZONE
 	
 	struct Triangle3D
 	{

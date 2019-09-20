@@ -7,7 +7,7 @@ typedef unsigned int uint;
 
 namespace mem
 {
-	//******************************** BUFFER TYPES
+	//-------------------------------- BUFFER TYPES
 
 	template <class type> struct Buffer
 	{
@@ -196,7 +196,7 @@ namespace mem
 		btID operator[] (btui32 x);
 	};
 
-	//******************************** BIT-VECTOR OPERATIONS
+	//-------------------------------- BIT-VECTOR OPERATIONS
 
 	// Bitvector (the safest iteration yet)
 	template <class tcast, class trecv> class bv

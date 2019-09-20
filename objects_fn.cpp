@@ -12,10 +12,3 @@ void TickMusket(btf32 dt, btID id)
 {
 
 }
-
-// Draw
-
-void DrawEntity(btID id)
-{
-
-}

@@ -7,6 +7,7 @@ namespace cfg
 	//is fullscreen
 	extern bool bFullscreen;
 	extern bool bShowConsole;
+	extern bool bEditMode;
 
 	extern unsigned int iIPA;
 	extern unsigned int iIPB;

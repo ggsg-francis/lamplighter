@@ -12,76 +12,75 @@ uniform sampler2D screenTexture;
 //const float offsetx = 0.9 / 640.0;
 //const float offsety = 0.9 / 480.0;
 
-const float offsetx = 0.8 / 640.0;
-const float offsety = 0.8 / 480.0;
+uniform uint wx = 640u;
+uniform uint wy = 480u;
 
-const float tilesizex = 640 / 1;
+uniform float offsetx = 0.8 / 640.0;
+uniform float offsety = 0.8 / 480.0;
 
 const float PI = 3.1415926535; // for fisheye
 
+// normally the first one is zero
+const int indexMatrix4x4[16] = int[](
+	0,	8,	2,	10,
+	12,	4,	14,	6,
+	3,	11,	1,	9,
+	15,	7,	13,	5);
+	
+vec2 offsets[9] = vec2[](
+	vec2(-offsetx,  offsety), // top-left
+	vec2( 0.0f,    offsety), // top-center
+	vec2( offsetx,  offsety), // top-right
+	vec2(-offsetx,  0.0f),   // center-left
+	vec2( 0.0f,    0.0f),   // center-center
+	vec2( offsetx,  0.0f),   // center-right
+	vec2(-offsetx, -offsety), // bottom-left
+	vec2( 0.0f,   -offsety), // bottom-center
+	vec2( offsetx, -offsety)  // bottom-right    
+);
+
+float kernel[9] = float[](
+	1.0f/16,2.0f/16,1.0f/16,
+	2.0f/16,4.0f/16,2.0f/16,
+	1.0f/16,2.0f/16,1.0f/16
+);
+
+/*
 float dither(float color, float index_value) {
 	float closestColor = (color < 0.5) ? 0 : 1;
 	float secondClosestColor = 1 - closestColor;
 	float distance = abs(closestColor - color);
 	return (distance < index_value) ? closestColor : secondClosestColor;
+}*/
+
+const int indexMat4x4PSX[16] = int[]
+(
+	-4,	0,	-3,	1,
+	2,	-2,	3,	-1,
+	-3,	1,	-4,	0,
+	3,	-1,	2,	-2
+);
+
+//*
+float indexValue(void) {
+	int x = int(mod(gl_FragCoord.x, 4));
+	int y = int(mod(gl_FragCoord.y, 4));
+	return indexMatrix4x4[(x + y * 4)] / 16.0;
 }
+
+float dither(float color) {
+	float closestColor = (color < 0.5) ? 0 : 1;
+	float secondClosestColor = 1 - closestColor;
+	float d = indexValue();
+	float distance = abs(closestColor - color);
+	return (distance < d) ? closestColor : secondClosestColor;
+}
+//*/
 
 void main()
 { 
     //FragColor = texture(screenTexture, TexCoords);
 	
-	const int indexMatrix4x4[16] = int[](
-		1,	8,	2,	10,
-		12,	4,	14,	6,
-		3,	11,	1,	9,
-		14,	7,	13,	5);
-		
-	// normally the first one is zero
-	const int indexMatrix8x8[64] = int[](
-		1,32,8,40,2,34,10,42,
-		48,16,56,24,50,18,58,26,
-		12,44,4,36,14,46,6,38,
-		60,28,52,20,62,30,54,22,
-		3,35,11,43,1,33,9,41,
-		51,19,59,27,49,17,57,25,
-		15,47,7,39,13,45,5,37,
-		63,31,55,23,61,29,53,21);
-	
-	/*
-	float indexValue(void) {
-		int x = int(mod(gl_FragCoord.x, 4));
-		int y = int(mod(gl_FragCoord.y, 4));
-		return indexMatrix4x4[(x + y * 4)] / 16.0;
-	}
-
-	float dither(float color) {
-		float closestColor = (color < 0.5) ? 0 : 1;
-		float secondClosestColor = 1 - closestColor;
-		float d = indexValue();
-		float distance = abs(closestColor - color);
-		return (distance < d) ? closestColor : secondClosestColor;
-	}
-	*/
-	
-
-	vec2 offsets[9] = vec2[](
-        vec2(-offsetx,  offsety), // top-left
-        vec2( 0.0f,    offsety), // top-center
-        vec2( offsetx,  offsety), // top-right
-        vec2(-offsetx,  0.0f),   // center-left
-        vec2( 0.0f,    0.0f),   // center-center
-        vec2( offsetx,  0.0f),   // center-right
-        vec2(-offsetx, -offsety), // bottom-left
-        vec2( 0.0f,   -offsety), // bottom-center
-        vec2( offsetx, -offsety)  // bottom-right    
-    );
-	
-	float kernel[9] = float[](
-		1.0f/16,2.0f/16,1.0f/16,
-		2.0f/16,4.0f/16,2.0f/16,
-		1.0f/16,2.0f/16,1.0f/16
-	);
-    	
 	// blur part
 	//sample diffuse colour
     vec3 sampleTex[9];
@@ -92,8 +91,9 @@ void main()
     vec3 col = vec3(0.0);
     for(int i = 0; i < 9; i++)
         col += sampleTex[i] * kernel[i];
-		
-	col = vec3(texture(screenTexture, TexCoords));		
+	
+	// temp activate to disable blur	
+	//col = vec3(texture(screenTexture, TexCoords));		
 	
 	//dither part (wip)
 	//col.r = round(col.r * 16) / 16;
@@ -105,9 +105,9 @@ void main()
 	//int dy = int(mod(gl_FragCoord.y, 4));
 	//float index_value = indexMatrix4x4[(dx + dy * 4)] / 16.0;
 	
-	int dx = int(mod(gl_FragCoord.x, 8));
-	int dy = int(mod(gl_FragCoord.y, 8));
-	float index_value = indexMatrix8x8[(dx + dy * 8)] / 16.0;
+	//int dx = int(mod(gl_FragCoord.x, 8));
+	//int dy = int(mod(gl_FragCoord.y, 8));
+	//float index_value = indexMatrix8x8[(dx + dy * 8)] / 16.0;
 	
 	//darken
 	//FragColor = vec4(col - (0.045 * (1 - col)), 1.0);
@@ -125,6 +125,7 @@ void main()
 	//if (highestOverflow > 1.f)
 		//col += highestOverflow - 1.f;
 		col = mix(col, vec3(1,1,1), clamp((highestOverflow - 0.9f) * 0.75f, 0.f, 1.f));
+	
 	FragColor.rgb = col;
 	
 	//FragColor.rgb = col - 0.5f;
@@ -134,6 +135,22 @@ void main()
 	//normal
 	//FragColor = vec4(col, 1.0);
     //FragColor = vec4(red, grn, blu, 1.0);
+	
+	//FragColor = texture(screenTexture, TexCoords);
+	//FragColor -= texture(noise, TexCoords);
+	
+	// Dither
+	/*
+	int dx = int(mod(gl_FragCoord.x, 4));
+	int dy = int(mod(gl_FragCoord.y, 4));
+	float rndBy = 16.f;
+	FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
+	//FragColor.rgb += (indexMatrix4x4[(dx + dy * 4)] - 8.f) / (rndBy * 4.f);
+	// Posterize
+	FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
+	//*/
+	
+	//FragColor = vec4(0.5f);
 	
 	// fisheye
 	/*

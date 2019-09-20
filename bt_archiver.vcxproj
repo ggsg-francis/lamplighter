@@ -131,17 +131,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="archive.cpp" />
     <ClCompile Include="bt_archiver.cpp" />
-    <ClCompile Include="resources-archive.cpp" />
-    <ClCompile Include="serializer-graphics.cpp" />
+    <ClCompile Include="archiver_graphics_convert.cpp" />
     <ClCompile Include="serializer.cpp" />
     <ClCompile Include="tga_reader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="archive.hpp" />
     <ClInclude Include="global-archiver.h" />
     <ClInclude Include="global.h" />
-    <ClInclude Include="resources-archive.h" />
-    <ClInclude Include="serializer-graphics.h" />
+    <ClInclude Include="archiver_graphics_convert.h" />
     <ClInclude Include="serializer.h" />
     <ClInclude Include="tga_reader.h" />
   </ItemGroup>

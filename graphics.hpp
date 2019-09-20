@@ -105,21 +105,26 @@ namespace graphics
 		FRow4 const& operator[](const bti32 index) const { return v[index]; };
 	};
 
+	// to do CLEAR THE RETURNS ON ALL OF THESE
+
 	// Translate matrix (copied from glm)
 	Matrix4x4 MatrixTranslate(Matrix4x4 const& MATRIX, m::Vector3 const& VECTOR);
 	// Rotate matrix (copied from glm)
 	Matrix4x4 MatrixRotate(Matrix4x4 const& MATRIX, btf32 ANGLE, m::Vector3 const& VECTOR);
 	// Scale matrix (copied from glm)
 	Matrix4x4 MatrixScale(Matrix4x4 const& MATRIX, m::Vector3 const& VECTOR);
-	// Rotate matrix to face direction (this function does not work, currently)
-	Matrix4x4 MatrixPointDirection(Matrix4x4 const& MATRIX, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
+	// For generating a camera matrix (copied from glm)
+	Matrix4x4 MatrixLookAt(Matrix4x4 const& MATRIX, m::Vector3 const& SOURCE_POINT, m::Vector3 const& TARGET_POINT, m::Vector3 const& UP_DIRECTION);
 	// Generate model location matrix
 	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR);
 	// Generate model location and yaw matrix
 	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, btf32 YAW);
 	// Generate model location and yaw/pitch matrix
-	void MatrixTransform(Matrix4x4& MATRIX, m::Vector3 const& POSITION_VECTOR, btf32 YAW, btf32 PITCH);
-	
+	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, btf32 YAW, btf32 PITCH);
+	// Generate model location and rotation matrix
+	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
+	void MatrixTransformXFlip(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
+
 	// Vertex structure
 	struct vert {
 		glm::vec3 pos; // Position
@@ -135,6 +140,16 @@ namespace graphics
 		glm::vec3 nor_a; // Normal A
 		glm::vec3 nor_b; // Normal B
 		glm::vec2 uvc; // UV Coords (TexCoords)
+	};
+
+	#define VERT_BONE_COUNT 4
+	// Vertex structure used for a rigged mesh
+	struct vert_rig {
+		glm::vec3 pos; // Position
+		glm::vec3 nor; // Normal
+		glm::vec2 uvc; // UV Coords (TexCoords)
+		bti32 boneID[VERT_BONE_COUNT]; // Bone handle
+		btf32 boneWeight[VERT_BONE_COUNT]; // Bone weight per handle
 	};
 
 	namespace vns
@@ -175,6 +190,7 @@ namespace graphics
 	void SetMatView(void* t);
 	void SetMatProjLight();
 	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz);
+	void SetMatViewEditor(void* t);
 
 	glm::mat4 GetMatProj();
 	glm::mat4 GetMatView();
@@ -273,7 +289,7 @@ namespace graphics
 		void InitRenderTexture(int WIDTH, int HEIGHT, bool LINEAR);
 		void InitDepthTexture(int WIDTH, int HEIGHT, bool LINEAR);
 		void InitShadowTexture(int WIDTH, int HEIGHT, bool LINEAR);
-		void InitRenderBuffer(int WIDTH, int HEIGHT, bool LINEAR);
+		void InitDepthBuffer(int WIDTH, int HEIGHT, bool LINEAR);
 	};
 
 	class Mesh
@@ -290,6 +306,19 @@ namespace graphics
 	};
 
 	class MeshBlend
+	{
+	public:
+		GLuint glID;
+		GLuint vao; // Vertex Array Object
+		void Draw(unsigned int TEXTURE, unsigned int SHADER);
+		void LoadFile(char* FILENAME);
+		// add void unload?
+	private:
+		GLuint vbo; // Vertex Buffer Object
+		GLuint ebo; // Element Buffer Object
+	};
+
+	class MeshRig
 	{
 	public:
 		GLuint glID;
@@ -385,7 +414,7 @@ namespace graphics
 		//set boundaries of the text box
 		void SetOffset(int X, int Y);
 		void GetTextBounds();
-		void ReGen(char* STRING, unsigned int LENGTH, bti16 XA, bti16 XB, bti16 Y);
+		void ReGen(char* STRING, bti16 XA, bti16 XB, bti16 Y);
 		void Draw(Shader* SHADER, Texture* TEXTURE);
 		int width;
 		int lastLineWidth;

@@ -13,22 +13,29 @@
 #define DEF_INPUT_MOUSE_1ST_PERSON
 //#define DEF_INPUT_MOUSE_HIDDEN
 
-//versioning: 0x + hex number eg. 0x04f0a7
-#define VERSION_MAJOR 0x0
-#define VERSION_MINOR 0x9
-#define VERSION_EDITOR_MAJOR 0x0
-#define VERSION_EDITOR_MINOR 0x9
-#define VERSION_SERVER_MAJOR 0x0
-#define VERSION_SERVER_MINOR 0x1
+#define SHADOW_WIDTH 1024
+#define SHADOW_HEIGHT 1024
+//#define SHADOW_WIDTH 2048
+//#define SHADOW_HEIGHT 2048
+
+// Program Version
+#define VERSION_MAJOR 0u
+#define VERSION_MINOR 13u
+#define VERSION_BUILD 2u
+#define VERSION_SERVER_MAJOR 0u
+#define VERSION_SERVER_MINOR 13u
+#define VERSION_COMMENT "test"
 
 // Buffer / ID definitions
 #define BUF_SIZE 512
 #define BUF_NULL 513
 #define BUF_PLAYER_ALLOC 128
-#define ID_NULL 65535
+//#define ID_NULL 65535
+#define ID_NULL 0b1111111111111111
 
 // Time to pass in seconds before one single tick
 #define FRAME_TIME 1. / 30.
+//#define FRAME_TIME 1. / 60.
 
 // Terrain vertical precision per 1 unit
 #define TERRAIN_HEIGHT_DIVISION 4.f

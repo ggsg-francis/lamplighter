@@ -14,14 +14,10 @@ namespace graphics
 class Transform3D;
 
 struct CellGroup;
-struct CellSpaceInfo;
+struct CellSpace;
 
 namespace index
 {
-	#ifdef DEF_EDITOR
-	btui32 GetCellX();
-	btui32 GetCellY();
-	#endif // DEF_EDITOR
 	btf32 GetHP(btID id);
 
 	extern btID players[2];
@@ -45,12 +41,12 @@ namespace index
 	void DestroyProjectile(btID ID);
 
 	// Adds this entity to the local vector of this cell
-	void AddEntityCell(int X, int Y, btID ENTITY);
+	void AddEntityCell(btui32 X, btui32 Y, btID ENTITY);
 	// Removes this entity from the local vector of this cell
-	void RemoveEntityCell(int X, int Y, btID ENTITY);
+	void RemoveEntityCell(btui32 X, btui32 Y, btID ENTITY);
 
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg);
-	void GetCellSpaceInfo(m::Vector2 vec, CellSpaceInfo& csi);
+	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& csi);
 
 	bool ProjectileDoesIntersectEnv(btID id);
 }

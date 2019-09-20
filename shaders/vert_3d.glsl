@@ -10,10 +10,12 @@ out vec3 Pos;
 out vec4 Col;
 out vec4 LightSpacePos;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 matm;
+uniform mat4 matv;
+uniform mat4 matp;
 uniform mat4 lightProj;
+
+uniform vec3 pcam;
 
 //uniform int vert_precision = 256;
 uniform int vert_precision = 192;
@@ -27,17 +29,15 @@ void main()
 {
 	TexCoords = aTexCoords;
 	
-	Normal = normalize(vec3(model * vec4(aNormal, 0.0)));
+	Normal = normalize(vec3(matm * vec4(aNormal, 0.0)));
 	
-    //gl_Position = projection * view * model * vec4(aPos, 1.0);
+    //gl_Position = matp * matv * matm * vec4(aPos, 1.0);
 
-	vec4 pos2 = model * vec4(aPos, 1.0);
+	vec4 pos2 = matm * vec4(aPos, 1.0);
 	
 	Pos = pos2.xyz;
-	//pos2.z *= 0.75f;
-	//pos2.z -= pos2.y * z_offset_mult;
-    //gl_Position = projection * view * pos2;
-    gl_Position = projection * view * pos2;
+	
+    gl_Position = matp * matv * pos2;
 	
 	Col = aCol;
 	//Col.r = 1;

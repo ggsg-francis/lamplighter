@@ -7,8 +7,8 @@
 #define CUTE_SOUND_IMPLEMENTATION
 #include "3rdparty\cute_sound.h"
 #else
-#include <irrklang/irrKlang.h>
-using namespace irrklang;
+//#include <irrklang/irrKlang.h>
+//using namespace irrklang;
 #endif // DEF_USE_CS
 
 
@@ -44,11 +44,11 @@ namespace aud
 
 	#else
 
-	ISoundEngine *SoundEngine;
+	//ISoundEngine *SoundEngine;
 
-	void Init(void* handle)
+	void Init()
 	{
-		SoundEngine = createIrrKlangDevice();
+		//SoundEngine = createIrrKlangDevice();
 	}
 
 	void PlaySnd()

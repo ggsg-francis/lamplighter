@@ -9,41 +9,31 @@
 #define WORLD_BYTE_DEPTH 16
 #define WORLD_BIT_DEPTH WORLD_BYTE_DEPTH * 8
 
-// Environment model types
-
-#define EMT_EMPTY 0
-#define EMT_PLACEHOLDER_1 1
-#define EMT_PLACEHOLDER_2 2
-#define EMT_PLACEHOLDER_3 3
-#define EMT_WALL_STR_N 4
-#define EMT_WALL_STR_S 5
-#define EMT_WALL_STR_E 6
-#define EMT_WALL_STR_W 7
-#define EMT_WALL_COR_OUT_NE 8
-#define EMT_WALL_COR_OUT_NW 9
-#define EMT_WALL_COR_OUT_SE 10
-#define EMT_WALL_COR_OUT_SW 11
-#define EMT_WALL_COR_IN_NE 12
-#define EMT_WALL_COR_IN_NW 13
-#define EMT_WALL_COR_IN_SE 14
-#define EMT_WALL_COR_IN_SW 15
-
 typedef btui32 btcoord;
 //duplicate struct (of what?)
 struct CellCoord
 {
-	btcoord x = 0, y = 0;
-	CellCoord(btcoord _x, btcoord _y) { x = _x; y = _y; }
+	btcoord x, y;
+	CellCoord(btcoord _x, btcoord _y) : x{ _x }, y{ _y } {};
+};
+// Enumerator representing the intended function of the 4 cell coordinates used
+enum eCell : btui32
+{
+	eCELL_I, // This cell
+	eCELL_X, // Next cell along the X axis
+	eCELL_Y, // Next cell along the Y axis
+	eCELL_XY, // Next cell along both axes
+	eCELL_COUNT
 };
 // Collection of 4 cells relevant to an entity
 struct CellGroup
 {
-	CellCoord c[4u]{ CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u) };
+	CellCoord c[eCELL_COUNT]{ CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u) };
 };
 // Collection of 4 cells and XY offsets relevant to an entity
-struct CellSpaceInfo
+struct CellSpace
 {
-	CellCoord c[4u]{ CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u) };
+	CellCoord c[eCELL_COUNT]{ CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u) };
 	btf32 offsetx;
 	btf32 offsety;
 };
@@ -99,55 +89,6 @@ namespace env
 		};
 	}
 
-	namespace nbit
-	{
-		enum nsew : btui8
-		{
-			N_,
-			S_,
-			E_,
-			W_,
-		};
-
-		enum node_bit : btui8
-		{
-			N = 0b00000000,
-			S = 0b00000001,
-			E = 0b00000010,
-			W = 0b00000011,
-
-			N2 = 0b00000000,
-			S2 = 0b00000100,
-			E2 = 0b00001000,
-			W2 = 0b00001100,
-
-			N3 = 0b00000000,
-			S3 = 0b00010000,
-			E3 = 0b00100000,
-			W3 = 0b00110000,
-
-			N4 = 0b00000000,
-			S4 = 0b01000000,
-			E4 = 0b10000000,
-			W4 = 0b11000000,
-
-			MASK1 = 0b00000011,
-			MASK2 = 0b00001100,
-			MASK3 = 0b00110000,
-			MASK4 = 0b11000000,
-
-			CLEAR1 = 0b11111100,
-			CLEAR2 = 0b11110011,
-			CLEAR3 = 0b11001111,
-			CLEAR4 = 0b00111111,
-
-			//MAX = 0b11111111,
-
-			//NT = S3 >> 4u,
-			//test = 0b00001100,
-		};
-	}
-
 	struct node_coord
 	{
 		btui8 x, y;
@@ -169,10 +110,10 @@ namespace env
 		btui8 mat = 0ui8;
 		btui8 height = 0ui8;
 
-		btui8 slope_n = 0ui8;
-		btui8 slope_s = 0ui8;
-		btui8 slope_e = 0ui8;
-		btui8 slope_w = 0ui8;
+		btui8 num_01 = 0ui8;
+		btui8 num_02 = 0ui8;
+		btui8 num_03 = 0ui8;
+		btui8 num_04 = 0ui8;
 
 		btui8 water_height = 0ui8;
 		btui8 num_06 = 0ui8;
@@ -180,24 +121,13 @@ namespace env
 		btui8 num_08 = 0ui8;
 	};
 
-	//struct path_node
-	//{
-	//	//temp
-	//	uint8_t frontier_index = -1;
-	//	int from_x = -1, from_y = -1;
-	//	//float f = 0.f, g = 0.f, h = 0.f;
-	//	bool open = true;
-	//};
-
 	extern node_v001 eCells[WORLD_SIZE][WORLD_SIZE];
-	//extern path_node pnodes[WORLD_SIZE][WORLD_SIZE];
 
 	bool Get(uint x, uint y, eflag::flag bit);
 	void Set(uint x, uint y, eflag::flag bit);
 	void UnSet(uint x, uint y, eflag::flag bit);
 
-	void GetHeight(btf32& OUT_HEIGHT, CellSpaceInfo& CELL_SPACE);
-	void GetAngles(btf32& OUT_ANGLE_X, btf32& OUT_ANGLE_Y, CellSpaceInfo& CELL_SPACE);
+	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
 
 	//void Tick();
 
@@ -207,10 +137,4 @@ namespace env
 	void LoadBin();
 
 	void GeneratePhysicsSurfaces();
-	void GenerateModelTypes();
-}
-
-namespace ltr
-{
-	extern unsigned int tilesTemplate[8][8];
 }

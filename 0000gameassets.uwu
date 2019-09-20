@@ -1,4 +1,19 @@
 **** DEBUG STUFF
+item txtr
+hndl T_______
+srca resources/default_texture.tga
+tfil nearest
+tedg repeat
+<<<<
+item mesh
+hndl M_______
+srca resources/default_mesh.obj
+<<<<
+item mshb
+hndl MB______
+srca resources/default_mesh.obj
+srcb resources/default_mesh.obj
+<<<<
 item mesh
 hndl MdebugBB
 srca resources/object/beachball.obj
@@ -12,6 +27,12 @@ tedg repeat
 item mesh
 hndl Mdebgcel
 srca resources/debug_cell.obj
+<<<<
+item txtr
+hndl TNoise__
+srca resources/noise.tga
+tfil nearest
+tedg repeat
 <<<<
 **** COMPASS NEEDLE
 item mesh
@@ -71,11 +92,29 @@ item txtr
 **** character skin 1
 hndl Tchrskn1
 srca resources/character_palette_p1.tga
+tfil nearest
+tedg clamp
 <<<<
 item txtr
 **** character skin 2
 hndl Tchrskn2
 srca resources/character_palette_p2.tga
+tfil nearest
+tedg clamp
+<<<<
+item txtr
+**** character skin dark
+hndl Tchrskn3
+srca resources/character_palette_z.tga
+tfil nearest
+tedg clamp
+<<<<
+item txtr
+**** character skin dark
+hndl Tchrskn4
+srca resources/character_palette_bright.tga
+tfil nearest
+tedg clamp
 <<<<
 item txtr
 **** equipement atlas
@@ -86,26 +125,26 @@ srca resources/txtr_apparel_atlas.tga
 item mshb
 **** body base step
 hndl MBbase_s
-srca resources/char_legs_idle.obj
-srcb resources/char_legs_step_L.obj
+srca resources/char_body_0.obj
+srcb resources/char_body_0.obj
 <<<<
 item mshb
-**** body base run
-hndl MBbase_r
-srca resources/char_legs_idle.obj
-srcb resources/char_legs_run_L.obj
-<<<<
-item mshb
-**** arms cast
+**** arm
 hndl MAbase_c
-srca resources/char_arms_idle.obj
-srcb resources/char_arms_cast.obj
+srca resources/char_arm_0.obj
+srcb resources/char_arm_1.obj
 <<<<
 item mshb
 **** head
 hndl MHbase_b
-srca resources/char_head.obj
-srcb resources/char_head_blink.obj
+srca resources/char_head_0.obj
+srcb resources/char_head_0.obj
+<<<<
+item mshb
+**** leg
+hndl MCharLeg
+srca resources/char_leg_0.obj
+srcb resources/char_leg_1.obj
 <<<<
 **** FLOWER PICKERS PITH HELMET (MEqH = MESH EQUIP HEAD)
 item mesh
@@ -161,7 +200,7 @@ srca resources/item_matchlock_01.tga
 **** PROJECTILE
 item mesh
 hndl Mprjctil
-srca resources/projectile/projectile_basic.fbx
+srca resources/projectile/projectile_basic.dae
 <<<<
 item txtr
 hndl Tprjctil
@@ -202,29 +241,36 @@ tedg repeat
 item txtr
 hndl TGUIcros
 srca resources/gui_crosshairs.tga
+tfil nearest
 <<<<
 item txtr
 hndl TGUIFont
 srca resources/gui/font_default.tga
+tfil nearest
 <<<<
 item txtr
 hndl TGUIbarR
 srca resources/gui_hp.tga
+tfil nearest
 <<<<
 item txtr
 hndl TGUIbarY
 srca resources/gui_hp_enemy.tga
+tfil nearest
 <<<<
 item txtr
 hndl TGUI_Box
+tfil nearest
 srca resources/gui_box.tga
 <<<<
 item txtr
 hndl TGUI_SBx
+tfil nearest
 srca resources/gui_select_box.tga
 <<<<
 item txtr
 hndl TGUI_ISl
+tfil nearest
 srca resources/gui_inv_slot.tga
 <<<<
 **** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
