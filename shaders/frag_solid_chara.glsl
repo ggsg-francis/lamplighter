@@ -188,14 +188,20 @@ void main()
 		FragColor = texture(texture_diffuse1, TexCoords);
 		if (FragColor.a < 0.5) discard;
 
+		vec3 vd = Pos - pcam;
+		float amboffset = dot(Normal, vd);
+
 		//float ndotl = clamp(dot(normalize(Normal), vsun), 0, 1);
 		//float ndotl = clamp(dot(Normal, vsun), 0, 1);
 		//float ndotl = clamp(dot(Normal, vsun) * 0.5 + 0.5, 0, 1);
-		float ndotl = clamp(round(dot(Normal, vsun) + 0.6), 0, 1); // Rounded
+		float ndotl = clamp(round(dot(Normal, vsun) + 0.5 + (amboffset * -0.35f)), 0, 1); // Rounded
 		//float ndotl = clamp(round((dot(Normal, vsun) + 0.125) * 8) / 2, 0, 1); // Rounded 3-tone
+		
 		//float ndotl_amb = clamp(dot(Normal, vec3(0,-1,0)) + 0.5f, 0, 1);
-		//float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f) * 2) / 2, 0, 1);
-		float ndotl_amb = 0.5f;
+		//float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f)), 0, 1); // rounded
+		float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f) + amboffset * 0.6f), 0, 1); // rounded
+		//float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f) * 2) / 2, 0, 1); // rounded 3-tone
+		//float ndotl_amb = 0.5f;
 		
 		if (lit)
 		{
@@ -254,14 +260,14 @@ void main()
 			//*/
 			
 			// Dither
-			/*
+			///*
 			int dx = int(mod(gl_FragCoord.x, 4));
 			int dy = int(mod(gl_FragCoord.y, 4));
-			float rndBy = 12.f;
+			float rndBy = 8.f;
 			FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
 			// Posterize
 			FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-			*/
+			//*/
 		}
 		else
 		{

@@ -1,4 +1,5 @@
 #include "objects.h"
+#include "objects_items.h"
 
 #include "graphics.hpp"
 #include <glm\gtc\matrix_transform.hpp>
@@ -125,138 +126,24 @@ void DrawBlendMesh(btID id, assetID mdl, btf32 bs, assetID tex, graphics::Shader
 	res::GetMeshBlend(mdl).Draw(res::GetTexture(tex).glID, shd.ID);
 }
 
-void HeldGun::Tick()
-{
-	// State switch
-	///*
-	if (input::Get(input::key::eACTION_A_HIT))
-	{
-		btui8 i = eMusketHoldState;
-		++i;
-		if (i == eHOLD_STATE_COUNT)
-			i = 0ui8;
-		eMusketHoldState = (musket_hold_state)i;
-	}
-	//*/
-
-	if (eMusketHoldState == HeldGun::aim) // IF AIMING
-	{
-		/*if (input::Get(input::key::eACTION_A_HIT))
-			eMusketHoldState = HeldGun::inspect_pan;
-		if (input::Get(input::key::eACTION_B_HIT))
-			eMusketHoldState = HeldGun::inspect_barrel;*/
-		bvMusketState.setto(HeldGun::musket_state::latch_pulled, input::Get(input::key::eUSE_HOLD));
-	}
-	else if (eMusketHoldState == HeldGun::inspect_pan) // IF PAN
-	{
-		/*if (input::Get(input::key::eACTION_A_HIT))
-			eMusketHoldState = HeldGun::aim;*/
-		if (input::Get(input::key::eACTION_B_HIT))
-			bvMusketState.toggle(HeldGun::musket_state::fpan_hatch_open);
-		if (bvMusketState.get(HeldGun::musket_state::fpan_hatch_open)) // if hatch open
-			if (input::Get(input::key::eACTION_C_HIT)) // input
-				bvMusketState.set(HeldGun::musket_state::fpan_powder_in); // set powder
-		bvMusketState.setto(HeldGun::musket_state::latch_pulled, input::Get(input::key::eUSE_HOLD));
-	}
-	else if (eMusketHoldState == HeldGun::inspect_barrel) // IF BARREL
-	{
-		// if the hatch is open powder falls out lol
-		if (bvMusketState.get(HeldGun::fpan_hatch_open))
-			bvMusketState.unset(HeldGun::fpan_powder_in);
-
-		/*if (input::Get(input::key::eACTION_A_HIT))
-			eMusketHoldState = HeldGun::aim;*/
-
-		if (input::Get(input::key::eACTION_B_HIT)) // set latch float
-			bvMusketState.toggle(HeldGun::musket_state::barrel_rod_in);
-
-		rod = m::Lerp(rod, (btf32)bvMusketState.get(HeldGun::musket_state::barrel_rod_in), 0.1f);
-
-		if (rod > 0.95f)
-			bvMusketState.set(HeldGun::musket_state::barrel_armed); // unset powder
-	}
-
-	fpan = m::Lerp(fpan, (btf32)bvMusketState.get(HeldGun::musket_state::fpan_hatch_open), 0.3f);
-	lever = m::Lerp(lever, (btf32)bvMusketState.get(HeldGun::musket_state::latch_pulled), 0.2f);
-
-	if (lever > 0.95f
-		//&& bvMusketState.get(Musket::get_can_fire))
-		&& bvMusketState.get(HeldGun::barrel_armed)
-		&& bvMusketState.get(HeldGun::fpan_hatch_open)
-		&& bvMusketState.get(HeldGun::fpan_powder_in))
-	{
-		bvMusketState.unset(HeldGun::unset_fire); // unset
-		//EntityCastProj(index);
-	}
-	else if (lever > 0.95f
-		//&& bvMusketState.get(Musket::get_can_fire))
-		&& bvMusketState.get(HeldGun::fpan_hatch_open)
-		&& bvMusketState.get(HeldGun::fpan_powder_in))
-	{
-		bvMusketState.unset(HeldGun::unset_fire); // unset
-	}
-}
-
-void HeldGun::Draw(m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
-{
-	t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
-	t_item.SetRotation(0.f);
-	t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
-
-	switch ((eMusketHoldState))
-	{
-	case HeldGun::aim:
-		loc = m::Lerp(loc, m::Vector3(0.13f, 1.3f, 0.3f), 0.1f);
-		yaw = m::Lerp(yaw, 0.f, 0.1f);
-		pitch = m::Lerp(pitch, pitch2.Deg(), 0.1f);
-		break;
-	case HeldGun::inspect_pan:
-		/*loc = m::Lerp(loc, m::Vector3(-0.13f, 1.2f, 0.6f), 0.1f);
-		yaw = m::Lerp(yaw, 65.f, 0.1f);
-		pitch = m::Lerp(pitch, -15.f, 0.1f);*/
-		loc = m::Lerp(loc, m::Vector3(0.f, 1.f, 0.4f), 0.1f);
-		yaw = m::Lerp(yaw, -15.f, 0.1f);
-		pitch = m::Lerp(pitch, -30.f, 0.1f);
-		break;
-	case HeldGun::inspect_barrel:
-		loc = m::Lerp(loc, m::Vector3(0.f, 0.2f, 0.4f), 0.1f);
-		yaw = m::Lerp(yaw, 0.f, 0.1f);
-		pitch = m::Lerp(pitch, -80.f, 0.1f);
-		break;
-	}
-
-	t_item.TranslateLocal(loc); // set pose
-	t_item.Rotate(glm::radians(yaw), m::Vector3(0.f, 1.f, 0.f));
-	t_item.Rotate(glm::radians(pitch), m::Vector3(1.f, 0.f, 0.f));
-
-	DrawMeshAtTransform(ID_NULL, res::m_item_matchlock_01, res::t_item_matchlock_01, graphics::shader_solid, t_item);
-
-	if (bvMusketState.get(HeldGun::musket_state::fpan_powder_in))
-		DrawBlendMeshAtTransform(ID_NULL, res::mb_item_matchlock_01_pan_full, fpan, res::t_item_matchlock_01, graphics::shader_blend, t_item);
-	else
-		DrawBlendMeshAtTransform(ID_NULL, res::mb_item_matchlock_01_pan, fpan, res::t_item_matchlock_01, graphics::shader_blend, t_item);
-
-	DrawBlendMeshAtTransform(ID_NULL, res::mb_item_matchlock_01_lever, lever, res::t_item_matchlock_01, graphics::shader_blend, t_item);
-
-	if (eMusketHoldState == HeldGun::inspect_barrel || bvMusketState.get(HeldGun::musket_state::barrel_rod_in)) // IF BARREL
-		DrawBlendMeshAtTransform(ID_NULL, res::mb_item_matchlock_01_rod, rod, res::t_item_matchlock_01, graphics::shader_blend, t_item);
-}
-
-void Entity::Tick()
+void Entity::Tick(btID index, btf32 dt)
 {
 }
 
-void Entity::Draw()
+void Entity::Draw(btID index)
 {
 }
 
-void EItem::Tick()
+void EItem::Tick(btID index, btf32 dt)
 {
+	index::GetCellSpaceInfo(t.position, csi);
+	env::GetHeight(t.height, csi);
+	t_item.SetPosition(m::Vector3(t.position.x, t.height, t.position.y));
+	t_item.SetRotation(yaw.Rad());
 }
 
-void EItem::Draw()
+void EItem::Draw(btID index)
 {
-	btID index = 0u;
 	// Draw the mesh of our item id
 	DrawMeshAtTransform(index, (res::AssetConstantID)archive::items[itemid]->id_mesh, (res::AssetConstantID)archive::items[itemid]->id_tex, graphics::shader_solid, t_item);
 }
@@ -278,23 +165,113 @@ void Actor::DropItem(btID slot)
 	}
 }
 
-void Actor::Tick()
+void Actor::Tick(btID index, btf32 dt)
 {
 }
 
-void Actor::Draw()
+void Actor::Draw(btID index)
 {
 }
 
-void Chara::Tick()
+void Chara::Tick(btID index, btf32 dt)
 {
+	if (state.properties.get(ActiveState::eALIVE))
+	{
+		if (cfg::bEditMode)
+		{
+			//ENTITY[index]->t.velocity = fw::Lerp(ENTITY[index]->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
+			input.x = -input.x;
+			t.velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
+		}
+		else
+		{
+			input.x = -input.x;
+			t.velocity = m::Lerp(t.velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed, 0.2f);
+			yaw.RotateTowards(viewYaw.Deg(), 5.f); // Rotate body towards the target direction
+		}
+
+		//-------------------------------- APPLY MOVEMENT
+
+		moving = (m::Length(t.velocity) > 0.016f);
+		m::Vector2 oldpos = t.position;
+		t.position += t.velocity; // Apply velocity
+
+		CellSpace cs_last = csi;
+
+		//regenerate csi
+		index::GetCellSpaceInfo(t.position, csi);
+
+		//I don't want this to be here
+		if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
+		{
+			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, index);
+			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, index);
+
+			//// New way ( four references )
+			//// optimize this $hit, also keeps missing for some reason
+			//btui32 i;
+			//for (i = 0u; i < eCELL_COUNT; ++i)
+			//	index::RemoveEntityCell(cs_last.c[i].x, cs_last.c[i].y, index);
+			////GetCellSpaceInfo(ePos, ENTITY(index)->csi);
+			//for (i = 0u; i < eCELL_COUNT; ++i)
+			//	index::AddEntityCell(ENTITY(index)->csi.c[i].x, ENTITY(index)->csi.c[i].y, index);
+		}
+
+		//-------------------------------- SET HEIGHT AND CELL SPACE
+
+		env::GetHeight(t.height, csi);
+
+		//-------------------------------- RUN COLLISION & AI
+
+		if (!cfg::bEditMode)
+		{
+			index::EntDeintersect(this, csi, viewYaw.Deg(), true);
+			if (aiControlled) index::ActorRunAI(index); // Run AI
+		}
+	} // End if alive
+
+	  //if attacking
+	if (inputbv.get(Actor::IN_USE) && attack_time < time)
+	{
+		attack_time = time + 0.25;
+		index::ActorCastProj(index);
+	}
+
+	state.hp += 0.001f;
+	if (state.hp > 1.f) state.hp = 1.f;
+
+	if (heldItem != nullptr) heldItem->Tick(
+		inputbv.get(Actor::IN_ATN_A),
+		inputbv.get(Actor::IN_ATN_B),
+		inputbv.get(Actor::IN_ATN_C),
+		inputbv.get(Actor::IN_ATN_D),
+		inputbv.get(Actor::IN_USE));
+
+	//________________________________________________________________
+	//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
+
+	// Reset transforms
+	t_body = Transform3D();
+	t_head = Transform3D();
+
+	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.75f, t.position.y));
+	t_body.Rotate(yaw.Rad(), m::Vector3(0, 1, 0));
+
+	//CHARA(index)->ani_body_lean = m::Lerp(CHARA(index)->ani_body_lean, f2Input * 15.f, 0.1f);
+	ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
+
+	t_body.Rotate(glm::radians(ani_body_lean.y), m::Vector3(1, 0, 0));
+	t_body.Rotate(glm::radians(ani_body_lean.x), m::Vector3(0, 0, 1));
+
+	// Set head transform
+	t_head.SetPosition(t_body.GetPosition());
+	t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
+	t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
+	t_head.Translate(t_body.GetUp() * 0.7f);
 }
 
-void Chara::Draw()
+void Chara::Draw(btID index)
 {
-	// draw body
-	btID index = 0u;
-
 	// need a good way of knowing own index
 	DrawBlendMeshAtTransform(index, res::mb_legs, 0, t_skin, graphics::shader_blend, t_body);
 
@@ -307,16 +284,22 @@ void Chara::Draw()
 	m::Vector3 newpos_l = newpos2 + t_body.GetRight() * 0.1f;
 	m::Vector3 newpos_r = newpos2 + t_body.GetRight() * -0.1f;
 
-	m::Vector3 hand_pos_l = heldItem.t_item.GetPosition() + heldItem.t_item.GetUp() * -0.08f;
-	m::Vector3 hand_pos_r = heldItem.t_item.GetPosition() + heldItem.t_item.GetForward() * 0.5f;
+	btf32 dist_l;
+	btf32 dist_r;
 
-	btf32 dist_l = m::Length(newpos_l - hand_pos_l) * 1.5f - 0.5f;
-	btf32 dist_r = m::Length(newpos_r - hand_pos_r) * 1.5f - 0.5f;
+	if (heldItem != nullptr)
+	{
+		m::Vector3 hand_pos_l = heldItem->t_item.GetPosition() + heldItem->t_item.GetUp() * -0.08f;
+		m::Vector3 hand_pos_r = heldItem->t_item.GetPosition() + heldItem->t_item.GetForward() * 0.5f;
 
-	graphics::MatrixTransform(matrix, newpos_l, hand_pos_l - newpos_l, (t_body.GetRight() * -1.f) + t_body.GetUp());
-	DrawBlendMesh(index, res::mb_armscast, dist_l, t_skin, graphics::shader_blend, matrix);
-	graphics::MatrixTransform(matrix, newpos_r, hand_pos_r - newpos_r, t_body.GetRight() + t_body.GetUp());
-	DrawBlendMesh(index, res::mb_armscast, dist_r, t_skin, graphics::shader_blend, matrix);
+		dist_l = m::Length(newpos_l - hand_pos_l) * 1.5f - 0.5f;
+		dist_r = m::Length(newpos_r - hand_pos_r) * 1.5f - 0.5f;
+
+		graphics::MatrixTransform(matrix, newpos_l, hand_pos_l - newpos_l, (t_body.GetRight() * -1.f) + t_body.GetUp());
+		DrawBlendMesh(index, res::mb_armscast, dist_l, t_skin, graphics::shader_blend, matrix);
+		graphics::MatrixTransform(matrix, newpos_r, hand_pos_r - newpos_r, t_body.GetRight() + t_body.GetUp());
+		DrawBlendMesh(index, res::mb_armscast, dist_r, t_skin, graphics::shader_blend, matrix);
+	}
 
 	// draw legs
 
@@ -410,5 +393,65 @@ void Chara::Draw()
 
 	// draw item
 
-	heldItem.Draw(t.position, t.height, viewYaw, viewPitch);
+	if (heldItem != nullptr) heldItem->Draw(t.position, t.height, viewYaw, viewPitch);
+}
+
+void EditorPawn::Tick(btID index, btf32 dt)
+{
+	if (state.properties.get(ActiveState::eALIVE))
+	{
+		//ENTITY[index]->t.velocity = fw::Lerp(ENTITY[index]->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
+		input.x = -input.x;
+		t.velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
+
+		//-------------------------------- APPLY MOVEMENT
+
+		moving = (m::Length(t.velocity) > 0.016f);
+		m::Vector2 oldpos = t.position;
+		t.position += t.velocity; // Apply velocity
+
+		CellSpace cs_last = csi;
+
+		//regenerate csi
+		index::GetCellSpaceInfo(t.position, csi);
+
+		//I don't want this to be here
+		if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
+		{
+			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, index);
+			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, index);
+		}
+
+		//-------------------------------- SET HEIGHT AND CELL SPACE
+
+		env::GetHeight(t.height, csi);
+	} // End if alive
+
+
+	//________________________________________________________________
+	//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
+
+	// Reset transforms
+	t_body = Transform3D();
+	t_head = Transform3D();
+
+	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.75f, t.position.y));
+	t_body.Rotate(yaw.Rad(), m::Vector3(0, 1, 0));
+
+	// Set head transform
+	t_head.SetPosition(t_body.GetPosition());
+	t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
+	t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
+	t_head.Translate(t_body.GetUp() * 0.7f);
+}
+
+void EditorPawn::Draw(btID index)
+{
+	// need a good way of knowing own index
+	DrawBlendMeshAtTransform(index, res::mb_legs, 0, t_skin, graphics::shader_blend, t_body);
+
+	// draw head
+
+	DrawBlendMeshAtTransform(index, res::mb_char_head, 0, t_skin, graphics::shader_blend, t_head);
+	DrawMeshAtTransform(index, res::m_equip_head_pickers, res::t_equip_atlas, graphics::shader_solid, t_head);
 }

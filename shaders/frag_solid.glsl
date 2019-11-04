@@ -251,14 +251,14 @@ void main()
 			//*/
 			
 			// Dither
-			/*
+			///*
 			int dx = int(mod(gl_FragCoord.x, 4));
 			int dy = int(mod(gl_FragCoord.y, 4));
 			float rndBy = 12.f;
 			FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
 			// Posterize
 			FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-			*/
+			//*/
 		}
 		else
 		{

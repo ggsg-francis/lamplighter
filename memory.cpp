@@ -86,6 +86,7 @@ namespace mem
 	idbuf::~idbuf()
 	{
 		free(ptr_id);
+		//delete ptr_id;
 	}
 
 	void idbuf::resize(size_t s)

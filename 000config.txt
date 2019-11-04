@@ -1,6 +1,6 @@
 bFullScreen=0
 bShowConsole=1
-bEditMode=1
+bEditMode=0
 iIPA=127
 iIPB=0
 iIPC=0

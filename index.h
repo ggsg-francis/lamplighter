@@ -16,6 +16,8 @@ class Transform3D;
 struct CellGroup;
 struct CellSpace;
 
+struct Entity;
+
 namespace index
 {
 	btf32 GetHP(btID id);
@@ -23,7 +25,8 @@ namespace index
 	extern btID players[2];
 	extern btID activeplayer;
 
-	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack, bool RUN, bool AIM);
+	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack,
+		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C, bool ACTION_D);
 
 	void SetViewTargetID(btID ID);
 	btID GetViewTargetID();
@@ -34,6 +37,10 @@ namespace index
 
 	//btID SpawnEntity(prefab::prefabtype type, fw::Vector2 pos, float dir);
 	void DestroyEntity(btID ID);
+
+	void EntDeintersect(Entity* ENT, CellSpace& CSI, btf32 ROT, bool KNOCKBACK);
+	void ActorRunAI(btID ID);
+	void ActorCastProj(btID ID);
 
 	//	Creates a projectile instance, allocates an ID and sends a network message
 	void SpawnProjectile(int TYPE, m::Vector2 POSITION, btf32 HEIGHT, float YAW, float PITCH, float SPREAD);

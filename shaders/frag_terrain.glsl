@@ -216,13 +216,13 @@ void main()
 		FragColor.rgb = mix(FragColor.rgb, fogcol, clamp((length((Pos.xz - pcam.xz) * 0.0015f) - 0.2f), 0.f, 1.f));
 		
 		// Dither
-		/*
+		///*
 		int dx = int(mod(gl_FragCoord.x, 4));
 		int dy = int(mod(gl_FragCoord.y, 4));
 		float rndBy = 12.f;
 		FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
 		// Posterize
 		FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-		*/
+		//*/
 	}
 }

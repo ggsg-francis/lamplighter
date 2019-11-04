@@ -53,36 +53,36 @@ namespace index
 		actor->input.x = -1.f;
 
 		//actor->target_ent = GetClosestEntityAlleg(id, 10.f, fac::enemy); // Find the closest enemy
-		actor->target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
+		actor->ai_target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
 
 		// find new ally if necessary
-		if (actor->ally_ent == BUF_NULL)
+		if (actor->ai_ally_ent == BUF_NULL)
 		{
-			actor->ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
-			if (actor->ally_ent == BUF_NULL) actor->ai_pointman = true;
+			actor->ai_ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
+			if (actor->ai_ally_ent == BUF_NULL) actor->ai_pointman = true;
 		}
-		else if (!ENTITY(actor->ally_ent)->state.properties.get(ActiveState::eALIVE))
+		else if (!ENTITY(actor->ai_ally_ent)->state.properties.get(ActiveState::eALIVE))
 		{
-			actor->ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
-			if (actor->ally_ent == BUF_NULL) actor->ai_pointman = true;
+			actor->ai_ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
+			if (actor->ai_ally_ent == BUF_NULL) actor->ai_pointman = true;
 		}
 		else
 		{
-			ACTOR(actor->ally_ent)->ai_pointman = true;
+			ACTOR(actor->ai_ally_ent)->ai_pointman = true;
 			actor->ai_pointman = false;
 		}
 
-		if (actor->target_ent == BUF_NULL)
+		if (actor->ai_target_ent == BUF_NULL)
 		{
-			if (actor->ally_ent == BUF_NULL)
+			if (actor->ai_ally_ent == BUF_NULL)
 			{
 				actor->input.y = 0.f;
 				actor->input.x = 0.f;
-				actor->inputbv.unset(Actor::in_atk);
+				actor->inputbv.unset(Actor::IN_USE);
 			}
 			else // if we have an ally, follow it
 			{
-				m::Vector2 TargetVector = ENTITY(actor->ally_ent)->t.position - actor->t.position;
+				m::Vector2 TargetVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
 				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 				float distance_to_target = m::Length(TargetVector);
 
@@ -95,7 +95,7 @@ namespace index
 				else
 					actor->input.y = 0.f;
 				actor->input.x = 0.f;
-				actor->inputbv.unset(Actor::in_atk);
+				actor->inputbv.unset(Actor::IN_USE);
 			}
 		}
 		//else if (actor->ai_pointman)
@@ -109,11 +109,11 @@ namespace index
 			//	actor->target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
 			//}
 
-			m::Vector2 TargetVector = ENTITY(actor->target_ent)->t.position - actor->t.position;
-			m::Vector2 TargetVectorVertical = m::Vector2(m::Length(TargetVector), ENTITY(actor->target_ent)->t.height - actor->t.height);
+			m::Vector2 TargetVector = ENTITY(actor->ai_target_ent)->t.position - actor->t.position;
+			m::Vector2 TargetVectorVertical = m::Vector2(m::Length(TargetVector), ENTITY(actor->ai_target_ent)->t.height - actor->t.height);
 			float distance_to_target = m::Length(TargetVector);
 
-			actor->inputbv.unset(Actor::in_atk);
+			actor->inputbv.unset(Actor::IN_USE);
 
 			if (distance_to_target < 20.f) // if enemy is close enough to shoot at
 			{
@@ -123,9 +123,9 @@ namespace index
 
 				actor->input.y = 0.f;
 
-				if (actor->ally_ent != BUF_NULL)
+				if (actor->ai_ally_ent != BUF_NULL)
 				{
-					m::Vector2 AllyVector = ENTITY(actor->ally_ent)->t.position - actor->t.position;
+					m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
 					float distance_to_ally = m::Length(AllyVector);
 					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
 
@@ -161,7 +161,7 @@ namespace index
 
 				//actor->input.y = 0.f; actor->input.x = 1.f;
 
-				actor->inputbv.set(Actor::in_atk);
+				actor->inputbv.set(Actor::IN_USE);
 			}
 			else
 			{
@@ -169,9 +169,9 @@ namespace index
 				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
 				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
 
-				if (actor->ally_ent != BUF_NULL)
+				if (actor->ai_ally_ent != BUF_NULL)
 				{
-					m::Vector2 AllyVector = ENTITY(actor->ally_ent)->t.position - actor->t.position;
+					m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
 					float distance_to_ally = m::Length(AllyVector);
 					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
 
@@ -350,11 +350,11 @@ namespace index
 
 								if (knockback)
 								{
-									if (ent->Type() == etype::chara)
+									if (ent->Type() == Entity::eCHARA)
 									{
 										ent->t.velocity = hit2.surface * -0.1f; // set their velocity
 									}
-									if (ENTITY(ID)->Type() == etype::chara)
+									if (ENTITY(ID)->Type() == Entity::eCHARA)
 									{
 										ENTITY(ID)->t.velocity = hit2.surface * 0.2f; // set their velocity
 									}
@@ -423,8 +423,8 @@ namespace index
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			// If used, not me, and is targeting me
-			if (block_entity.used[i] && i != index && CHARA(i)->target_ent == index) // and type is entity?
-				CHARA(i)->target_ent = BUF_NULL; // Reset it's target
+			if (block_entity.used[i] && i != index && CHARA(i)->ai_target_ent == index) // and type is entity?
+				CHARA(i)->ai_target_ent = BUF_NULL; // Reset it's target
 		}
 	}
 
@@ -522,6 +522,22 @@ namespace index
 			AddEntityCell(eCSI.c[i].x, eCSI.c[i].y, i);
 	}
 
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	//--------------------------- PREFABS --------------------------------------------------------------------------------------------
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+	namespace prefab
+	{
+		enum prefabtype : btui8
+		{
+			prefab_player,
+			prefab_ai_player,
+			prefab_npc,
+			prefab_zombie,
+			PREFAB_EDITORPAWN,
+		};
+	}
+
 	void prefab_pc(btID id, m::Vector2 pos, btf32 dir)
 	{
 		ENTITY(id) = new Chara();
@@ -574,7 +590,26 @@ namespace index
 		CHARA(id)->speed = 2.f;
 	}
 
-	void(*PrefabEntity[])(btID, m::Vector2, btf32) = { prefab_pc, prefab_aipc, prefab_npc, prefab_zombie };
+	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)
+	{
+		ENTITY(id) = new EditorPawn();
+		spawn_setup_t(id, pos, dir);
+		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
+		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(id)->faction = fac::faction::player;
+		CHARA(id)->t_skin = res::t_skin1;
+		CHARA(id)->aiControlled = false;
+		CHARA(id)->speed = 6.f;
+	}
+
+	void(*PrefabEntity[])(btID, m::Vector2, btf32) = { prefab_pc, prefab_aipc, prefab_npc, prefab_zombie, prefab_editorpawn };
+
+	// THESE FUNCTION DECLARATIONS ARE KEPT HERE TEMPORARILY
+
+	// Creates an Entity instance, adds it to the index and allocates it an ID
+	btID SpawnEntity(prefab::prefabtype TYPE, m::Vector2 pos, float dir);
+	// Removes a given Entity from the index
+	void DestroyEntity(btID ID);
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- CELL STUFF -----------------------------------------------------------------------------------------

@@ -40,6 +40,8 @@
 // Terrain vertical precision per 1 unit
 #define TERRAIN_HEIGHT_DIVISION 4.f
 
+#define CEILING(x,y) (((x) + (y) - 1) / (y))
+
 #ifdef __cplusplus
 extern "C" {
 	#endif

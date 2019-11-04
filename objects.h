@@ -1,7 +1,5 @@
 // For inclusion in index_decl.h only
 
-#include "objects_fn_array.h"
-
 // Inherited from index.cpp
 #include "archive.hpp"
 #include "cfg.h"
@@ -13,6 +11,8 @@
 #include "Transform.h"
 #include "maths.hpp"
 #include "graphics.hpp"
+
+struct HeldItem;
 
 namespace inv
 {
@@ -58,7 +58,7 @@ namespace inv
 		}
 		inline void RemvStack(int index)
 		{
-			if (invstate.invSize > 1u)
+			if (invstate.invSize > 1u && index < invstate.invSize) // If within range (attempt to fix buffer overrun)
 			{
 				--invstate.invSize;
 				btID* _items = (btID*)malloc(sizeof(btID) * invstate.invSize);
@@ -166,56 +166,6 @@ class TransformEntity
 };
 
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-//------------- ITEM STUFF ---------------------------------------
-//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-struct HeldItem
-{
-
-};
-struct HeldGun : public HeldItem
-{
-	// GUN STUFF (will eventually end up elsewhere)
-	enum musket_hold_state : btui8
-	{
-		aim,
-		inspect_pan,
-		inspect_barrel,
-		eHOLD_STATE_COUNT,
-	};
-	musket_hold_state eMusketHoldState = aim;
-
-	enum musket_state : btui16
-	{
-		latch_pulled = (0x1 << 0x0),
-		fpan_hatch_open = (0x1 << 0x1),
-		fpan_powder_in = (0x1 << 0x2),
-		barrel_armed = (0x1 << 0x3),
-		barrel_rod_in = (0x1 << 0x4),
-		match_lit = (0x1 << 0x7),
-		match_held = (0x1 << 0x8),
-
-		get_can_fire = fpan_hatch_open & fpan_powder_in & barrel_armed,
-		unset_fire = fpan_powder_in | barrel_armed,
-	};
-	mem::bv<btui16, musket_state> bvMusketState;
-
-	Transform3D t_item;
-
-	btf32 fpan;
-	btf32 lever;
-	btf32 rod;
-
-	//btf32 musket_pitch;
-	m::Vector3 loc;
-	btf32 pitch;
-	btf32 yaw;
-
-	void Tick();
-	void Draw(m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-};
-
-//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //------------- ENTITY STRUCTS -----------------------------------
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -232,9 +182,19 @@ struct ActiveState
 	btf32 hp = 1.f;
 };
 
+// Base entity class
 struct Entity
 {
-	virtual etype::etype Type() { return etype::entity; };
+	enum EntityType : btui8
+	{
+		eENTITY,
+		eACTOR,
+		eCHARA,
+		eITEM,
+		eEDITORPAWN,
+	};
+	// Return which entity type / class this is
+	virtual EntityType Type() { return EntityType::eENTITY; };
 
 	enum eprop : btui8
 	{
@@ -267,29 +227,33 @@ struct Entity
 
 	CellSpace csi; // Where we are in cell space
 
-	virtual void Tick();
-	virtual void Draw();
+	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
+	virtual void Draw(btID INDEX);
 };
 // Entity type representing placed items
 struct EItem : public Entity
 {
-	virtual etype::etype Type() { return etype::eitem; };
+	virtual EntityType Type() { return EntityType::eITEM; };
 
 	btID itemid;
 	Transform3D t_item;
 
-	virtual void Tick();
-	virtual void Draw();
+	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
+	virtual void Draw(btID INDEX);
 };
 struct Actor : public Entity
 {
-	virtual etype::etype Type() { return etype::actor; };
+	virtual EntityType Type() { return EntityType::eACTOR; };
 
 	enum actor_input : btui8
 	{
-		in_run = (0x1ui8 << 0x0ui8),
-		in_aim = (0x1ui8 << 0x1ui8),
-		in_atk = (0x1ui8 << 0x2ui8),
+		IN_RUN = 0x1ui8 << 0x0ui8,
+		IN_AIM = 0x1ui8 << 0x1ui8,
+		IN_USE = 0x1ui8 << 0x2ui8,
+		IN_ATN_A = 0x1ui8 << 0x4ui8,
+		IN_ATN_B = 0x1ui8 << 0x5ui8,
+		IN_ATN_C = 0x1ui8 << 0x6ui8,
+		IN_ATN_D = 0x1ui8 << 0x7ui8,
 	};
 
 	//-------------------------------- Actor stuff
@@ -315,18 +279,18 @@ struct Actor : public Entity
 	bool ai_pointman = false;
 	btf32 ai_vy_target = 0.f;
 	btf32 ai_vp_target = 0.f;
-	btui32 target_ent = BUF_NULL;
-	btui32 ally_ent = BUF_NULL;
+	btui32 ai_target_ent = BUF_NULL;
+	btui32 ai_ally_ent = BUF_NULL;
 	bool aiControlled = false;
 
 	void PickUpItem(btID ID);
 	void DropItem(btID SLOT);
-	virtual void Tick();
-	virtual void Draw();
+	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
+	virtual void Draw(btID INDEX);
 };
 struct Chara : public Actor
 {
-	virtual etype::etype Type() { return etype::chara; };
+	virtual EntityType Type() { return EntityType::eCHARA; };
 
 	enum equipmode : btui8
 	{
@@ -336,7 +300,7 @@ struct Chara : public Actor
 	enum chara_state : btui8
 	{
 		ani_right_foot = (0x1ui8 << 0x0ui8),
-		reloading = (0x1ui8 << 0x1ui8),
+		//reloading = (0x1ui8 << 0x1ui8),
 	};
 	// Inventory stuff
 	btID equipped_item = BUF_NULL; // Everything that moves can hold an item
@@ -346,27 +310,27 @@ struct Chara : public Actor
 	mem::bv<btui8, chara_state> charastatebv;
 	btID lookTarget = BUF_NULL; // What it's looking at
 
-	HeldGun heldItem;
+	HeldItem* heldItem = nullptr;
 
 	Transform3D t_body, t_head;
 
 	m::Vector3 foot_pos_l, foot_pos_r, foot_pos_l_interp, foot_pos_r_interp;
-	enum foot_state : btui8
+	enum FootState : btui8
 	{
 		eL_DOWN,
 		eR_DOWN,
 		eBOTH_DOWN,
 	};
-	foot_state foot_state = eBOTH_DOWN;
+	FootState foot_state = eBOTH_DOWN;
 
 	m::Vector2 ani_body_lean;
 
-	virtual void Tick();
-	virtual void Draw();
+	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
+	virtual void Draw(btID INDEX);
 };
 struct EditorPawn : public Actor
 {
-	virtual etype::etype Type() { return etype::chara; };
+	virtual EntityType Type() { return EntityType::eEDITORPAWN; };
 
 	enum equipmode : btui8
 	{
@@ -386,7 +350,7 @@ struct EditorPawn : public Actor
 	mem::bv<btui8, chara_state> charastatebv;
 	btID lookTarget = BUF_NULL; // What it's looking at
 
-	HeldGun heldItem;
+	HeldItem* heldItem;
 
 	Transform3D t_body, t_head;
 
@@ -401,6 +365,6 @@ struct EditorPawn : public Actor
 
 	m::Vector2 ani_body_lean;
 
-	virtual void Tick();
-	virtual void Draw();
+	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
+	virtual void Draw(btID INDEX);
 };

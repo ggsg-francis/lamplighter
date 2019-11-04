@@ -1,5 +1,14 @@
 // ctrl-r, ctrl-w for showing line indentation
 
+// CRT memory leak detection
+
+#ifdef _DEBUG
+//#include  "vld.h"
+//#define _CRTDBG_MAP_ALLOC
+//#include <stdlib.h>
+//#include <crtdbg.h>
+#endif // _DEBUG
+
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //|||||||||||||||||||||||||||||||| STYLE GUIDE |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -153,19 +162,23 @@ bool StepTick(double dt) // Fixed timestep tick function
 
 		// Generate analogue input from directional keys
 		m::Vector2 input_p1(0.f, 0.f);
-		if (input::Get(input::key::eDIR_F_HOLD)) // Forward
+		if (input::GetHeld(input::key::DIR_F)) // Forward
 			input_p1.y = 1.f;
-		if (input::Get(input::key::eDIR_B_HOLD)) // Back
+		if (input::GetHeld(input::key::DIR_B)) // Back
 			input_p1.y = -1.f;
-		if (input::Get(input::key::eDIR_R_HOLD)) // Right
+		if (input::GetHeld(input::key::DIR_R)) // Right
 			input_p1.x += 1.f;
-		if (input::Get(input::key::eDIR_L_HOLD)) // Left
+		if (input::GetHeld(input::key::DIR_L)) // Left
 			input_p1.x -= 1.f;
 		// Set input
 		index::SetInput(0ui16, input_p1, input::mouse_x * 0.25f, input::mouse_y * 0.25f,
-			input::Get(input::key::eUSE_HOLD),
-			input::Get(input::key::eRUN_HOLD),
-			false); // 3rd 'aim' variable was here
+			input::GetHeld(input::key::USE),
+			input::GetHeld(input::key::RUN),
+			false,
+			input::GetHit(input::key::ACTION_A),
+			input::GetHit(input::key::ACTION_B),
+			input::GetHit(input::key::ACTION_C),
+			input::GetHit(input::key::ACTION_D)); // 3rd 'aim' variable was here
 
 		// Generate analogue input from joystick input
 		m::Vector2 input_p2(0.f, 0.f);
@@ -173,9 +186,13 @@ bool StepTick(double dt) // Fixed timestep tick function
 		input_p2.y = -input::joy_y_a;
 		// Set input
 		index::SetInput(1ui16, input_p2, input::joy_x_b * 8.f, input::joy_y_b * 8.f,
-			input::Get(input::key::c_atk_held),
-			input::Get(input::key::c_sprint_held),
-			false); // 3rd 'aim' variable was here
+			input::GetHeld(input::key::C_USE),
+			input::GetHeld(input::key::C_RUN),
+			false,
+			input::GetHit(input::key::C_ACTION_A),
+			input::GetHit(input::key::C_ACTION_B),
+			input::GetHit(input::key::C_ACTION_C),
+			input::GetHit(input::key::C_ACTION_D)); // 3rd 'aim' variable was here
 
 		//do stuff
 		index::Tick((btf32)(FRAME_TIME));
@@ -237,19 +254,23 @@ bool StepTickEditor(double dt)
 
 		// Generate analogue input from directional keys
 		m::Vector2 input_p1(0.f, 0.f);
-		if (input::Get(input::key::eDIR_F_HOLD)) // Forward
+		if (input::GetHeld(input::key::DIR_F)) // Forward
 			input_p1.y = 1.f;
-		if (input::Get(input::key::eDIR_B_HOLD)) // Back
+		if (input::GetHeld(input::key::DIR_B)) // Back
 			input_p1.y = -1.f;
-		if (input::Get(input::key::eDIR_R_HOLD)) // Right
+		if (input::GetHeld(input::key::DIR_R)) // Right
 			input_p1.x += 1.f;
-		if (input::Get(input::key::eDIR_L_HOLD)) // Left
+		if (input::GetHeld(input::key::DIR_L)) // Left
 			input_p1.x -= 1.f;
 		// Set input
 		index::SetInput(0ui16, input_p1, input::mouse_x * 0.25f, input::mouse_y * 0.25f,
-			input::Get(input::key::eUSE_HIT),
-			input::Get(input::key::eRUN_HOLD),
-			false); // 3rd 'aim' variable was here
+			input::GetHit(input::key::USE),
+			input::GetHeld(input::key::RUN),
+			false,
+			input::GetHit(input::key::ACTION_A),
+			input::GetHit(input::key::ACTION_B),
+			input::GetHit(input::key::ACTION_C),
+			input::GetHit(input::key::ACTION_D)); // 3rd 'aim' variable was here
 
 		//do stuff
 		index::Tick(FRAME_TIME);
@@ -461,7 +482,7 @@ int main()
 		{
 			UpdateTime();
 
-			if (input::Get(input::key::quit_hit)) quit = true;
+			if (input::GetHit(input::key::QUIT)) quit = true;
 
 			if (StepTick(time_delta)) // Run simulation at a fixed step, if step proceed to render
 			{
@@ -601,7 +622,7 @@ int main()
 		{
 			UpdateTime();
 
-			if (input::Get(input::key::quit_hit)) quit = true;
+			if (input::GetHit(input::key::QUIT)) quit = true;
 
 			if (StepTickEditor(time_delta)) // Run simulation at a fixed step, if step proceed to render
 			{
@@ -655,6 +676,11 @@ int main()
 	res::End();
 
 	glfwTerminate();
+
+	#ifdef _DEBUG
+	// CRT memory leak report
+	//_CrtDumpMemoryLeaks();
+	#endif // _DEBUG
 
 	return 0; // Goodbye
 }

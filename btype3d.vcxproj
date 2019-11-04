@@ -96,9 +96,9 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;_CRTDBG_MAP_ALLOC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>global.h;stdlib.h;crtdbg.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>..\libraries\bin</AdditionalLibraryDirectories>
@@ -146,7 +146,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="network_client.cpp" />
-    <ClCompile Include="objects_fn.cpp" />
     <ClCompile Include="audio.cpp" />
     <ClCompile Include="cfg.cpp" />
     <ClCompile Include="entity.cpp" />
@@ -161,6 +160,7 @@
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="engine-main.cpp" />
     <ClCompile Include="archive.cpp" />
+    <ClCompile Include="objects_items.cpp" />
     <ClCompile Include="serializer.cpp" />
     <ClCompile Include="test_zone.cpp" />
     <ClCompile Include="tga_reader.cpp" />
@@ -173,7 +173,6 @@
     <ClInclude Include="3rdparty\cute_sound.h" />
     <ClInclude Include="network_client.h" />
     <ClInclude Include="network_common.h" />
-    <ClInclude Include="objects_fn_array.h" />
     <ClInclude Include="audio.h" />
     <ClInclude Include="cfg.h" />
     <ClInclude Include="entity.h" />
@@ -189,6 +188,7 @@
     <ClInclude Include="objects.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="graphics.hpp" />
+    <ClInclude Include="objects_items.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="serializer.h" />

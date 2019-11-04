@@ -395,7 +395,10 @@ namespace index
 
 		//players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1.f, 1.f), 0.f);
 		//players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(4.f, 4.f), 0.f);
-		players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
+		if (cfg::bEditMode)
+			players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
+		else
+			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 		players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1020.f), 0.f);
 
 		CHARA(players[1])->t_skin = res::t_skin2;
@@ -461,7 +464,7 @@ namespace index
 
 	void Tick(btf32 dt)
 	{
-		/*
+		///*
 		if (!cfg::bEditMode)
 		{
 			if (spawnz_time_temp < time)
@@ -488,8 +491,7 @@ namespace index
 			EntCheckDeath(0, block_entity.index_end); // Check hp of every entity
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
-			if (block_entity.used[i])
-				tick[ENTITY(i)->Type()](dt, i);
+			if (block_entity.used[i]) ENTITY(i)->Tick(i, dt);
 
 		ProjectileTick(dt);
 
@@ -504,26 +506,26 @@ namespace index
 
 		if (cfg::bEditMode)
 		{
-			if (input::Get(input::key::eUSE_HIT))
+			if (input::GetHit(input::key::USE))
 			{
 				env::GeneratePhysicsSurfaces();
 				//env::GeneratePaths();
 			}
-			if (input::Get(input::key::eACTIVATE_HIT))
+			if (input::GetHit(input::key::ACTIVATE))
 			{
 				env::SaveBin();
 			}
-			if (input::Get(input::key::eACTION_A_HIT))
+			if (input::GetHit(input::key::ACTION_A))
 			{
 				env::Get(GetCellX, GetCellY, env::eflag::eIMPASSABLE) ? env::UnSet(GetCellX, GetCellY, env::eflag::eIMPASSABLE) : env::Set(GetCellX, GetCellY, env::eflag::eIMPASSABLE);
 			}
-			if (input::Get(input::key::eACTION_B_HIT))
+			if (input::GetHit(input::key::ACTION_B))
 			{
 				--env::eCells[GetCellX][GetCellY].model;
 				while(!res::IsMesh(env::eCells[GetCellX][GetCellY].model))
 					--env::eCells[GetCellX][GetCellY].model;
 			}
-			else if (input::Get(input::key::eACTION_C_HIT))
+			else if (input::GetHit(input::key::ACTION_C))
 			{
 				++env::eCells[GetCellX][GetCellY].model;
 				while (!res::IsMesh(env::eCells[GetCellX][GetCellY].model))
@@ -647,10 +649,6 @@ namespace index
 
 			//-------------------------------- DRAW OOB TERRAIN
 
-
-
-
-
 			//glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
 
 			graphics::SetMatProj(128.f); // Set projection matrix for long-distance rendering
@@ -676,7 +674,7 @@ namespace index
 		}
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
-			if (block_entity.used[i]) ENTITY(i)->Draw(); // Draw entities
+			if (block_entity.used[i]) ENTITY(i)->Draw(i); // Draw entities
 		if (!cfg::bEditMode) if (oob) ProjectileDraw(); // Draw projectiles
 
 		/*for (int i = 0; i < 4; ++i)
@@ -775,21 +773,21 @@ namespace index
 
 	void TickGUI()
 	{
-		if (input::Get(input::key::eACTION_B_HIT))
+		if (input::GetHit(input::key::ACTION_B))
 		{
 			if (inv_active_slot > 0u)
 				--inv_active_slot;
 		}
-		if (input::Get(input::key::eACTION_C_HIT))
+		if (input::GetHit(input::key::ACTION_C))
 		{
 			if (inv_active_slot < 10u)
 			++inv_active_slot;
 		}
-		if (input::Get(input::key::eACTIVATE_HIT)) // Pick up items
+		if (input::GetHit(input::key::ACTIVATE)) // Pick up items
 			if (viewtarget != ID_NULL)
-				if (ENTITY(viewtarget)->Type() == etype::eitem)
+				if (ENTITY(viewtarget)->Type() == Entity::eITEM)
 					ACTOR(players[0])->PickUpItem(viewtarget);
-		if (input::Get(input::key::eACTION_A_HIT))
+		if (input::GetHit(input::key::ACTION_A))
 		{
 			ACTOR(players[0])->DropItem(inv_active_slot);
 		}
@@ -818,7 +816,7 @@ namespace index
 		{
 			if (viewtarget != viewtarget_last_tick) // if target has changed
 			{
-				if (ENTITY(viewtarget)->Type() == etype::eitem)
+				if (ENTITY(viewtarget)->Type() == Entity::eITEM)
 				{
 					/*text.ReGen((char*)archive::items[ITEM(viewtarget)->itemid]->name, strlen((char*)archive::items[ITEM(viewtarget)->itemid]->name), 20, 160, -15);
 					guibox.ReGen(20, 20 + text.sizex, -15 - text.sizey, -15, 4, 8);*/
@@ -826,9 +824,9 @@ namespace index
 					guibox.ReGen(-310, -310 + text_temp.sizex, -200 - text_temp.sizey, -200, 4, 10);
 				}
 			}
-			if (ENTITY(viewtarget)->Type() == etype::chara)
+			if (ENTITY(viewtarget)->Type() == Entity::eCHARA)
 				graphics::DrawGUITexture(&res::GetTexture(res::t_gui_bar_yellow), &graphics::shader_gui, p1_x_start + 32, p1_y_start + 24, (int)(index::GetHP(viewtarget) * 64.f), 16);
-			else if (ENTITY(viewtarget)->Type() == etype::eitem)
+			else if (ENTITY(viewtarget)->Type() == Entity::eITEM)
 			{
 				guibox.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_box));
 				text_temp.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_font));
@@ -847,14 +845,18 @@ namespace index
 		text_fps.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_font));
 	}
 
-	void SetInput(btID index, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool run, bool aim)
+	void SetInput(btID index, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C, bool ACTION_D)
 	{
 		CHARA(index)->input = input;
 		CHARA(index)->viewYaw.Rotate(rot_x);
 		CHARA(index)->viewPitch.RotateClamped(rot_y, -80.f, 80.f);
-		CHARA(index)->inputbv.setto(Actor::in_atk, atk);
-		CHARA(index)->inputbv.setto(Actor::in_run, run);
-		CHARA(index)->inputbv.setto(Actor::in_aim, aim);
+		CHARA(index)->inputbv.setto(Actor::IN_USE, atk);
+		CHARA(index)->inputbv.setto(Actor::IN_RUN, run);
+		CHARA(index)->inputbv.setto(Actor::IN_AIM, aim);
+		CHARA(index)->inputbv.setto(Actor::IN_ATN_A, ACTION_A);
+		CHARA(index)->inputbv.setto(Actor::IN_ATN_B, ACTION_B);
+		CHARA(index)->inputbv.setto(Actor::IN_ATN_C, ACTION_C);
+		CHARA(index)->inputbv.setto(Actor::IN_ATN_D, ACTION_D);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
@@ -895,9 +897,6 @@ namespace index
 		block_proj.remove(id);
 	}
 
-	#define DEF_INDEX
-	#ifdef DEF_INDEX
-
 	btID SpawnItem(btID itemid, m::Vector2 pos, btf32 dir)
 	{
 		btID id = block_entity.add();
@@ -915,9 +914,7 @@ namespace index
 	btID SpawnEntity(prefab::prefabtype type, m::Vector2 pos, float dir)
 	{
 		btID id = block_entity.add();
-
 		PrefabEntity[type](id, pos, dir);
-
 		return id;
 	}
 
@@ -929,7 +926,7 @@ namespace index
 		std::cout << "Destroyed entity " << id << std::endl;
 	}
 
-	inline void ActorCastProj(btID i)
+	void ActorCastProj(btID i)
 	{
 		SpawnProjectile(ENTITY(i)->faction, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->yaw.Rad()) * 0.55f), ENTITY(i)->t.height, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
 	}
@@ -937,123 +934,6 @@ namespace index
 	inline void EntityReceiveDamage(btID i)
 	{
 
-	}
-
-	void TickEntity(btf32 dt, btID index)
-	{
-		// do nothing at the moment
-	}
-
-	void TickChara(btf32 dt, btID index)
-	{
-		if (ENTITY(index)->state.properties.get(ActiveState::eALIVE))
-		{
-			if (cfg::bEditMode)
-			{
-				//ENTITY[index]->t.velocity = fw::Lerp(ENTITY[index]->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
-				f2Input.x = -f2Input.x;
-				ENTITY(index)->t.velocity = m::Rotate(f2Input, aViewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
-			}
-			else
-			{
-				f2Input.x = -f2Input.x;
-				ENTITY(index)->t.velocity = m::Lerp(ENTITY(index)->t.velocity, m::Rotate(f2Input, aViewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * ACTOR(index)->speed, 0.2f);
-				eYaw2.RotateTowards(aViewYaw.Deg(), 5.f); // Rotate body towards the target direction
-			}
-
-			//-------------------------------- APPLY MOVEMENT
-
-			bMoving = (m::Length(ENTITY(index)->t.velocity) > 0.016f);
-			m::Vector2 oldpos = ENTITY(index)->t.position;
-			ENTITY(index)->t.position += ENTITY(index)->t.velocity; // Apply velocity
-
-			CellSpace cs_last = ENTITY(index)->csi;
-
-			//regenerate csi
-			GetCellSpaceInfo(ePos, ENTITY(index)->csi);
-
-			//I don't want this to be here
-			if (cs_last.c[eCELL_I].x != eCellX || cs_last.c[eCELL_I].y != eCellY)
-			{
-				// optimize this $hit?
-				index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, index);
-				index::AddEntityCell(ENTITY(index)->csi.c[eCELL_I].x, ENTITY(index)->csi.c[eCELL_I].y, index);
-
-				//// New way ( four references )
-				//// optimize this $hit, also keeps missing for some reason
-				//btui32 i;
-				//for (i = 0u; i < eCELL_COUNT; ++i)
-				//	index::RemoveEntityCell(cs_last.c[i].x, cs_last.c[i].y, index);
-				////GetCellSpaceInfo(ePos, ENTITY(index)->csi);
-				//for (i = 0u; i < eCELL_COUNT; ++i)
-				//	index::AddEntityCell(ENTITY(index)->csi.c[i].x, ENTITY(index)->csi.c[i].y, index);
-			}
-
-			//-------------------------------- SET HEIGHT AND CELL SPACE
-
-			env::GetHeight(ENTITY(index)->t.height, ENTITY(index)->csi);
-
-			//-------------------------------- RUN COLLISION & AI
-
-			if (!cfg::bEditMode)
-			{
-				EntDeintersect(ENTITY(index), ENTITY(index)->csi, aViewYaw.Deg(), true);
-				if (CHARA(index)->aiControlled) ActorRunAI(index); // Run AI
-			}
-		} // End if alive
-
-		//if attacking
-		if (CHARA(index)->inputbv.get(Actor::in_atk) && CHARA(index)->attack_time < time)
-		{
-			CHARA(index)->attack_time = time + 0.25;
-			ActorCastProj(index);
-		}
-
-		ENTITY(index)->state.hp += 0.001f;
-		if (ENTITY(index)->state.hp > 1.f) ENTITY(index)->state.hp = 1.f;
-
-		CHARA(index)->heldItem.Tick();
-
-		//________________________________________________________________
-		//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
-
-		Chara* c = (Chara*)_entities[index];
-
-		// Reset transforms
-		c->t_body = Transform3D();
-		c->t_head = Transform3D();
-
-		c->t_body.SetPosition(m::Vector3(ENTITY(index)->t.position.x, 0.1f + ENTITY(index)->t.height + 0.75f, ENTITY(index)->t.position.y));
-		c->t_body.Rotate(eYaw2.Rad(), m::Vector3(0, 1, 0));
-
-		//CHARA(index)->ani_body_lean = m::Lerp(CHARA(index)->ani_body_lean, f2Input * 15.f, 0.1f);
-		CHARA(index)->ani_body_lean = m::Lerp(CHARA(index)->ani_body_lean, f2Input * m::Vector2(8.f, 15.f), 0.25f);
-
-		c->t_body.Rotate(glm::radians(CHARA(index)->ani_body_lean.y), m::Vector3(1, 0, 0));
-		c->t_body.Rotate(glm::radians(CHARA(index)->ani_body_lean.x), m::Vector3(0, 0, 1));
-
-		// Set head transform
-		c->t_head.SetPosition(c->t_body.GetPosition());
-		c->t_head.Rotate(aViewYaw.Rad(), m::Vector3(0, 1, 0));
-		c->t_head.Rotate(aViewPitch.Rad(), m::Vector3(1, 0, 0));
-		c->t_head.Translate(c->t_body.GetUp() * 0.7f);
-	}
-
-	void TickItem(btf32 dt, btID i)
-	{
-		EItem* ent = (EItem*)_entities[i];
-		GetCellSpaceInfo(ent->t.position, ent->csi);
-		env::GetHeight(ent->t.height, ent->csi);
-		btf32 angx;
-		btf32 angy;
-		ent->t_item.SetPosition(m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
-		ent->t_item.SetRotation(ent->yaw.Rad());
-		// terrain rotation
-		//env::GetAngles(angx, angy, ent->csi);
-		//ent->t_item.SetRotation(0.f);
-		//ent->t_item.Rotate(angx, fw::Vector3(0.f, 0.f, 1.f));
-		//ent->t_item.Rotate(-angy, fw::Vector3(0.f, 0.f, 1.f));
-		//ent->t_item.SetScale(fw::Vector3(0.1f,2.f,0.1f));
 	}
 
 	int cater_loop_index(int i)
@@ -1277,6 +1157,4 @@ namespace index
 
 		return false;
 	}
-
-	#endif
 }

@@ -6,71 +6,128 @@ namespace input
 {
 	namespace ki
 	{
-		enum key_intermediate : btui8 // saves space
+		char* scancodeNames[]
 		{
-			none,
-			quit,
-			fw,
-			bk,
-			lt,
-			rt,
-			atk,
-			sprint,
-			activate,
-			action_a,
-			action_b,
-			action_c,
-			action_d,
-			key_intermediate_count,
+			"Error",
+			"Escape",
+			"1",
+			"2",
+			"3",
+			"4",
+			"5",
+			"6",
+			"7",
+			"8",
+			"9",
+			"0",
+			"-",
+			"=",
+			"Backspace",
+			"Tab",
+			"Q",
+			"W",
+			"E",
+			"R",
+			"T",
+			"Y",
+			"U",
+			"I",
+			"O",
+			"P",
+			"[",
+			"]",
+			"Enter",
+			"Left Control",
+			"A",
+			"S",
+			"D",
+			"F",
+			"G",
+			"H",
+			"J",
+			"K",
+			"L",
+			";",
+			"'",
+			"`",
+			"Left Shift",
+			"'\'",
+			"Z",
+			"X",
+			"C",
+			"V",
+			"B",
+			"N",
+			"M",
+			",",
+			".",
+			"/",
+			"Right Shift",
+			"Print Screen",
+			"Left Alt",
+			"Space",
+			"Caps Lock",
+			"F1",
+			"F2",
+			"F3",
+			"F4",
+			"F5",
+			"F6",
+			"F7",
+			"F8",
+			"F9",
+			"F10",
+			"Num Lock",
+			"Scroll Lock",
+			"Numpad 7",
+			"Numpad 8",
+			"Numpad 9",
+			"Numpad -",
+			"Numpad 4",
+			"Numpad 5",
+			"Numpad 6",
+			"Numpad +",
+			"Numpad 1",
+			"Numpad 2",
+			"Numpad 3",
+			"Numpad 0",
+			"Numpad Del",
+			"Alt-SysRq",
+			"F11 or F12 or PF1 or FN", // 55
+			"Unlabeled Key",
+			"F11",
+			"F12",
+			"Unknown", // Everything at or past this point is not standard
 		};
 	}
 
-	ki::key_intermediate ScancodeTransfer[256]{ ki::none }; // uses btui8 to save space
-	key::modkey KeyTransferPress[ki::key_intermediate_count]{ key::set_none };
-	key::modkey KeyTransferRelease[ki::key_intermediate_count]{ key::set_none };
+	key::Key2 ScancodeTransfer[512]{ key::NONE }; // uses btui8 to save space
 
 	void Init()
 	{
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_ESCAPE)] = ki::quit;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_W)] = ki::fw;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_S)] = ki::bk;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_D)] = ki::rt;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_A)] = ki::lt;
-		//ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_SPACE)] = ki::atk;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_LEFT_SHIFT)] = ki::sprint;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_E)] = ki::activate;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_Q)] = ki::action_a;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_1)] = ki::action_b;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_2)] = ki::action_c;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_3)] = ki::action_d;
-
-		KeyTransferPress[ki::none] = key::set_none;
-		KeyTransferPress[ki::quit] = key::set_quit;
-		KeyTransferPress[ki::fw] = key::eSET_DIR_F;
-		KeyTransferPress[ki::bk] = key::eSET_DIR_B;
-		KeyTransferPress[ki::lt] = key::eSET_DIR_L;
-		KeyTransferPress[ki::rt] = key::eSET_DIR_R;
-		KeyTransferPress[ki::atk] = key::eSET_USE;
-		KeyTransferPress[ki::sprint] = key::eSET_RUN;
-		KeyTransferPress[ki::activate] = key::eSET_ACTIVATE;
-		KeyTransferPress[ki::action_a] = key::eSET_ACTION_A;
-		KeyTransferPress[ki::action_b] = key::eSET_ACTION_B;
-		KeyTransferPress[ki::action_c] = key::eSET_ACTION_C;
-		KeyTransferPress[ki::action_d] = key::eSET_ACTION_D;
-
-		KeyTransferRelease[ki::none] = key::set_none;
-		KeyTransferRelease[ki::quit] = key::set_none;
-		KeyTransferRelease[ki::fw] = key::eUNS_DIR_F;
-		KeyTransferRelease[ki::bk] = key::eUNS_DIR_B;
-		KeyTransferRelease[ki::lt] = key::eUNS_DIR_L;
-		KeyTransferRelease[ki::rt] = key::eUNS_DIR_R;
-		KeyTransferRelease[ki::atk] = key::eUNS_USE;
-		KeyTransferRelease[ki::sprint] = key::eUNS_RUN;
-		KeyTransferRelease[ki::activate] = key::eUNS_ACTIVATE;
-		KeyTransferRelease[ki::action_a] = key::eUNS_ACTION_A;
-		KeyTransferRelease[ki::action_b] = key::eUNS_ACTION_B;
-		KeyTransferRelease[ki::action_c] = key::eUNS_ACTION_C;
-		KeyTransferRelease[ki::action_d] = key::eUNS_ACTION_D;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_ESCAPE)] = key::QUIT;
+		ScancodeTransfer[scancode::W] = key::DIR_F;
+		ScancodeTransfer[scancode::S] = key::DIR_B;
+		ScancodeTransfer[scancode::D] = key::DIR_R;
+		ScancodeTransfer[scancode::A] = key::DIR_L;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_LEFT_SHIFT)] = key::RUN;
+		ScancodeTransfer[scancode::E] = key::ACTIVATE;
+		ScancodeTransfer[scancode::Q] = key::ACTION_A;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_1)] = key::ACTION_B;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_2)] = key::ACTION_C;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_3)] = key::ACTION_D;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F1)] = key::FUNCTION_1;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F2)] = key::FUNCTION_2;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F3)] = key::FUNCTION_3;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F4)] = key::FUNCTION_4;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F5)] = key::FUNCTION_5;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F6)] = key::FUNCTION_6;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F7)] = key::FUNCTION_7;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F8)] = key::FUNCTION_8;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F9)] = key::FUNCTION_9;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F10)] = key::FUNCTION_10;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F11)] = key::FUNCTION_11;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F12)] = key::FUNCTION_12;
 	}
 
 	namespace rawinput
@@ -156,11 +213,11 @@ namespace input
 	{
 		if (glfwJoystickIsGamepad(GLFW_JOYSTICK_1) && glfwGetGamepadState(GLFW_JOYSTICK_1, &state))
 		{
-			SetTo(key::set_c_sprint, state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER] == GLFW_PRESS);
+			SetTo(key::C_RUN, state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER] == GLFW_PRESS);
 			if (state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] == GLFW_PRESS)
-				Set(key::set_c_atk);
+				Set(key::C_USE);
 			else if (state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] == GLFW_RELEASE)
-				Unset(key::unset_c_atk);
+				Unset(key::C_USE);
 
 			#define JOY_DEADZONE 0.05F
 
@@ -182,13 +239,13 @@ namespace input
 	{
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, true);
-		if (action != GLFW_REPEAT && scancode < 256) // Check scancode size because numpad is too large for input array
+		if (action != GLFW_REPEAT) // Check scancode size because numpad is too large for input array
 		{
-			if (ScancodeTransfer[scancode] != ki::none)
+			if (ScancodeTransfer[scancode] != key::NONE)
 				if (action == GLFW_PRESS)
-					Set(KeyTransferPress[ScancodeTransfer[scancode]]);
+					Set(ScancodeTransfer[scancode]);
 				else if (action == GLFW_RELEASE)
-					Unset(KeyTransferRelease[ScancodeTransfer[scancode]]);
+					Unset(ScancodeTransfer[scancode]);
 		}
 	}
 
@@ -211,10 +268,10 @@ namespace input
 	{
 		if (action == GLFW_PRESS)
 			if (button == GLFW_MOUSE_BUTTON_LEFT)
-				Set(key::eSET_USE);
+				Set(key::USE);
 		if (action == GLFW_RELEASE)
 			if (button == GLFW_MOUSE_BUTTON_LEFT)
-				Unset(key::eUNS_USE);
+				Unset(key::USE);
 	}
 
 	void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
@@ -230,53 +287,37 @@ namespace input
 		joy_y_a = 0.f;
 		joy_x_b = 0.f;
 		joy_y_b = 0.f;
-		//Unset(key::unset_hits);
-		Unset(key::unset_hits);
+		keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
 	}
 
 	void ClearAll()
 	{
 		//mouse_x = 0.f;
 		//mouse_y = 0.f;
-		Unset(key::unset_all);
+		keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
+		keyBitsHeld = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
 	}
 
-	bool Get(key::key i)
+	bool GetHeld(key::Key2 i)
 	{
-		return mem::bvget(flags2, (btui64)i);
+		return mem::bvget(keyBitsHeld, 1ui64 << (btui64)i);
 	}
-	void SetTo(key::modkey i, bool b)
+	bool GetHit(key::Key2 i)
 	{
-		mem::bvsetto(flags2, (btui64)i, b);
+		return mem::bvget(keyBitsHit, 1ui64 << (btui64)i);
 	}
-	void Set(key::modkey i)
+	void SetTo(key::Key2 i, bool b)
 	{
-		mem::bvset(flags2, (btui64)i);
+		mem::bvsetto(keyBitsHeld, 1ui64 << (btui64)i, b);
+		mem::bvsetto(keyBitsHit, 1ui64 << (btui64)i, b);
 	}
-	void Unset(key::modkey i)
+	void Set(key::Key2 i)
 	{
-		mem::bvunset(flags2, (btui64)i);
+		mem::bvset(keyBitsHeld, 1ui64 << (btui64)i);
+		mem::bvset(keyBitsHit, 1ui64 << (btui64)i);
 	}
-
-	bool GetHeld(key::key_test i)
+	void Unset(key::Key2 i)
 	{
-		return mem::bvget(keyBitsHeld, (btui64)i);
-	}
-	bool GetHit(key::key_test i)
-	{
-		return mem::bvget(keyBitsHit, (btui64)i);
-	}
-	void SetTo(key::key_test i, bool b)
-	{
-		mem::bvsetto(keyBitsHeld, (btui64)i, b);
-	}
-	void Set(key::key_test i)
-	{
-		mem::bvset(keyBitsHeld, (btui64)i);
-		mem::bvset(keyBitsHit, (btui64)i);
-	}
-	void Unset(key::key_test i)
-	{
-		mem::bvunset(keyBitsHeld, (btui64)i);
+		mem::bvunset(keyBitsHeld, 1ui64 << (btui64)i);
 	}
 }

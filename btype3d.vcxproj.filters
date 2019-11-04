@@ -64,13 +64,7 @@
     <ClInclude Include="index_util.h">
       <Filter>gamework\index</Filter>
     </ClInclude>
-    <ClInclude Include="objects.h">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
     <ClInclude Include="test_zone.h" />
-    <ClInclude Include="objects_fn_array.h">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
     <ClInclude Include="index_fn.cpp">
       <Filter>gamework\index</Filter>
     </ClInclude>
@@ -91,6 +85,12 @@
     </ClInclude>
     <ClInclude Include="network_client.h">
       <Filter>framework\network</Filter>
+    </ClInclude>
+    <ClInclude Include="objects_items.h">
+      <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="objects.h">
+      <Filter>gamework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -127,13 +127,7 @@
     <ClCompile Include="index.cpp">
       <Filter>gamework\index</Filter>
     </ClCompile>
-    <ClCompile Include="objects.cpp">
-      <Filter>gamework\index</Filter>
-    </ClCompile>
     <ClCompile Include="test_zone.cpp" />
-    <ClCompile Include="objects_fn.cpp">
-      <Filter>gamework\index</Filter>
-    </ClCompile>
     <ClCompile Include="time.cpp">
       <Filter>framework</Filter>
     </ClCompile>
@@ -145,6 +139,12 @@
     </ClCompile>
     <ClCompile Include="network_client.cpp">
       <Filter>framework\network</Filter>
+    </ClCompile>
+    <ClCompile Include="objects.cpp">
+      <Filter>gamework</Filter>
+    </ClCompile>
+    <ClCompile Include="objects_items.cpp">
+      <Filter>gamework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
