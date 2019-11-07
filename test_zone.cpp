@@ -5,6 +5,8 @@
 
 void InitTest()
 {
+	int* chunks[16];
+
 	struct str
 	{
 		btui16 i = 0ui16;

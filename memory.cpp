@@ -71,90 +71,49 @@ namespace mem
 
 	idbuf::idbuf() // Constructor
 	{
-		i_allocated = PTRBUF_INIT_SIZE; i_used = 0;
-		ptr_id = (btID*)malloc(sizeof(btID) * i_allocated);
-	}
-
-	idbuf::idbuf(idbuf & copy) // Copy constructor
-	{
-		// WIP
-		//i_allocated = PTRBUF_INIT_SIZE; i_used = 0;
-		//ptr_id = (id_t*)malloc(sizeof(id_t) * i_allocated);
-		//memcpy(copy.ptr_id, ptr_id, PTRBUF_INIT_SIZE);
 	}
 
 	idbuf::~idbuf()
 	{
-		free(ptr_id);
-		//delete ptr_id;
-	}
-
-	void idbuf::resize(size_t s)
-	{
-		btID* items2 = (btID*)realloc(ptr_id, sizeof(btID) * s);
-		if (items2) {
-			ptr_id = items2;
-			i_allocated = (btui32)s;
-			std::cout << "IDBUF resized to size " << i_allocated << std::endl;
-			std::cout << "IDBUF current usage: " << i_used << std::endl;
-		}
 	}
 
 	void idbuf::add(btID id)
 	{
-		if (i_allocated == i_used)
-			resize(i_allocated * 2);
-		ptr_id[i_used++] = id;
-		std::cout << "IDBUF added index " << i_used << std::endl;
+		//search this vector
+		for (btui32 i = 0; i < IDBUF_SIZE; i++)
+			//if we found ptr in this vector
+			if (ptr_used[i] == false)
+			{
+				ptr_used[i] = true;
+				ptr_id[i] = id;
+				std::cout << "IDBUF added index " << i << std::endl;
+				return;
+			}
+		std::cout << "IDBUF could not add ID, ran out of space" << std::endl;
 	}
 
 	// I realize that this is slow, but it will do for now
-	//otherwise, store in every entity a 'cell ID' so it can remove itself from the cell faster
+	// otherwise, store in every entity a 'cell ID' so it can remove itself from the cell faster
 	void idbuf::remove(btID id)
 	{
 		//search this vector
-		for (uint i = 0; i < i_allocated; i++)
+		for (btui32 i = 0; i < IDBUF_SIZE; i++)
 			//if we found ptr in this vector
-			if (ptr_id[i] == id)
+			if (ptr_id[i] == id && ptr_used[i] == true)
 			{
-				del(i);
+				ptr_used[i] = false;
+				ptr_id[i] = ID_NULL;
+				std::cout << "IDBUF removed index " << i << std::endl;
 				return;
 			}
 		std::cout << "IDBUF attempted to remove pointer not in array" << std::endl;
 	}
 
-	int idbuf::size()
-	{
-		return i_used;
-	}
-
-	void idbuf::del(btID index)
-	{
-		if (index >= i_used)
-		{
-			std::cout << "ERROR! IDBUF 'remove' out of range!" << std::endl;
-			return;
-		}
-		ptr_id[index] = ID_NULL;
-		std::cout << "IDBUF deleted index " << index << std::endl;
-
-		//shift every index after this back by one
-		for (btui32 i = index; i < i_used - 1; i++) {
-			ptr_id[i] = ptr_id[i + 1];
-			ptr_id[i + 1] = ID_NULL;
-		}
-
-		i_used--;
-
-		if (i_used > 0 && i_used == i_allocated / 4)
-			resize(i_allocated / 2);
-	}
-
 	btID idbuf::operator[] (btui32 x)
 	{
-		if (x >= 0 && x < i_used)
+		if (x >= 0u && x < IDBUF_SIZE && ptr_used[x] == true)
 			return ptr_id[x];
-		std::cout << "ERROR! IDBUF 'operator[]' out of range!" << std::endl;
+		//std::cout << "ERROR! IDBUF 'operator[]' out of range!" << std::endl;
 		return ID_NULL;
 	}
 }

@@ -14,129 +14,33 @@
 
 struct HeldItem;
 
-namespace inv
+struct ItemSlot
 {
-	struct InvItems
-	{
-		btui32 invSize = 0u;
-		btui32* itemCounts = nullptr;
-		btID* items = nullptr;
-	};
+	btID item = ID_NULL;
+	btui32 count = 1.f;
+	HeldItem* heldInstance = nullptr;
 
-	class Inventory
-	{
-	public:
-		Inventory() {};
-		~Inventory()
-		{
-			free(invstate.items);
-			free(invstate.itemCounts);
-		};
-	private:
-		InvItems invstate;
-		inline void AddStack(btID itemid)
-		{
-			++invstate.invSize;
-			if (invstate.invSize > 1u)
-			{
-				// Reallocate items
-				invstate.items = (btID*)realloc(invstate.items, sizeof(btID) * invstate.invSize);
-				// Reallocate item counts
-				invstate.itemCounts = (btui32*)realloc(invstate.itemCounts, sizeof(btui32) * invstate.invSize);
-				invstate.items[invstate.invSize - 1] = itemid;
-				invstate.itemCounts[invstate.invSize - 1] = 1u;
-			}
-			else
-			{
-				// Allocate items
-				invstate.items = (btID*)malloc(sizeof(btID) * invstate.invSize);
-				// Allocate item counts
-				invstate.itemCounts = (btui32*)malloc(sizeof(btui32) * invstate.invSize);
-				invstate.items[0u] = itemid;
-				invstate.itemCounts[0u] = 1u;
-			}
-		}
-		inline void RemvStack(int index)
-		{
-			if (invstate.invSize > 1u && index < invstate.invSize) // If within range (attempt to fix buffer overrun)
-			{
-				--invstate.invSize;
-				btID* _items = (btID*)malloc(sizeof(btID) * invstate.invSize);
-				btui32* _itemCounts = (btui32*)malloc(sizeof(btui32) * invstate.invSize);
-				if (_items && _itemCounts) {
-					btui32 i;
-					// copy up until index directly
-					for (i = 0; i < index; i++)
-					{
-						_items[i] = invstate.items[i];
-						_itemCounts[i] = invstate.itemCounts[i];
-					}
-					// copy index & after with 1 offset
-					for (i = index; i < invstate.invSize; i++)
-					{
-						_items[i] = invstate.items[i + 1];
-						_itemCounts[i] = invstate.itemCounts[i + 1];
-					}
-					free(invstate.items);
-					free(invstate.itemCounts);
-					invstate.items = _items;
-					invstate.itemCounts = _itemCounts;
-				}
-			}
-			else
-			{
-				invstate.invSize = 0u;
-				free(invstate.items);
-				free(invstate.itemCounts);
-			}
-		}
-		inline void IncrStack(int index)
-		{
-			++invstate.itemCounts[index];
-		}
-		inline void DecrStack(int index)
-		{
-			if (invstate.itemCounts[index] > 1u)
-				--invstate.itemCounts[index];
-			else
-				RemvStack(index);
-		}
-	public:
-		void AddItem(btID itemid)
-		{
-			bool added = false;
-			for (int i = 0; i < invstate.invSize; ++i)
-			{
-				if (invstate.items[i] == itemid) // if we already have a stack of this item
-				{
-					IncrStack(i); added = true; // Add to existing stack
-				}
-			}
-			if (!added)
-			{
-				AddStack(itemid);
-			}
-		}
-		void RemvItem(btID itemid)
-		{
-			for (int i = 0; i < invstate.invSize; ++i)
-			{
-				if (invstate.items[i] == itemid) // if we already have a stack of this item
-				{
-					DecrStack(i);
-				}
-			}
-		}
-		inline void RemvItemAt(int index)
-		{
-			DecrStack(index);
-		}
-		InvItems* Get()
-		{
-			return &invstate;
-		}
-	};
-}
+	ItemSlot() {}
+	ItemSlot(btID _item);
+	~ItemSlot();
+};
+
+class Inventory
+{
+public:
+	Inventory() {};
+	~Inventory() {};
+private:
+	mem::CkBuffer<ItemSlot> items;
+	inline void IncrStack(btui32 index);
+	inline void DecrStack(btui32 index);
+public:
+	void AddItem(btID itemid);
+	void RemvItem(btID itemid);
+	void RemvItemAt(btui32 index);
+	mem::CkBuffer<ItemSlot>& Get() { return items; }
+	void Draw(btui16 active_slot);
+};
 
 //could just send a gl index for the texture value, but i'd rather future-proof it in case I need to store more metadata in the texture class
 void DrawMeshAtTransform(btID ID, assetID MODEL, assetID TEXTURE, graphics::Shader& SHADER, Transform3D TRANSFORM);
@@ -196,7 +100,7 @@ struct Entity
 	// Return which entity type / class this is
 	virtual EntityType Type() { return EntityType::eENTITY; };
 
-	enum eprop : btui8
+	enum EntityFlags : btui8
 	{
 		// Basic properties
 		eCOLLIDE_ENV = 1ui8, // Handle collision between this entity and the environment
@@ -213,7 +117,7 @@ struct Entity
 		ePREFAB_ITEM = eCOLLIDE_ENV | eNO_TICK,
 	};
 	// Entity base properties
-	mem::bv<btui8, eprop> properties;
+	mem::bv<btui8, EntityFlags> properties;
 
 	fac::faction faction;
 	ActiveState state;
@@ -245,7 +149,7 @@ struct Actor : public Entity
 {
 	virtual EntityType Type() { return EntityType::eACTOR; };
 
-	enum actor_input : btui8
+	enum ActorInput : btui8
 	{
 		IN_RUN = 0x1ui8 << 0x0ui8,
 		IN_AIM = 0x1ui8 << 0x1ui8,
@@ -253,7 +157,6 @@ struct Actor : public Entity
 		IN_ATN_A = 0x1ui8 << 0x4ui8,
 		IN_ATN_B = 0x1ui8 << 0x5ui8,
 		IN_ATN_C = 0x1ui8 << 0x6ui8,
-		IN_ATN_D = 0x1ui8 << 0x7ui8,
 	};
 
 	//-------------------------------- Actor stuff
@@ -263,14 +166,15 @@ struct Actor : public Entity
 	m::Angle viewPitch;
 	// Movement stuff
 	bool moving = false;
-	mem::bv<btui8, actor_input> inputbv;
+	mem::bv<btui8, ActorInput> inputbv;
 
 	res::AssetConstantID t_skin; // The texture we use for drawing the character
 
 	btf32 speed = 2.3f;
 	btf32 agility = 0.f; // 0?? use agility to determine turning speed?
 
-	inv::Inventory inventory;
+	Inventory inventory;
+	btui32 inv_active_slot = 0u;
 
 	btf64 attack_time = 0.f;
 
@@ -309,8 +213,6 @@ struct Chara : public Actor
 	bool aniStepR = false; // Which foot is forwards right now
 	mem::bv<btui8, chara_state> charastatebv;
 	btID lookTarget = BUF_NULL; // What it's looking at
-
-	HeldItem* heldItem = nullptr;
 
 	Transform3D t_body, t_head;
 

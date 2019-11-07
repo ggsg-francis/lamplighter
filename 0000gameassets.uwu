@@ -16,7 +16,7 @@ srcb resources/default_mesh.obj
 <<<<
 item mesh
 hndl MdebugBB
-srca resources/object/beachball.obj
+srca resources/object/beachball.fbx
 <<<<
 item txtr
 hndl TdebugBB
@@ -146,6 +146,11 @@ hndl MCharLeg
 srca resources/char_leg_0.obj
 srcb resources/char_leg_1.obj
 <<<<
+**** EX1E AIR CARRIER
+item mesh
+hndl MEX1E___
+srca resources/exie.obj
+<<<<
 **** FLOWER PICKERS PITH HELMET (MEqH = MESH EQUIP HEAD)
 item mesh
 hndl MEqHpith
@@ -200,13 +205,23 @@ srca resources/item_matchlock_01.tga
 **** PROJECTILE
 item mesh
 hndl Mprjctil
-srca resources/projectile/projectile_basic.dae
+srca resources/projectile/projectile_basic.fbx
 <<<<
 item txtr
 hndl Tprjctil
 srca resources/projectile/projectile_basic.tga
 tfil linearmip
 tedg clamp
+<<<<
+item mesh
+hndl Mprjctl2
+srca resources/projectile/projectile_head.fbx
+<<<<
+item txtr
+hndl Tprjctl2
+srca resources/projectile/projectile_head.tga
+tfil linear
+tedg repeat
 <<<<
 item mshb
 hndl MBSmkSeg
@@ -281,6 +296,10 @@ srca resources/gui_inv_slot.tga
 ****hndl TTerrain
 ****srca resources/Terrain_HMAP.tga
 ****<<<<
+item mesh
+hndl MEnvWall
+srca resources/environment/made/wall_c_solid.fbx
+<<<<
 **** NATURE
 item mesh
 hndl MNTree01

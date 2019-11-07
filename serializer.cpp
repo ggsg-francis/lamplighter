@@ -11,7 +11,7 @@
 
 namespace serializer
 {
-	btID get_id_from_handle(char* handle, archive::types::asset_type type)
+	btID get_id_from_handle(char* handle, archive::types::AssetType type)
 	{
 		btID retid = ID_NULL;
 
@@ -59,13 +59,13 @@ namespace serializer
 			std::cout << "MESH ID              " << ITEMI->id_mesh << std::endl;
 			std::cout << "TEXTURE ID           " << ITEMI->id_tex << std::endl;
 
-			if (archive::item_types[i] == archive::types::weapon)
+			if (archive::item_types[i] == archive::types::ITEM_HELDGUN)
 			{
 				std::cout << "DAMAGE PIERCE        " << WPNI->f_dam_pierce << std::endl;
 				std::cout << "DAMAGE SLASH         " << WPNI->f_dam_slash << std::endl;
 				std::cout << "DAMAGE SLAM          " << WPNI->f_dam_slam << std::endl;
 			}
-			if (archive::item_types[i] == archive::types::potion)
+			if (archive::item_types[i] == archive::types::ITEM_CONSUM)
 			{
 				std::cout << "EFFECT               " << PTNI->effect << std::endl;
 				std::cout << "EFFECT VALUE         " << PTNI->effect_value << std::endl;
@@ -124,7 +124,7 @@ namespace serializer
 
 					//....................................... SET ITEM TYPE
 
-					archive::types::asset_type type;
+					archive::types::AssetType type;
 					graphics::TextureFilterMode t_filter_mode = graphics::eLINEAR;
 					graphics::TextureEdgeMode t_edge_mode = graphics::eREPEAT;
 					char cdest[FN_SIZE];
@@ -132,13 +132,13 @@ namespace serializer
 					char csrcb[FN_SIZE];
 
 					if (strcmp(elem, "txtr") == 0) { // Texture
-						type = archive::types::texturefile;
+						type = archive::types::ASSET_TEXTURE_FILE;
 					}
-					if (strcmp(elem, "mesh") == 0) { // Mesh
-						type = archive::types::meshfile;
+					else if (strcmp(elem, "mesh") == 0) { // Mesh
+						type = archive::types::ASSET_MESH_FILE;
 					}
-					if (strcmp(elem, "mshb") == 0) { // Mesh Blend
-						type = archive::types::meshblendfile;
+					else if (strcmp(elem, "mshb") == 0) { // Mesh Blend
+						type = archive::types::ASSET_MESHBLEND_FILE;
 					}
 
 					//....................................... READ ITEM PROPERTIES
@@ -206,31 +206,31 @@ namespace serializer
 
 					//....................................... CONVERT AND SAVE ASSETS
 
-					if (type == archive::types::texturefile)
+					if (type == archive::types::ASSET_TEXTURE_FILE)
 					{
 						std::cout << "GENERATING TEXTURE   [" << cdest << "]" << std::endl;
 						serializer_graphics::ConvertTex(csrca, cdest, t_filter_mode, t_edge_mode); // Create source file
 						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
 						strcpy(archive::assets[index].filename, cdest); // Copy filename into archive
-						archive::assets[index].type = archive::types::texturefile;
+						archive::assets[index].type = archive::types::ASSET_TEXTURE_FILE;
 						std::cout << "---------------------" << std::endl;
 					}
-					else if (type == archive::types::meshfile)
+					else if (type == archive::types::ASSET_MESH_FILE)
 					{
 						std::cout << "GENERATING MESH      [" << cdest << "]" << std::endl;
 						serializer_graphics::ConvertMesh(csrca, cdest); // Create source file
 						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
 						strcpy(archive::assets[index].filename, cdest); // Copy filename into archive
-						archive::assets[index].type = archive::types::meshfile;
+						archive::assets[index].type = archive::types::ASSET_MESH_FILE;
 						std::cout << "---------------------" << std::endl;
 					}
-					else if (type == archive::types::meshblendfile)
+					else if (type == archive::types::ASSET_MESHBLEND_FILE)
 					{
 						std::cout << "GENERATING MESHBLEND [" << cdest << "]" << std::endl;
 						serializer_graphics::ConvertMB(csrca, csrcb, cdest); // Create source file
 						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
 						strcpy(archive::assets[index].filename, cdest); // Copy filename into archive
-						archive::assets[index].type = archive::types::meshblendfile;
+						archive::assets[index].type = archive::types::ASSET_MESHBLEND_FILE;
 						std::cout << "---------------------" << std::endl;
 					}
 
@@ -280,19 +280,19 @@ namespace serializer
 
 				if (strcmp(elem, "misc") == 0) {
 					archive::items[archive::item_index] = new archive::item();
-					archive::item_types[archive::item_index] = archive::types::root;
+					archive::item_types[archive::item_index] = archive::types::ITEM_ROOT;
 				}
 				else if (strcmp(elem, "aprl") == 0) {
 					archive::items[archive::item_index] = new archive::item_aprl();
-					archive::item_types[archive::item_index] = archive::types::apparel;
+					archive::item_types[archive::item_index] = archive::types::ITEM_EQUIP;
 				}
 				else if (strcmp(elem, "wpon") == 0) {
 					archive::items[archive::item_index] = new archive::item_wpon();
-					archive::item_types[archive::item_index] = archive::types::weapon;
+					archive::item_types[archive::item_index] = archive::types::ITEM_HELDGUN;
 				}
 				else if (strcmp(elem, "pton") == 0) {
 					archive::items[archive::item_index] = new archive::item_pton();
-					archive::item_types[archive::item_index] = archive::types::potion;
+					archive::item_types[archive::item_index] = archive::types::ITEM_CONSUM;
 				}
 
 				//....................................... ASSIGN ITEM ID
@@ -334,7 +334,7 @@ namespace serializer
 					}
 					else if (strcmp(elem, "icon") == 0) // Icon (change to string?)
 						//ITEM_ITEM->id_icon = (btID)atoi(value);
-						ITEM_ITEM->id_icon = get_id_from_handle(value, archive::types::texturefile);
+						ITEM_ITEM->id_icon = get_id_from_handle(value, archive::types::ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "name") == 0) // Name
 						memcpy(ITEM_ITEM->name, value, end - start);
 					else if (strcmp(elem, "wght") == 0) // Carry weight
@@ -344,11 +344,11 @@ namespace serializer
 					else if (strcmp(elem, "radi") == 0) // Radius when placed
 						ITEM_ITEM->f_radius = (float)atof(value);
 					else if (strcmp(elem, "srct") == 0) // Texture
-						ITEM_ITEM->id_tex = get_id_from_handle(value, archive::types::texturefile);
+						ITEM_ITEM->id_tex = get_id_from_handle(value, archive::types::ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "srcm") == 0) // Mesh
-						ITEM_ITEM->id_mesh = get_id_from_handle(value, archive::types::meshfile);
+						ITEM_ITEM->id_mesh = get_id_from_handle(value, archive::types::ASSET_MESH_FILE);
 					else if (strcmp(elem, "scmb") == 0) // Mesh
-						ITEM_ITEM->id_mesh = get_id_from_handle(value, archive::types::meshblendfile);
+						ITEM_ITEM->id_mesh = get_id_from_handle(value, archive::types::ASSET_MESHBLEND_FILE);
 					// Weapon value
 					else if (strcmp(elem, "held") == 0) // Damage pierce
 					{
@@ -420,12 +420,12 @@ namespace serializer
 			{
 				fread(&archive::item_types[i], sizeof(btui8), 1, file);
 
-				if (archive::item_types[i] == archive::types::weapon)
+				if (archive::item_types[i] == archive::types::ITEM_HELDGUN)
 				{
 					archive::items[i] = new archive::item_wpon();
 					fread(archive::items[i], sizeof(archive::item_wpon), 1, file);
 				}
-				else if (archive::item_types[i] == archive::types::potion)
+				else if (archive::item_types[i] == archive::types::ITEM_CONSUM)
 				{
 					archive::items[i] = new archive::item_pton();
 					fread(archive::items[i], sizeof(archive::item_pton), 1, file);
@@ -471,12 +471,12 @@ namespace serializer
 
 			for (int i = 0; i < archive::item_index; i++)
 			{
-				if (archive::item_types[i] == archive::types::weapon)
+				if (archive::item_types[i] == archive::types::ITEM_HELDGUN)
 				{
 					fwrite(&archive::item_types[i], sizeof(btui8), 1, file);
 					fwrite(archive::items[i], sizeof(archive::item_wpon), 1, file);
 				}
-				if (archive::item_types[i] == archive::types::potion)
+				if (archive::item_types[i] == archive::types::ITEM_CONSUM)
 				{
 					fwrite(&archive::item_types[i], sizeof(btui8), 1, file);
 					fwrite(archive::items[i], sizeof(archive::item_pton), 1, file);

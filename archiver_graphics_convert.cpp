@@ -171,9 +171,9 @@ namespace serializer_graphics
 			else
 			{
 				vertex.col.x = 1.f;
-				vertex.col.y = 1.f;
-				vertex.col.z = 1.f;
-				vertex.col.w = 1.f;
+				vertex.col.y = 0.f;
+				vertex.col.z = 0.f;
+				vertex.col.w = 0.f;
 			}
 
 			vertices.push_back(vertex);

@@ -7,38 +7,38 @@ namespace res
 {
 	graphics::Texture& GetTexture(btui32 index)
 	{
-		if (archive::assets[index].type == archive::types::texturefile)
+		if (archive::assets[index].type == archive::types::ASSET_TEXTURE_FILE)
 			return *(graphics::Texture*)archive::assets[index].asset;
 		else return *(graphics::Texture*)archive::assets[DEFAULT_TEXTURE].asset;
 	}
 
 	graphics::Mesh& GetMesh(btui32 index)
 	{
-		if (archive::assets[index].type == archive::types::meshfile)
+		if (archive::assets[index].type == archive::types::ASSET_MESH_FILE)
 			return *(graphics::Mesh*)archive::assets[index].asset;
 		else return *(graphics::Mesh*)archive::assets[DEFAULT_MESH].asset;
 	}
 
 	graphics::MeshBlend& GetMeshBlend(btui32 index)
 	{
-		if (archive::assets[index].type == archive::types::meshblendfile)
+		if (archive::assets[index].type == archive::types::ASSET_MESHBLEND_FILE)
 			return *(graphics::MeshBlend*)archive::assets[index].asset;
 		else return *(graphics::MeshBlend*)archive::assets[DEFAULT_MESHBLEND].asset;
 	}
 
 	bool IsTexture(btui32 index)
 	{
-		return archive::assets[index].type == archive::types::texturefile;
+		return archive::assets[index].type == archive::types::ASSET_TEXTURE_FILE;
 	}
 
 	bool IsMesh(btui32 index)
 	{
-		return archive::assets[index].type == archive::types::meshfile;
+		return archive::assets[index].type == archive::types::ASSET_MESH_FILE;
 	}
 
 	bool IsMeshBlend(btui32 index)
 	{
-		return archive::assets[index].type == archive::types::meshblendfile;
+		return archive::assets[index].type == archive::types::ASSET_MESHBLEND_FILE;
 	}
 
 	void Init()
@@ -62,7 +62,7 @@ namespace archive
 {
 	//items
 	item* items[ITEMS_COUNT]{ nullptr };
-	types::item_type item_types[ITEMS_COUNT];
+	types::ItemType item_types[ITEMS_COUNT];
 	btID item_index = 0;
 
 	// NEW STUFF !!!!!!!!!!!!!!!!!!!!!
@@ -78,17 +78,20 @@ namespace archive
 		{
 			switch (assets[i].type)
 			{
-			case types::texturefile:
+			case types::ASSET_TEXTURE_FILE:
 				assets[i].asset = new graphics::Texture;
 				((graphics::Texture*)assets[i].asset)->LoadFile(assets[i].filename);
+				assets[i].loaded = true; 
 				return;
-			case types::meshfile:
+			case types::ASSET_MESH_FILE:
 				assets[i].asset = new graphics::Mesh;
 				((graphics::Mesh*)assets[i].asset)->LoadFile(assets[i].filename);
+				assets[i].loaded = true;
 				return;
-			case types::meshblendfile:
+			case types::ASSET_MESHBLEND_FILE:
 				assets[i].asset = new graphics::MeshBlend;
 				((graphics::MeshBlend*)assets[i].asset)->LoadFile(assets[i].filename);
+				assets[i].loaded = true;
 				return;
 			};
 		}
@@ -96,6 +99,7 @@ namespace archive
 
 	void UnloadAsset(btui32 i)
 	{
+		// Old (seems to leak)
 		if (assets[i].asset != nullptr && assets[i].loaded)
 			delete assets[i].asset;
 	};
@@ -109,7 +113,7 @@ namespace archive
 			delete(archive::items[i]);
 		}
 		#ifndef DEF_ARCHIVER
-		for (int i = 0; i < archive::item_index; i++)
+		for (int i = 0; i < FN_COUNT; i++)
 		{
 			UnloadAsset(i);
 		}

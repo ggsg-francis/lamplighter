@@ -54,10 +54,12 @@ namespace input
 			USE, // Use equipped item
 			RUN,
 			ACTIVATE, // Activate other actor
-			ACTION_A,
-			ACTION_B,
-			ACTION_C,
-			ACTION_D,
+			ACTION_A, // Perform action A on item
+			ACTION_B, // Perform action B on item
+			ACTION_C, // Perform action C on item
+			DROP_HELD,
+			INV_CYCLE_L, // Select previous inventory slot
+			INV_CYCLE_R, // Select next inventory slot
 
 			//-------------------------------- CONTROLLER PLAYER INPUT
 
@@ -68,10 +70,12 @@ namespace input
 			C_USE, // Use equipped item
 			C_RUN,
 			C_ACTIVATE, // Activate other actor
-			C_ACTION_A,
-			C_ACTION_B,
-			C_ACTION_C,
-			C_ACTION_D,
+			C_ACTION_A, // Perform action A on item
+			C_ACTION_B, // Perform action B on item
+			C_ACTION_C, // Perform action C on item
+			C_DROP_HELD,
+			C_INV_CYCLE_L,
+			C_INV_CYCLE_R,
 
 			//-------------------------------- UTILITY HIT
 

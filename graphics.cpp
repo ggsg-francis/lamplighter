@@ -363,10 +363,9 @@ namespace graphics
 		gui_y_start = -(int)cfg::iWinY / 2;
 
 		shader_solid = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
-		shader_scroll = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_scr.glsl");
 		shader_blend = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
+		//shader_blend = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
 		shader_terrain = graphics::Shader("shaders/vert_3d_terrain.glsl", "shaders/frag_terrain.glsl");
-		shader_shadow = graphics::Shader("shaders/vert_shadow.glsl", "shaders/frag_shadow.glsl");
 		shader_sky = graphics::Shader("shaders/vert_3d_sky.glsl", "shaders/frag_sky.glsl");
 		shader_gui = graphics::Shader("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
 		shader_post = graphics::Shader("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
@@ -549,7 +548,7 @@ namespace graphics
 	//#define LIGHT_HALF 16.f
 	#define LIGHT_FAR 256.f
 	#define LIGHT_HALF 128.f
-	#define LIGHT_WIDTH 32.f
+	#define LIGHT_WIDTH 16.f
 	// Lightsource
 	void SetMatProjLight()
 	{
@@ -766,7 +765,7 @@ namespace graphics
 
 	ModifiableTexture::~ModifiableTexture()
 	{
-		delete buffer;
+		delete[] buffer;
 	}
 	void ModifiableTexture::Init(btui16 sx, btui16 sy, colour col)
 	{
@@ -802,6 +801,7 @@ namespace graphics
 			fread(&height, sizeof(btui16), 1, file);
 			// Read pixel buffer
 			buffer = new colour[width * height];
+			//if (sizeof(graphics::colour) * width * height > sizeof(buffer)) return;
 			fread(buffer, sizeof(graphics::colour), width * height, file);
 
 			fclose(file);
@@ -915,7 +915,7 @@ namespace graphics
 			SetFilterMode[fm]();
 			SetEdgeMode[em]();
 
-			delete buffer;
+			delete[] buffer;
 		}
 	}
 	void Texture::InitRenderTexture(int x, int y, bool linear)

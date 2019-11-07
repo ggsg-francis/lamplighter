@@ -9,21 +9,27 @@
 //#define DEF_MULTISAMPLE
 //#define DEF_MULTISAMPLE_DEPTH 4
 #define DEF_HDR
+
+// Any debug only defines
+#ifdef _DEBUG
+#define DEF_CONSOLE_OUTPUT
+#endif
+
 // Input
 #define DEF_INPUT_MOUSE_1ST_PERSON
 //#define DEF_INPUT_MOUSE_HIDDEN
 
-#define SHADOW_WIDTH 1024
-#define SHADOW_HEIGHT 1024
-//#define SHADOW_WIDTH 2048
-//#define SHADOW_HEIGHT 2048
+//#define SHADOW_WIDTH 1024
+//#define SHADOW_HEIGHT 1024
+#define SHADOW_WIDTH 2048
+#define SHADOW_HEIGHT 2048
 
 // Program Version
 #define VERSION_MAJOR 0u
-#define VERSION_MINOR 13u
+#define VERSION_MINOR 14u
 #define VERSION_BUILD 2u
 #define VERSION_SERVER_MAJOR 0u
-#define VERSION_SERVER_MINOR 13u
+#define VERSION_SERVER_MINOR 14u
 #define VERSION_COMMENT "test"
 
 // Buffer / ID definitions
@@ -63,7 +69,7 @@ extern "C" {
 	// For specific uses
 	typedef unsigned short btID;
 	#else
-	#error New c++ version not accounted for! Please check and add the new compiler version to the fundamental type definitions in global.h!
+	#error Using different c++ version than written for, please review! (global.h) 
 	#endif
 
 	#ifdef __cplusplus

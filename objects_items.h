@@ -20,8 +20,8 @@ struct HeldItem
 {
 	Transform3D t_item;
 
-	void Tick(bool actionA, bool actionB, bool actionC, bool actionD, bool use);
-	void Draw(m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
+	virtual void Tick(bool actionA, bool actionB, bool actionC, bool use);
+	virtual void Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
 };
 struct HeldGun : public HeldItem
 {
@@ -50,15 +50,14 @@ struct HeldGun : public HeldItem
 	};
 	mem::bv<btui16, musket_state> bvMusketState;
 
-	btf32 fpan;
-	btf32 lever;
-	btf32 rod;
+	btf32 fpan = 0.f;
+	btf32 lever = 0.f;
+	btf32 rod = 0.f;
 
-	//btf32 musket_pitch;
-	m::Vector3 loc;
-	btf32 pitch;
-	btf32 yaw;
+	m::Vector3 loc = m::Vector3(0.f, 0.9f, 0.4f);
+	btf32 pitch = -90.f;
+	btf32 yaw = 0.f;
 
-	void Tick(bool actionA, bool actionB, bool actionC, bool actionD, bool use);
-	void Draw(m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
+	virtual void Tick(bool actionA, bool actionB, bool actionC, bool use);
+	virtual void Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
 };

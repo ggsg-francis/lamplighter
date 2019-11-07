@@ -52,6 +52,8 @@ namespace res
 		mb_armscast,
 		mb_char_head,
 		mb_char_leg, // good name
+		// Err....
+		m_ex1e_air_carrier,
 		// Equipment
 		m_equip_head_pickers, // good name
 		mb_equip_body_pickers_step, // good name
@@ -66,6 +68,8 @@ namespace res
 		// Other shit
 		m_proj,
 		t_proj,
+		m_proj_2,
+		t_proj_2,
 		mb_smoke_trail_segment, // good name
 		t_smoke_trail, // good name
 		m_kitfloor,
@@ -102,19 +106,19 @@ namespace archive
 {
 	namespace types
 	{
-		enum item_type : btui8
+		enum ItemType : btui8
 		{
-			root,
-			apparel,
-			weapon,
-			potion,
+			ITEM_ROOT,
+			ITEM_EQUIP,
+			ITEM_HELDGUN,
+			ITEM_CONSUM,
 		};
-		enum asset_type : btui8
+		enum AssetType : btui8
 		{
-			none,
-			texturefile,
-			meshfile,
-			meshblendfile,
+			ASSET_NONE,
+			ASSET_TEXTURE_FILE,
+			ASSET_MESH_FILE,
+			ASSET_MESHBLEND_FILE,
 		};
 	}
 
@@ -157,14 +161,14 @@ namespace archive
 	{
 		char handle[8];
 		char filename[FN_SIZE];
-		types::asset_type type = types::none;
+		types::AssetType type = types::ASSET_NONE;
 		bool loaded;
 		void* asset = nullptr;
 	};
 
 	//items (also make inaccessable)
 	extern item* items[ITEMS_COUNT];
-	extern types::item_type item_types[ITEMS_COUNT];
+	extern types::ItemType item_types[ITEMS_COUNT];
 	extern btID item_index; // number of items, I think
 
 	// make inaccessable

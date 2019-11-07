@@ -110,9 +110,6 @@ namespace index
 		glActiveTexture(GL_TEXTURE3); // active proper texture unit before binding
 		glUniform1i(glGetUniformLocation(graphics::shader_terrain.ID, "ts"), 3);
 		glBindTexture(GL_TEXTURE_2D, res::GetTexture(res::t_sky).glID); // Bind the texture
-		glActiveTexture(GL_TEXTURE4); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(graphics::shader_terrain.ID, "ttsm"), 4);
-		glBindTexture(GL_TEXTURE_2D, t_envShadowMap.glID); // Bind the texture
 
 		// terrain textures
 		glActiveTexture(GL_TEXTURE6); // active proper texture unit before binding
@@ -129,9 +126,6 @@ namespace index
 		glActiveTexture(GL_TEXTURE3); // active proper texture unit before binding
 		glUniform1i(glGetUniformLocation(graphics::shader_solid.ID, "ts"), 3);
 		glBindTexture(GL_TEXTURE_2D, res::GetTexture(res::t_sky).glID); // Bind the texture
-		glActiveTexture(GL_TEXTURE4); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(graphics::shader_solid.ID, "ttsm"), 4);
-		glBindTexture(GL_TEXTURE_2D, t_envShadowMap.glID); // Bind the texture
 
 		graphics::shader_blend.Use();
 		glActiveTexture(GL_TEXTURE1); // active proper texture unit before binding
@@ -143,175 +137,6 @@ namespace index
 		glActiveTexture(GL_TEXTURE3); // active proper texture unit before binding
 		glUniform1i(glGetUniformLocation(graphics::shader_blend.ID, "ts"), 3);
 		glBindTexture(GL_TEXTURE_2D, res::GetTexture(res::t_sky).glID); // Bind the texture
-		glActiveTexture(GL_TEXTURE4); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(graphics::shader_blend.ID, "ttsm"), 4);
-		glBindTexture(GL_TEXTURE_2D, t_envShadowMap.glID); // Bind the texture
-	}
-	void InitShadowMap()
-	{
-		// Generate shadowmap v2
-		int shadow_map_div = 8;
-
-		t_envShadowMap.Init(WORLD_SIZE / shadow_map_div, WORLD_SIZE / shadow_map_div, graphics::colour(0ui8, 255ui8, 255ui8, 255ui8));
-	
-		for (btui16 x = 0; x < WORLD_SIZE / shadow_map_div; x++) // Create smaller texture
-			for (btui16 y = 0; y < WORLD_SIZE / shadow_map_div; y++)
-			{
-				// Method A: Average
-				///*
-				float average = 0.f;
-				for (int x2 = 0; x2 < shadow_map_div; x2++) // Add every pixel in this block
-					for (int y2 = 0; y2 < shadow_map_div; y2++)
-						average += (float)env::eCells[x * shadow_map_div + x2][y * shadow_map_div + y2].height;
-				average /= (shadow_map_div * shadow_map_div); // Divide back to normalized
-				btui8 averageRnd = (btui8)ceilf(average);
-				t_envShadowMap.SetPixelChannelB(x, y, averageRnd);
-				//*/
-
-				// Method B: Max
-				/*
-				btui8 max = 0ui8;
-				for (int x2 = 0; x2 < shadow_map_div; x2++) // Add every pixel in this block
-				for (int y2 = 0; y2 < shadow_map_div; y2++)
-				if (env::eCells[x * shadow_map_div + x2][y * shadow_map_div + y2].height > max) // If higher than already measured
-				max = env::eCells[x * shadow_map_div + x2][y * shadow_map_div + y2].height; // Then add
-				if (max > 0ui8)
-				t_envShadowMap.SetPixelChannelB(x, y, max);
-				//*/
-			}
-	}
-	btui16 shadow_map_x;
-	void UpdateShadowMapPartial(btf32 time2)
-	{
-		// Generate shadowmap v2
-		int shadow_map_div = 8;
-
-		// iterators
-		btui16 y = 0u;
-
-		// Reset heights if new texture
-		if (shadow_map_x == 0u)
-			for (btui16 x = 0u; x < WORLD_SIZE / shadow_map_div; x++)
-				for (y = 0u; y < WORLD_SIZE / shadow_map_div; y++)
-				{
-					t_envShadowMap.SetPixelChannelR(x, y, t_envShadowMap.GetPixel(x, y).b);
-					t_envShadowMap.SetPixelChannelG(x, y, 255ui8); // Reset bounce map
-				}
-
-		m::Vector2 sunrot = m::AngToVec2(glm::radians((floor(time2 * 360.f * 8.f) / 8.f) + 180.f));
-
-		float rise_mult = fabsf(sunrot.y) / fabsf(sunrot.x);
-
-		// Update texture with shadow crests
-		for (y = 0u; y < WORLD_SIZE / shadow_map_div; y++)
-		{
-			// https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-			int x2 = shadow_map_x;
-			int run = 0;
-			btui8 origin_height = t_envShadowMap.GetPixel(shadow_map_x, y).r;
-			btui8 current_height = origin_height;
-			while (true)
-			{
-				++x2; ++run;
-				if (x2 >= WORLD_SIZE / shadow_map_div)
-					break;
-				else
-				{
-					//current_height = origin_height - ((x2 - x) * rise_mult * shadow_map_div * TERRAIN_HEIGHT_DIVISION); // get rise from distance * aspect
-					//current_height = (btui8)floorf(origin_height - ((x2 - x) * rise_mult * shadow_map_div * TERRAIN_HEIGHT_DIVISION)); // get rise from distance * aspect
-					current_height = (btui8)ceilf(origin_height - ((x2 - shadow_map_x) * rise_mult * shadow_map_div * TERRAIN_HEIGHT_DIVISION)); // get rise from distance * aspect
-					if (t_envShadowMap.GetPixel(x2, y).r < current_height && current_height > 0ui8)
-					{
-						t_envShadowMap.SetPixelChannelR(x2, y, current_height);
-						t_envShadowMap.SetPixelChannelG(x2, y, 0ui8);
-					}
-					else break;
-				}
-			}
-		}
-
-		// if last line, lower other pixels & bind texture
-		if (shadow_map_x == (WORLD_SIZE / shadow_map_div) - 1u)
-		{
-			for (btui16 x = 0u; x < WORLD_SIZE / shadow_map_div; x++) // Lower all non-crest shadow heights
-				for (y = 0u; y < WORLD_SIZE / shadow_map_div; y++)
-					if (t_envShadowMap.GetPixel(x, y).g > 0ui8) // if not part of crest
-						if (t_envShadowMap.GetPixel(x, y).r > 3ui8) // If height above zero
-							t_envShadowMap.SetPixelChannelR(x, y, t_envShadowMap.GetPixel(x, y).r - 4ui8); // lower
-						else t_envShadowMap.SetPixelChannelR(x, y, 0ui8); // set to zero
-
-			t_envShadowMap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
-		}
-
-		++shadow_map_x;
-		if (shadow_map_x == t_envShadowMap.width)
-			shadow_map_x = 0u;
-	}
-	void UpdateShadowMap(btf32 time2)
-	{
-		// Generate shadowmap v2
-		int shadow_map_div = 8;
-
-		// iterators
-		btui16 x = 0u, y = 0u;
-
-		// Reset heights
-		for (x = 0u; x < WORLD_SIZE / shadow_map_div; x++)
-			for (y = 0u; y < WORLD_SIZE / shadow_map_div; y++)
-			{
-				t_envShadowMap.SetPixelChannelR(x, y, t_envShadowMap.GetPixel(x, y).b);
-				t_envShadowMap.SetPixelChannelG(x, y, 255ui8); // Reset bounce map
-			}
-
-		// try to add shadow crest generation
-		// http://www.andrewwillmott.com/tech-notes#TOC-Height-Map-Shadows
-		// https://github.com/andrewwillmott/height-map-shadow
-		// new idea: 4 channels, 2 for dawn, 2 for dusk, can interpolate towards zero for midday, towards 1 for night
-
-		//btf32 time2 = 0.28f;
-		//btf32 time2 = 0.35f;
-		m::Vector2 sunrot = m::AngToVec2(glm::radians((floor(time2 * 360.f * 8.f) / 8.f) + 180.f));
-
-		//float rise_mult = 1.f;
-		//float rise_mult = fabsf(sunrot.x) / fabsf(sunrot.y);
-		float rise_mult = fabsf(sunrot.y) / fabsf(sunrot.x);
-
-		for (x = 0u; x < WORLD_SIZE / shadow_map_div; x++) // Update texture with shadow crests
-			for (y = 0u; y < WORLD_SIZE / shadow_map_div; y++)
-			{
-				// https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-				int x2 = x;
-				int run = 0;
-				btui8 origin_height = t_envShadowMap.GetPixel(x, y).r;
-				btui8 current_height = origin_height;
-				while (true)
-				{
-					++x2; ++run;
-					if (x2 >= WORLD_SIZE / shadow_map_div)
-						break;
-					else
-					{
-						//current_height = origin_height - ((x2 - x) * rise_mult * shadow_map_div * TERRAIN_HEIGHT_DIVISION); // get rise from distance * aspect
-						//current_height = (btui8)floorf(origin_height - ((x2 - x) * rise_mult * shadow_map_div * TERRAIN_HEIGHT_DIVISION)); // get rise from distance * aspect
-						current_height = (btui8)ceilf(origin_height - ((x2 - x) * rise_mult * shadow_map_div * TERRAIN_HEIGHT_DIVISION)); // get rise from distance * aspect
-						if (t_envShadowMap.GetPixel(x2, y).r < current_height && current_height > 0ui8)
-						{
-							t_envShadowMap.SetPixelChannelR(x2, y, current_height);
-							t_envShadowMap.SetPixelChannelG(x2, y, 0ui8);
-						}
-						else break;
-					}
-				}
-			}
-
-		for (x = 0u; x < WORLD_SIZE / shadow_map_div; x++) // Lower all non-crest shadow heights
-			for (y = 0u; y < WORLD_SIZE / shadow_map_div; y++)
-				if (t_envShadowMap.GetPixel(x, y).g > 0ui8) // if not part of crest
-					if (t_envShadowMap.GetPixel(x, y).r > 1ui8) // If height above zero
-						t_envShadowMap.SetPixelChannelR(x, y, t_envShadowMap.GetPixel(x, y).r - 2ui8); // lower by 1
-					else t_envShadowMap.SetPixelChannelR(x, y, 0ui8); // set to zero
-
-					t_envShadowMap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 	}
 
 	void Init()
@@ -373,8 +198,9 @@ namespace index
 
 		t_EnvLightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(255ui8, 0ui8, 0ui8, 255ui8));
 
-		//flood_fill_temp(1005, 1003, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
-		//flood_fill_temp(1016, 1016, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+		flood_fill_temp(1024, 1024, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+		flood_fill_temp(1005, 1003, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+		flood_fill_temp(1016, 1016, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
 
 		t_EnvLightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
@@ -388,15 +214,13 @@ namespace index
 		
 		t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
-		InitShadowMap();
-		//UpdateShadowMap(0.28f);
-
 		// Spawnz
 
 		//players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1.f, 1.f), 0.f);
 		//players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(4.f, 4.f), 0.f);
 		if (cfg::bEditMode)
-			players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
+			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
+			//players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
 		else
 			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 		players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1020.f), 0.f);
@@ -454,6 +278,7 @@ namespace index
 	void End()
 	{
 		for (int i = 0; i < BUF_SIZE; i++)
+		//for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			if (block_entity.used[i])
 				DestroyEntity(i);
@@ -479,7 +304,6 @@ namespace index
 				SpawnEntity(prefab::prefab_ai_player, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
 				SpawnEntity(prefab::prefab_npc, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
 				SpawnEntity(prefab::prefab_npc, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				SpawnEntity(prefab::prefab_npc, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
 			}
 		} //*/
 
@@ -494,6 +318,7 @@ namespace index
 			if (block_entity.used[i]) ENTITY(i)->Tick(i, dt);
 
 		ProjectileTick(dt);
+		ProjectileTick(dt); // temp
 
 		//temporary destroy dead entities
 		///*
@@ -508,11 +333,11 @@ namespace index
 		{
 			if (input::GetHit(input::key::USE))
 			{
-				env::GeneratePhysicsSurfaces();
 				//env::GeneratePaths();
 			}
 			if (input::GetHit(input::key::ACTIVATE))
 			{
+				env::GeneratePhysicsSurfaces();
 				env::SaveBin();
 			}
 			if (input::GetHit(input::key::ACTION_A))
@@ -534,31 +359,17 @@ namespace index
 		}
 	}
 
-	btui32 drawticker_temp = 0;
-
 	void Draw(bool oob)
 	{
 		//btf32 time2 = time * 0.0001f + 0.3f; // decent timescale for now
-		//btf32 time2 = time * 0.006f + 0.2f;
-		btf32 time2 = time * 0.0001f + 0.26f;
+		btf32 time2 = time * 0.0002f + 0.22f;
+		//btf32 time2 = time * 0.01f + 0.23f;
+		//btf32 time2 = time * 0.001f + 0.1f;
 
-		//btf32 sunang = atan(0.5f / 1.f);
-
-		/*
-		drawticker_temp++;
-		if (drawticker_temp == 16u)
-		{
-			drawticker_temp = 0u;
-			//UpdateShadowMap(time2);
-			UpdateShadowMapPartial(time2);
-		}*/
-		UpdateShadowMapPartial(time2);
-
-
-		//btf32 time2 = 0.28f;
-		//btf32 time2 = 0.35f;
-		//btf32 time2 = glm::degrees(sunang) / 360.f + 0.5f;
 		m::Vector2 sunrot = m::AngToVec2(glm::radians((floor(time2 * 360.f * 8.f) / 8.f) + 180.f));
+		//glm::vec3 sunrot2 = glm::vec3(sunrot.x, sunrot.y, 0.f);
+		glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x, sunrot.y, sunrot.y * 1.34f));
+
 
 		graphics::Matrix4x4 matrix; // Matrix used for rendering env. props (so far...)
 
@@ -573,7 +384,8 @@ namespace index
 			graphics::shader_terrain.setMat4("lightProj", shadowmat_temp);
 			graphics::shader_terrain.SetFloat("ft", (float)time2);
 			graphics::shader_terrain.setVec3("pcam", pcam);
-			graphics::shader_terrain.setVec3("vsun", glm::vec3(sunrot.x, sunrot.y, 0.f));
+			//graphics::shader_terrain.setVec3("vsun", glm::vec3(sunrot.x, sunrot.y, 0.f));
+			graphics::shader_terrain.setVec3("vsun", sunrot2);
 			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
 			glUniform1i(glGetUniformLocation(graphics::shader_terrain.ID, "tshadow"), 5);
 			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
@@ -582,7 +394,8 @@ namespace index
 			graphics::shader_solid.setMat4("lightProj", shadowmat_temp);
 			graphics::shader_solid.SetFloat("ft", (float)time2);
 			graphics::shader_solid.setVec3("pcam", pcam);
-			graphics::shader_solid.setVec3("vsun", glm::vec3(sunrot.x, sunrot.y, 0.f));
+			//graphics::shader_solid.setVec3("vsun", glm::vec3(sunrot.x, sunrot.y, 0.f));
+			graphics::shader_solid.setVec3("vsun", sunrot2);
 			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
 			glUniform1i(glGetUniformLocation(graphics::shader_solid.ID, "tshadow"), 5);
 			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
@@ -591,7 +404,8 @@ namespace index
 			graphics::shader_blend.setMat4("lightProj", shadowmat_temp);
 			graphics::shader_blend.SetFloat("ft", (float)time2);
 			graphics::shader_blend.setVec3("pcam", pcam);
-			graphics::shader_blend.setVec3("vsun", glm::vec3(sunrot.x, sunrot.y, 0.f));
+			//graphics::shader_blend.setVec3("vsun", glm::vec3(sunrot.x, sunrot.y, 0.f));
+			graphics::shader_blend.setVec3("vsun", sunrot2);
 			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
 			glUniform1i(glGetUniformLocation(graphics::shader_blend.ID, "tshadow"), 5);
 			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
@@ -609,7 +423,8 @@ namespace index
 			graphics::shader_sky.Use();
 			graphics::shader_sky.SetFloat("ft", (float)time2);
 			graphics::shader_sky.setVec3("pcam", pcam);
-			graphics::shader_sky.setVec3("vsun", glm::vec3(sunrot.x, sunrot.y, 0.f));
+			//graphics::shader_sky.setVec3("vsun", glm::vec3(sunrot.x, sunrot.y, 0.f));
+			graphics::shader_sky.setVec3("vsun", sunrot2);
 
 			//-------------------------------- DRAW SKY
 
@@ -652,8 +467,14 @@ namespace index
 			//glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
 
 			graphics::SetMatProj(128.f); // Set projection matrix for long-distance rendering
+
 			graphics::MatrixTransform(matrix, m::Vector3(0.f, 0.f, 0.f));
 			DrawMesh(ID_NULL, res::m_terrain_oob, res::t_terrain_sanddirt, graphics::shader_terrain, matrix);
+
+			graphics::MatrixTransform(matrix, m::Vector3(2048.f, 340.f, 2048.f), 34.f);
+			//graphics::MatrixTransform(matrix, m::Vector3(2048.f, 340.f, 2048.f));
+			DrawMesh(ID_NULL, res::m_ex1e_air_carrier, res::t_default, graphics::shader_solid, matrix);
+
 			graphics::SetMatProj(); // Reset projection matrix
 
 			//-------------------------------- DRAW ENTITIES
@@ -669,7 +490,7 @@ namespace index
 				ENTITY(active_player_view)->t.position.x,
 				ENTITY(active_player_view)->t.height,
 				-ENTITY(active_player_view)->t.position.y,
-				-sunrot.x, -sunrot.y, 0.f);
+				-sunrot2.x, -sunrot2.y, -sunrot2.z);
 			shadowmat_temp = graphics::GetMatProj() * graphics::GetMatView();
 		}
 
@@ -685,8 +506,9 @@ namespace index
 
 		//-------------------------------- DRAW ENVIRONMENT
 
-		if (oob)
+		//if (oob)
 		{
+			matrix = graphics::Matrix4x4();
 			graphics::MatrixTransform(matrix, m::Vector3(roundf(ENTITY(active_player_view)->t.position.x / 8) * 8, 0.f, roundf(ENTITY(active_player_view)->t.position.y / 8) * 8));
 			DrawMesh(ID_NULL, res::m_terrain_near, res::t_terrain_sanddirt, graphics::shader_terrain, matrix);
 
@@ -773,12 +595,12 @@ namespace index
 
 	void TickGUI()
 	{
-		if (input::GetHit(input::key::ACTION_B))
+		if (input::GetHit(input::key::INV_CYCLE_L))
 		{
 			if (inv_active_slot > 0u)
 				--inv_active_slot;
 		}
-		if (input::GetHit(input::key::ACTION_C))
+		if (input::GetHit(input::key::INV_CYCLE_R))
 		{
 			if (inv_active_slot < 10u)
 			++inv_active_slot;
@@ -787,10 +609,8 @@ namespace index
 			if (viewtarget != ID_NULL)
 				if (ENTITY(viewtarget)->Type() == Entity::eITEM)
 					ACTOR(players[0])->PickUpItem(viewtarget);
-		if (input::GetHit(input::key::ACTION_A))
-		{
+		if (input::GetHit(input::key::DROP_HELD))
 			ACTOR(players[0])->DropItem(inv_active_slot);
-		}
 	}
 
 	void DrawGUI()
@@ -833,19 +653,19 @@ namespace index
 			}
 		}
 
-		DrawInv();
+		CHARA(0)->inventory.Draw(inv_active_slot);
 	}
 
 	void DrawPostDraw()
 	{
 		text_version.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_font));
 		char buffer[16];
-		snprintf(buffer, 16, "%f", 1.f / time_delta_tick);
+		int i = snprintf(buffer, 16, "%f", 1.f / time_delta_tick);
 		text_fps.ReGen(buffer, cfg::iWinX * -0.25f, 512, cfg::iWinY * 0.5f - 16.f);
 		text_fps.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_font));
 	}
 
-	void SetInput(btID index, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C, bool ACTION_D)
+	void SetInput(btID index, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C)
 	{
 		CHARA(index)->input = input;
 		CHARA(index)->viewYaw.Rotate(rot_x);
@@ -856,7 +676,6 @@ namespace index
 		CHARA(index)->inputbv.setto(Actor::IN_ATN_A, ACTION_A);
 		CHARA(index)->inputbv.setto(Actor::IN_ATN_B, ACTION_B);
 		CHARA(index)->inputbv.setto(Actor::IN_ATN_C, ACTION_C);
-		CHARA(index)->inputbv.setto(Actor::IN_ATN_D, ACTION_D);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
@@ -1054,12 +873,15 @@ namespace index
 					btui16 y2 = (btui16)((bti16)y + (bti16)roundf(vec.y));
 					//t_EnvHeightmap.SetPixelChannelG((btui16)roundf(proj[index].t.position.x), (btui16)roundf(proj[index].t.position.y), 255ui8);
 					
-					if (env::eCells[x2][y2].height < env::eCells[x][y].height + 3ui8) // If the height difference is low
+					if (!env::Get(x, y, env::eflag::eIMPASSABLE) && !env::Get(x2, y2, env::eflag::eIMPASSABLE))
 					{
-						--env::eCells[x][y].height;
-						t_EnvHeightmap.SetPixelChannelR(x, y, env::eCells[x][y].height);
-						++env::eCells[x2][y2].height;
-						t_EnvHeightmap.SetPixelChannelR(x2, y2, env::eCells[x2][y2].height);
+						if (env::eCells[x2][y2].height < env::eCells[x][y].height + 3ui8) // If the height difference is low
+						{
+							--env::eCells[x][y].height;
+							t_EnvHeightmap.SetPixelChannelR(x, y, env::eCells[x][y].height);
+							++env::eCells[x2][y2].height;
+							t_EnvHeightmap.SetPixelChannelR(x2, y2, env::eCells[x2][y2].height);
+						}
 					}
 
 					t_EnvHeightmap.SetPixelChannelG(x, y, 255ui8);
@@ -1071,6 +893,7 @@ namespace index
 				}
 				else // Otherwise
 				{
+					/*
 					for (int i = 0; i <= block_entity.index_end; i++)
 						if (block_entity.used[i] && ENTITY(i)->properties.get(Entity::eCOLLIDE_PRJ))
 						{
@@ -1097,35 +920,44 @@ namespace index
 								}
 							}
 						}
-					/*
+						*/
+						///*
 					CellGroup cg;
-					GetCollisionCells(proj[index].t.position, cg);
+					GetCellGroup(proj[index].t.position, cg);
 					for (int i = 0; i < 4; i++)
 					{
 						#define X cg.c[i].x
 						#define Y cg.c[i].y
 						// For all entities in this cell
-						for (int e = 0; e < cells[X][Y].ents.size(); e++)
+						for (int e = 0; e < IDBUF_SIZE; e++)
 						{
 							#define ID cells[X][Y].ents[e]
-							if (block_entity.used[ID] && ENTITY(ID)->state.alive)
-							{
-								//get difference between positions
-								fw::Vector2 vec = proj[index].t.position - ENTITY(ID)->t.position;
-								//get distance
-								float dist = fw::Length(vec);
-								if (dist < 0.5f)
+							if (cells[X][Y].ents[e] != ID_NULL)
+								if (block_entity.used[ID] && ENTITY(ID)->properties.get(Entity::eCOLLIDE_PRJ))
 								{
-									// kill
-									ENTITY(ID)->state.hp -= 0.1f;
-									if (ENTITY(ID)->state.hp <= 0.f)
+									if (fac::GetAllegiance(proj[index].faction, ENTITY(ID)->faction) != fac::allied)
 									{
-										ENTITY(ID)->state.alive = false;
-										ENTITY(ID)->state.hp = 0.f;
+										//check height difference
+										if (proj[index].t.height > ENTITY(ID)->t.height && proj[index].t.height < ENTITY(ID)->t.height + ENTITY(ID)->height)
+										{
+											//get difference between positions
+											m::Vector2 vec = proj[index].t.position - ENTITY(ID)->t.position;
+											//get distance
+											float dist = m::Length(vec);
+											if (dist < 0.5f)
+											{
+												// kill
+												ENTITY(ID)->state.hp -= 0.5f;
+												if (ENTITY(ID)->state.hp <= 0.f)
+												{
+													ENTITY(ID)->state.properties.unset(ActiveState::eALIVE);
+													ENTITY(ID)->state.hp = 0.f;
+												}
+												DestroyProjectile(index); // Destroy the projectile
+											}
+										}
 									}
-									DestroyProjectile(index); // Destroy the projectile
 								}
-							}
 							#undef ID
 						}
 						#undef X

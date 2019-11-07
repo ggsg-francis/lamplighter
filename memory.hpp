@@ -8,55 +8,182 @@ typedef unsigned int uint;
 namespace mem
 {
 	//-------------------------------- BUFFER TYPES
-
-	template <class type> struct Buffer
+	#define CHUNK_SIZE 32u
+	#define CHUNK_BITVEC btui32
+	#define CHUNK_BUFFER_SIZE 32u
+	#define CHUNK_BUFFER_MAX_INDEX (CHUNK_SIZE * CHUNK_BUFFER_SIZE)
+	template <class type> class Chunk
+	{
+	public:
+		type buffer[CHUNK_SIZE];
+		CHUNK_BITVEC buffer_used = 0ui32;
+	};
+	template <class type> class CkBuffer
 	{
 	private:
-		type* b = nullptr;
-		btui32 s = 0u;
-		Buffer() { b = new type; s = 1u; };
-		~Buffer() { delete b; };
+		btui32 index_end = 0u;
+		Chunk<type>* chunks[CHUNK_BUFFER_SIZE]{ nullptr };
+		inline void DecrementEnd()
+		{
+			// test (is this the first element of this buffer)
+			btui32 iChunk = index_end / CHUNK_SIZE;
+			btui32 iElement = index_end - iChunk * CHUNK_SIZE;
+			if (iElement == 0u) {
+				delete chunks[iChunk];
+				chunks[iChunk] = nullptr;
+			}
+			// Go back one step
+			--index_end;
+		}
 	public:
-		// Initialize at size
-		Buffer(btui32 size) { b = new type[size]; s = size; };
-		btui32 Size()
+		CkBuffer() {}
+		~CkBuffer()
 		{
-			return s;
+			for (btui32 iChunk = 0u; iChunk < CHUNK_BUFFER_SIZE; ++iChunk)
+				if (chunks[iChunk] != nullptr)
+				{
+					for (btui32 iElement = 0u; iElement < CHUNK_SIZE; ++iChunk)
+						// If this space is used, call it's destructor
+						if (mem::bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement))
+							chunks[iChunk]->buffer[iElement].~type();
+					// Delete the chunk
+					delete (void*)chunks[iChunk];
+				}
 		}
-		// Set new size
-		void SetSize(btui32 size)
+		btui32 Add(type* element)
 		{
-			type* b2 = new type[size];
-			for (btui32 i = 0; i < s; ++i)
+			for (btui32 i = 0; i < CHUNK_BUFFER_MAX_INDEX; i++) // For every space in the buffer
 			{
-				b2[i] = b[i];
+				btui32 iChunk = i / CHUNK_SIZE;
+				btui32 iElement = i - iChunk * CHUNK_SIZE;
+				// If this chunk is not created, create it
+				if (chunks[iChunk] == nullptr) chunks[iChunk] = new Chunk<type>;
+				// If this space is free, copy what we created into it
+				if (!mem::bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement))
+				{
+					mem::bvset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+					chunks[iChunk]->buffer[iElement] = *element;
+					delete (void*)element;
+					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
+					return i; // End the loop
+				}
 			}
-			delete b;
-			b = b2;
-			s = size;
+			return 0u;
 		}
-		// Set new size
-		void IncrSize()
+		void Remove(btui32 index)
 		{
-			type* b2 = new type[s + 1];
-			for (btui32 i = 0; i < s; ++i)
+			// If within range (attempt to fix buffer overrun)
+			if (index <= index_end)
 			{
-				b2[i] = b[i];
+				btui32 iChunk = index / CHUNK_SIZE;
+				btui32 iElement = index - iChunk * CHUNK_SIZE;
+				mem::bvunset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+				chunks[iChunk]->buffer[iElement].~type();
+				if (index == index_end && index > 0u)
+				{
+					// Decrement index last (no point checking if it's not used, we already know)
+					DecrementEnd();
+					// Continue decrementing until we reach the next last full space
+					while (!Used(index_end) && index_end > 0u) DecrementEnd();
+				}
 			}
-			delete b;
-			b = b2;
-			s = size;
 		}
-		type& Last()
+		bool Used(btui32 index)
 		{
-			return b[s - 1u];
+			btui32 iChunk = index / CHUNK_SIZE;
+			btui32 iElement = index - iChunk * CHUNK_SIZE;
+			if (chunks[iChunk] != nullptr)
+				return mem::bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+			else return false;
 		}
+		btui32 Size() { return index_end + 1ui32; }
 		type& operator[](btui32 index)
 		{
-			//index < s ? return b[index] : return nullptr;
-			return b[index];
+			btui32 iChunk = index / CHUNK_SIZE;
+			btui32 iElement = index - iChunk * CHUNK_SIZE;
+			return chunks[iChunk]->buffer[iElement];
 		}
 	};
+
+	#undef CHUNK_SIZE
+	#undef CHUNK_BITVEC
+	#undef CHUNK_BUFFER_SIZE
+	#undef CHUNK_BUFFER_MAX_INDEX
+
+	template <class type> class Buffer
+	{
+	private:
+		btui32 size = 0u;
+		bool* used = nullptr;
+		type* buf = nullptr;
+	public:
+		Buffer(btui32 _size = 16u)
+		{
+			used = new bool[_size];
+			buf = new type[_size];
+			size = _size;
+		}
+		~Buffer()
+		{
+			delete[] used;
+			delete[] buf;
+		}
+		btui32 Size() { return size; }
+		type& operator[](btui32 index)
+		{
+			return buf[index];
+		}
+	};
+
+	//template <class type> class Buffer
+	//{
+	//	btui32 size = 0u;
+	//	type* buf = nullptr;
+	//public:
+	//	Buffer() {}
+	//	~Buffer() { delete[] buf; }
+	//	void Add(type itemid)
+	//	{
+	//		// If there's already one element, the buffer is already initialized
+	//		if (size > 0u)
+	//		{
+	//			++size;
+	//			type* _buf = new type[size];
+	//			if (_buf) {
+	//				// Copy the existing buffer contents
+	//				for (btui32 i = 0; i < size - 1u; i++) _buf[i] = buf[i];
+	//				// Set the new element in the buffer
+	//				_buf[size - 1u] = itemid;
+	//				// Delete the old buffer and set buffer pointer to the new one
+	//				delete[] buf; buf = _buf;
+	//			}
+	//		}
+	//		// Else initialize new buffer
+	//		else { buf = new type[1u]{ itemid }; size = 1u; }
+	//	}
+	//	void Remove(btui32 index)
+	//	{
+	//		// If within range (attempt to fix buffer overrun)
+	//		if (size > 1u && index < size)
+	//		{
+	//			--size;
+	//			type* _buf = new type[size];
+	//			if (_buf) {
+	//				btui32 i;
+	//				// Copy up until this index directly
+	//				for (i = 0; i < index; i++) _buf[i] = buf[i];
+	//				// Copy this index & after with offset
+	//				for (i = index; i < size; i++) _buf[i] = buf[i + 1u];
+	//				// Delete old buffer and set buffer pointer to the new one
+	//				delete[] buf; buf = _buf;
+	//			}
+	//		}
+	//		// Else delete the buffer as it is empty
+	//		else { delete[] buf; size = 0u; }
+	//	}
+	//	btui32 Size() { return size; }
+	//	type& operator[](btui32 index) { return buf[index]; }
+	//};
 
 	// Fixed size object ID buffer
 	struct objbuf
@@ -179,20 +306,18 @@ namespace mem
 		}
 	};
 
+	#define IDBUF_SIZE 16u
 	// Automatic unfixed size object ID buffer 
 	struct idbuf
 	{
 	private:
-		btID* ptr_id; btui32 i_allocated; btui32 i_used;
-		void del(btID index);
-		void resize(size_t size);
+		btID ptr_id[IDBUF_SIZE]{ ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL };
+		bool ptr_used[IDBUF_SIZE]{ false };
 	public:
 		idbuf(); // Constructor
-		idbuf(idbuf& COPY); // Copy constructor (only maybe)
 		~idbuf(); // Destructor
 		void add(btID ID);
 		void remove(btID ID);
-		int size();
 		btID operator[] (btui32 x);
 	};
 

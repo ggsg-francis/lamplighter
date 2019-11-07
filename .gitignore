@@ -9,6 +9,9 @@ IntermediateArchiver/
 IntermediateEditor/
 IntermediateGame/
 IntermediateServer/
+.vs/
+*.suo
+*.db
 *.opendb
 *.psd
 *.tga

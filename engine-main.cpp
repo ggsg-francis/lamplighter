@@ -3,7 +3,7 @@
 // CRT memory leak detection
 
 #ifdef _DEBUG
-//#include  "vld.h"
+//#include "vld.h"
 //#define _CRTDBG_MAP_ALLOC
 //#include <stdlib.h>
 //#include <crtdbg.h>
@@ -111,43 +111,6 @@ bool step_pause = false;
 
 bool StepTick(double dt) // Fixed timestep tick function
 {
-	/*
-	if (!focus) // If this window is out of focus, wait for an event to say that we are back in focus
-		if (SDL_WaitEvent(&sdl_event))
-		{
-			if (sdl_event.type == SDL_WINDOWEVENT)
-			{
-				if (sdl_event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-				{
-					SDL_Log("Window %d gained keyboard focus", sdl_event.window.windowID);
-					focus = true;
-					return false;
-				}
-			}
-		}
-	// e is an SDL_Event variable we've declared globally
-	while (SDL_PollEvent(&sdl_event))
-	{
-		//If user closes the window
-		if (sdl_event.type == SDL_QUIT) {
-			quit = true;
-		}
-		else if (sdl_event.type == SDL_WINDOWEVENT)
-		{
-			if (sdl_event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-			{
-				SDL_Log("Window %d lost keyboard focus", sdl_event.window.windowID);
-				input::ClearAll(); // Clear all inputs
-				focus = false;
-				return false;
-			}
-		}
-		else if (focus)
-		{
-			input::UpdateInput(sdl_event);
-		}
-	}*/
-
 	if (!step_pause && focus)
 	{
 		step_accumulator += dt;
@@ -177,8 +140,7 @@ bool StepTick(double dt) // Fixed timestep tick function
 			false,
 			input::GetHit(input::key::ACTION_A),
 			input::GetHit(input::key::ACTION_B),
-			input::GetHit(input::key::ACTION_C),
-			input::GetHit(input::key::ACTION_D)); // 3rd 'aim' variable was here
+			input::GetHit(input::key::ACTION_C)); // 3rd 'aim' variable was here
 
 		// Generate analogue input from joystick input
 		m::Vector2 input_p2(0.f, 0.f);
@@ -191,8 +153,7 @@ bool StepTick(double dt) // Fixed timestep tick function
 			false,
 			input::GetHit(input::key::C_ACTION_A),
 			input::GetHit(input::key::C_ACTION_B),
-			input::GetHit(input::key::C_ACTION_C),
-			input::GetHit(input::key::C_ACTION_D)); // 3rd 'aim' variable was here
+			input::GetHit(input::key::C_ACTION_C)); // 3rd 'aim' variable was here
 
 		//do stuff
 		index::Tick((btf32)(FRAME_TIME));
@@ -207,42 +168,6 @@ bool StepTick(double dt) // Fixed timestep tick function
 //fixed timestep tick function
 bool StepTickEditor(double dt)
 {
-	/*
-	if (!focus) // If this window is out of focus, wait for an event to say that we are back in focus
-		if (SDL_WaitEvent(&sdl_event))
-		{
-			if (sdl_event.type == SDL_WINDOWEVENT)
-			{
-				if (sdl_event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-				{
-					SDL_Log("Window %d gained keyboard focus", sdl_event.window.windowID);
-					focus = true;
-					return false;
-				}
-			}
-		}
-	// e is an SDL_Event variable we've declared globally
-	while (SDL_PollEvent(&sdl_event))
-	{
-		//If user closes the window
-		if (sdl_event.type == SDL_QUIT) {
-			quit = true;
-		}
-		else if (sdl_event.type == SDL_WINDOWEVENT)
-		{
-			if (sdl_event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-			{
-				SDL_Log("Window %d lost keyboard focus", sdl_event.window.windowID);
-				focus = false;
-				return false;
-			}
-		}
-		else if (focus)
-		{
-			input::UpdateInput(sdl_event);
-		}
-	}*/
-
 	if (!step_pause && focus)
 	{
 		step_accumulator += dt;
@@ -269,8 +194,7 @@ bool StepTickEditor(double dt)
 			false,
 			input::GetHit(input::key::ACTION_A),
 			input::GetHit(input::key::ACTION_B),
-			input::GetHit(input::key::ACTION_C),
-			input::GetHit(input::key::ACTION_D)); // 3rd 'aim' variable was here
+			input::GetHit(input::key::ACTION_C)); // 3rd 'aim' variable was here
 
 		//do stuff
 		index::Tick(FRAME_TIME);
@@ -537,7 +461,7 @@ int main()
 				glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				index::SetViewFocus(1u);
-				//index::Draw();
+				index::Draw();
 
 				//-------------------------------- DRAW FRAMEBUFFER
 

@@ -2,17 +2,17 @@
 // not desirable but necessary for draw functions
 #include "objects.h"
 
-void HeldItem::Tick(bool actionA, bool actionB, bool actionC, bool actionD, bool use)
+void HeldItem::Tick(bool actionA, bool actionB, bool actionC, bool use)
 {
 	
 }
 
-void HeldItem::Draw(m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
+void HeldItem::Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch)
 {
 	
 }
 
-void HeldGun::Tick(bool actionA, bool actionB, bool actionC, bool actionD, bool use)
+void HeldGun::Tick(bool actionA, bool actionB, bool actionC, bool use)
 {
 	// State switch
 	///*
@@ -75,7 +75,7 @@ void HeldGun::Tick(bool actionA, bool actionB, bool actionC, bool actionD, bool 
 	}
 }
 
-void HeldGun::Draw(m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
+void HeldGun::Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
 {
 	t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
 	t_item.SetRotation(0.f);
@@ -107,7 +107,7 @@ void HeldGun::Draw(m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
 	t_item.Rotate(glm::radians(yaw), m::Vector3(0.f, 1.f, 0.f));
 	t_item.Rotate(glm::radians(pitch), m::Vector3(1.f, 0.f, 0.f));
 
-	DrawMeshAtTransform(ID_NULL, res::m_item_matchlock_01, res::t_item_matchlock_01, graphics::shader_solid, t_item);
+	DrawMeshAtTransform(ID_NULL, archive::items[itemid]->id_mesh, archive::items[itemid]->id_tex, graphics::shader_solid, t_item);
 
 	if (bvMusketState.get(HeldGun::musket_state::fpan_powder_in))
 		DrawBlendMeshAtTransform(ID_NULL, res::mb_item_matchlock_01_pan_full, fpan, res::t_item_matchlock_01, graphics::shader_blend, t_item);

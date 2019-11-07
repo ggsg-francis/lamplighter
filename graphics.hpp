@@ -346,10 +346,8 @@ namespace graphics
 	};
 
 	extern Shader shader_solid; // Used for drawing static meshes
-	extern Shader shader_scroll; // Used for drawing static meshes
 	extern Shader shader_blend; // Used for drawing blended meshes
 	extern Shader shader_terrain; // Used for drawing objects adjusted to the world heightmap
-	extern Shader shader_shadow; // Used for drawing shadows
 	extern Shader shader_sky; // Used for drawing... the sky
 	extern Shader shader_gui; // GUI shader
 	extern Shader shader_post; // Framebuffer postprocessing shader

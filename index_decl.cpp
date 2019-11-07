@@ -5,74 +5,14 @@
 
 #include "objects.h"
 
-/*
 struct Index
 {
-	// Environment lightmap texture
-	// R: Unused | G: Lightsources | B: Unused | A: Unused
-	graphics::ModifiableTexture t_EnvLightmap;
-	// R: Height | G: Unused | B: Unused | A: Unused
-	graphics::ModifiableTexture t_EnvHeightmap;
-	// R: Shadow Crest | G: Bounced Light Level | B: Heightmap | A: Unused
-	graphics::ModifiableTexture t_envShadowMap;
-
-	//-------------------------------- GLOBAL VARIABLES
-
-	float networkTimerTemp;
-
-	btID players[2];
-	m::Vector2 viewpos;
-
-	btID activeplayer;
-
 	struct cell
 	{
 		mem::idbuf ents;
 	};
-
 	cell cells[WORLD_SIZE][WORLD_SIZE];
-
-	// inventory stuff
-	graphics::GUIBox guibox;
-	graphics::GUIBox guibox_selection;
-	graphics::GUIText text_temp;
-	graphics::GUIText text_inventory_temp;
-	graphics::GUIText text_version;
-	graphics::GUIText text_fps;
-	btui16 inv_active_slot = 0u;
-
-	//-------------------------------- ENTITY BUFFERS
-
-	//block of IDs in memory, tracks the numbers and IDs of any type of object
-	mem::objbuf block_entity; // Entity buffer
-	Entity* _entities[BUF_SIZE]; // Entity pointer buffer
-
-	mem::objbuf_caterpillar block_proj; // Projectile buffer
-	#define PROJ_TRAIL_NUM 32
-	struct Projectile // Projectile variables
-	{
-		Transform2D t;
-		btf64 ttd = 0.f;
-		fac::faction faction = fac::none;
-		graphics::Matrix4x4 smokePoints[PROJ_TRAIL_NUM];
-		btf32 smokePointTime[PROJ_TRAIL_NUM]{ 0.f };
-		btui8 smokePointIndex = 0ui8;
-		btf32 distance_travelled = 0.f;
-	};
-	Projectile proj[BUF_SIZE];
-
-	//-------------------------------- FUNCTION DECLARATIONS
-
-	btID GetClosestPlayer(btID id);
-	btID GetClosestEntity(btID id, btf32 dist);
-	btID GetClosestEntityAlleg(btID index, btf32 dist, fac::facalleg allegiance);
-
-	void ProjectileTick(btf32 dt);
-	void ProjectileDraw();
-	void ProjectileHitCheck();
-	void RemoveAllReferences(btID id);
 };
-*/
 
 namespace index
 {
@@ -81,8 +21,6 @@ namespace index
 	graphics::ModifiableTexture t_EnvLightmap;
 	// R: Height | G: Unused | B: Unused | A: Unused
 	graphics::ModifiableTexture t_EnvHeightmap;
-	// R: Shadow Crest | G: Bounced Light Level | B: Heightmap | A: Unused
-	graphics::ModifiableTexture t_envShadowMap;
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- GLOBAL VARIABLES -----------------------------------------------------------------------------------
@@ -104,9 +42,7 @@ namespace index
 
 	// inventory stuff
 	graphics::GUIBox guibox;
-	graphics::GUIBox guibox_selection;
 	graphics::GUIText text_temp;
-	graphics::GUIText text_inventory_temp;
 	graphics::GUIText text_version;
 	graphics::GUIText text_fps;
 	btui16 inv_active_slot = 0u;

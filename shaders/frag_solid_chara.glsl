@@ -17,7 +17,6 @@ uniform sampler2D texture_diffuse1;
 uniform sampler2D tlm; // texture lightmap
 uniform sampler2D thm; // texture heightmap
 uniform sampler2D ts; // texture sky
-uniform sampler2D ttsm; // texture terrain shadow map
 uniform sampler2D tshadow; // texture shadow
 
 uniform vec3 vsun = normalize(vec3(-1,1,-1));
@@ -189,12 +188,13 @@ void main()
 		if (FragColor.a < 0.5) discard;
 
 		vec3 vd = Pos - pcam;
-		float amboffset = dot(Normal, vd);
+		float amboffset = dot(normalize(Normal), normalize(vd));
 
 		//float ndotl = clamp(dot(normalize(Normal), vsun), 0, 1);
 		//float ndotl = clamp(dot(Normal, vsun), 0, 1);
 		//float ndotl = clamp(dot(Normal, vsun) * 0.5 + 0.5, 0, 1);
-		float ndotl = clamp(round(dot(Normal, vsun) + 0.5 + (amboffset * -0.35f)), 0, 1); // Rounded
+		//float ndotl = clamp(round(dot(Normal, vsun) + 0.5 + (amboffset * -0.5f)), 0, 1); // Rounded Bent
+		float ndotl = clamp(round(dot(Normal, vsun) + 0.5), 0, 1); // Rounded
 		//float ndotl = clamp(round((dot(Normal, vsun) + 0.125) * 8) / 2, 0, 1); // Rounded 3-tone
 		
 		//float ndotl_amb = clamp(dot(Normal, vec3(0,-1,0)) + 0.5f, 0, 1);
@@ -206,18 +206,10 @@ void main()
 		if (lit)
 		{
 			vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
-			vec4 shadow_heightmap = texture(ttsm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
-			//float shadow_terrain = clamp(Pos.y - (shadow_heightmap.r * 64.f) + 1.f, 0, 1);
-			//float shadow_terrain = clamp((Pos.y - (shadow_heightmap.r * 64.f) + 0.125f) * 8, 0, 1);
-			float shadow_terrain = clamp((Pos.y - (shadow_heightmap.r * 64.f)) * 4, 0, 1);
-			//float shadow_terrain = shadow_heightmap.g;
-			//float shadow_terrain = clamp(((Pos.y - (shadow_heightmap.r * 64.f) + 0.125f) * 8) * (shadow_heightmap.g), 0, 1);
-			//float shadow_terrain = clamp(Pos.y - 16.f, 0, 1);
-			
 			
 			//vec3 skycol = mix(texture(ts, vec2(ft, 16.5f / 32.f)).rgb, texture(ts, vec2(ft, 0.f)).rgb, ndotl_amb * shadow_heightmap.g);
 			//vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb * shadow_heightmap.g);
-			vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb * shadow_heightmap.g);
+			vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb);
 			
 			vec3 suncol = texture(ts, vec2(ft, 30.5f / 32.f)).rgb * 2.f;
 			//vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (Pos.y / 256.f))).rgb;
@@ -235,7 +227,7 @@ void main()
 			// Ambient
 			// max: if the sky is lighter than the sun, override it
 			//if (shadow_heightmap.g < 0.5f)
-				FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl * shadow_terrain) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
+				FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
 			//else
 			//	FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
 			

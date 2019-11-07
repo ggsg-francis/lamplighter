@@ -9,6 +9,87 @@
 #include "index.h"
 #include "cfg.h"
 
+graphics::GUIText text_inventory_temp;
+graphics::GUIBox guibox_selection;
+
+ItemSlot::ItemSlot(btID _item)
+{
+	switch (archive::item_types[_item])
+	{
+	//case archive::types::root:
+	//	instance = new HeldItem;
+	//	break;
+	case archive::types::ITEM_EQUIP:
+		heldInstance = new HeldItem;
+		break;
+	case archive::types::ITEM_HELDGUN:
+		heldInstance = new HeldGun;
+		break;
+	case archive::types::ITEM_CONSUM:
+		heldInstance = new HeldItem;
+		break;
+	default:
+		heldInstance = new HeldItem;
+		break;
+	}
+	item = _item;
+}
+ItemSlot::~ItemSlot()
+{
+	delete heldInstance;
+}
+
+inline void Inventory::IncrStack(btui32 index)
+{
+	++items[index].count;
+}
+inline void Inventory::DecrStack(btui32 index)
+{
+	if (items[index].count > 1u)
+		--items[index].count;
+	else
+		items.Remove(index);
+}
+void Inventory::AddItem(btID itemid)
+{
+	bool added = false;
+	for (int i = 0; i < items.Size(); ++i)
+		if (items.Used(i) && items[i].item == itemid) // if we already have a stack of this item
+		{
+			IncrStack(i); added = true; // Add to existing stack
+		}
+	//if (!added) items.Add(new ItemSlot(HeldItem(), itemid));
+	if (!added) items.Add(new ItemSlot(itemid));
+}
+void Inventory::RemvItem(btID itemid)
+{
+	for (int i = 0; i < items.Size(); ++i)
+		if (items[i].item == itemid) // if we already have a stack of this item
+			DecrStack(i);
+}
+void Inventory::RemvItemAt(btui32 index) { DecrStack(index); }
+void Inventory::Draw(btui16 active_slot)
+{
+	for (btui16 i = 0; i < 10; i++)
+	{
+		graphics::DrawGUITexture(&res::GetTexture(res::t_gui_inv_slot), &graphics::shader_gui, i * 32, -240 + 16, 32, 32);
+		if (i < items.Size() && items.Used(i))
+		{
+			graphics::DrawGUITexture(&res::GetTexture(archive::items[items[i].item]->id_icon), &graphics::shader_gui, i * 32, -240 + 16, 32, 32);
+			char* ctest = new char[6];
+			_itoa(items[i].count, ctest, 10);
+			text_inventory_temp.ReGen(ctest, i * 32 - 14, i * 32 + 30, -210);
+			text_inventory_temp.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_font));
+			if (i == active_slot)
+			{
+				guibox_selection.ReGen((i * 32) - 8, (i * 32) + 8, -240 + 8, -240 + 24, 8, 8);
+				guibox_selection.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_select_box));
+			}
+			delete[] ctest;
+		}
+	}
+}
+
 void DrawMeshAtTransform(btID id, assetID mdl, assetID tex, graphics::Shader& shd, Transform3D transform)
 {
 	// Enable the shader
@@ -157,11 +238,10 @@ void Actor::PickUpItem(btID id)
 
 void Actor::DropItem(btID slot)
 {
-	if (slot < inventory.Get()->invSize)
+	if (slot < inventory.Get().Size() && inventory.Get().Used(slot))
 	{
-		index::SpawnItem(inventory.Get()->items[slot], t.position, yaw.Deg());
+		index::SpawnItem(inventory.Get()[slot].item, t.position, yaw.Deg());
 		inventory.RemvItemAt(slot);
-		//inventory.RemvItem(itemID);
 	}
 }
 
@@ -240,12 +320,16 @@ void Chara::Tick(btID index, btf32 dt)
 	state.hp += 0.001f;
 	if (state.hp > 1.f) state.hp = 1.f;
 
-	if (heldItem != nullptr) heldItem->Tick(
-		inputbv.get(Actor::IN_ATN_A),
-		inputbv.get(Actor::IN_ATN_B),
-		inputbv.get(Actor::IN_ATN_C),
-		inputbv.get(Actor::IN_ATN_D),
-		inputbv.get(Actor::IN_USE));
+	if (inventory.Get().Used(inv_active_slot))
+	{
+		#define HELDINSTANCE inventory.Get()[inv_active_slot].heldInstance
+		if (HELDINSTANCE != nullptr) HELDINSTANCE->Tick(
+			inputbv.get(Actor::IN_ATN_A),
+			inputbv.get(Actor::IN_ATN_B),
+			inputbv.get(Actor::IN_ATN_C),
+			inputbv.get(Actor::IN_USE));
+		#undef HELDINSTANCE
+	}
 
 	//________________________________________________________________
 	//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
@@ -257,7 +341,6 @@ void Chara::Tick(btID index, btf32 dt)
 	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.75f, t.position.y));
 	t_body.Rotate(yaw.Rad(), m::Vector3(0, 1, 0));
 
-	//CHARA(index)->ani_body_lean = m::Lerp(CHARA(index)->ani_body_lean, f2Input * 15.f, 0.1f);
 	ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
 
 	t_body.Rotate(glm::radians(ani_body_lean.y), m::Vector3(1, 0, 0));
@@ -275,6 +358,8 @@ void Chara::Draw(btID index)
 	// need a good way of knowing own index
 	DrawBlendMeshAtTransform(index, res::mb_legs, 0, t_skin, graphics::shader_blend, t_body);
 
+	btf32 lerpAmt = 0.05f * speed;
+
 	// draw arms
 
 	graphics::Matrix4x4 matrix;
@@ -287,18 +372,28 @@ void Chara::Draw(btID index)
 	btf32 dist_l;
 	btf32 dist_r;
 
-	if (heldItem != nullptr)
+	if (inventory.Get().Used(inv_active_slot))
 	{
-		m::Vector3 hand_pos_l = heldItem->t_item.GetPosition() + heldItem->t_item.GetUp() * -0.08f;
-		m::Vector3 hand_pos_r = heldItem->t_item.GetPosition() + heldItem->t_item.GetForward() * 0.5f;
+		#define HELDINSTANCE inventory.Get()[inv_active_slot].heldInstance
+
+		m::Vector3 hand_pos_l = HELDINSTANCE->t_item.GetPosition() + HELDINSTANCE->t_item.GetUp() * -0.08f;
+		m::Vector3 hand_pos_r = HELDINSTANCE->t_item.GetPosition() + HELDINSTANCE->t_item.GetForward() * 0.5f;
 
 		dist_l = m::Length(newpos_l - hand_pos_l) * 1.5f - 0.5f;
 		dist_r = m::Length(newpos_r - hand_pos_r) * 1.5f - 0.5f;
 
-		graphics::MatrixTransform(matrix, newpos_l, hand_pos_l - newpos_l, (t_body.GetRight() * -1.f) + t_body.GetUp());
+		graphics::MatrixTransformXFlip(matrix, newpos_l, hand_pos_l - newpos_l, (t_body.GetRight() * -1.f) + t_body.GetUp());
+		graphics::SetFrontFaceInverse();
 		DrawBlendMesh(index, res::mb_armscast, dist_l, t_skin, graphics::shader_blend, matrix);
+		graphics::SetFrontFace();
+
 		graphics::MatrixTransform(matrix, newpos_r, hand_pos_r - newpos_r, t_body.GetRight() + t_body.GetUp());
 		DrawBlendMesh(index, res::mb_armscast, dist_r, t_skin, graphics::shader_blend, matrix);
+
+		// draw item
+		HELDINSTANCE->Draw(inventory.Get()[inv_active_slot].item, t.position, t.height, viewYaw, viewPitch);
+
+		#undef HELDINSTANCE
 	}
 
 	// draw legs
@@ -371,10 +466,8 @@ void Chara::Draw(btID index)
 		}
 	}
 
-	//foot_pos_l_interp = m::Lerp(foot_pos_l_interp, foot_pos_l, 0.15f);
-	//foot_pos_r_interp = m::Lerp(foot_pos_r_interp, foot_pos_r, 0.15f);
-	foot_pos_l_interp = m::Lerp(foot_pos_l_interp, foot_pos_l, 0.2f);
-	foot_pos_r_interp = m::Lerp(foot_pos_r_interp, foot_pos_r, 0.2f);
+	foot_pos_l_interp = m::Lerp(foot_pos_l_interp, foot_pos_l, lerpAmt);
+	foot_pos_r_interp = m::Lerp(foot_pos_r_interp, foot_pos_r, lerpAmt);
 
 	dist_l = m::Length(newpos_hip_l - foot_pos_l_interp) * 2.f - 1.f;
 	dist_r = m::Length(newpos_hip_r - foot_pos_r_interp) * 2.f - 1.f;
@@ -389,18 +482,15 @@ void Chara::Draw(btID index)
 	// draw head
 
 	DrawBlendMeshAtTransform(index, res::mb_char_head, 0, t_skin, graphics::shader_blend, t_head);
+	//DrawMeshAtTransform(index, res::m_proj_2, res::t_proj_2, graphics::shader_solid, t_head);
 	DrawMeshAtTransform(index, res::m_equip_head_pickers, res::t_equip_atlas, graphics::shader_solid, t_head);
-
-	// draw item
-
-	if (heldItem != nullptr) heldItem->Draw(t.position, t.height, viewYaw, viewPitch);
+	//DrawMeshAtTransform(index, res::m_debug_bb, res::t_equip_atlas, graphics::shader_solid, t_head);
 }
 
 void EditorPawn::Tick(btID index, btf32 dt)
 {
 	if (state.properties.get(ActiveState::eALIVE))
 	{
-		//ENTITY[index]->t.velocity = fw::Lerp(ENTITY[index]->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
 		input.x = -input.x;
 		t.velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
 

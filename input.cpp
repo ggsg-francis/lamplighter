@@ -112,10 +112,12 @@ namespace input
 		ScancodeTransfer[scancode::A] = key::DIR_L;
 		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_LEFT_SHIFT)] = key::RUN;
 		ScancodeTransfer[scancode::E] = key::ACTIVATE;
-		ScancodeTransfer[scancode::Q] = key::ACTION_A;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_1)] = key::ACTION_B;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_2)] = key::ACTION_C;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_3)] = key::ACTION_D;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_1)] = key::ACTION_A;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_2)] = key::ACTION_B;
+		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_3)] = key::ACTION_C;
+		ScancodeTransfer[scancode::Q] = key::DROP_HELD;
+		ScancodeTransfer[scancode::Z] = key::INV_CYCLE_L;
+		ScancodeTransfer[scancode::X] = key::INV_CYCLE_R;
 		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F1)] = key::FUNCTION_1;
 		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F2)] = key::FUNCTION_2;
 		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F3)] = key::FUNCTION_3;
@@ -219,19 +221,31 @@ namespace input
 			else if (state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] == GLFW_RELEASE)
 				Unset(key::C_USE);
 
-			#define JOY_DEADZONE 0.05F
+			#define JOY_DEADZONE 0.06F
+			#define JOY_MULT 1 / (1 - 0.06F)
 
 			int count;
 			const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_5, &count);
-			if (abs(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]) > JOY_DEADZONE)
-				joy_x_a = state.axes[GLFW_GAMEPAD_AXIS_LEFT_X];
-			if (abs(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]) > JOY_DEADZONE)
-				joy_y_a = state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y];
-
-			if (abs(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]) > JOY_DEADZONE)
-				joy_x_b = state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X];
-			if (abs(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]) > JOY_DEADZONE)
-				joy_y_b = state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y];
+			// Left X
+			if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] > JOY_DEADZONE)
+				joy_x_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] - JOY_DEADZONE) * JOY_MULT;
+			else if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] < -JOY_DEADZONE)
+				joy_x_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] + JOY_DEADZONE) * JOY_MULT;
+			// Left Y
+			if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] > JOY_DEADZONE)
+				joy_y_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] - JOY_DEADZONE) * JOY_MULT;
+			else if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] < -JOY_DEADZONE)
+				joy_y_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] + JOY_DEADZONE) * JOY_MULT;
+			// Right X
+			if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] > JOY_DEADZONE)
+				joy_x_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] - JOY_DEADZONE) * JOY_MULT;
+			else if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] < -JOY_DEADZONE)
+				joy_x_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] + JOY_DEADZONE) * JOY_MULT;
+			// Right Y
+			if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] > JOY_DEADZONE)
+				joy_y_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] - JOY_DEADZONE) * JOY_MULT;
+			else if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] < -JOY_DEADZONE)
+				joy_y_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] + JOY_DEADZONE) * JOY_MULT;
 		}
 	}
 

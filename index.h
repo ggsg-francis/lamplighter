@@ -26,7 +26,7 @@ namespace index
 	extern btID activeplayer;
 
 	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack,
-		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C, bool ACTION_D);
+		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C);
 
 	void SetViewTargetID(btID ID);
 	btID GetViewTargetID();
