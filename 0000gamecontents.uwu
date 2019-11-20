@@ -1,0 +1,70 @@
+item wgun
+name Coolweapon Longname
+radi 1.0
+mdlh 0.2
+wght 1.1
+muns 123456
+held twohandpierce
+srcm Mmatchlc
+srct Tmatchlc
+icon TIcoMtch
+<<<<
+item misc
+name Beachball
+radi 0.5
+mdlh 0.5
+wght 1.4
+muns 20
+srcm MdebugBB
+srct TdebugBB
+icon TIcoBBal
+<<<<
+item cons
+name My Strongest Potion
+radi 0.5
+mdlh 0.0
+wght 0.1
+muns 10
+srcm MNFern01
+srct TNFern01
+icon T_______
+<<<<
+item wmgc
+name Stick
+radi 0.5
+mdlh 0.35
+wght 0.1
+muns 10
+srcm Mprjctl2
+srct Tprjctl2
+icon TdebugBB
+<<<<
+item wmel
+name Uranium Fist
+radi 1.0
+mdlh 0.1
+wght 1.1
+muns 14
+held twohandpierce
+dmg1 1000
+dmg2 0.0
+dmg3 0.0
+srcm MUraFist
+srct TUraFist
+icon TIcoMtch
+<<<<
+item wmel
+name Single Use Boomerang
+radi 1.0
+mdlh 0.5
+wght 1.1
+muns 14
+held twohandpierce
+dmg1 1000
+dmg2 0.0
+dmg3 0.0
+srcm MUraFist
+srct TUraFist
+icon TIcoMtch
+<<<<
+eof_
