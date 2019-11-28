@@ -12,9 +12,7 @@ namespace index
 			return nullptr;
 	}
 
-	// errrr
 	#define CHARA(a) ((Chara*)_entities[a])
-	//#define ENTITY _entities
 	#define ACTOR(a) ((Actor*)_entities[a])
 	#define ENTITY(a) ((Entity*)_entities[a])
 	#define ITEM(a) ((EItem*)_entities[a])
@@ -22,6 +20,171 @@ namespace index
 	#define HEAD_TURN_SPEED 8.f
 
 	void ActorRunAI(btID id)
+	{
+		Actor* actor = ACTOR(id);
+
+		actor->input.y = 1.f;
+		actor->input.x = -1.f;
+
+		// If ally is null or deleted or dead
+		if (actor->ai_target_ent == BUF_NULL || !block_entity.used[actor->ai_target_ent]
+			|| !ENTITY(actor->ai_target_ent)->state.properties.get(ActiveState::eALIVE))
+		{
+			actor->ai_target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
+			actor->atk_target = actor->ai_target_ent;
+		}
+
+		// If ally is null or deleted or dead
+		if (actor->ai_ally_ent == BUF_NULL || !block_entity.used[actor->ai_ally_ent]
+			|| !ENTITY(actor->ai_ally_ent)->state.properties.get(ActiveState::eALIVE))
+			actor->ai_ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
+
+		if (actor->ai_target_ent == BUF_NULL)
+		{
+			if (actor->ai_ally_ent == BUF_NULL)
+			{
+				actor->input.y = 0.f;
+				actor->input.x = 0.f;
+				actor->inputBV.unset(Actor::IN_USE);
+			}
+			else // if we have an ally, follow it
+			{
+				m::Vector2 TargetVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
+				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+				float distance_to_target = m::Length(TargetVector);
+
+				//actor->viewYaw.Set(angle2);
+				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+				actor->ai_vy_target = angle2;
+
+				if (distance_to_target > 5.f) // if ally is far away
+					actor->input.y = 1.f;
+				else
+					actor->input.y = 0.f;
+				actor->input.x = 0.f;
+				actor->inputBV.unset(Actor::IN_USE);
+			}
+		}
+		// if we have a target
+		else
+		{
+			m::Vector2 TargetVector = ENTITY(actor->ai_target_ent)->t.position - actor->t.position;
+			m::Vector2 TargetVectorVertical = m::Vector2(m::Length(TargetVector), ENTITY(actor->ai_target_ent)->t.height - actor->t.height);
+			float distance_to_target = m::Length(TargetVector);
+
+			actor->inputBV.unset(Actor::IN_USE);
+
+			if (distance_to_target < 1.5f) // if enemy is close enough to swing at
+			{
+				//compute rotation
+				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
+				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
+
+				actor->input.y = 0.f;
+
+				if (actor->ai_ally_ent != BUF_NULL)
+				{
+					m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
+					float distance_to_ally = m::Length(AllyVector);
+					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
+
+					if (distance_to_ally < 10.f) // if ally is close, spread
+						if (offsetLR_ally > 0.5f) actor->input.x = -1.f;
+						else if (offsetLR_ally < -0.5f) actor->input.x = 1.f;
+						else actor->input.x = 0.f;
+					else if (actor->state.hp > 0.6f) // if ally is far and hitpoints high, move in
+						if (offsetLR_ally > 0.5f) { actor->input.x = -0.5f; actor->input.y = 1.f; }
+						else if (offsetLR_ally < -0.5f) { actor->input.x = 0.5f; actor->input.y = 1.f; }
+						else actor->input.x = 1.f;
+					else // if low on hp, retreat
+						if (offsetLR_ally > 0.5f) { actor->input.x = 1.f; actor->input.y = -1.f; }
+						else if (offsetLR_ally < -0.5f) { actor->input.x = -1.f; actor->input.y = -1.f; }
+						else actor->input.x = -1.f;
+				}
+				else
+				{
+					actor->input.x = 0.f;
+				}
+
+				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+				btf32 angle22 = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(TargetVectorVertical)));
+
+				//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
+
+				//actor->viewYaw.Set(angle2);
+				//actor->viewPitch.Set(angle22);
+				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+				//actor->viewPitch.RotateTowards(angle22, HEAD_TURN_SPEED);
+				actor->ai_vy_target = angle2;
+				actor->ai_vp_target = angle22;
+
+				//actor->input.y = 0.f; actor->input.x = 1.f;
+
+				actor->inputBV.set(Actor::IN_USE);
+			}
+			else
+			{
+				//compute rotation
+				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
+				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
+
+				if (actor->ai_ally_ent != BUF_NULL)
+				{
+					m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
+					float distance_to_ally = m::Length(AllyVector);
+					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
+
+					// if ally is closer than enemy
+					if (distance_to_ally > distance_to_target || distance_to_ally < 4.f)
+					{
+						if (distance_to_ally > 2.f)
+							if (offsetLR_ally > 0.5f) actor->input.x = 1.f;
+							else if (offsetLR_ally < -0.5f) actor->input.x = -1.f;
+							else actor->input.x = 0.f;
+						else actor->input.x = 0.f;
+
+						btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+						//actor->viewYaw.Set(angle2);
+						//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+						actor->ai_vy_target = angle2;
+
+						actor->input.y = 1.f;
+					}
+					else
+					{
+						if (distance_to_ally > 2.f) actor->input.y = 1.f;
+						else actor->input.y = 0.f;
+						actor->input.x = 0.f;
+
+						btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(AllyVector)));
+
+						//actor->viewYaw.Set(angle2);
+						//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+						actor->ai_vy_target = angle2;
+
+					}
+				}
+				else
+				{
+					btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+					//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
+
+					//actor->viewYaw.Set(angle2);
+					//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
+					actor->ai_vy_target = angle2;
+
+					actor->input.y = 1.f;// actor->input.x = 0.f;
+
+					actor->input.x = 0.f;
+				}
+			}
+		}
+
+		actor->viewYaw.RotateTowards(actor->ai_vy_target, HEAD_TURN_SPEED);
+		actor->viewPitch.RotateTowards(actor->ai_vp_target, HEAD_TURN_SPEED);
+	}
+
+	void ActorRunAIBak(btID id)
 	{
 		Actor* actor = ACTOR(id);
 
@@ -281,7 +444,7 @@ namespace index
 			for (int y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; y++)
 			{
 				//de-intersect entities
-				for (int e = 0; e < IDBUF_SIZE; e++)
+				for (int e = 0; e <= cells[x][y].ents.end(); e++)
 				{
 					if (cells[x][y].ents[e] != ID_NULL)
 					{
@@ -307,14 +470,10 @@ namespace index
 
 								if (knockback)
 								{
-									if (ent->Type() == Entity::eCHARA)
-									{
-										ent->t.velocity = hit2.surface * -0.1f; // set their velocity
-									}
-									if (ENTITY(cells[x][y].ents[e])->Type() == Entity::eCHARA)
-									{
-										ENTITY(cells[x][y].ents[e])->t.velocity = hit2.surface * 0.2f; // set their velocity
-									}
+									if (ent->IsActor())
+										ent->t.velocity = hit2.surface * -0.1f; // set my velocity
+									if (ENTITY(cells[x][y].ents[e])->IsActor())
+										ENTITY(cells[x][y].ents[e])->t.velocity = hit2.surface * 0.3f; // set their velocity
 								}
 							}
 						}
@@ -378,7 +537,7 @@ namespace index
 	{
 		for (int i = 0; i <= block_entity.index_end; i++)
 			if (block_entity.used[i] && i != index) // If entity exists and is not me
-				if (ENTITY(i)->Type() == Entity::eCHARA) // and is character
+				if (ENTITY(i)->IsActor()) // and is actor
 				{
 					if (ACTOR(i)->ai_target_ent == index) // and is targeting me
 						ACTOR(i)->ai_target_ent = BUF_NULL; // Reset it's target
@@ -417,27 +576,32 @@ namespace index
 		return current_closest;
 	}
 
+	// TO DO ANGLE IS ALREADY CALCULATED HERE, SO REUSE IT FOR THE PROJECTILE CODE INSTEAD OF REGENNING
 	btID GetViewTargetEntity(btID index, btf32 dist, fac::facalleg allegiance)
 	{
 		btID current_closest = BUF_NULL;
-		btf32 closest_distance = dist; // Effectively sets a max return range
-		btf32 closest_x_distance = 1.f;
-		for (int i = 0; i <= block_entity.index_end; i++)
+		btf32 closest_angle = 35.f;
+		for (int index_other = 0; index_other <= block_entity.index_end; index_other++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != index && ENTITY(i)->state.properties.get(ActiveState::eALIVE))
+			if (block_entity.used[index_other] && index_other != index && ENTITY(index_other)->state.properties.get(ActiveState::eALIVE))
 			{
 				// do I like THEM
-				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == allegiance)
+				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(index_other)->faction) == allegiance)
 				{
-					btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
-					m::Vector2 offset = ENTITY(i)->t.position - ENTITY(index)->t.position;
-					btf32 local_x_dist = m::Dot(offset, m::AngToVec2(ACTOR(i)->viewYaw.Rad()));
-					if (check_distance < closest_distance && local_x_dist < closest_x_distance)
+					btf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
+					if (check_distance < dist)
 					{
-						closest_x_distance = local_x_dist;
-						current_closest = i;
-						closest_distance = check_distance;
+						m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
+
+						m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
+
+						btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
+						if (abs(angdif) < closest_angle)
+						{
+							closest_angle = angdif;
+							current_closest = index_other;
+						}
 					}
 				}
 			}
@@ -498,15 +662,42 @@ namespace index
 		return current_closest;
 	}
 
+	btID GetClosestActivator(btID index)
+	{
+		btID id = BUF_NULL;
+		btf32 closestDist = 1.f;
+		// Iterate through all 9 closest cells
+		for (int x = ENTITY(index)->csi.c[eCELL_I].x - 1u; x < ENTITY(index)->csi.c[eCELL_I].x + 1u; x++)
+		{
+			for (int y = ENTITY(index)->csi.c[eCELL_I].y - 1u; y < ENTITY(index)->csi.c[eCELL_I].y + 1u; y++)
+			{
+				// Iterate through every entity space in this cell
+				for (int e = 0; e <= cells[x][y].ents.end(); e++)
+				{
+					//if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->Type() == Entity::eITEM)
+					if (cells[x][y].ents[e] != ID_NULL && cells[x][y].ents[e] != index && block_entity.used[cells[x][y].ents[e]])
+					{
+						m::Vector2 vec = ENTITY(index)->t.position - ENTITY(cells[x][y].ents[e])->t.position;
+						btf32 dist = m::Length(vec);
+						if (dist < closestDist)
+						{
+							closestDist = dist;
+							id = cells[x][y].ents[e];
+						}
+					}
+				}
+			}
+		}
+		return id;
+	}
+
 	inline void spawn_setup_t(btID index, m::Vector2 pos, btf32 dir)
 	{
 		ePos = pos;
 		eYaw2.Set(dir);
 		GetCellSpaceInfo(ePos, eCSI);
 		env::GetHeight(eHgt, eCSI);
-
-		for (int i = 0; i < 4; i++) // Add me to all cells I'm touching
-			AddEntityCell(eCSI.c[i].x, eCSI.c[i].y, i);
+		AddEntityCell(eCSI.c[eCELL_I].x, eCSI.c[eCELL_I].y, index);
 	}
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -535,8 +726,6 @@ namespace index
 		CHARA(id)->t_skin = 0u;
 		CHARA(id)->aiControlled = false;
 		CHARA(id)->speed = 4.f;
-		CHARA(id)->inventory.AddItem(0u);
-		CHARA(id)->inventory.AddItem(0u);
 		CHARA(id)->inventory.AddItem(0u);
 	}
 
@@ -575,8 +764,8 @@ namespace index
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 3u;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 2.f;
-		//CHARA(id)->inventory.AddItem(0u);
+		CHARA(id)->speed = 1.f;
+		CHARA(id)->inventory.AddItem(4u);
 	}
 
 	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)

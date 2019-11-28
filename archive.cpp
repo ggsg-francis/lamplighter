@@ -11,50 +11,57 @@ namespace res
 {
 	graphics::Texture& GetT(btui32 index)
 	{
-		if (archive::assets[index].type == archive::types::ASSET_TEXTURE_FILE)
-			return *(graphics::Texture*)archive::assets[index].asset;
-		else return *(graphics::Texture*)archive::assets[DEFAULT_TEXTURE].asset;
+		if (acv::assets[index].type == acv::types::ASSET_TEXTURE_FILE)
+			return *(graphics::Texture*)acv::assets[index].asset;
+		else return *(graphics::Texture*)acv::assets[DEFAULT_TEXTURE].asset;
 	}
 
 	graphics::Mesh& GetM(btui32 index)
 	{
-		if (archive::assets[index].type == archive::types::ASSET_MESH_FILE)
-			return *(graphics::Mesh*)archive::assets[index].asset;
-		else return *(graphics::Mesh*)archive::assets[DEFAULT_MESH].asset;
+		if (acv::assets[index].type == acv::types::ASSET_MESH_FILE)
+			return *(graphics::Mesh*)acv::assets[index].asset;
+		else return *(graphics::Mesh*)acv::assets[DEFAULT_MESH].asset;
 	}
 
 	graphics::MeshBlend& GetMB(btui32 index)
 	{
-		if (archive::assets[index].type == archive::types::ASSET_MESHBLEND_FILE)
-			return *(graphics::MeshBlend*)archive::assets[index].asset;
-		else return *(graphics::MeshBlend*)archive::assets[DEFAULT_MESHBLEND].asset;
+		if (acv::assets[index].type == acv::types::ASSET_MESHBLEND_FILE)
+			return *(graphics::MeshBlend*)acv::assets[index].asset;
+		else return *(graphics::MeshBlend*)acv::assets[DEFAULT_MESHBLEND].asset;
+	}
+
+	graphics::MeshDeform& GetMD(btui32 index)
+	{
+		if (acv::assets[index].type == acv::types::ASSET_MESHDEFORM_FILE)
+			return *(graphics::MeshDeform*)acv::assets[index].asset;
+		else return *(graphics::MeshDeform*)acv::assets[DEFAULT_MESHDEFORM].asset;
 	}
 
 	bool IsTexture(btui32 index)
 	{
-		return archive::assets[index].type == archive::types::ASSET_TEXTURE_FILE;
+		return acv::assets[index].type == acv::types::ASSET_TEXTURE_FILE;
 	}
 
 	bool IsMesh(btui32 index)
 	{
-		return archive::assets[index].type == archive::types::ASSET_MESH_FILE;
+		return acv::assets[index].type == acv::types::ASSET_MESH_FILE;
 	}
 
 	bool IsMeshBlend(btui32 index)
 	{
-		return archive::assets[index].type == archive::types::ASSET_MESHBLEND_FILE;
+		return acv::assets[index].type == acv::types::ASSET_MESHBLEND_FILE;
 	}
 
 	graphics::ModifiableTexture skin_t[4];
 
 	void Init()
 	{
-		serializer::load_archive("res/archive.UwUa");
+		serializer::LoadArchive("res/archive.UwUa");
 
 		//for now, just load everything
-		for (btui32 i = 0u; i < archive::assetCount; i++)
+		for (btui32 i = 0u; i < acv::assetCount; i++)
 		{
-			archive::LoadAsset(i);
+			acv::LoadAsset(i);
 		}
 
 		srand(time(NULL)); //initialize the random seed
@@ -137,17 +144,20 @@ namespace res
 	}
 	void End()
 	{
-		archive::ClearMemory();
+		acv::ClearMemory();
 	}
 }
 #endif
 
-namespace archive
+namespace acv
 {
 	//items
 	item* items[ITEMS_COUNT]{ nullptr };
 	types::ItemType item_types[ITEMS_COUNT];
-	btID item_index = 0;
+	btui32 item_index = 0;
+
+	EnvProp props[PROPS_COUNT];
+	btui32 prop_index = 0;
 
 	// NEW STUFF !!!!!!!!!!!!!!!!!!!!!
 
@@ -178,6 +188,11 @@ namespace archive
 				((graphics::MeshBlend*)assets[i].asset)->LoadFile(assets[i].filename);
 				assets[i].loaded = true;
 				return;
+			case types::ASSET_MESHDEFORM_FILE:
+				assets[i].asset = new graphics::MeshDeform;
+				((graphics::MeshDeform*)assets[i].asset)->LoadFile(assets[i].filename);
+				assets[i].loaded = true;
+				return;
 			};
 		}
 	}
@@ -193,9 +208,9 @@ namespace archive
 
 	void ClearMemory()
 	{
-		for (int i = 0; i < archive::item_index; i++)
+		for (int i = 0; i < acv::item_index; i++)
 		{
-			delete(archive::items[i]);
+			delete(acv::items[i]);
 		}
 		#ifndef DEF_ARCHIVER
 		for (int i = 0; i < FN_COUNT; i++)

@@ -57,58 +57,40 @@ float dither(float color, float index_value) {
 	
 void main()
 {
-	if (gl_FragCoord.x > 319 && gl_FragCoord.x < 321 && gl_FragCoord.y > 239 && gl_FragCoord.y < 241)
-	{
-		if (idn)
-		{
-			FragColor.r = 0;
-			FragColor.g = 0;
-			FragColor.b = 1;
-		}
-		else
-		{
-			FragColor.r = float(id) / float(256);
-			FragColor.g = float(id >> 8) / float(256);
-			FragColor.b = 0;
-		}
-	}
-	else
-	{
-		float ndotl = dot(Normal, vsun);
+	float ndotl = dot(Normal, vsun);
 
-		//FragColor = texture(texture_diffuse1, TexCoords);
-		//FragColor = texture(texture_diffuse1, vec2(TexCoords.x + (ft), TexCoords.y));
-		
-		vec3 vd = normalize(Pos - pcam);
-		
-		/*
-		FragColor = texture(texture_diffuse1, vec2(
-				ft + dot(vd, vsun) * 0.01, // X Coord
-				dot(vd, vec3(0,-1,0)) * 0.5 + 0.5
-			)); // Y Coord
-		*/
-		/*
-		FragColor = texture(texture_diffuse1, vec2(ft,
-				(dot(vd, vec3(0,-1,0)) * 0.5 + (0.5 - 0.06)) + (dot(vd, vsun) * 0.06)
-			));
-		*/
-		
-		FragColor = Col;
-				
-		// Draw Sun
-		FragColor += vec4(clamp(round(dot(vd, vsun) * 512 - 511), 0, 1));
-		// Draw Sun Halo
-		//vec3 suncol = texture(texture_diffuse1, vec2(ft, 30.5f / 32.f)).rgb * 2.f;
-		//FragColor.rgb += suncol * clamp(dot(vd, vsun) * 0.5 - 0.25, 0, 2);
-		
-		// Dither
-		/*
-		int dx = int(mod(gl_FragCoord.x, 4));
-		int dy = int(mod(gl_FragCoord.y, 4));
-		float rndBy = 12.f;
-		FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
-		// Posterize
-		FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-		*/
-	}
+	//FragColor = texture(texture_diffuse1, TexCoords);
+	//FragColor = texture(texture_diffuse1, vec2(TexCoords.x + (ft), TexCoords.y));
+	
+	vec3 vd = normalize(Pos - pcam);
+	
+	/*
+	FragColor = texture(texture_diffuse1, vec2(
+			ft + dot(vd, vsun) * 0.01, // X Coord
+			dot(vd, vec3(0,-1,0)) * 0.5 + 0.5
+		)); // Y Coord
+	*/
+	/*
+	FragColor = texture(texture_diffuse1, vec2(ft,
+			(dot(vd, vec3(0,-1,0)) * 0.5 + (0.5 - 0.06)) + (dot(vd, vsun) * 0.06)
+		));
+	*/
+	
+	FragColor = Col;
+			
+	// Draw Sun
+	FragColor += vec4(clamp(round(dot(vd, vsun) * 512 - 511), 0, 1));
+	// Draw Sun Halo
+	//vec3 suncol = texture(texture_diffuse1, vec2(ft, 30.5f / 32.f)).rgb * 2.f;
+	//FragColor.rgb += suncol * clamp(dot(vd, vsun) * 0.5 - 0.25, 0, 2);
+	
+	// Dither
+	/*
+	int dx = int(mod(gl_FragCoord.x, 4));
+	int dy = int(mod(gl_FragCoord.y, 4));
+	float rndBy = 12.f;
+	FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
+	// Posterize
+	FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
+	*/
 }

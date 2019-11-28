@@ -7,6 +7,7 @@
 #define DEFAULT_TEXTURE 0u
 #define DEFAULT_MESH 1u
 #define DEFAULT_MESHBLEND 2u
+#define DEFAULT_MESHDEFORM 3u
 
 typedef btui16 assetID;
 
@@ -24,10 +25,12 @@ namespace res
 		t_default,
 		m_default,
 		mb_default,
+		md_default,
 		m_debug_bb,
 		t_debug_bb,
 		m_debugcell,
-		t_noise,
+		m_debug_sphere,
+		t_meat_test,
 		// Compass
 		m_compass,
 		t_compass,
@@ -49,16 +52,18 @@ namespace res
 		t_skin3,
 		t_skin4,
 		// Chara models
-		mb_legs,
-		mb_armscast,
+		md_chr_body,
+		md_char_arm,
 		mb_char_head,
 		mb_char_leg,
+		md_char_leg,
 		// Err....
 		m_ex1e_air_carrier,
 		// Equipment
 		m_equip_head_pickers,
-		mb_equip_body_pickers_step,
-		mb_equip_body_pickers_run,
+		md_equip_body_robe_01,
+		t_equip_body_robe_01,
+		t_equip_legs_robe_01,
 		// Matchlock gun
 		m_item_matchlock_01,
 		mb_item_matchlock_01_lever,
@@ -85,12 +90,13 @@ namespace res
 		t_gui_bar_yellow,
 		t_gui_box,
 		t_gui_select_box,
-		t_gui_inv_slot,
+		t_gui_icon_pick_up,
 	};
 
 	graphics::Texture& GetT(btui32 index);
 	graphics::Mesh& GetM(btui32 index);
 	graphics::MeshBlend& GetMB(btui32 index);
+	graphics::MeshDeform& GetMD(btui32 index);
 
 	bool IsTexture(btui32 index);
 	bool IsMesh(btui32 index);
@@ -101,12 +107,23 @@ namespace res
 }
 #endif
 
+// Number of characters in a filename
 #define FN_SIZE 64
+// Number of filenames (number of assets, in other words)
 #define FN_COUNT 128
-#define ITEMS_COUNT 128
+// -
+#define ITEMS_COUNT 32
+// -
+#define PROPS_COUNT 8
 
-namespace archive
+namespace acv
 {
+	struct EnvProp
+	{
+		btID idMesh = ID_NULL;
+		btID idTxtr = ID_NULL;
+	};
+
 	namespace types
 	{
 		enum ItemType : btui8
@@ -124,6 +141,7 @@ namespace archive
 			ASSET_TEXTURE_FILE,
 			ASSET_MESH_FILE,
 			ASSET_MESHBLEND_FILE,
+			ASSET_MESHDEFORM_FILE,
 		};
 	}
 
@@ -188,7 +206,10 @@ namespace archive
 	//items (also make inaccessable)
 	extern item* items[ITEMS_COUNT];
 	extern types::ItemType item_types[ITEMS_COUNT];
-	extern btID item_index; // number of items, I think
+	extern btui32 item_index; // number of items, I think
+
+	extern EnvProp props[PROPS_COUNT];
+	extern btui32 prop_index;
 
 	// make inaccessable
 	extern archive_asset assets[FN_COUNT];

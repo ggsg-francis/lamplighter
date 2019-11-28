@@ -26,7 +26,7 @@ namespace m
 		};
 		Angle(btf32 angle)
 		{
-			deg = angle;
+			Set(angle);
 		};
 		inline void Set(btf32 other)
 		{
@@ -234,6 +234,8 @@ namespace m
 	// Convert to a magnitude of one??????????
 	Quaternion Normalize(const Quaternion& QUATERNION);
 
+	btf32 AngDif(btf32 ANGLE_A, btf32 ANGLE_B);
+
 	// Convert radians angle to Vector2
 	Vector2 AngToVec2(float ANGLE);
 	// Convert radians angle to Vector2 using right-handed rule
@@ -243,6 +245,8 @@ namespace m
 	// Convert Vector2 to radians angle using right-handed rule
 	float Vec2ToAngRH(Vector2 VECTOR);
 
+	// Get value for drawing blend mesh from A to B
+	btf32 BlendValueFromDistance(const Vector3& VECTOR_SRC, const Vector3& VECTOR_DST, btf32 MIN_LENGTH, btf32 MAX_LENGTH);
 
 	// Create quaternion from axis and angle (does not work)
 	Quaternion QuatFromAxisAngle(Vector3& axis, btf32 angle);

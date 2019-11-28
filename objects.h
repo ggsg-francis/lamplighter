@@ -41,13 +41,27 @@ public:
 	void Draw(btui16 active_slot);
 };
 
-//could just send a gl index for the texture value, but i'd rather future-proof it in case I need to store more metadata in the texture class
-void DrawMeshAtTransform(btID ID, graphics::Mesh MODEL, graphics::TextureBase TEXTURE, graphics::Shader& SHADER, Transform3D TRANSFORM);
-void DrawMesh(btID ID, graphics::Mesh MODEL, graphics::TextureBase TEXTURE, graphics::Shader& SHADER, glm::mat4 MATRIX);
-void DrawMesh(btID ID, graphics::Mesh MODEL, graphics::TextureBase TEXTURE, graphics::Shader& SHADER, graphics::Matrix4x4 MATRIX);
-void DrawMesh(btID ID, graphics::Mesh MODEL, graphics::Shader& SHADER, graphics::Matrix4x4 MATRIX);
-void DrawBlendMeshAtTransform(btID ID, graphics::MeshBlend MODEL, btf32 BLENDSTATE, graphics::TextureBase TEXTURE, graphics::Shader& SHADER, Transform3D TRANSFORM);
-void DrawBlendMesh(btID ID, graphics::MeshBlend MODEL, btf32 BLENDSTATE, graphics::TextureBase TEXTURE, graphics::Shader& SHADER, graphics::Matrix4x4 MATRIX);
+enum ShaderStyle
+{
+	SS_NORMAL,
+	SS_CHARA,
+	SS_TERRAIN,
+	SS_SKY,
+};
+
+void DrawMesh(btID ID, graphics::Mesh MODEL, graphics::TextureBase TEXTURE, ShaderStyle SHADER, glm::mat4 MATRIX);
+
+void DrawMesh(btID ID, graphics::Mesh MODEL, graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+
+void DrawMesh(btID ID, graphics::Mesh MODEL, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+
+void DrawBlendMesh(btID ID, graphics::MeshBlend MODEL, btf32 BLENDSTATE,
+	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+
+void DrawMeshDeform(btID ID, graphics::MeshDeform MODEL,
+	graphics::TextureBase TEXTURE, ShaderStyle SHADER, btui32 MATRIX_COUNT,
+	graphics::Matrix4x4 MATRIX_A, graphics::Matrix4x4 MATRIX_B,
+	graphics::Matrix4x4 MATRIX_C, graphics::Matrix4x4 MATRIX_D);
 
 //transform
 class Transform2D
@@ -75,29 +89,25 @@ class TransformEntity
 struct ActiveState
 {
 	// Global properties, ultimately to be used by every object in the game, incl. environment tiles
-	enum globalProperty : btui8 // WIP
+	enum globalProperty : btui64 // WIP
 	{
-		eALIVE = 1ui8,
-		eFLAMMABLE = 1ui8 << 6ui8,
-		eON_FIRE = 1ui8 << 7ui8,
+		eALIVE = 1ui64,
+		eFLAMMABLE = 1ui64 << 1ui64,
+		eON_FIRE = 1ui64 << 2ui64,
 	};
-	mem::bv<btui8, globalProperty> properties;
+	mem::bv<btui64, globalProperty> properties;
 	btf32 hp = 1.f;
+
+	void Damage(btf32 AMOUNT, btf32 ANGLE);
 };
 
 // Base entity class
 struct Entity
 {
-	enum EntityType : btui8
-	{
-		eENTITY,
-		eACTOR,
-		eCHARA,
-		eITEM,
-		eEDITORPAWN,
-	};
-	// Return which entity type / class this is
-	virtual EntityType Type() { return EntityType::eENTITY; };
+	virtual bool IsActor() { return false; };
+	virtual bool IsActivator() { return false; };
+	virtual bool IsRestingItem() { return false; };
+	virtual char* GetDisplayName() { return "Entity";};
 
 	enum EntityFlags : btui8
 	{
@@ -136,7 +146,9 @@ struct Entity
 // Entity type representing placed items
 struct EItem : public Entity
 {
-	virtual EntityType Type() { return EntityType::eITEM; };
+	virtual bool IsActivator() { return true; };
+	virtual bool IsRestingItem() { return true; };
+	virtual char* GetDisplayName() { return (char*)acv::items[itemid]->name; };
 
 	btID itemid;
 	Transform3D t_item;
@@ -146,7 +158,8 @@ struct EItem : public Entity
 };
 struct Actor : public Entity
 {
-	virtual EntityType Type() { return EntityType::eACTOR; };
+	virtual bool IsActor() { return true; };
+	virtual char* GetDisplayName() { return "Actor"; };
 
 	enum ActorInput : btui8
 	{
@@ -180,8 +193,6 @@ struct Actor : public Entity
 	Inventory inventory;
 	btui32 inv_active_slot = 0u;
 
-	btf64 attack_time = 0.f;
-
 	btID atk_target = BUF_NULL;
 	m::Angle atkYaw;
 
@@ -204,29 +215,30 @@ struct Actor : public Entity
 };
 struct Chara : public Actor
 {
-	virtual EntityType Type() { return EntityType::eCHARA; };
-
 	enum equipmode : btui8
 	{
 		spell,
 		weapon,
 	};
-	enum chara_state : btui8
+
+	enum CharaStaticProperties : btui8
+	{
+		eLEFT_HANDED = (0x1ui8 << 0x0ui8),
+	};
+	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
+
+	enum CharaActiveState : btui8
 	{
 		ani_right_foot = (0x1ui8 << 0x0ui8),
-		//reloading = (0x1ui8 << 0x1ui8),
-	};
-	// Inventory stuff
-	btID equipped_item = BUF_NULL; // Everything that moves can hold an item
-	equipmode equip_mode;
-	// Animation stuff
-	bool aniStepR = false; // Which foot is forwards right now
-	mem::bv<btui8, chara_state> charastatebv;
-	btID lookTarget = BUF_NULL; // What it's looking at
+	}; 
+	mem::bv<btui8, CharaActiveState> charastatebv;
+
 
 	Transform3D t_body, t_head;
-
-	m::Vector3 foot_pos_l, foot_pos_r, foot_pos_l_interp, foot_pos_r_interp;
+	m::Vector3 footPosTargR, footPosTargL, footPosR, footPosL;
+	m::Vector2 ani_body_lean;
+	graphics::Matrix4x4 matLegHipR, matLegUpR, matLegLoR, matLegFootR;
+	graphics::Matrix4x4 matLegHipL, matLegUpL, matLegLoL, matLegFootL;
 	enum FootState : btui8
 	{
 		eL_DOWN,
@@ -235,31 +247,22 @@ struct Chara : public Actor
 	};
 	FootState foot_state = eBOTH_DOWN;
 
-	m::Vector2 ani_body_lean;
-
 	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
 	virtual void Draw(btID INDEX);
+
+protected:
+	m::Vector3 SetFootPos(m::Vector2 POSITION);
 };
 struct EditorPawn : public Actor
 {
-	virtual EntityType Type() { return EntityType::eEDITORPAWN; };
-
-	enum equipmode : btui8
-	{
-		spell,
-		weapon,
-	};
-	enum chara_state : btui8
+	enum CharaState : btui8
 	{
 		ani_right_foot = (0x1ui8 << 0x0ui8),
 		reloading = (0x1ui8 << 0x1ui8),
 	};
-	// Inventory stuff
-	btID equipped_item = BUF_NULL; // Everything that moves can hold an item
-	equipmode equip_mode;
 	// Animation stuff
 	bool aniStepR = false; // Which foot is forwards right now
-	mem::bv<btui8, chara_state> charastatebv;
+	mem::bv<btui8, CharaState> charastatebv;
 	btID lookTarget = BUF_NULL; // What it's looking at
 
 	HeldItem* heldItem;

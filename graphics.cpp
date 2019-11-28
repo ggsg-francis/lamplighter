@@ -23,28 +23,49 @@ typedef btui16 version_t;
 
 namespace graphics
 {
-	//btui8 font_kerning[] =
-	//{
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	3u,	6u,	7u,	8u,	7u,	7u,	3u,	4u,	4u,	5u,	6u,	3u,	6u,	3u,	4u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	3u,	3u,	7u,	6u,	7u,	6u,
-	//	8u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	6u,	6u,	7u,	6u,	8u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	6u,	7u,	7u,	8u,	7u,	7u,	7u,	4u,	4u,	4u,	7u,	7u,
-	//	3u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	6u,	5u,	7u,	4u,	8u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	5u,	7u,	7u,	8u,	7u,	7u,	7u,	4u,	2u,	4u,	6u,	7u,
+	/*btui8 font_kerning[] =
+	{
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	3u,	6u,	7u,	8u,	7u,	7u,	3u,	4u,	4u,	5u,	6u,	3u,	6u,	3u,	4u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	3u,	3u,	7u,	6u,	7u,	6u,
+		8u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	6u,	6u,	7u,	6u,	8u,	7u,	7u,
+		7u,	7u,	7u,	7u,	6u,	7u,	7u,	8u,	7u,	7u,	7u,	4u,	4u,	4u,	7u,	7u,
+		3u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	6u,	5u,	7u,	4u,	8u,	7u,	7u,
+		7u,	7u,	7u,	7u,	5u,	7u,	7u,	8u,	7u,	7u,	7u,	4u,	2u,	4u,	6u,	7u,
 
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
-	//};
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+	};*/
 
 	btui8 font_kerning[] =
+	{
+		0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+		0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+		7,	3,	6,	7,	8,	7,	7,	3,	4,	4,	5,	6,	3,	6,	3,	4,
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	3,	3,	7,	6,	7,	6,
+		8,	7,	7,	7,	7,	7,	7,	7,	7,	6,	6,	7,	6,	8,	7,	7,
+		7,	7,	7,	7,	6,	7,	7,	8,	7,	7,	7,	4,	4,	4,	7,	7,
+		3,	7,	7,	7,	7,	7,	6,	7,	7,	6,	5,	7,	6,	8,	7,	7,
+		7,	7,	7,	7,	6,	7,	7,	8,	7,	7,	7,	4,	2,	4,	6,	7,
+
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,
+		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7
+	};
+
+	/*btui8 font_kerning[] =
 	{
 		0u,	0u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
@@ -63,315 +84,80 @@ namespace graphics
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
+	};*/
+
+	struct Graphics
+	{
+		btui32 frameSizeX = 320u;
+		btui32 frameSizeY = 240u;
+		Shader shaders[S_COUNT];
 	};
+	Graphics* gPtr;
+
+	btui32 FrameSizeX() { return gPtr->frameSizeX; }
+	btui32 FrameSizeY() { return gPtr->frameSizeY; }
+
+	void SetFrameSize(btui32 x, btui32 y)
+	{
+		if (!cfg::bEditMode)
+		{
+			//btui32 scale = x / 1280u + 1u;
+			btui32 scale = x / 2000u + 1u;
+			btui32 scale_half = scale * 2u;
+			gPtr->frameSizeX = cfg::iWinX / scale_half;
+			gPtr->frameSizeY = cfg::iWinY / scale;
+		}
+		else
+		{
+			gPtr->frameSizeX = cfg::iWinX;
+			gPtr->frameSizeY = cfg::iWinY;
+		}
+
+		gPtr->shaders[S_POST].Use();
+		gPtr->shaders[S_POST].SetFloat("wx", (GLfloat)x * 0.5f);
+		gPtr->shaders[S_POST].SetFloat("wy", (GLfloat)y);
+	}
 
 	glm::mat4 mat_proj;
 	glm::mat4 mat_view;
 
 	// TEMP TEMP TEMP TEMP
 	GUIBitmap guibmp;
-	int gui_x_start;
-	int gui_y_start;
 
-	Shader shader_solid;
-	Shader shader_solidChara;
-	Shader shader_solidBlend;
-	Shader shader_solidBlendChara;
-	Shader shader_terrain;
-	Shader shader_shadow;
-	Shader shader_sky;
-	Shader shader_gui;
-	Shader shader_post;
-
-	void CompileShaderTest()
-	{
-		char* c =
-			R"(
-		#version 330 core
-		out vec4 FragColor;
-
-		in vec2 TexCoords;
-		in vec3 Normal;
-		in vec3 Pos;
-		in vec4 Col;
-		in vec4 LightSpacePos;
-
-		uniform uint id; // identity
-		uniform bool idn; // id null
-		uniform vec3 pcam;
-
-		uniform float ft; // Time
-
-		uniform sampler2D texture_diffuse1;
-		uniform sampler2D tlm; // texture lightmap
-		uniform sampler2D thm; // texture heightmap
-		uniform sampler2D ts; // texture sky
-		uniform sampler2D ttsm; // texture terrain shadow map
-		uniform sampler2D tshadow; // texture shadow
-
-		uniform vec3 vsun = normalize(vec3(-1, 1, -1));
-
-		uniform bool lit = true;
-
-		const int indexMatrix4x4old[16] = int[](
-			0, 8, 2, 10,
-			12, 4, 14, 6,
-			3, 11, 1, 9,
-			15, 7, 13, 5);
-
-		const int indexMatrix4x4[16] = int[](
-			1, 8, 2, 10,
-			12, 4, 14, 6,
-			3, 11, 1, 9,
-			14, 7, 13, 5);
-
-		const int indexMat4x4PSX[16] = int[]
-		(
-			-4, 0, -3, 1,
-			2, -2, 3, -1,
-			-3, 1, -4, 0,
-			3, -1, 2, -2
-			);
-
-		// normally the first one is zero
-		const int indexMatrix8x8[64] = int[](
-			0, 32, 8, 40, 2, 34, 10, 42,
-			48, 16, 56, 24, 50, 18, 58, 26,
-			12, 44, 4, 36, 14, 46, 6, 38,
-			60, 28, 52, 20, 62, 30, 54, 22,
-			3, 35, 11, 43, 1, 33, 9, 41,
-			51, 19, 59, 27, 49, 17, 57, 25,
-			15, 47, 7, 39, 13, 45, 5, 37,
-			63, 31, 55, 23, 61, 29, 53, 21);
-
-		float dither(float color, float index_value) {
-			float closestColor = (color < 0.5) ? 0 : 1;
-			float secondClosestColor = 1 - closestColor;
-			float distance = abs(closestColor - color);
-			return (distance < index_value) ? closestColor : secondClosestColor;
-		}
-
-		float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize)
-		{
-			vec2 nearestpoint = (round(projCoords.xy * tsize.x) - 0.5) / tsize.x; // also seems to work, for some reason
-			vec2 offset = (projCoords.xy - nearestpoint) / texelSize.x; // known to work
-			return mix( // X1xX2 x X3xX4 (Y lerp)
-				mix( // X1, X2 Lerp
-					1 - clamp((projCoords.z - texture(tshadow, nearestpoint).r) * 512.f, 0.0, 1.0),                          // Shadow A
-					1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 0) * texelSize).r) * 512.f, 0.0, 1.0), // Shadow B
-					abs(offset.x)),
-				mix( // X3, X4 Lerp
-					1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(0, 1) * texelSize).r) * 512.f, 0.0, 1.0), // Shadow C
-					1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 1) * texelSize).r) * 512.f, 0.0, 1.0), // Shadow D
-					abs(offset.x)),
-				abs(offset.y));
-		}
-
-		float ShadowCalculation(vec4 fragPosLightSpace)
-		{
-			float shadow = 0.0;
-			if (length(Pos.xz - pcam.xz) < 32.f)
-			{
-				// perform perspective divide
-				vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-				// transform to [0,1] range (coord Z represents current fragment from light's perspective)
-				projCoords = projCoords * 0.5 + 0.5;
-
-				float currentDepth = projCoords.z;
-
-				// texture parameters
-				ivec2 tsize = textureSize(tshadow, 0);
-				vec2 texelSize = 1.0 / textureSize(tshadow, 0);
-
-				//shadow = GetShadowBilinear(projCoords, tsize, texelSize);
-
-				// circle pattern
-				///*
-				float offsetamt = 1.f * texelSize.x;
-				float offsetamtdiag = 0.707107f * texelSize.x;
-				shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-				if (shadow < 3.5f && shadow > 0.5f)
-				{
-					shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
-					shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
-					shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
-					shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
-					shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-
-					shadow /= 9;
-				}
-				else
-				{
-					shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-					shadow /= 5;
-					//shadow = 1;
-				}
-				//*/
-				//hex pattern
-				/*
-				float oHexA = 1.5f * texelSize.x;
-				float oHexB = 1.29904f * texelSize.x;
-				float oHexC = 0.75f * texelSize.x;
-				shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-				shadow /= 7;
-				//*/
-
-				// double hex pattern
-				/*
-				float oHexA = 1.5f * texelSize.x;
-				float oHexB = 1.29904f * texelSize.x;
-				float oHexC = 0.75f * texelSize.x;
-				shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-				shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-				shadow /= 13;
-				//*/
-
-				// Blend into clip distance
-				shadow += 1 - clamp((32.f - length(Pos.xz - pcam.xz)) / 8.f, 0, 1);
-			}
-			else shadow = 1.f;
-			//else shadow = 0.f; // For debugging
-
-			return shadow;
-		}
-
-		void main()
-		{
-			if (gl_FragCoord.x > 319 && gl_FragCoord.x < 321 && gl_FragCoord.y > 239 && gl_FragCoord.y < 241)
-			{
-				vec4 col = texture(texture_diffuse1, TexCoords);
-				if (col.a < 0.5) discard;
-				if (idn)
-				{
-					FragColor.r = 0;
-					FragColor.g = 0;
-					FragColor.b = 1;
-				}
-				else
-				{
-					FragColor.r = float(id) / float(256);
-					FragColor.g = float(id >> 8) / float(256);
-					FragColor.b = 0;
-				}
-			}
-			else
-			{
-				FragColor = texture(texture_diffuse1, TexCoords);
-				if (FragColor.a < 0.5) discard;
-
-				//float ndotl = clamp(dot(normalize(Normal), vsun), 0, 1);
-				float ndotl = clamp(dot(Normal, vsun), 0, 1);
-				//float ndotl = clamp(dot(Normal, vsun) * 0.5 + 0.5, 0, 1);
-				//float ndotl = clamp(round((dot(Normal, vsun) + 0.125) * 8) / 2, 0, 1);
-				float ndotl_amb = clamp(dot(Normal, vec3(0, -1, 0)) + 0.5f, 0, 1);
-
-				if (lit)
-				{
-					vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
-					vec4 shadow_heightmap = texture(ttsm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
-					//float shadow_terrain = clamp(Pos.y - (shadow_heightmap.r * 64.f) + 1.f, 0, 1);
-					//float shadow_terrain = clamp((Pos.y - (shadow_heightmap.r * 64.f) + 0.125f) * 8, 0, 1);
-					float shadow_terrain = clamp((Pos.y - (shadow_heightmap.r * 64.f)) * 4, 0, 1);
-					//float shadow_terrain = shadow_heightmap.g;
-					//float shadow_terrain = clamp(((Pos.y - (shadow_heightmap.r * 64.f) + 0.125f) * 8) * (shadow_heightmap.g), 0, 1);
-					//float shadow_terrain = clamp(Pos.y - 16.f, 0, 1);
-
-
-					//vec3 skycol = mix(texture(ts, vec2(ft, 16.5f / 32.f)).rgb, texture(ts, vec2(ft, 0.f)).rgb, ndotl_amb * shadow_heightmap.g);
-					//vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb * shadow_heightmap.g);
-					vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb * shadow_heightmap.g);
-
-					vec3 suncol = texture(ts, vec2(ft, 30.5f / 32.f)).rgb * 2.f;
-					//vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (Pos.y / 256.f))).rgb;
-					vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (clamp(Pos.y, 0.f, 1.f) / 512.f))).rgb; // todo: clamp position to the maximum terrain height, not just 1
-					vec3 litcol = texture(ts, vec2(ft, 29.5f / 32.f)).rgb * 4.f;
-
-
-					float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
-																								   //float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened
-																								   //float shadow = clamp(round(ShadowCalculation(LightSpacePos) - 0.25), 0.f, 1.f); // Rounded
-																								   //float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
-
-																								   //FragColor.rgb = vec3(shadow_heightmap.g); // test
-
-																								   // Ambient
-																								   // max: if the sky is lighter than the sun, override it
-																								   //if (shadow_heightmap.g < 0.5f)
-					FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl * shadow_terrain) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
-					//else
-					//	FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
-
-					// Add fog
-					//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos - pcam) * 0.1f) - 0.2f), 0.f, 1.f));
-					//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos.xz - pcam.xz) * 0.1f) - 0.2f), 0.f, 1.f));
-					FragColor.rgb = mix(FragColor.rgb, fogcol, clamp((length((Pos.xz - pcam.xz) * 0.0015f) - 0.2f), 0.f, 1.f));
-
-
-					//fres test
-					//FragColor.rgb = vec3(dot(normalize(ViewDir), Normal)) + 1;
-
-					//phong
-					//vec3 reflectDir = reflect(vsun, Normal);
-					//FragColor.rgb += suncol * (pow(max(dot(normalize(ViewDir), reflectDir), 0.0), 8.0));
-
-					//blinnphong
-					/*
-					vec3 vd = Pos - pcam;
-					vec3 halfwayDir = normalize(vsun - normalize(vd));
-					FragColor.rgb += suncol * pow(max(dot(normalize(Normal), halfwayDir), 0.0), 16.0) * shadow * shadow_terrain;
-					//*/
-
-					// Dither
-					///*
-					int dx = int(mod(gl_FragCoord.x, 4));
-					int dy = int(mod(gl_FragCoord.y, 4));
-					float rndBy = 12.f;
-					FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
-					// Posterize
-					FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-					//*/
-				}
-				else
-				{
-					FragColor.rgb *= ndotl * 2.f;
-				}
-			}
-		})";
-	}
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- INITIALIZATION
 
 	void Init()
 	{
-		guibmp.Init();
-		gui_x_start = -(int)cfg::iWinX / 4;
-		gui_y_start = -(int)cfg::iWinY / 2;
+		gPtr = new Graphics();
 
-		shader_solid = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
-		shader_solidChara = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_solid_chara.glsl");
-		shader_solidBlend = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
-		shader_solidBlendChara = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
-		shader_terrain = graphics::Shader("shaders/vert_3d_terrain.glsl", "shaders/frag_terrain.glsl");
-		shader_sky = graphics::Shader("shaders/vert_3d_sky.glsl", "shaders/frag_sky.glsl");
-		shader_gui = graphics::Shader("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
-		shader_post = graphics::Shader("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
+		guibmp.Init();
+
+		gPtr->shaders[S_SOLID] = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
+		gPtr->shaders[S_SOLID_CHARA] = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_solid_chara.glsl");
+
+		gPtr->shaders[S_SOLID_BLEND] = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
+		gPtr->shaders[S_SOLID_BLEND_CHARA] = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
+
+		gPtr->shaders[S_SOLID_DEFORM] = graphics::Shader("shaders/vert_3d_deform.glsl", "shaders/frag_solid_chara.glsl");
+		
+		gPtr->shaders[S_MEAT] = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_meat.glsl");
+
+		gPtr->shaders[S_TERRAIN] = graphics::Shader("shaders/vert_3d_terrain.glsl", "shaders/frag_terrain.glsl");
+		gPtr->shaders[S_SKY] = graphics::Shader("shaders/vert_3d_sky.glsl", "shaders/frag_sky.glsl");
+		gPtr->shaders[S_GUI] = graphics::Shader("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
+		gPtr->shaders[S_POST] = graphics::Shader("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
+
+		SetFrameSize(cfg::iWinX, cfg::iWinY);
 	}
+
+	void End()
+	{
+		delete gPtr;
+	}
+
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- MATRIX
 
 	FRow4 operator*(const FRow4& row, const btf32 mult)
 	{
@@ -502,6 +288,26 @@ namespace graphics
 		matrix[1][0] = vLoUp.x; matrix[1][1] = vLoUp.y; matrix[1][2] = -vLoUp.z;
 		matrix[2][0] = vForw.x; matrix[2][1] = vForw.y; matrix[2][2] = -vForw.z;
 	}
+	void MatrixTransformForwardUp(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
+	{
+		// Translate matrix
+		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
+
+		// Rotate matrix
+		// Generate forward, right, up vectors for use in the matrix
+		m::Vector3 vForw = m::Normalize(dir) * -1.f;
+		m::Vector3 vSide = m::Normalize(m::Cross(up, dir));
+		// We need to make sure we have a local up vector at right angles with forwards, so cross side and forward
+		m::Vector3 vLoUp = m::Normalize(m::Cross(vForw, vSide));
+
+		// The 3 direction vectors translate directly into the matrix
+		// The third values are inverted for some reason beyond me.
+		// (Don't know why forward must be inverted but will leave for now)
+		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = -vSide.z;
+		matrix[1][0] = vForw.x; matrix[1][1] = vForw.y; matrix[1][2] = -vForw.z;
+		matrix[2][0] = -vLoUp.x; matrix[2][1] = -vLoUp.y; matrix[2][2] = vLoUp.z;
+
+	}
 	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
 	{
 		// Translate matrix
@@ -532,21 +338,19 @@ namespace graphics
 	void SetMatProj(btf32 fovMult)
 	{
 		cfg::bEditMode ?
-			mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), (float)cfg::iWinX / (float)cfg::iWinY, cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult) :
-			mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), ((float)cfg::iWinX / 2.f) / (float)cfg::iWinY, cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult);
+			mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult) :
+			mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult);
 	}
 	void SetMatView(void* t)
 	{
 		// this is not.... good.....
 		#define T ((Transform3D*)t)
-		view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.23f, 0.15f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
+		//view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.23f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
+		view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
 		mat_view = glm::lookAt((glm::vec3)view, (glm::vec3)view + (T->GetForward()) * glm::vec3(1.f, 1.f, -1.f),
 			(glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
 		#undef T
 	}
-	#define LIGHT_FAR 256.f
-	#define LIGHT_HALF 128.f
-	#define LIGHT_WIDTH 32.f
 	// Lightsource
 	void SetMatProjLight()
 	{
@@ -562,7 +366,7 @@ namespace graphics
 	{
 		// this is not.... good.....
 		#define T ((Transform3D*)t)
-		mat_view = glm::lookAt((T->pos_glm + (T->GetForward() * -5.f)) * glm::vec3(1.f, 1.f, -1.f),
+		mat_view = glm::lookAt((T->pos_glm + (T->GetForward() * -2.f)) * glm::vec3(1.f, 1.f, -1.f),
 			T->pos_glm * glm::vec3(1.f, 1.f, -1.f),
 			(glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
 		#undef T
@@ -577,6 +381,9 @@ namespace graphics
 		return mat_view;
 	}
 
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- UTILITY FUNCTIONS
+
 	void SetFrontFace()
 	{
 		glFrontFace(GL_CW);
@@ -587,35 +394,36 @@ namespace graphics
 	}
 
 	// good, but replace the std::vectors
-	void BindBuffers(std::vector<vert> &vertices, std::vector<btui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO)
+	void BindBuffers(std::vector<Vert> &vertices, std::vector<btui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO)
 	{
 		glBindVertexArray(VAO); // Bind this vertex array
 		glBindBuffer(GL_ARRAY_BUFFER, VBO); // Create vertex buffer in opengl
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vert), &vertices[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vert), &vertices[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // Create index buffer in opengl
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(btui32), &indices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
-		glEnableVertexAttribArray(vns::vi_pos); // Set Vertex positions
-		glVertexAttribPointer(vns::vi_pos, 3, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)vns::v_pos);
-		glEnableVertexAttribArray(vns::vi_nor); // Set Vertex normals
-		glVertexAttribPointer(vns::vi_nor, 3, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)vns::v_nor);
-		glEnableVertexAttribArray(vns::vi_uvc); // Set Vertex texture coords
-		glVertexAttribPointer(vns::vi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)vns::v_uvc);
-		glEnableVertexAttribArray(vns::vi_col); // Set Vertex colour
-		glVertexAttribPointer(vns::vi_col, 3, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)vns::v_col);
+		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
+		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_POS);
+		glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
+		glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_NOR);
+		glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
+		glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_UVC);
+		glEnableVertexAttribArray(VI_COL); // Set Vertex colour
+		glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_COL);
 	}
 
-	void DrawGUITexture(Texture* texture, Shader* shader, bti32 x, bti32 y, bti32 w, bti32 h)
+	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h)
 	{
+		Shader* shader = &gPtr->shaders[S_GUI];
+
 		// TEEEEMMP TEMP TEMP TEMP
 		guibmp.SetShader(shader);
 		guibmp.SetTexture(texture->glID);
 		guibmp.Draw(x, y, w, h);
 	}
 
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	//--------------------------- SHADER ---------------------------------------------------------------------------------------------
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- SHADER
 
 	Shader::Shader()
 	{
@@ -786,9 +594,13 @@ namespace graphics
 		}
 	}
 
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	//--------------------------- TEXTURE --------------------------------------------------------------------------------------------
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	Shader& GetShader(eShader id)
+	{
+		return gPtr->shaders[id];
+	}
+
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- TEXTURE
 
 	ModifiableTexture::~ModifiableTexture()
 	{
@@ -1062,9 +874,8 @@ namespace graphics
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, glID);
 	}
 
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	//--------------------------- MESH -----------------------------------------------------------------------------------------------
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- MESH
 
 	void Mesh::Draw(unsigned int tex, unsigned int shd)
 	{
@@ -1084,7 +895,7 @@ namespace graphics
 		FILE* in = fopen(fn, "rb");
 		if (in != NULL)
 		{
-			vert* vces; // Vertices
+			Vert* vces; // Vertices
 			size_t vces_size;
 			btui32* ices; // Indices
 			size_t ices_size;
@@ -1095,8 +906,8 @@ namespace graphics
 			//-------------------------------- READ VERTICES
 
 			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
-			vces = (vert*)malloc(sizeof(vert) * vces_size); // Allocate buffer to hold our vertices
-			fread(&vces[0], sizeof(vert), vces_size, in); // Read vertices
+			vces = (Vert*)malloc(sizeof(Vert) * vces_size); // Allocate buffer to hold our vertices
+			fread(&vces[0], sizeof(Vert), vces_size, in); // Read vertices
 
 			//-------------------------------- READ INDICES
 
@@ -1115,30 +926,29 @@ namespace graphics
 
 			glBindVertexArray(vao); // Bind this vertex array
 			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(vert), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vert), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
-			glEnableVertexAttribArray(vns::vi_pos); // Set Vertex positions
-			glVertexAttribPointer(vns::vi_pos, 3, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)vns::v_pos);
-			glEnableVertexAttribArray(vns::vi_nor); // Set Vertex normals
-			glVertexAttribPointer(vns::vi_nor, 3, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)vns::v_nor);
-			glEnableVertexAttribArray(vns::vi_uvc); // Set Vertex texture coords
-			glVertexAttribPointer(vns::vi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)vns::v_uvc);
-			glEnableVertexAttribArray(vns::vi_col); // Set Vertex colour
-			glVertexAttribPointer(vns::vi_col, 3, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)vns::v_col);
+			glEnableVertexAttribArray(VI_POS); // Set Vertex positions
+			glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_POS);
+			glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
+			glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_NOR);
+			glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
+			glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_UVC);
+			glEnableVertexAttribArray(VI_COL); // Set Vertex colour
+			glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_COL);
 
 			glBindVertexArray(0); // Bind default vertex array
 			free(vces);
 			free(ices);
 
-			std::cout << "Generated mesh!" << std::endl;
+			std::cout << "Generated Mesh!" << std::endl;
 		}
 	}
 
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	//--------------------------- MESHBLEND ------------------------------------------------------------------------------------------
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- MESH BLEND
 
 	void MeshBlend::Draw(unsigned int tex, unsigned int shd)
 	{
@@ -1165,7 +975,7 @@ namespace graphics
 		FILE* in = fopen(fn, "rb");
 		if (in != NULL)
 		{
-			vert_blend* vces; // Vertices
+			VertBlend* vces; // Vertices
 			size_t vces_size;
 			btui32* ices; // Indices
 			size_t ices_size;
@@ -1176,8 +986,8 @@ namespace graphics
 			//-------------------------------- READ VERTICES
 
 			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
-			vces = (vert_blend*)malloc(sizeof(vert_blend) * vces_size); // Allocate buffer to hold our vertices
-			fread(&vces[0], sizeof(vert_blend), vces_size, in); // Read vertices
+			vces = (VertBlend*)malloc(sizeof(VertBlend) * vces_size); // Allocate buffer to hold our vertices
+			fread(&vces[0], sizeof(VertBlend), vces_size, in); // Read vertices
 
 			//-------------------------------- READ INDICES
 
@@ -1196,34 +1006,123 @@ namespace graphics
 
 			glBindVertexArray(vao); // Bind this vertex array
 			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(vert_blend), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertBlend), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
-			glEnableVertexAttribArray(graphics::vns::vbi_pos_a); // Set Vertex positions
-			glVertexAttribPointer(graphics::vns::vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(vert_blend), (void*)graphics::vns::vb_pos_a);
-			glEnableVertexAttribArray(graphics::vns::vbi_pos_b);
-			glVertexAttribPointer(graphics::vns::vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(vert_blend), (void*)graphics::vns::vb_pos_b);
+			glEnableVertexAttribArray(graphics::vbi_pos_a); // Set Vertex positions
+			glVertexAttribPointer(graphics::vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_pos_a);
+			glEnableVertexAttribArray(graphics::vbi_pos_b);
+			glVertexAttribPointer(graphics::vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_pos_b);
 
-			glEnableVertexAttribArray(graphics::vns::vbi_nor_a); // Set Vertex normals
-			glVertexAttribPointer(graphics::vns::vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(vert_blend), (void*)graphics::vns::vb_nor_a);
-			glEnableVertexAttribArray(graphics::vns::vbi_nor_b);
-			glVertexAttribPointer(graphics::vns::vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(vert_blend), (void*)graphics::vns::vb_nor_b);
+			glEnableVertexAttribArray(graphics::vbi_nor_a); // Set Vertex normals
+			glVertexAttribPointer(graphics::vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_nor_a);
+			glEnableVertexAttribArray(graphics::vbi_nor_b);
+			glVertexAttribPointer(graphics::vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_nor_b);
 
-			glEnableVertexAttribArray(graphics::vns::vbi_uvc); // Set Vertex texture coords
-			glVertexAttribPointer(graphics::vns::vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(vert_blend), (void*)graphics::vns::vb_uvc);
+			glEnableVertexAttribArray(graphics::vbi_uvc); // Set Vertex texture coords
+			glVertexAttribPointer(graphics::vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_uvc);
+
+			glEnableVertexAttribArray(graphics::vbi_col); // Set Vertex colour
+			glVertexAttribPointer(graphics::vbi_col, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_col);
 
 			glBindVertexArray(0); // Bind default vertex array
 			free(vces);
 			free(ices);
 
-			std::cout << "Generated mesh blend!" << std::endl;
+			std::cout << "Generated Mesh Blend!" << std::endl;
 		}
 	}
 
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	//--------------------------- GUIBITMAP ------------------------------------------------------------------------------------------
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- MESH DEFORM
+
+	void MeshDeform::Draw(unsigned int tex, unsigned int shd)
+	{
+		glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
+		glUniform1i(glGetUniformLocation(shd, "texture_diffuse1"), 0);
+		// and finally bind the texture
+		glBindTexture(GL_TEXTURE_2D, tex);
+
+		// draw mesh
+		glBindVertexArray(vao);
+		//glDrawElements(GL_TRIANGLES, ices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, glID, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		// always good practice to set everything back to defaults once configured.
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void MeshDeform::LoadFile(char* fn)
+	{
+		std::cout << "Loading " << fn << "... ";
+
+		//-------------------------------- OPEN FILE
+
+		FILE* in = fopen(fn, "rb");
+		if (in != NULL)
+		{
+			VertDeform* vces; // Vertices
+			size_t vces_size;
+			btui32* ices; // Indices
+			size_t ices_size;
+
+			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
+			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
+
+			//-------------------------------- READ VERTICES
+
+			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
+			vces = (VertDeform*)malloc(sizeof(VertDeform) * vces_size); // Allocate buffer to hold our vertices
+			fread(&vces[0], sizeof(VertDeform), vces_size, in); // Read vertices
+
+			//-------------------------------- READ INDICES
+
+			fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
+			ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
+			fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
+
+			fclose(in);
+
+			glID = (GLuint)ices_size; // Set number of indices used in Draw()
+
+			//-------------------------------- INITIALIZE OPENGL BUFFER
+
+			glGenVertexArrays(1, &vao); // Create vertex buffer
+			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
+
+			glBindVertexArray(vao); // Bind this vertex array
+			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
+			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertDeform), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+
+			glEnableVertexAttribArray(vdi_pos); // Set Vertex positions
+			glVertexAttribPointer(vdi_pos, 3u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)vd_pos);
+			glEnableVertexAttribArray(vdi_nor); // Set Vertex normals
+			glVertexAttribPointer(vdi_nor, 3u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)vd_nor);
+			glEnableVertexAttribArray(vdi_uvc); // Set Vertex texture coords
+			glVertexAttribPointer(vdi_uvc, 2u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)vd_uvc);
+			glEnableVertexAttribArray(vdi_col); // Set Vertex colour
+			glVertexAttribPointer(vdi_col, 4u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)vd_col);
+			// Set the matrix value array
+			for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
+			{
+				glEnableVertexAttribArray(vdi_mat + i); // Set Vertex colour
+				glVertexAttribPointer(vdi_mat + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)(vd_mat + (sizeof(btf32) * i)));
+			}
+
+			glBindVertexArray(0); // Bind default vertex array
+			free(vces);
+			free(ices);
+
+			std::cout << "Generated Mesh Deform!" << std::endl;
+		}
+	}
+	
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- GUI BITMAP
 
 	GUIBitmap::GUIBitmap()
 	{
@@ -1286,8 +1185,7 @@ namespace graphics
 		glm::mat4 transform = glm::mat4(1.0f);
 		//scale to screen space
 
-		//transform = glm::scale(transform, glm::vec3(2.f / cfg::iWinX, 2.f / cfg::iWinY, 1.0f));
-		transform = glm::scale(transform, glm::vec3(4.f / cfg::iWinX, 2.f / cfg::iWinY, 1.0f));
+		transform = glm::scale(transform, glm::vec3(2.f / FrameSizeX(), 2.f / FrameSizeY(), 1.0f));
 		transform = glm::translate(transform, glm::vec3(posx, posy, 0));
 		transform = glm::scale(transform, glm::vec3(w / 2, h / 2, 1.0f));
 
@@ -1333,17 +1231,17 @@ namespace graphics
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	// (copied from ltr, yet to be optimized, integrated or fixed
 
-	vert createvert(float x, float y, float z, float r, float g, float b, float u, float v)
+	Vert createvert(float x, float y, float z, float r, float g, float b, float u, float v)
 	{
-		vert v2;
+		Vert v2;
 
 		v2.pos.x = x;
 		v2.pos.y = y;
 		v2.pos.z = z;
 
-		v2.col.r = r;
-		v2.col.g = g;
-		v2.col.b = b;
+		v2.col.x = r;
+		v2.col.y = g;
+		v2.col.z = b;
 
 		v2.uvc.x = u;
 		v2.uvc.y = v;
@@ -1361,7 +1259,7 @@ namespace graphics
 			v1 = _v1; v2 = _v2;
 		}
 	};
-	void AddQuad(std::vector<vert>& vertices, std::vector<unsigned int>& indices, quad p, int index)
+	void AddQuad(std::vector<Vert>& vertices, std::vector<unsigned int>& indices, quad p, int index)
 	{
 		// Create vertices
 		vertices.push_back(createvert(p.x1, p.y2, 0.f, 1.f, 1.f, 1.f, p.u1, p.v1)); // Top left
@@ -1397,7 +1295,7 @@ namespace graphics
 		transform = glm::mat4(1.0f);
 
 		//manual vector version
-		std::vector<vert> vertices;
+		std::vector<Vert> vertices;
 		std::vector<unsigned int> indices;
 
 		bti16 xA = _xA - bl;
@@ -1420,10 +1318,12 @@ namespace graphics
 		// create transformations
 		transform = glm::mat4(1.0f);
 		//scale to screen space
-		transform = glm::scale(transform, glm::vec3(4.f / cfg::iWinX, 2.f / cfg::iWinY, 1.0f));
+		transform = glm::scale(transform, glm::vec3(2.f / FrameSizeX(), 2.f / FrameSizeY(), 1.0f));
 	}
-	void GUIBox::Draw(Shader* s, Texture* t)
+	void GUIBox::Draw(Texture* t)
 	{
+		Shader* s = &gPtr->shaders[S_GUI];
+
 		glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
 		glBindTexture(GL_TEXTURE_2D, t->glID);
 		s->Use();
@@ -1483,7 +1383,7 @@ namespace graphics
 		transform = glm::mat4(1.0f);
 
 		//manual vector version
-		std::vector<vert> vertices;
+		std::vector<Vert> vertices;
 		std::vector<unsigned int> indices;
 
 		//character height
@@ -1604,11 +1504,13 @@ namespace graphics
 		transform = glm::mat4(1.0f);
 
 		//scale to screen space
-		transform = glm::scale(transform, glm::vec3(4.f / cfg::iWinX, 2.f / cfg::iWinY, 1.0f));
+		transform = glm::scale(transform, glm::vec3(2.f / FrameSizeX(), 2.f / FrameSizeY(), 1.0f));
 	}
 	//the 'scroll' boolean feels kind of clunky but it will work for now
-	void GUIText::Draw(Shader* s, Texture* t)
+	void GUIText::Draw(Texture* t)
 	{
+		Shader* s = &gPtr->shaders[S_GUI];
+
 		s->Use();
 
 		// get matrix's uniform location and set matrix

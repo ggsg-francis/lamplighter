@@ -5,18 +5,8 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 
-//1px blur
-//const float offsetx = 1.0 / 640.0;
-//const float offsety = 1.0 / 480.0;
-//closest to .5 ps blur
-//const float offsetx = 0.9 / 640.0;
-//const float offsety = 0.9 / 480.0;
-
-uniform uint wx = 640u;
-uniform uint wy = 480u;
-
-uniform float offsetx = 0.7 / 640.0;
-uniform float offsety = 0.7 / 480.0;
+uniform float wx = 640.f;
+uniform float wy = 480.f;
 
 const float PI = 3.1415926535; // for fisheye
 
@@ -26,18 +16,6 @@ const int indexMatrix4x4[16] = int[](
 	12,	4,	14,	6,
 	3,	11,	1,	9,
 	15,	7,	13,	5);
-	
-vec2 offsets[9] = vec2[](
-	vec2(-offsetx,  offsety), // top-left
-	vec2( 0.0f,    offsety), // top-center
-	vec2( offsetx,  offsety), // top-right
-	vec2(-offsetx,  0.0f),   // center-left
-	vec2( 0.0f,    0.0f),   // center-center
-	vec2( offsetx,  0.0f),   // center-right
-	vec2(-offsetx, -offsety), // bottom-left
-	vec2( 0.0f,   -offsety), // bottom-center
-	vec2( offsetx, -offsety)  // bottom-right    
-);
 
 float kernel[9] = float[](
 	1.0f/16,2.0f/16,1.0f/16,
@@ -84,10 +62,21 @@ void main()
 	// blur part
 	//sample diffuse colour
     vec3 sampleTex[9];
-    for(int i = 0; i < 9; i++)
-    {
-        sampleTex[i] = vec3(texture(screenTexture, TexCoords.st + offsets[i]));
-    }
+
+	// 0.9 is like PS 0.5px blur
+	float ofsx = 1.0f / wx;
+	float ofsy = 1.0f / wy;
+	
+	sampleTex[0] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, ofsy)));
+	sampleTex[1] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f,  ofsy)));
+	sampleTex[2] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx,  ofsy)));
+	sampleTex[3] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, 0.0f)));
+	sampleTex[4] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f,  0.0f)));
+	sampleTex[5] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx,  0.0f)));
+	sampleTex[6] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx,-ofsy)));
+	sampleTex[7] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f, -ofsy)));
+	sampleTex[8] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx, -ofsy)));
+	
     vec3 col = vec3(0.0);
     for(int i = 0; i < 9; i++)
         col += sampleTex[i] * kernel[i];
@@ -112,6 +101,8 @@ void main()
 	//darken
 	//FragColor = vec4(col - (0.045 * (1 - col)), 1.0);
 	
+	// Gamma correction
+	//*
 	const float exposure = 2.2;
 	const float gamma = 0.6;
     // Exposure tone mapping
@@ -125,6 +116,7 @@ void main()
 	//if (highestOverflow > 1.f)
 		//col += highestOverflow - 1.f;
 		col = mix(col, vec3(1,1,1), clamp((highestOverflow - 0.9f) * 0.75f, 0.f, 1.f));
+	//*/
 	
 	FragColor.rgb = col;
 	

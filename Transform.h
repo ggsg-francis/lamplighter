@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "maths.hpp"
+#include "graphics.hpp"
 
 // Class representing a 3D transformation
 class Transform3D
@@ -84,4 +85,5 @@ public:
 
 	// Get GLM matrix
 	glm::mat4 getModelMatrix();
+	graphics::Matrix4x4 getMatrix();
 };

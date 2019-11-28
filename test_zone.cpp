@@ -6,6 +6,13 @@
 void InitTest()
 {
 	// Test things here
+	btf32 f = INFINITY;
+	size_t size1 = sizeof(short);
+	size_t size2 = sizeof(short int);
+	size_t size3 = sizeof(int);
+	size_t size4 = sizeof(long);
+	size_t size5 = sizeof(long long);
+	size_t size6 = sizeof(long long);
 }
 
 struct p_settarget

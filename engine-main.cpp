@@ -15,11 +15,7 @@
 
 // FOR BROAD CATEGORIZATION
 //________________________________________________________________________________________________________________________________
-//--------------------------- BIG COMMENT ----------------------------------------------------------------------------------------
-
-// FOR WITHIN FUNCTION DEFINITIONS
-//________________________________________________________________
-//------------- MEDIUM COMMENT -----------------------------------
+//-------------------------------- BIG COMMENT
 
 // ANYTHING SMALLER / HEADER ZONING
 //-------------------------------- LITTLE COMMENT
@@ -50,7 +46,6 @@
 #include "network_client.h"
 #include "audio.hpp"
 #include "index.h"
-#include "index_util.h"
 #include "weather.h"
 #include "time.hpp"
 #include "test_zone.h"
@@ -82,6 +77,23 @@ GLuint rendertexture_shadow; // Shadowmap rendertexture
 //________________________________________________________________________________________________________________________________
 //--------------------------- UTIL FUNCTIONS -------------------------------------------------------------------------------------
 
+void RegenFramebuffers()
+{
+	// Left screen
+	glGenFramebuffers(1, &framebuffer_1);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
+	rendertexture_1.InitRenderTexture(graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	depthbuffer_1.InitDepthBuffer(graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	//depthbuffer_1.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
+
+	// Right screen
+	glGenFramebuffers(1, &framebuffer_2);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
+	rendertexture_2.InitRenderTexture(graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	depthbuffer_2.InitDepthBuffer(graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	//depthbuffer_2.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
+}
+
 void FocusCallback(GLFWwindow* win, int focus2)
 {
 	//focus = focus2 == 1;
@@ -89,17 +101,10 @@ void FocusCallback(GLFWwindow* win, int focus2)
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	cfg::iWinX = width; cfg::iWinY = height;
-
 	if (!cfg::bEditMode)
 	{
-		// Left screen
-		rendertexture_1.InitRenderTexture(cfg::iWinX / 2, cfg::iWinY, true);
-		depthbuffer_1.InitDepthBuffer(cfg::iWinX / 2, cfg::iWinY, false);
-		//depthbuffer_1.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
-		// Right screen
-		rendertexture_2.InitRenderTexture(cfg::iWinX / 2, cfg::iWinY, true);
-		depthbuffer_2.InitDepthBuffer(cfg::iWinX / 2, cfg::iWinY, false);
-		//depthbuffer_2.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
+		graphics::SetFrameSize(cfg::iWinX, cfg::iWinY);
+		RegenFramebuffers();
 	}
 }
 
@@ -286,6 +291,10 @@ int main()
 	}
 	glViewport(0, 0, cfg::iWinX, cfg::iWinY); // Set opengl viewport size to window size X, Y, W, H
 	
+	//-------------------------------- INITIALIZE GRAPHICS
+
+	graphics::Init();
+
 	//-------------------------------- CONFIGURE GLOBAL OPENGL STATE
 
 	glEnable(GL_CULL_FACE); // Enable face culling	
@@ -317,22 +326,7 @@ int main()
 
 	//-------------------------------- CREATE EACH SCREEN FRAMEBUFFER
 
-	if (!cfg::bEditMode)
-	{
-		// Left screen
-		glGenFramebuffers(1, &framebuffer_1);
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
-		rendertexture_1.InitRenderTexture(cfg::iWinX / 2, cfg::iWinY, true);
-		depthbuffer_1.InitDepthBuffer(cfg::iWinX / 2, cfg::iWinY, false);
-		//depthbuffer_1.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
-
-		// Right screen
-		glGenFramebuffers(1, &framebuffer_2);
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
-		rendertexture_2.InitRenderTexture(cfg::iWinX / 2, cfg::iWinY, true);
-		depthbuffer_2.InitDepthBuffer(cfg::iWinX / 2, cfg::iWinY, false);
-		//depthbuffer_2.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
-	}
+	if (!cfg::bEditMode) RegenFramebuffers();
 
 	//-------------------------------- CREATE SHADOWBUFFER
 
@@ -360,14 +354,19 @@ int main()
 	glGenTextures(1, &screenTexture);
 	glBindTexture(GL_TEXTURE_2D, screenTexture);
 	#ifdef DEF_HDR // HDR Texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, cfg::iWinX / 2, cfg::iWinY, 0, GL_RGBA, GL_FLOAT, NULL); //create a blank image
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, GL_RGBA, GL_FLOAT, NULL); //create a blank image
 	#else // Not HDR Texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cfg::iWinX / 2, cfg::iWinY, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	#endif
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	#ifdef DEF_LINEAR_FB
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	#else
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	#endif
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);	// we only need a color buffer
 	#ifdef DEF_MULTISAMPLE
 	glEnable(GL_MULTISAMPLE); // Enable multisampling for anti-aliasing
@@ -376,7 +375,6 @@ int main()
 
 	//-------------------------------- INITIALIZATION
 
-	graphics::Init();
 	res::Init();
 	#ifdef DEF_USE_CS
 	SDL_SysWMinfo wmInfo;
@@ -408,7 +406,7 @@ int main()
 				// BUFFER 1 (LEFT SCREEN)
 				glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
 
-				glViewport(0, 0, cfg::iWinX / 2, cfg::iWinY);
+				glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
 				glClearColor(0.f, 0.f, 0.f, 1.0f);
 
 				//-------------------------------- BUFFER 1 (LEFT SCREEN)
@@ -426,19 +424,12 @@ int main()
 				index::Draw(false);
 				index::SetShadowTexture(rendertexture_shadow);
 
-				glViewport(0, 0, cfg::iWinX / 2, cfg::iWinY);
+				glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
 
 				glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				index::SetViewFocus(0u);
 				index::Draw();
-				// Read pixel
-				unsigned char pixel[4];
-				glReadPixels(320, 240, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
-				if (pixel[2] == 0ui8)
-					index::SetViewTargetID((btID)pixel[0] + ((btID)pixel[1] << 8u));
-				else
-					index::SetViewTargetID(ID_NULL);
 				index::DrawGUI();
 				index::TickGUI(); // causes a crash if before drawgui (does it still?)
 
@@ -453,12 +444,6 @@ int main()
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				index::SetViewFocus(1u);
 				index::Draw();
-				// Read pixel
-				glReadPixels(320, 240, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
-				if (pixel[2] == 0ui8)
-					index::SetViewTargetID((btID)pixel[0] + ((btID)pixel[1] << 8u));
-				else
-					index::SetViewTargetID(ID_NULL);
 				index::DrawGUI();
 				index::TickGUI(); // causes a crash if before drawgui (does it still?)
 
@@ -474,7 +459,7 @@ int main()
 				// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
 				glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_1);
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_intermediate);
-				glBlitFramebuffer(0, 0, cfg::iWinX / 2, cfg::iWinY, 0, 0, cfg::iWinX / 2, cfg::iWinY, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+				glBlitFramebuffer(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0, 0, cfg::iWinX, cfg::iWinY);
@@ -482,7 +467,7 @@ int main()
 				glClearColor(1.f, 0.5f, 0.5f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-				graphics::shader_post.Use();
+				graphics::GetShader(graphics::S_POST).Use();
 
 				glDisable(GL_DEPTH_TEST);
 				glFrontFace(GL_CW);
@@ -491,11 +476,11 @@ int main()
 				mat_fb = glm::translate(mat_fb, glm::vec3(-0.5f, 0.f, 0.f));
 				mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
 				// get matrix's uniform location and set matrix
-				graphics::shader_post.setMat4("transform", mat_fb);
+				graphics::GetShader(graphics::S_POST).setMat4("transform", mat_fb);
 
 				glBindVertexArray(quadVAO);
 				glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
-				glUniform1i(glGetUniformLocation(graphics::shader_post.ID, "screenTexture"), 0);
+				glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
 				glBindTexture(GL_TEXTURE_2D, screenTexture);
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -504,7 +489,7 @@ int main()
 				// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
 				glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_2);
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_intermediate);
-				glBlitFramebuffer(0, 0, cfg::iWinX / 2, cfg::iWinY, 0, 0, cfg::iWinX / 2, cfg::iWinY, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+				glBlitFramebuffer(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -512,11 +497,11 @@ int main()
 				mat_fb = glm::translate(mat_fb, glm::vec3(0.5f, 0.f, 0.f));
 				mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
 				// get matrix's uniform location and set matrix
-				graphics::shader_post.setMat4("transform", mat_fb);
+				graphics::GetShader(graphics::S_POST).setMat4("transform", mat_fb);
 
 				glBindVertexArray(quadVAO);
 				glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
-				glUniform1i(glGetUniformLocation(graphics::shader_post.ID, "screenTexture"), 0);
+				glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
 				glBindTexture(GL_TEXTURE_2D, screenTexture);
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -602,6 +587,7 @@ int main()
 	index::End();
 	aud::End();
 	res::End();
+	graphics::End();
 
 	glfwTerminate();
 

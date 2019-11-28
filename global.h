@@ -7,8 +7,9 @@
 //#define DEF_DEBUG_DISPLAY // Draw debug information
 #define DEF_BLIT_FRAME
 //#define DEF_MULTISAMPLE
-//#define DEF_MULTISAMPLE_DEPTH 4
+#define DEF_MULTISAMPLE_DEPTH 4
 #define DEF_HDR
+//#define DEF_LINEAR_FB
 
 // Any debug only defines
 #ifdef _DEBUG
@@ -19,10 +20,14 @@
 #define DEF_INPUT_MOUSE_1ST_PERSON
 //#define DEF_INPUT_MOUSE_HIDDEN
 
-//#define SHADOW_WIDTH 1024
-//#define SHADOW_HEIGHT 1024
-#define SHADOW_WIDTH 2048
-#define SHADOW_HEIGHT 2048
+#define SHADOW_WIDTH 1024
+#define SHADOW_HEIGHT 1024
+//#define SHADOW_WIDTH 2048
+//#define SHADOW_HEIGHT 2048
+
+#define LIGHT_FAR 256.f
+#define LIGHT_HALF 128.f
+#define LIGHT_WIDTH 12.f
 
 // Program Version
 #define VERSION_MAJOR 0u
@@ -32,9 +37,13 @@
 #define VERSION_SERVER_MINOR 14u
 #define VERSION_COMMENT "test"
 
+#define MD_MATRIX_COUNT 4u
+
 // Buffer / ID definitions
 #define BUF_SIZE 512
-#define BUF_NULL 513
+// Merge BUF_NULL and ID_NULL
+//#define BUF_NULL 513
+#define BUF_NULL 0b1111111111111111
 #define BUF_PLAYER_ALLOC 128
 //#define ID_NULL 65535
 #define ID_NULL 0b1111111111111111

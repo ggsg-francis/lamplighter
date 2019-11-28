@@ -49,6 +49,7 @@ namespace aud
 	void Init()
 	{
 		SoundEngine = createIrrKlangDevice();
+		SoundEngine->setSoundVolume(0.25f);
 	}
 
 	void PlaySnd()
@@ -58,7 +59,7 @@ namespace aud
 
 	void PlayGunshotTemp(bool shot)
 	{
-		if (shot) SoundEngine->play2D("snd/fire.wav", false);
+		if (shot) SoundEngine->play2D("snd/fire_smg.wav", false);
 		else SoundEngine->play2D("snd/fire_no_shot.wav", false);
 		//SoundEngine->play3D();
 	}

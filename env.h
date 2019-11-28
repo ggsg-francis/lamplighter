@@ -106,7 +106,7 @@ namespace env
 	{
 		eflag::flag flags = eflag::eNULL;
 
-		btui16 model = 0ui16;
+		btui16 prop = 0ui16;
 		btui8 mat = 0ui8;
 		btui8 height = 0ui8;
 
@@ -127,6 +127,7 @@ namespace env
 	void Set(uint x, uint y, eflag::flag bit);
 	void UnSet(uint x, uint y, eflag::flag bit);
 
+	//void GetHeight(btf32& OUT_HEIGHT, CellGroup& CELL_GROUP);
 	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
 
 	//void Tick();

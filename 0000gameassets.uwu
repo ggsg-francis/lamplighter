@@ -14,6 +14,10 @@ hndl MB______
 srca resources/default_mesh.obj
 srcb resources/default_mesh.obj
 <<<<
+item mshd
+hndl MD______
+srca resources/default_mesh.obj
+<<<<
 item mesh
 hndl MdebugBB
 srca resources/object/beachball.fbx
@@ -28,10 +32,14 @@ item mesh
 hndl Mdebgcel
 srca resources/debug_cell.obj
 <<<<
+item mesh
+hndl MdebgSph
+srca resources/debug_sphere.obj
+<<<<
 item txtr
-hndl TNoise__
-srca resources/noise.tga
-tfil nearest
+hndl TMeatTex
+srca resources/meat/tree_01.tga
+tfil linear
 tedg repeat
 <<<<
 **** COMPASS NEEDLE
@@ -117,29 +125,32 @@ tfil linear
 tedg clamp
 <<<<
 **** CHARACTER MODELS
-item mshb
+item mshd
 **** body base step
-hndl MBbase_s
-srca resources/char_body_0.obj
-srcb resources/char_body_0.obj
+hndl MChrBody
+srca resources/chr_body.fbx
 <<<<
-item mshb
+item mshd
 **** arm
-hndl MAbase_c
-srca resources/char_arm_0.obj
-srcb resources/char_arm_1.obj
+hndl MChrArm_
+srca resources/chr_arm.fbx
 <<<<
 item mshb
 **** head
-hndl MHbase_b
+hndl MChrHead
 srca resources/char_head_0.obj
 srcb resources/char_head_0.obj
 <<<<
 item mshb
 **** leg
-hndl MCharLeg
+hndl MChrLeg_
 srca resources/char_leg_0.obj
 srcb resources/char_leg_1.obj
+<<<<
+item mshd
+**** leg
+hndl MChrLeg2
+srca resources/chr_leg.fbx
 <<<<
 **** EX1E AIR CARRIER
 item mesh
@@ -151,16 +162,23 @@ item mesh
 hndl MEqHpith
 srca resources/equip_head_pickers_01.obj
 <<<<
-**** FLOWER PICKERS LONG GAMBESON (MEqB = MESH EQUIP BODY)
-item mshb
-hndl MEqBfpgs
-srca resources/char_eqip_cloak_01_idle.obj
-srcb resources/char_eqip_cloak_01_step.obj
+**** FLOWER PICKERS LONG GAMBESON (EqB = MESH EQUIP BODY)
+item mshd
+hndl MEqBfpg1
+srca resources/chr_eqp_robe_01.fbx
 <<<<
-item mshb
-hndl MEqBfpgr
-srca resources/char_eqip_cloak_01_idle.obj
-srcb resources/char_eqip_cloak_01_run.obj
+item txtr
+hndl TEqBfpg1
+srca resources/eqp_atlas_01.tga
+tfil linear
+tedg clamp
+<<<<
+**** FLOWER PICKERS PANTS(EqL = MESH EQUIP LEGS)
+item txtr
+hndl TEqLfpp1
+srca resources/eqp_atlas_02.tga
+tfil linear
+tedg clamp
 <<<<
 **** ------------------------------------------------------------------------------------ ITEMS
 **** MATCHLOCK GUN
@@ -245,13 +263,13 @@ srca resources/kit_floor.obj
 item txtr
 hndl TTSndDrt
 **** srca resources/t_marshmud_01.tga
-srca resources/t_dirt_01.tga
+srca resources/environment/terrain/t_dirt_01.tga
 tfil linearmip
 tedg repeat
 <<<<
 item txtr
 hndl TTScorch
-srca resources/t_dirt_02.tga
+srca resources/environment/terrain/t_dirt_02.tga
 tfil linearmip
 tedg repeat
 <<<<
@@ -287,13 +305,15 @@ tfil nearest
 srca resources/gui_select_box.tga
 <<<<
 item txtr
-hndl TGUI_ISl
+hndl TGUI_IPU
 tfil nearest
-srca resources/gui_inv_slot.tga
+srca resources/gui/icon_pick_up.tga
 <<<<
 **** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 **** ASSETS BEYOND THIS POINT ARE NOT DIRECTLY REFERENCED WITHIN THE GAME CODE ----------
 **** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+****
+**** EQUIPPABLE ITEMS
 item mesh
 hndl MUraFist
 srca resources/item_uranium_fist.obj
@@ -302,6 +322,25 @@ item txtr
 hndl TUraFist
 srca resources/item_uranium_fist.tga
 tfil linear
+tedg clamp
+<<<<
+item mesh
+hndl MRifleWp
+srca resources/wpn/wpn_rifle.fbx
+<<<<
+item txtr
+hndl TRifleWp
+srca resources/wpn/wpn_rifle.tga
+tedg clamp
+<<<<
+**** HARVESTING PROPS
+item mesh
+hndl MMushroo
+srca resources/object/mushroom.obj
+<<<<
+item txtr
+hndl TMushroo
+srca resources/object/mushroom.tga
 tedg clamp
 <<<<
 **** TERRAIN (ADD 'MODT' TAG FOR MODIFIABLE TEXTURE)
@@ -331,7 +370,7 @@ srca resources/environment/nature/marsh_fern_01.obj
 item txtr
 hndl TNFern01
 srca resources/environment/nature/marsh_fern_01.tga
-tfil linearmip
+tfil linear
 tedg clamp
 <<<<
 **** ROCKS
@@ -342,20 +381,20 @@ srca resources/environment/terrain/rocks_01.obj
 item txtr
 hndl TTRcks01
 srca resources/environment/terrain/rocks_01.tga
-tfil linearmip
+tfil linear
 tedg clamp
 <<<<
 **** ICONS
 item txtr
 hndl TIcoMtch
 srca resources/gui_invicon_matchlock.tga
-tfil linear
+tfil nearest
 tedg clamp
 <<<<
 item txtr
 hndl TIcoBBal
 srca resources/gui_invicon_beachball.tga
-tfil linear
+tfil nearest
 tedg clamp
 <<<<
 eof_

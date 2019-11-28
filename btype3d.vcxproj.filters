@@ -59,9 +59,6 @@
     <ClInclude Include="index.h">
       <Filter>gamework\index</Filter>
     </ClInclude>
-    <ClInclude Include="index_util.h">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
     <ClInclude Include="test_zone.h" />
     <ClInclude Include="index_fn.cpp">
       <Filter>gamework\index</Filter>
@@ -95,6 +92,9 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics_structures.h">
+      <Filter>framework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -175,5 +175,8 @@
   <ItemGroup>
     <None Include="0000gameassets.uwu" />
     <None Include="0000gamecontents.uwu" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="000config.txt" />
   </ItemGroup>
 </Project>

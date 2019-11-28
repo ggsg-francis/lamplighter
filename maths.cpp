@@ -186,6 +186,16 @@ namespace m
 		return Quaternion(q.x * f, q.y * f, q.z * f, q.w * f);
 	}
 
+	//-------------------------------- ANGLE STUFF
+
+	btf32 AngDif(btf32 anga, btf32 angb)
+	{
+		btf32 angdif =anga - angb;
+		//angdif = abs(fmod(angdif + 180.f, 360.f) - 180.f);
+		angdif = fmod(angdif + 180.f, 360.f) - 180.f;
+		return angdif;
+	}
+
 	//-------------------------------- ANGLE / VECTOR2 CONVERSION
 
 	Vector2 AngToVec2(float angle)
@@ -212,6 +222,15 @@ namespace m
 	}
 
 	//-------------------------------- MISC FUNCTIONS
+
+	btf32 BlendValueFromDistance(const Vector3& src, const Vector3& dst, btf32 min = 0.25f, btf32 max = 1.0f)
+	{
+		#define DEADZONE min
+		#define MULT (max / (max - DEADZONE))
+		return Length(src - dst) * MULT - DEADZONE;
+		#undef DEADZONE
+		#undef MULT
+	}
 
 	/* A utility function to reverse a string  */
 	//void reverse(char str[], int length)

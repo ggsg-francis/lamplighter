@@ -81,11 +81,12 @@ namespace mem
 	{
 		//search this vector
 		for (btui32 i = 0; i < IDBUF_SIZE; i++)
-			//if we found ptr in this vector
+			//if no ptr in this vector
 			if (ptr_used[i] == false)
 			{
 				ptr_used[i] = true;
 				ptr_id[i] = id;
+				if (i > id_end) id_end = i; // If we hit new ground expand the end index
 				std::cout << "IDBUF added index " << i << std::endl;
 				return;
 			}
@@ -103,10 +104,21 @@ namespace mem
 			{
 				ptr_used[i] = false;
 				ptr_id[i] = ID_NULL;
+				if (i == id_end && id_end > 0u)
+				{
+					--id_end; // Go back one step
+				//	while (!ptr_used[id_end]) --id_end; // Continue rolling back until we reach the next last full space
+				}
 				std::cout << "IDBUF removed index " << i << std::endl;
 				return;
 			}
 		std::cout << "IDBUF attempted to remove pointer not in array" << std::endl;
+	}
+
+	btui32 idbuf::end()
+	{
+		return id_end;
+		//return IDBUF_SIZE - 1;
 	}
 
 	btID idbuf::operator[] (btui32 x)

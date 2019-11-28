@@ -133,7 +133,7 @@
   <ItemGroup>
     <ClCompile Include="archive.cpp" />
     <ClCompile Include="bt_archiver.cpp" />
-    <ClCompile Include="archiver_graphics_convert.cpp" />
+    <ClCompile Include="graphics_convert.cpp" />
     <ClCompile Include="serializer.cpp" />
     <ClCompile Include="tga_reader.cpp" />
   </ItemGroup>
@@ -141,7 +141,7 @@
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="global-archiver.h" />
     <ClInclude Include="global.h" />
-    <ClInclude Include="archiver_graphics_convert.h" />
+    <ClInclude Include="graphics_convert.h" />
     <ClInclude Include="serializer.h" />
     <ClInclude Include="tga_reader.h" />
   </ItemGroup>

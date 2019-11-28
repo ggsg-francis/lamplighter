@@ -313,11 +313,13 @@ namespace mem
 	private:
 		btID ptr_id[IDBUF_SIZE]{ ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL };
 		bool ptr_used[IDBUF_SIZE]{ false };
+		btui32 id_end = 0u;
 	public:
 		idbuf(); // Constructor
 		~idbuf(); // Destructor
 		void add(btID ID);
 		void remove(btID ID);
+		btui32 end();
 		btID operator[] (btui32 x);
 	};
 

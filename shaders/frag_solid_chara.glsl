@@ -80,7 +80,7 @@ float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize)
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
 	float shadow = 0.0;
-	if (length(Pos.xz - pcam.xz) < 32.f)
+	if (length(Pos.xz - pcam.xz) < 12.f)
 	{
 		// perform perspective divide
 		vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -155,7 +155,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 		//*/
 		
 		// Blend into clip distance
-		shadow += 1 - clamp((32.f - length(Pos.xz - pcam.xz)) / 8.f, 0, 1);
+		shadow += 1 - clamp((12.f - length(Pos.xz - pcam.xz)) / 1.f, 0, 1);
 	}
 	else shadow = 1.f;
 	//else shadow = 0.f; // For debugging
@@ -165,105 +165,88 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 
 void main()
 {
-	if (gl_FragCoord.x > 319 && gl_FragCoord.x < 321 && gl_FragCoord.y > 239 && gl_FragCoord.y < 241)
+	FragColor = texture(texture_diffuse1, TexCoords);
+	if (FragColor.a < 0.5) discard;
+
+	vec3 vd = Pos - pcam;
+	float amboffset = dot(normalize(Normal), normalize(vd));
+
+	//float ndotl = clamp(dot(normalize(Normal), vsun), 0, 1);
+	//float ndotl = clamp(dot(Normal, vsun), 0, 1);
+	//float ndotl = clamp(dot(Normal, vsun) * 0.5 + 0.5, 0, 1);
+	//float ndotl = clamp(round(dot(Normal, vsun) + 0.5 + (amboffset * -0.5f)), 0, 1); // Rounded Bent
+	float ndotl = clamp(round(dot(Normal, vsun) + 0.5), 0, 1); // Rounded
+	//float ndotl = clamp(round((dot(Normal, vsun) + 0.125) * 8) / 2, 0, 1); // Rounded 3-tone
+	
+	//float ndotl_amb = clamp(dot(Normal, vec3(0,-1,0)) + 0.5f, 0, 1);
+	//float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f)), 0, 1); // rounded
+	//float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f) + amboffset * 0.6f), 0, 1); // rounded
+	//float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f) * 2) / 2, 0, 1); // rounded 3-tone
+	float ndotl_amb = 0.5f;
+	
+	if (lit)
 	{
-		vec4 col = texture(texture_diffuse1, TexCoords);
-		if (col.a < 0.5) discard;
-		if (idn)
-		{
-			FragColor.r = 0;
-			FragColor.g = 0;
-			FragColor.b = 1;
-		}
-		else
-		{
-			FragColor.r = float(id) / float(256);
-			FragColor.g = float(id >> 8) / float(256);
-			FragColor.b = 0;
-		}
+		vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
+		
+		//vec3 skycol = mix(texture(ts, vec2(ft, 16.5f / 32.f)).rgb, texture(ts, vec2(ft, 0.f)).rgb, ndotl_amb * shadow_heightmap.g);
+		//vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb * shadow_heightmap.g);
+		vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb);
+		
+		vec3 suncol = texture(ts, vec2(ft, 30.5f / 32.f)).rgb * 2.f;
+		//vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (Pos.y / 256.f))).rgb;
+		vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (clamp(Pos.y, 0.f, 1.f) / 512.f))).rgb; // todo: clamp position to the maximum terrain height, not just 1
+		vec3 litcol = texture(ts, vec2(ft, 29.5f / 32.f)).rgb * 4.f;
+		
+		
+		float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
+		//float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened
+		//float shadow = clamp(round(ShadowCalculation(LightSpacePos)), 0.f, 1.f); // Rounded
+		//float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
+		
+		//FragColor.rgb = vec3(shadow_heightmap.g); // test
+		
+		// Ambient
+		// max: if the sky is lighter than the sun, override it
+		//if (shadow_heightmap.g < 0.5f)
+			//FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
+		//else
+		//	FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
+		FragColor.rgb *= max(suncol, skycol) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
+		FragColor.rgb *= shadow * 0.4f + 0.6f;		
+
+		// Add fog
+		//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos - pcam) * 0.1f) - 0.2f), 0.f, 1.f));
+		//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos.xz - pcam.xz) * 0.1f) - 0.2f), 0.f, 1.f));
+		// the one we use
+		//FragColor.rgb = mix(FragColor.rgb, fogcol, clamp((length((Pos.xz - pcam.xz) * 0.0015f) - 0.2f), 0.f, 1.f));
+		
+		
+		//fres test
+		//FragColor.rgb = vec3(dot(normalize(ViewDir), Normal)) + 1;
+		
+		//phong
+		//vec3 reflectDir = reflect(vsun, Normal);
+		//FragColor.rgb += suncol * (pow(max(dot(normalize(ViewDir), reflectDir), 0.0), 8.0));
+		
+		//blinnphong
+		/*
+		vec3 vd = Pos - pcam;
+		vec3 halfwayDir = normalize(vsun - normalize(vd));
+		FragColor.rgb += suncol * pow(max(dot(normalize(Normal), halfwayDir), 0.0), 16.0) * shadow * shadow_terrain;
+		//*/
+		
+		// Dither
+		///*
+		int dx = int(mod(gl_FragCoord.x, 4));
+		int dy = int(mod(gl_FragCoord.y, 4));
+		float rndBy = 24.f;
+		FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
+		// Posterize
+		FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
+		//*/
 	}
 	else
 	{
-		FragColor = texture(texture_diffuse1, TexCoords);
-		if (FragColor.a < 0.5) discard;
-
-		vec3 vd = Pos - pcam;
-		float amboffset = dot(normalize(Normal), normalize(vd));
-
-		//float ndotl = clamp(dot(normalize(Normal), vsun), 0, 1);
-		//float ndotl = clamp(dot(Normal, vsun), 0, 1);
-		//float ndotl = clamp(dot(Normal, vsun) * 0.5 + 0.5, 0, 1);
-		//float ndotl = clamp(round(dot(Normal, vsun) + 0.5 + (amboffset * -0.5f)), 0, 1); // Rounded Bent
-		float ndotl = clamp(round(dot(Normal, vsun) + 0.5), 0, 1); // Rounded
-		//float ndotl = clamp(round((dot(Normal, vsun) + 0.125) * 8) / 2, 0, 1); // Rounded 3-tone
-		
-		//float ndotl_amb = clamp(dot(Normal, vec3(0,-1,0)) + 0.5f, 0, 1);
-		//float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f)), 0, 1); // rounded
-		float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f) + amboffset * 0.6f), 0, 1); // rounded
-		//float ndotl_amb = clamp(round((dot(Normal, vec3(0,-1,0)) + 0.5f) * 2) / 2, 0, 1); // rounded 3-tone
-		//float ndotl_amb = 0.5f;
-		
-		if (lit)
-		{
-			vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
-			
-			//vec3 skycol = mix(texture(ts, vec2(ft, 16.5f / 32.f)).rgb, texture(ts, vec2(ft, 0.f)).rgb, ndotl_amb * shadow_heightmap.g);
-			//vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb * shadow_heightmap.g);
-			vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb);
-			
-			vec3 suncol = texture(ts, vec2(ft, 30.5f / 32.f)).rgb * 2.f;
-			//vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (Pos.y / 256.f))).rgb;
-			vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (clamp(Pos.y, 0.f, 1.f) / 512.f))).rgb; // todo: clamp position to the maximum terrain height, not just 1
-			vec3 litcol = texture(ts, vec2(ft, 29.5f / 32.f)).rgb * 4.f;
-			
-			
-			//float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
-			//float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened
-			float shadow = clamp(round(ShadowCalculation(LightSpacePos)), 0.f, 1.f); // Rounded
-			//float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
-			
-			//FragColor.rgb = vec3(shadow_heightmap.g); // test
-			
-			// Ambient
-			// max: if the sky is lighter than the sun, override it
-			//if (shadow_heightmap.g < 0.5f)
-				FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
-			//else
-			//	FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
-			
-			// Add fog
-			//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos - pcam) * 0.1f) - 0.2f), 0.f, 1.f));
-			//FragColor.rgb = mix(FragColor.rgb, csun, clamp((length((Pos.xz - pcam.xz) * 0.1f) - 0.2f), 0.f, 1.f));
-			FragColor.rgb = mix(FragColor.rgb, fogcol, clamp((length((Pos.xz - pcam.xz) * 0.0015f) - 0.2f), 0.f, 1.f));
-			
-			
-			//fres test
-			//FragColor.rgb = vec3(dot(normalize(ViewDir), Normal)) + 1;
-			
-			//phong
-			//vec3 reflectDir = reflect(vsun, Normal);
-			//FragColor.rgb += suncol * (pow(max(dot(normalize(ViewDir), reflectDir), 0.0), 8.0));
-			
-			//blinnphong
-			/*
-			vec3 vd = Pos - pcam;
-			vec3 halfwayDir = normalize(vsun - normalize(vd));
-			FragColor.rgb += suncol * pow(max(dot(normalize(Normal), halfwayDir), 0.0), 16.0) * shadow * shadow_terrain;
-			//*/
-			
-			// Dither
-			///*
-			int dx = int(mod(gl_FragCoord.x, 4));
-			int dy = int(mod(gl_FragCoord.y, 4));
-			float rndBy = 8.f;
-			FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
-			// Posterize
-			FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-			//*/
-		}
-		else
-		{
-			FragColor.rgb *= ndotl * 2.f;
-		}
+		FragColor.rgb *= ndotl * 2.f;
 	}
 }

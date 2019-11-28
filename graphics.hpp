@@ -1,4 +1,6 @@
 #pragma once
+#include "graphics_structures.h"
+
 //opengl stuff
 #include <glm\glm.hpp>
 #include <glad\glad.h> // include glad to get all the required OpenGL headers
@@ -81,6 +83,10 @@ namespace CHARCODE
 
 namespace graphics
 {
+	btui32 FrameSizeX();
+	btui32 FrameSizeY();
+	void SetFrameSize(btui32 x, btui32 y);
+
 	struct Matrix3x3
 	{
 		btf32 m[3][3];
@@ -123,57 +129,8 @@ namespace graphics
 	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, btf32 YAW, btf32 PITCH);
 	// Generate model location and rotation matrix
 	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
+	void MatrixTransformForwardUp(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
 	void MatrixTransformXFlip(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
-
-	// Vertex structure
-	struct vert {
-		glm::vec3 pos; // Position
-		glm::vec3 nor; // Normal
-		glm::vec2 uvc; // UV Coords (TexCoords)
-		glm::vec4 col; // Vertex Colour
-	};
-
-	// Vertex structure used for blending between two meshes
-	struct vert_blend {
-		glm::vec3 pos_a; // Position A
-		glm::vec3 pos_b; // Position B
-		glm::vec3 nor_a; // Normal A
-		glm::vec3 nor_b; // Normal B
-		glm::vec2 uvc; // UV Coords (TexCoords)
-	};
-
-	#define VERT_BONE_COUNT 4
-	// Vertex structure used for a rigged mesh
-	struct vert_rig {
-		glm::vec3 pos; // Position
-		glm::vec3 nor; // Normal
-		glm::vec2 uvc; // UV Coords (TexCoords)
-		bti32 boneID[VERT_BONE_COUNT]; // Bone handle
-		btf32 boneWeight[VERT_BONE_COUNT]; // Bone weight per handle
-	};
-
-	namespace vns
-	{
-		enum v_i : btui32 { // Vert Indices
-			vi_pos, vi_nor, vi_uvc, vi_col,
-		};
-		enum v_o : size_t { // Vert Offsets
-			v_pos = offsetof(vert, pos),
-			v_nor = offsetof(vert, nor),
-			v_uvc = offsetof(vert, uvc),
-			v_col = offsetof(vert, col),
-		};
-		enum vb_i : btui32 { // VertBlend Indices
-			vbi_pos_a, vbi_pos_b, vbi_nor_a, vbi_nor_b, vbi_uvc,
-		};
-		enum vb_o : size_t { // VertBlend Offsets
-			vb_pos_a = offsetof(vert_blend, pos_a),
-			vb_pos_b = offsetof(vert_blend, pos_b),
-			vb_nor_a = offsetof(vert_blend, nor_a),
-			vb_nor_b = offsetof(vert_blend, nor_b),
-			vb_uvc = offsetof(vert_blend, uvc),
-		};
-	}
 
 	struct colour
 	{
@@ -185,6 +142,7 @@ namespace graphics
 	};
 
 	void Init();
+	void End();
 
 	m::Vector3 GetViewPos();
 	void SetMatProj(btf32 FOV_MULT = 1.f);
@@ -235,6 +193,26 @@ namespace graphics
 		// Utility function for checking shader compilation/linking errors
 		void CheckCompileErrors(GLuint shader, std::string type);
 	};
+
+	enum eShader
+	{
+		S_SOLID, // Used for drawing static meshes
+		S_SOLID_CHARA, // Used for drawing static meshes
+		S_SOLID_BLEND, // Used for drawing blended meshes
+		S_SOLID_BLEND_CHARA, // Used for drawing blended meshes
+		S_SOLID_DEFORM, // Used for drawing deformed meshes
+		S_MEAT,
+		S_TERRAIN, // Used for drawing objects adjusted to the world heightmap
+		S_SKY, // Used for drawing... the sky
+		S_GUI, // GUI shader
+		S_POST, // Framebuffer postprocessing shader
+
+		S_COUNT, // Number of shaders used in the program
+
+		S_UTIL_FIRST_LIT = S_SOLID, // First solid shader, for iterating when setting shader parameters
+		S_UTIL_LAST_LIT = S_MEAT, // Last solid shader, for iterating when setting shader parameters
+	};
+	Shader& GetShader(eShader SHADER_ID);
 
 	enum TextureFilterMode : btui8
 	{
@@ -326,7 +304,7 @@ namespace graphics
 		GLuint ebo; // Element Buffer Object
 	};
 
-	class MeshRig
+	class MeshDeform
 	{
 	public:
 		GLuint glID;
@@ -353,19 +331,13 @@ namespace graphics
 		void Draw(int posx, int posy, int WIDTH, int HEIGHT);
 	};
 
-	extern Shader shader_solid; // Used for drawing static meshes
-	extern Shader shader_solidChara; // Used for drawing static meshes
-	extern Shader shader_solidBlend; // Used for drawing blended meshes
-	extern Shader shader_solidBlendChara; // Used for drawing blended meshes
-	extern Shader shader_terrain; // Used for drawing objects adjusted to the world heightmap
-	extern Shader shader_sky; // Used for drawing... the sky
-	extern Shader shader_gui; // GUI shader
-	extern Shader shader_post; // Framebuffer postprocessing shader
 
 
 
 
-	void DrawGUITexture(Texture* texture, Shader* shader, bti32 x, bti32 y, bti32 w, bti32 h);
+
+
+	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h);
 
 
 
@@ -402,7 +374,7 @@ namespace graphics
 	public:
 		void Init();
 		void ReGen(bti16 XA, bti16 XB, bti16 YA, bti16 YB, btui16 MARGIN_SIZE, btui16 BLEED_SIZE = 0ui16);
-		void Draw(Shader* SHADER, Texture* TEXTURE);
+		void Draw(Texture* TEXTURE);
 	};
 
 	class GUIText
@@ -423,7 +395,7 @@ namespace graphics
 		void SetOffset(int X, int Y);
 		void GetTextBounds();
 		void ReGen(char* STRING, bti16 XA, bti16 XB, bti16 Y);
-		void Draw(Shader* SHADER, Texture* TEXTURE);
+		void Draw(Texture* TEXTURE);
 		int width;
 		int lastLineWidth;
 		//number of lines

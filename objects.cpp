@@ -14,21 +14,22 @@ graphics::GUIBox guibox_selection;
 
 ItemSlot::ItemSlot(btID _item)
 {
-	switch (archive::item_types[_item])
+	switch (acv::item_types[_item])
 	{
-	case archive::types::ITEM_EQUIP:
+	case acv::types::ITEM_EQUIP:
 		heldInstance = new HeldItem;
 		break;
-	case archive::types::ITEM_WPN_MELEE:
+	case acv::types::ITEM_WPN_MELEE:
 		heldInstance = new HeldMel;
 		break;
-	case archive::types::ITEM_WPN_MATCHGUN:
-		heldInstance = new HeldGun;
+	case acv::types::ITEM_WPN_MATCHGUN:
+		//heldInstance = new HeldGun;
+		heldInstance = new HeldGunMatchLock;
 		break;
-	case archive::types::ITEM_WPN_MAGIC:
+	case acv::types::ITEM_WPN_MAGIC:
 		heldInstance = new HeldMgc;
 		break;
-	case archive::types::ITEM_CONS:
+	case acv::types::ITEM_CONS:
 		heldInstance = new HeldItem;
 		break;
 	default:
@@ -78,142 +79,180 @@ void Inventory::RemvItem(btID itemid)
 void Inventory::RemvItemAt(btui32 index) { items.Remove(index); }
 void Inventory::Draw(btui16 active_slot)
 {
+	int p1_x_start = -(int)graphics::FrameSizeX() / 2;
+	int p1_y_start = -(int)graphics::FrameSizeY() / 2;
+
 	const bti32 invspace = 38;
 
-	bti32 offset = -(bti32)cfg::iWinX / 4 + 96 - 16;
+	bti32 offset = p1_x_start + 96 - 16;
 	for (btui16 i = 0; i < 10; i++)
 	{
-		//graphics::DrawGUITexture(&res::GetTexture(res::t_gui_inv_slot), &graphics::shader_gui, offset + i * 32, -240 + 16, 32, 32);
 		if (i < items.Size() && items.Used(i))
 		{
 			if (i == active_slot)
-				graphics::DrawGUITexture(&res::GetT(archive::items[items[i].item]->id_icon), &graphics::shader_gui, offset + i * invspace, -240 + 24, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[items[i].item]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
 			else
-				graphics::DrawGUITexture(&res::GetT(archive::items[items[i].item]->id_icon), &graphics::shader_gui, offset + i * invspace, -240 + 16, 64, 64);
-			//char* ctest = new char[6];
-			//_itoa(items[i].count, ctest, 10);
-			//text_inventory_temp.ReGen(ctest, offset + i * 32 - 14, offset + i * 32 + 30, -210);
-			//text_inventory_temp.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_font));
-			//if (i == active_slot)
-			{
-				//guibox_selection.ReGen((offset + i * 32) - 8, (offset + i * 32) + 8, -240 + 8, -240 + 24, 8, 8);
-				//guibox_selection.Draw(&graphics::shader_gui, &res::GetTexture(res::t_gui_select_box));
-			}
-			//delete[] ctest;
+				graphics::DrawGUITexture(&res::GetT(acv::items[items[i].item]->id_icon), offset + i * invspace, p1_y_start + 16, 64, 64);
 		}
 	}
-	guibox_selection.ReGen((offset + active_slot * invspace) - 8, (offset + active_slot * invspace) + 8, -240 + 8, -240 + 24, 8, 8);
-	guibox_selection.Draw(&graphics::shader_gui, &res::GetT(res::t_gui_select_box));
+	guibox_selection.ReGen((offset + active_slot * invspace) - 12, (offset + active_slot * invspace) + 12, p1_y_start + 12, p1_y_start + 36, 8, 8);
+	guibox_selection.Draw(&res::GetT(res::t_gui_select_box));
 }
 
-void DrawMeshAtTransform(btID id, graphics::Mesh mdl, graphics::TextureBase tex, graphics::Shader& shd, Transform3D transform)
+void DrawMesh(btID id, graphics::Mesh mdl, graphics::TextureBase tex, ShaderStyle charashader, glm::mat4 matrix)
 {
-	// Enable the shader
-	shd.Use();
+	graphics::Shader* shd = nullptr;
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
+		break;
+	case SS_TERRAIN:
+		shd = &graphics::GetShader(graphics::S_TERRAIN);
+		break;
+	case SS_SKY:
+		shd = &graphics::GetShader(graphics::S_SKY);
+		break;
+	};
 
-	// set object ID on shader
-	shd.SetBool("idn", id == ID_NULL);
-	shd.SetUint("id", id);
+	// Enable the shader
+	shd->Use();
 
 	// Set matrices on shader
-	shd.setMat4("matp", graphics::GetMatProj());
-	shd.setMat4("matv", graphics::GetMatView());
-	shd.setMat4("matm", transform.getModelMatrix());
+	shd->setMat4("matp", graphics::GetMatProj());
+	shd->setMat4("matv", graphics::GetMatView());
+	shd->setMat4("matm", matrix);
 
 	// Render the mesh
-	mdl.Draw(tex.glID, shd.ID);
+	mdl.Draw(tex.glID, shd->ID);
 }
 
-void DrawMesh(btID id, graphics::Mesh mdl, graphics::TextureBase tex, graphics::Shader& shd, glm::mat4 matrix)
+void DrawMesh(btID id, graphics::Mesh mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
 {
-	// Enable the shader
-	shd.Use();
+	graphics::Shader* shd = nullptr;
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
+		break;
+	case SS_TERRAIN:
+		shd = &graphics::GetShader(graphics::S_TERRAIN);
+		break;
+	case SS_SKY:
+		shd = &graphics::GetShader(graphics::S_SKY);
+		break;
+	};
 
-	// set object ID on shader
-	shd.SetBool("idn", id == ID_NULL);
-	shd.SetUint("id", id);
+	// Enable the shader
+	shd->Use();
 
 	// Set matrices on shader
-	shd.setMat4("matp", graphics::GetMatProj());
-	shd.setMat4("matv", graphics::GetMatView());
-	shd.setMat4("matm", matrix);
+	shd->setMat4("matp", graphics::GetMatProj());
+	shd->setMat4("matv", graphics::GetMatView());
+	shd->setMat4("matm", matrix);
 
 	// Render the mesh
-	mdl.Draw(tex.glID, shd.ID);
+	mdl.Draw(tex.glID, shd->ID);
 }
 
-void DrawMesh(btID id, graphics::Mesh mdl, graphics::TextureBase tex, graphics::Shader& shd, graphics::Matrix4x4 matrix)
+void DrawMesh(btID id, graphics::Mesh mdl, ShaderStyle charashader, graphics::Matrix4x4 matrix)
 {
-	// Enable the shader
-	shd.Use();
+	graphics::Shader* shd = nullptr;
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
+		break;
+	case SS_TERRAIN:
+		shd = &graphics::GetShader(graphics::S_TERRAIN);
+		break;
+	case SS_SKY:
+		shd = &graphics::GetShader(graphics::S_SKY);
+		break;
+	};
 
-	// set object ID on shader
-	shd.SetBool("idn", id == ID_NULL);
-	shd.SetUint("id", id);
+	// Enable the shader
+	shd->Use();
 
 	// Set matrices on shader
-	shd.setMat4("matp", graphics::GetMatProj());
-	shd.setMat4("matv", graphics::GetMatView());
-	shd.setMat4("matm", matrix);
+	shd->setMat4("matp", graphics::GetMatProj());
+	shd->setMat4("matv", graphics::GetMatView());
+	shd->setMat4("matm", matrix);
 
 	// Render the mesh
-	mdl.Draw(tex.glID, shd.ID);
+	mdl.Draw(res::GetT(res::t_default).glID, shd->ID);
 }
 
-void DrawMesh(btID id, graphics::Mesh mdl, graphics::Shader& shd, graphics::Matrix4x4 matrix)
+void DrawBlendMesh(btID id, graphics::MeshBlend mdl, btf32 bs, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
 {
-	// Enable the shader
-	shd.Use();
+	graphics::Shader* shd = nullptr;
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID_BLEND);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_BLEND_CHARA);
+		break;
+	};
 
-	// set object ID on shader
-	shd.SetBool("idn", id == ID_NULL);
-	shd.SetUint("id", id);
+	// Enable the shader
+	shd->Use();
 
 	// Set matrices on shader
-	shd.setMat4("matp", graphics::GetMatProj());
-	shd.setMat4("matv", graphics::GetMatView());
-	shd.setMat4("matm", matrix);
+	shd->setMat4("matp", graphics::GetMatProj());
+	shd->setMat4("matv", graphics::GetMatView());
+	shd->SetFloat("blendState", bs);
+	shd->setMat4("matm", matrix);
 
 	// Render the mesh
-	mdl.Draw(res::GetT(res::t_default).glID, shd.ID);
+	mdl.Draw(tex.glID, shd->ID);
 }
 
-void DrawBlendMeshAtTransform(btID id, graphics::MeshBlend mdl, btf32 bs, graphics::TextureBase tex, graphics::Shader& shd, Transform3D transform)
+void DrawMeshDeform(
+	btID id, graphics::MeshDeform mdl, graphics::TextureBase tex,
+	ShaderStyle charashader, btui32 matrix_count,
+	graphics::Matrix4x4 transform_a = graphics::Matrix4x4(),
+	graphics::Matrix4x4 transform_b = graphics::Matrix4x4(),
+	graphics::Matrix4x4 transform_c = graphics::Matrix4x4(),
+	graphics::Matrix4x4 transform_d = graphics::Matrix4x4())
 {
-	// Enable the shader
-	shd.Use();
+	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID_DEFORM);
 
-	// set object ID on shader
-	shd.SetBool("idn", id == ID_NULL);
-	shd.SetUint("id", id);
+	// Enable the shader
+	shd->Use();
+
+	shd->SetUint("mc", matrix_count);
+	if (matrix_count >= 1u) shd->setMat4("matma", transform_a);
+	if (matrix_count >= 2u) shd->setMat4("matmb", transform_b);
+	if (matrix_count >= 3u) shd->setMat4("matmc", transform_c);
+	if (matrix_count == 4u) shd->setMat4("matmd", transform_d);
 
 	// Set matrices on shader
-	shd.setMat4("matp", graphics::GetMatProj());
-	shd.setMat4("matv", graphics::GetMatView());
-	shd.SetFloat("blendState", bs);
-	shd.setMat4("matm", transform.getModelMatrix());
+	shd->setMat4("matp", graphics::GetMatProj());
+	shd->setMat4("matv", graphics::GetMatView());
 
 	// Render the mesh
-	mdl.Draw(tex.glID, shd.ID);
+	mdl.Draw(tex.glID, shd->ID);
 }
 
-void DrawBlendMesh(btID id, graphics::MeshBlend mdl, btf32 bs, graphics::TextureBase tex, graphics::Shader& shd, graphics::Matrix4x4 matrix)
+void ActiveState::Damage(btf32 amount, btf32 angle)
 {
-	// Enable the shader
-	shd.Use();
-
-	// set object ID on shader
-	shd.SetBool("idn", id == ID_NULL);
-	shd.SetUint("id", id);
-
-	// Set matrices on shader
-	shd.setMat4("matp", graphics::GetMatProj());
-	shd.setMat4("matv", graphics::GetMatView());
-	shd.SetFloat("blendState", bs);
-	shd.setMat4("matm", matrix);
-
-	// Render the mesh
-	mdl.Draw(tex.glID, shd.ID);
+	hp -= amount;
+	if (hp <= 0.f)
+	{
+		properties.unset(ActiveState::eALIVE);
+		hp = 0.f;
+	}
 }
 
 void Entity::Tick(btID index, btf32 dt)
@@ -226,16 +265,27 @@ void Entity::Draw(btID index)
 
 void EItem::Tick(btID index, btf32 dt)
 {
-	index::GetCellSpaceInfo(t.position, csi);
-	env::GetHeight(t.height, csi);
-	t_item.SetPosition(m::Vector3(t.position.x, t.height + archive::items[itemid]->f_model_height, t.position.y));
+	//t.position.y += 0.01f;
+
+	//CellSpace cs_last = csi;
+
+	//index::GetCellSpaceInfo(t.position, csi);
+
+	/*if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
+	{
+		index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, index);
+		index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, index);
+	}*/
+
+	//env::GetHeight(t.height, csi);
+	t_item.SetPosition(m::Vector3(t.position.x, t.height + acv::items[itemid]->f_model_height, t.position.y));
 	t_item.SetRotation(yaw.Rad());
 }
 
 void EItem::Draw(btID index)
 {
 	// Draw the mesh of our item id
-	DrawMeshAtTransform(index, res::GetM(archive::items[itemid]->id_mesh), res::GetT(archive::items[itemid]->id_tex), graphics::shader_solid, t_item);
+	DrawMesh(index, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, t_item.getMatrix());
 }
 
 void Actor::PickUpItem(btID id)
@@ -318,8 +368,8 @@ void Chara::Tick(btID index, btf32 dt)
 				input = m::Vector2(0.f, 0.f);
 				t.velocity = m::Lerp(t.velocity, m::Vector2(0.f, 0.f), 0.2f);
 			}
-			if (can_turn)
-				yaw.RotateTowards(viewYaw.Deg(), 5.f); // Rotate body towards the target direction
+			if (can_turn && abs(m::AngDif(yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
+				yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
 		}
 
 		//-------------------------------- APPLY MOVEMENT
@@ -338,15 +388,6 @@ void Chara::Tick(btID index, btf32 dt)
 		{
 			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, index);
 			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, index);
-
-			//// New way ( four references )
-			//// optimize this $hit, also keeps missing for some reason
-			//btui32 i;
-			//for (i = 0u; i < eCELL_COUNT; ++i)
-			//	index::RemoveEntityCell(cs_last.c[i].x, cs_last.c[i].y, index);
-			////GetCellSpaceInfo(ePos, ENTITY(index)->csi);
-			//for (i = 0u; i < eCELL_COUNT; ++i)
-			//	index::AddEntityCell(ENTITY(index)->csi.c[i].x, ENTITY(index)->csi.c[i].y, index);
 		}
 
 		//-------------------------------- SET HEIGHT AND CELL SPACE
@@ -359,20 +400,10 @@ void Chara::Tick(btID index, btf32 dt)
 		{
 			index::EntDeintersect(this, csi, viewYaw.Deg(), true);
 			if (aiControlled) index::ActorRunAI(index); // Run AI
-			//else atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
+			else atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
+			//atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
 		}
 	} // End if alive
-
-	//if attacking
-	/*
-	if (inputbv.get(Actor::IN_USE) && attack_time < time)
-	{
-		attack_time = time + 0.25;
-		index::ActorCastProj(index);
-	}//*/
-
-	//state.hp += 0.001f;
-	//if (state.hp > 1.f) state.hp = 1.f;
 
 	if (inventory.items.Used(inv_active_slot))
 	{
@@ -388,7 +419,7 @@ void Chara::Tick(btID index, btf32 dt)
 	t_body = Transform3D();
 	t_head = Transform3D();
 
-	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.75f, t.position.y));
+	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.7f, t.position.y));
 	t_body.Rotate(yaw.Rad(), m::Vector3(0, 1, 0));
 
 	ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
@@ -406,8 +437,13 @@ void Chara::Tick(btID index, btf32 dt)
 
 void Chara::Draw(btID index)
 {
-	// need a good way of knowing own index
-	DrawBlendMeshAtTransform(index, res::GetMB(res::mb_legs), 0, res::skin_t[t_skin], graphics::shader_solidBlendChara, t_body);
+	#define leglen 0.75f
+	#define legDClen 1.f
+	//#define legDClen 0.75f
+	#define velocityStepMult 0.5f
+
+	Transform3D t_test = t_body;
+	t_test.Rotate(glm::radians(m::AngDif(viewYaw.Deg(), yaw.Deg())), m::Vector3(0, 1, 0));
 
 	btf32 lerpAmt = 0.05f * speed;
 
@@ -415,39 +451,49 @@ void Chara::Draw(btID index)
 
 	graphics::Matrix4x4 matrix;
 
-	m::Vector3 newpos2 = m::Vector3(t.position.x, 0.65f + t.height, t.position.y) + t_body.GetUp() * 0.75f;
+	m::Vector3 newpos2 = t_body.GetPosition() + t_test.GetUp() * 0.55f;
 
-	m::Vector3 newpos_l = newpos2 + t_body.GetRight() * 0.07f;
-	m::Vector3 newpos_r = newpos2 + t_body.GetRight() * -0.07f;
+	m::Vector3 jointPosR = newpos2 + t_test.GetRight() * 0.11f;
+	m::Vector3 jointPosL = newpos2 + t_test.GetRight() * -0.11f;
 
-	btf32 dist_l;
-	btf32 dist_r;
+	btf32 distR;
+	btf32 distL;
 
 	if (inventory.items.Used(inv_active_slot))
 	{
 		#define HELDINSTANCE inventory.items[inv_active_slot].heldInstance
 
-		m::Vector3 hand_pos_l = HELDINSTANCE->GetLeftHandPos();
-		m::Vector3 hand_pos_r = HELDINSTANCE->GetRightHandPos();
+		m::Vector3 handPosR = HELDINSTANCE->GetRightHandPos();
+		m::Vector3 handPosL = HELDINSTANCE->GetLeftHandPos();
 
-		#define DEADZONE 0.25F
-		#define MULT (1.0F / (1.0F - DEADZONE))
+		m::Vector3 bodyForwardR = m::Normalize((t_test.GetRight() * -1.f) + t_test.GetUp() + t_test.GetForward());
+		m::Vector3 bodyForwardL = m::Normalize(t_test.GetRight() + t_test.GetUp() + t_test.GetForward());
 
-		//joy_x_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] * JOY_MULT) - JOY_DEADZONE;
-
-		dist_l = m::Length(newpos_l - hand_pos_l) * MULT - DEADZONE;
-		dist_r = m::Length(newpos_r - hand_pos_r) * MULT - DEADZONE;
-
-		#undef DEADZONE
-		#undef MULT
-
-		graphics::MatrixTransformXFlip(matrix, newpos_l, hand_pos_l - newpos_l, (t_body.GetRight() * -1.f) + t_body.GetUp());
+		btf32 len = m::Length(jointPosR - handPosR);
+		if (len > leglen) len = leglen;
+		btf32 lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
+		m::Vector3 vecfw = m::Normalize(handPosR - jointPosR);
+		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, bodyForwardR));
+		m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
+		graphics::MatrixTransformXFlip(matLegHipR, jointPosR, t_body.GetUp() * -1.f, vecup);
+		graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len + vecup * lenUp), vecup);
+		graphics::MatrixTransformXFlip(matLegLoR, jointPosR + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
+		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup);
 		graphics::SetFrontFaceInverse();
-		DrawBlendMesh(index, res::GetMB(res::mb_armscast), dist_l, res::skin_t[t_skin], graphics::shader_solidBlendChara, matrix);
+		DrawMeshDeform(index, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 
-		graphics::MatrixTransform(matrix, newpos_r, hand_pos_r - newpos_r, t_body.GetRight() + t_body.GetUp());
-		DrawBlendMesh(index, res::GetMB(res::mb_armscast), dist_r, res::skin_t[t_skin], graphics::shader_solidBlendChara, matrix);
+		len = m::Length(jointPosL - handPosL);
+		if (len > leglen) len = leglen;
+		lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
+		vecfw = m::Normalize(handPosL - jointPosL);
+		vecside = m::Normalize(m::Cross(vecfw, bodyForwardL));
+		vecup = m::Normalize(m::Cross(vecfw, vecside));
+		graphics::MatrixTransform(matLegHipL, jointPosL, t_body.GetUp() * -1.f, vecup);
+		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len + vecup * lenUp), vecup);
+		graphics::MatrixTransform(matLegLoL, jointPosL + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
+		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup);
+		DrawMeshDeform(index, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 
 		// draw item
 		HELDINSTANCE->Draw(inventory.items[inv_active_slot].item, t.position, t.height, viewYaw, viewPitch);
@@ -459,28 +505,36 @@ void Chara::Draw(btID index)
 
 	btf32 hip_width = 0.125f;
 
-	m::Vector3 newpos = m::Vector3(t.position.x, 0.68f + t.height, t.position.y);
+	//m::Vector3 newpos = m::Vector3(t.position.x, 0.68f + t.height, t.position.y);
+	m::Vector3 newpos = t_body.GetPosition();
 
-	m::Vector3 newpos_hip_l = newpos + t_body.GetRight() * hip_width;
-	m::Vector3 newpos_hip_r = newpos + t_body.GetRight() * -hip_width;
+	jointPosR = newpos + t_body.GetRight() * hip_width;
+	jointPosL = newpos + t_body.GetRight() * -hip_width;
 
 	m::Vector3 velocity = m::Normalize(m::Vector3(t.velocity.x, 0.f, t.velocity.y));
+
+	m::Vector2 right = m::Vector2(t_body.GetRight().x, t_body.GetRight().z);
 
 	if (foot_state == eL_DOWN)
 	{
 		if (m::Length(t.velocity) < 0.025f) // if below a certain speed, switch to standing pose
 		{
-			foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width;
+			if (m::Length(jointPosR - footPosTargR) > leglen)
+				footPosTargR = SetFootPos(t.position + right * hip_width);
+			if (m::Length(jointPosL - footPosTargL) > leglen)
+				footPosTargL = SetFootPos(t.position + right * -hip_width);
+			//foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width;
 			foot_state = eBOTH_DOWN;
 		}
 		else // else hang foot
 		{
-			foot_pos_l = m::Vector3(t.position.x, t.height + 0.15f, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.3f;
+			footPosTargR = m::Vector3(t.position.x, t.height + 0.15f, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.3f;
 		}
 		// if too far off balance
-		if (m::Length(newpos_hip_r - foot_pos_r) > 1.f)
+		if (m::Length(jointPosL - footPosTargL) > legDClen)
 		{
-			foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.7f;
+			footPosTargL = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
+			//foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.7f;
 			foot_state = eR_DOWN;
 		}
 	}
@@ -488,17 +542,22 @@ void Chara::Draw(btID index)
 	{
 		if (m::Length(t.velocity) < 0.025f) // if below a certain speed, switch to standing pose
 		{
-			foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width;
+			if (m::Length(jointPosR - footPosTargR) > leglen)
+				footPosTargL = SetFootPos(t.position + right * -hip_width);
+			if (m::Length(jointPosR - footPosTargR) > leglen)
+				footPosTargR = SetFootPos(t.position + right * hip_width);
+			//foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width;
 			foot_state = eBOTH_DOWN;
 		}
 		else // else hang foot
 		{
-			foot_pos_r = m::Vector3(t.position.x, t.height + 0.15f, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.3f;
+			footPosTargL = m::Vector3(t.position.x, t.height + 0.15f, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.3f;
 		}
 		// if too far off balance
-		if (m::Length(newpos_hip_l - foot_pos_l) > 1.f)
+		if (m::Length(jointPosR - footPosTargR) > legDClen)
 		{
-			foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.7f;
+			footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
+			//foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.7f;
 			foot_state = eL_DOWN;
 		}
 	}
@@ -513,38 +572,78 @@ void Chara::Draw(btID index)
 		}
 		// should probably switch to: if the average position drifts off-balance
 		// move the furthest leg to a new position
-		else if (m::Length(newpos_hip_r - foot_pos_r) > 1.f)
+		else if (m::Length(jointPosL - footPosTargL) > leglen)
 		{
-			foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.7f;
+			footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
+			//foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.7f;
 			foot_state = eR_DOWN;
 		}
-		else if (m::Length(newpos_hip_l - foot_pos_l) > 1.f)
+		else if (m::Length(jointPosR - footPosTargR) > leglen)
 		{
-			foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.7f;
+			footPosTargR = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
+			//foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.7f;
 			foot_state = eL_DOWN;
 		}
 	}
 
-	foot_pos_l_interp = m::Lerp(foot_pos_l_interp, foot_pos_l, lerpAmt);
-	foot_pos_r_interp = m::Lerp(foot_pos_r_interp, foot_pos_r, lerpAmt);
+	footPosR = m::Lerp(footPosR, footPosTargR, lerpAmt);
+	footPosL = m::Lerp(footPosL, footPosTargL, lerpAmt);
 
-	dist_l = m::Length(newpos_hip_l - foot_pos_l_interp) * 2.f - 1.f;
-	dist_r = m::Length(newpos_hip_r - foot_pos_r_interp) * 2.f - 1.f;
-
-	graphics::MatrixTransformXFlip(matrix, newpos_hip_l, foot_pos_l_interp - newpos_hip_l, t_body.GetForward());
+	btf32 len = m::Length(jointPosR - footPosR);
+	if (len > leglen) len = leglen;
+	btf32 lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
+	m::Vector3 vecfw = m::Normalize(footPosR - jointPosR);
+	m::Vector3 vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
+	m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
+	m::Vector3 vecup2 = vecup * -1.f;
+	graphics::MatrixTransformXFlip(matLegHipR, jointPosR, t_body.GetUp() * -1.f, vecup2);
+	graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
+	graphics::MatrixTransformXFlip(matLegLoR, jointPosR - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
+	graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup2);
 	graphics::SetFrontFaceInverse();
-	DrawBlendMesh(index, res::GetMB(res::mb_char_leg), dist_l, res::skin_t[t_skin], graphics::shader_solidBlendChara, matrix);
+	DrawMeshDeform(index, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 	graphics::SetFrontFace();
-	graphics::MatrixTransform(matrix, newpos_hip_r, foot_pos_r_interp - newpos_hip_r, t_body.GetForward());
-	DrawBlendMesh(index, res::GetMB(res::mb_char_leg), dist_r, res::skin_t[t_skin], graphics::shader_solidBlendChara, matrix);
+	// transform legR for cloak
+	//graphics::MatrixTransformForwardUp(matrixLegR, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
+	graphics::MatrixTransformForwardUp(matLegUpR, t_body.GetPosition(), footPosR - t_body.GetPosition(), t_body.GetForward());
+
+	len = m::Length(jointPosL - footPosL);
+	if (len > leglen) len = leglen;
+	lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
+	vecfw = m::Normalize(footPosL - jointPosL);
+	vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
+	vecup = m::Normalize(m::Cross(vecfw, vecside));
+	vecup2 = vecup * -1.f;
+	graphics::MatrixTransform(matLegHipL, jointPosL, t_body.GetUp() * -1.f, vecup2);
+	graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
+	graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
+	graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup2);
+	DrawMeshDeform(index, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+	// transform legL for cloak
+	//graphics::MatrixTransformForwardUp(matrixLegL, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
+	graphics::MatrixTransformForwardUp(matLegUpL, t_body.GetPosition(), footPosL - t_body.GetPosition(), t_body.GetForward());
 
 	// draw head
 
 	//DrawBlendMeshAtTransform(index, res::mb_char_head, 0, t_skin, graphics::shader_blend, t_head);
-	DrawBlendMeshAtTransform(index, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], graphics::shader_solidBlendChara, t_head);
+	DrawBlendMesh(index, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], SS_CHARA, t_head.getMatrix());
 	//DrawMeshAtTransform(index, res::m_proj_2, res::t_proj_2, graphics::shader_solid, t_head);
-	//DrawMeshAtTransform(index, res::m_equip_head_pickers, res::t_equip_atlas, graphics::shader_solid, t_head);
-	//DrawMeshAtTransform(index, res::m_debug_bb, res::t_equip_atlas, graphics::shader_solid, t_head);
+	//DrawMesh(index, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_default), SS_NORMAL, t_head.getMatrix());
+
+	// need a good way of knowing own index
+	DrawMeshDeform(index, res::GetMD(res::md_chr_body), res::skin_t[t_skin], SS_CHARA, 2u, t_body.getMatrix(), t_test.getMatrix());
+	DrawMeshDeform(index, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
+		t_body.getMatrix(), t_test.getMatrix(), matLegUpL, matLegUpR);
+}
+
+m::Vector3 Chara::SetFootPos(m::Vector2 position)
+{
+	
+	CellSpace cs;
+	index::GetCellSpaceInfo(position, cs);
+	btf32 height;
+	env::GetHeight(height, cs);
+	return m::Vector3(position.x, height + 0.1f, position.y);
 }
 
 void EditorPawn::Tick(btID index, btf32 dt)
@@ -598,9 +697,9 @@ void EditorPawn::Tick(btID index, btf32 dt)
 void EditorPawn::Draw(btID index)
 {
 	// need a good way of knowing own index
-	DrawBlendMeshAtTransform(index, res::GetMB(res::mb_legs), 0, res::skin_t[t_skin], graphics::shader_solidBlend, t_body);
+	DrawBlendMesh(index, res::GetMB(res::md_chr_body), 0, res::skin_t[t_skin], SS_CHARA, t_body.getMatrix());
 
 	// draw head
 
-	DrawBlendMeshAtTransform(index, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], graphics::shader_solidBlend, t_head);
+	DrawBlendMesh(index, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], SS_CHARA, t_head.getMatrix());
 }

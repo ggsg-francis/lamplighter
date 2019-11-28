@@ -1,3 +1,23 @@
+prop envp
+srcm M_______
+srct T_______
+<<<<
+prop envp
+srcm MNFern01
+srct TNFern01
+<<<<
+prop envp
+srcm MTRcks01
+srct TTRcks01
+<<<<
+prop envp
+srcm MEnvWall
+srct TTScorch
+<<<<
+prop envp
+srcm MNFern01
+srct TNFern01
+<<<<
 item wgun
 name Coolweapon Longname
 radi 1.0
@@ -21,12 +41,12 @@ icon TIcoBBal
 <<<<
 item cons
 name My Strongest Potion
-radi 0.5
+radi 0.05
 mdlh 0.0
 wght 0.1
 muns 10
-srcm MNFern01
-srct TNFern01
+srcm MMushroo
+srct TMushroo
 icon T_______
 <<<<
 item wmgc
@@ -65,6 +85,17 @@ dmg2 0.0
 dmg3 0.0
 srcm MUraFist
 srct TUraFist
+icon TIcoMtch
+<<<<
+item wgun
+name Long Smig
+radi 1.0
+mdlh 0.2
+wght 1.1
+muns 123456
+held twohandpierce
+srcm MRifleWp
+srct TRifleWp
 icon TIcoMtch
 <<<<
 eof_

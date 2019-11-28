@@ -1,4 +1,4 @@
-#include "archiver_graphics_convert.h"
+#include "graphics_convert.h"
 
 #include "tga_reader.h"
 
@@ -14,11 +14,13 @@
 extern TGA_ORDER *TGA_READER_ARGB;
 extern TGA_ORDER *TGA_READER_ABGR;
 
-namespace serializer_graphics
+namespace graphics
 {
-	#define FILE_VERSION_MB 0x0u
-	#define FILE_VERSION_M 0x0u
 	#define FILE_VERSION_TEX 0x0u
+	#define FILE_VERSION_M 0x0u
+	#define FILE_VERSION_MB 0x0u
+	#define FILE_VERSION_MD 0x0u
+	#define FILE_VERSION_MDB 0x0u
 
 	typedef btui16 version_t;
 
@@ -38,9 +40,9 @@ namespace serializer_graphics
 
 	class Mesh {
 	public:
-		std::vector<vert_everything> vertices;
+		std::vector<Vert_ALL> vertices;
 		std::vector<unsigned int> indices;
-		Mesh(std::vector<vert_everything> vertices, std::vector<unsigned int> indices);
+		Mesh(std::vector<Vert_ALL> vertices, std::vector<unsigned int> indices);
 	};
 
 	//|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| MODEL
@@ -74,7 +76,7 @@ namespace serializer_graphics
 	//|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| MESH
 
 	// constructor
-	Mesh::Mesh(const std::vector<vert_everything> vertices, const std::vector<unsigned int> indices)
+	Mesh::Mesh(const std::vector<Vert_ALL> vertices, const std::vector<unsigned int> indices)
 	{
 		this->vertices = vertices;
 		this->indices = indices;
@@ -96,7 +98,10 @@ namespace serializer_graphics
 	{
 		// read file via ASSIMP
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		//const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices);
+		//const aiScene* scene = importer.ReadFile(path, aiProcess_FlipUVs | aiProcess_PreTransformVertices); // try aiProcess_PreTransformVertices?
+		const aiScene* scene = importer.ReadFile(path, aiProcess_FlipUVs); // try aiProcess_PreTransformVertices?
+		
 		// check for errors
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 		{
@@ -131,14 +136,33 @@ namespace serializer_graphics
 	Mesh ProcessMesh(aiMesh *mesh, const aiScene *scene)
 	{
 		// data to fill
-		std::vector<vert_everything> vertices;
+		std::vector<Vert_ALL> vertices;
 		std::vector<unsigned int> indices;
 
 		// Walk through each of the mesh's vertices
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
-			vert_everything vertex;
+			Vert_ALL vertex;
 			vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
+
+			// BLEND SHAPE TEST
+			/*
+			if (scene->mMeshes[0]->mNumAnimMeshes > 0u)
+			{
+				if (scene->mMeshes[0]->mAnimMeshes[0]->HasPositions())
+				{
+					vertex.pos_blend.x = -scene->mMeshes[0]->mAnimMeshes[0]->mVertices[i].x; // X handedness flip
+					vertex.pos_blend.y = scene->mMeshes[0]->mAnimMeshes[0]->mVertices[i].y;
+					vertex.pos_blend.z = scene->mMeshes[0]->mAnimMeshes[0]->mVertices[i].z;
+				}
+				if (scene->mMeshes[0]->mAnimMeshes[0]->HasNormals())
+				{
+					vertex.nor_blend.x = -scene->mMeshes[0]->mAnimMeshes[0]->mNormals[i].x; // X handedness flip
+					vertex.nor_blend.y = scene->mMeshes[0]->mAnimMeshes[0]->mNormals[i].y;
+					vertex.nor_blend.z = scene->mMeshes[0]->mAnimMeshes[0]->mNormals[i].z;
+				}
+			}//*/
+
 			// positions
 			vector.x = -mesh->mVertices[i].x; // X handedness flip
 			vector.y = mesh->mVertices[i].y;
@@ -176,6 +200,75 @@ namespace serializer_graphics
 				vertex.col.w = 0.f;
 			}
 
+			// If there is a second colour set
+			if (mesh->mColors[1u])
+			{
+				for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
+					vertex.matr[i] = 0.f;
+
+				btf32 fa = 0.f;
+				btf32 fb = 0.f;
+				btf32 fc = 0.f;
+				btf32 fd = 0.f;
+				// Set deform matrices
+				if (false) // to do: if 'mirror weights'
+				{
+					fa = mesh->mColors[1u][i].r;
+					if (vertex.pos.x < 0.0001f && vertex.pos.x > -0.0001f)
+					{
+						fb = mesh->mColors[1u][i].g;
+						fc = mesh->mColors[1u][i].g * 0.5f;
+					}
+					else if (vertex.pos.x < 0.f)
+					{
+						fb = mesh->mColors[1u][i].g;
+					}
+					else
+					{
+						fc = mesh->mColors[1u][i].g;
+					}
+					fd = mesh->mColors[1u][i].a;
+				}
+				else
+				{
+					fa = mesh->mColors[1u][i].r;
+					fb = mesh->mColors[1u][i].g;
+					fc = mesh->mColors[1u][i].b;
+					fd = mesh->mColors[1u][i].a;
+				}
+				//btf32 fd = 0.f;
+
+				//mesh->m
+
+				// Normalize the deform values
+				//btf32 length = sqrt(fb * fb + fc * fc + fd * fd);
+				//if (length != 0.f)
+				//{
+				//	fb = fb / length;
+				//	fc = fc / length;
+				//	fd = fd / length;
+				//}
+				//else
+				//{
+				//	fb = 0.f;
+				//	fc = 0.f;
+				//	fd = 0.f;
+				//}
+
+				//// set that neutral matrix is the remainder of the other three
+				//btf32 fa = 1.f - (fb + fc + fd);
+
+				vertex.matr[0u] = fa;
+				vertex.matr[1u] = fb;
+				vertex.matr[2u] = fc;
+				vertex.matr[3u] = fd;
+			}
+			else
+			{
+				for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
+					vertex.matr[i] = 0.f;
+			}
+			
 			vertices.push_back(vertex);
 		}
 		// now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -187,18 +280,15 @@ namespace serializer_graphics
 				indices.push_back(face.mIndices[j]);
 		}
 		// Bone Zone
+		/*
 		for (btui32 i = 0; i < mesh->mNumBones; i++) { // For every bone...
 			for (btui32 j = 0; j < mesh->mBones[i]->mNumWeights; j++) { // For every weight
 				#define vid mesh->mBones[i]->mWeights[j].mVertexId
-				if (vertices[vid].util_bindex < VERT_BONE_COUNT) // Check for exceeding the vertex bone count
-				{
-					vertices[vid].boneID[vertices[vid].util_bindex] = j; // Set vertex bone ID
-					vertices[vid].boneWeight[vertices[vid].util_bindex] = mesh->mBones[i]->mWeights[j].mWeight; // Set vertex bone weight
-					++vertices[vid].util_bindex; // Enumerate vertex active bone
-				}
+				vertices[vid].matr[0u] = mesh->mBones[i]->mWeights[j].mWeight;
+				std::cout << "Set Bone ID " << mesh->mBones[i]->mWeights[j].mVertexId << " to value " << mesh->mBones[i]->mWeights[j].mWeight << std::endl;
 				#undef vid
 			}
-		}
+		}//*/
 
 		// return a mesh object created from the extracted mesh data
 		return Mesh(vertices, indices);
@@ -271,13 +361,13 @@ namespace serializer_graphics
 		Model ma = Model(sfn);
 		Mesh a = ma.meshes[0];
 
-		std::vector<vert> vces; // Vertices
+		std::vector<Vert> vces; // Vertices
 		std::vector<btui32> ices; // Indices
 
 		// For each vertex
 		for (int i = 0; i < a.vertices.size(); i++)
 		{
-			vces.push_back(vert());
+			vces.push_back(Vert());
 			vces[i].pos = a.vertices[i].pos;
 			vces[i].nor = a.vertices[i].nor;
 			vces[i].uvc = a.vertices[i].uvc;
@@ -297,7 +387,7 @@ namespace serializer_graphics
 			// Write vertices
 			size_t i = vces.size(); // Get number of vertices
 			fwrite(&i, sizeof(size_t), 1, out);
-			fwrite(&vces[0], sizeof(vert), vces.size(), out);
+			fwrite(&vces[0], sizeof(Vert), vces.size(), out);
 			// Write indices
 			i = ices.size(); // Get number of indices
 			fwrite(&i, sizeof(size_t), 1, out);
@@ -312,7 +402,7 @@ namespace serializer_graphics
 		Mesh a = ma.meshes[0];
 		Mesh b = mb.meshes[0];
 
-		std::vector<vert_blend> vces; // Vertices
+		std::vector<VertBlend> vces; // Vertices
 		std::vector<unsigned int> ices; // Indices
 
 		// Progress if mesh A and B have same number of verts
@@ -321,12 +411,13 @@ namespace serializer_graphics
 			// For each vertex
 			for (int i = 0; i < a.vertices.size(); i++)
 			{
-				vces.push_back(vert_blend());
+				vces.push_back(VertBlend());
 				vces[i].pos_a = a.vertices[i].pos;
 				vces[i].pos_b = b.vertices[i].pos;
 				vces[i].nor_a = a.vertices[i].nor;
 				vces[i].nor_b = b.vertices[i].nor;
 				vces[i].uvc = a.vertices[i].uvc;
+				vces[i].col = a.vertices[i].col;
 			}
 			// Copy indices straight from mesh A, as they should be identical in each mesh
 			ices = a.indices;
@@ -342,7 +433,7 @@ namespace serializer_graphics
 				// Write vertices
 				size_t i = vces.size(); // Get number of vertices
 				fwrite(&i, sizeof(size_t), 1, out);
-				fwrite(&vces[0], sizeof(vert_blend), vces.size(), out);
+				fwrite(&vces[0], sizeof(VertBlend), vces.size(), out);
 				// Write indices
 				i = ices.size(); // Get number of indices
 				fwrite(&i, sizeof(size_t), 1, out);
@@ -355,22 +446,25 @@ namespace serializer_graphics
 			std::cout << "Could not generate Model Blend, number of vertices not consistent!" << std::endl;
 		}
 	}
-	void ConvertMRig(char* sfn, char* dfn)
+	void ConvertMD(char* sfn, char* dfn)
 	{
 		Model ma = Model(sfn);
 		Mesh a = ma.meshes[0];
 
-		std::vector<vert> vces; // Vertices
+		std::vector<VertDeform> vces; // Vertices
 		std::vector<btui32> ices; // Indices
 
 		// For each vertex
-		for (int i = 0; i < a.vertices.size(); i++)
+		for (btui32 iVert = 0; iVert < a.vertices.size(); ++iVert)
 		{
-			vces.push_back(vert());
-			vces[i].pos = a.vertices[i].pos;
-			vces[i].nor = a.vertices[i].nor;
-			vces[i].uvc = a.vertices[i].uvc;
-			vces[i].col = a.vertices[i].col;
+			vces.push_back(VertDeform());
+			vces[iVert].pos = a.vertices[iVert].pos;
+			vces[iVert].nor = a.vertices[iVert].nor;
+			vces[iVert].uvc = a.vertices[iVert].uvc;
+			vces[iVert].col = a.vertices[iVert].col;
+			// For each matrix blend
+			for (btui32 iMat = 0; iMat < MD_MATRIX_COUNT; ++iMat)
+				vces[iVert].mat[iMat] = a.vertices[iVert].matr[iMat];
 		}
 		// Copy indices straight from mesh A, as they should be identical in each mesh
 		ices = a.indices;
@@ -381,12 +475,12 @@ namespace serializer_graphics
 			// Seek the beginning of the file
 			fseek(out, 0, SEEK_SET);
 			// Write version
-			version_t v = FILE_VERSION_MB;
+			version_t v = FILE_VERSION_MD;
 			fwrite(&v, sizeof(version_t), 1, out);
 			// Write vertices
 			size_t i = vces.size(); // Get number of vertices
 			fwrite(&i, sizeof(size_t), 1, out);
-			fwrite(&vces[0], sizeof(vert), vces.size(), out);
+			fwrite(&vces[0], sizeof(VertDeform), vces.size(), out);
 			// Write indices
 			i = ices.size(); // Get number of indices
 			fwrite(&i, sizeof(size_t), 1, out);
