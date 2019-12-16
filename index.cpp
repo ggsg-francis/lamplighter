@@ -9,6 +9,79 @@ namespace index
 	btID viewtarget[2]{ ID_NULL,ID_NULL };
 	btID viewtarget_last_tick[2]{ ID_NULL,ID_NULL };
 
+	struct ViewCulling
+	{
+		enum testenum : btui8
+		{
+			test,
+		};
+		btui8 buf[32u][32u];
+		btui8 buf_half[32u][32u];
+		btf32 posX = 0.f;
+		btf32 posY = 0.f;
+		void DrawLine(btf32 x1, btf32 y1, btf32 x2, btf32 y2)
+		{
+			btf32 fx = (btf32)x1;
+			btf32 fy = (btf32)y1;
+
+			for (btui32 i = 0u; i < 16u; ++i)
+			{
+				bti32 x = (bti32)roundf(fx);
+				bti32 y = (bti32)roundf(fy);
+				buf[x][y] = 1ui8; // NOTE: For computing AI visibility, put return check BEFORE this
+				if (env::Get(x + posX - 16, y + posY - 16, env::eflag::eIMPASSABLE)) return;
+				fx = m::Lerp((btf32)x1, (btf32)x2, (btf32)i * (1.f / 16.f));
+				fy = m::Lerp((btf32)y1, (btf32)y2, (btf32)i * (1.f / 16.f));
+			}
+		}
+		void Update(const btf32 nx, const btf32 ny, const btf32 ang)
+		{
+			posX = nx;
+			posY = ny;
+
+			memset(&buf, 0, 32u * 32u);
+			memset(&buf_half, 0, 32u * 32u);
+
+			
+			const int linedist = 14;
+
+			btf32 offset_x = nx - floorf(nx);
+			btf32 offset_y = ny - floorf(ny);
+
+			btf32 origin_x = 16.f + offset_x;
+			btf32 origin_y = 16.f + offset_y;
+
+			for (btf32 i = ang - 60.f; i < ang + 60.f; i += 2.f)
+			{
+				m::Vector2 vectemp = m::AngToVec2(glm::radians(i));
+				DrawLine(origin_x, origin_y, origin_x + vectemp.x * 14.f, origin_y + vectemp.y * 14.f);
+			}
+			for (btui32 X = 1u; X < 31u; ++X)
+			{
+				for (btui32 Y = 1u; Y < 31u; ++Y)
+				{
+					if (buf[X][Y] == 1ui8)
+					{
+						buf_half[X + 1u][Y] = 1ui8;
+						buf_half[X - 1u][Y] = 1ui8;
+						buf_half[X][Y + 1u] = 1ui8;
+						buf_half[X][Y - 1u] = 1ui8;
+					}
+				}
+			}
+			for (btui32 X = 17u - 4u; X <= 17u + 3u; ++X)
+				for (btui32 Y = 17u - 4u; Y <= 17u + 3u; ++Y)
+					buf[X][Y] = 1ui8;
+		}
+		bool Get(btui32 x, btui32 y)
+		{
+			if (x < posX + 16 && x > posX - 16 && y < posY + 16 && y > posY - 16)
+				return buf[x - (btui32)posX + 16][y - (btui32)posY + 16] == 1ui8 || buf_half[x - (btui32)posX + 16][y - (btui32)posY + 16] == 1ui8;
+			else return false;
+		}
+	};
+	ViewCulling culling;
+
 	//// temp
 	//btui32 GetCellX()
 	//{
@@ -71,19 +144,142 @@ namespace index
 		a_unused,
 	};
 
+	void bhm_line(int x1, int y1, int x2, int y2)
+	{
+		int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
+		dx = x2 - x1;
+		dy = y2 - y1;
+		dx1 = fabs(dx);
+		dy1 = fabs(dy);
+		px = 2 * dy1 - dx1;
+		py = 2 * dx1 - dy1;
+		if (dy1 <= dx1)
+		{
+			if (dx >= 0)
+			{
+				x = x1;
+				y = y1;
+				xe = x2;
+			}
+			else
+			{
+				x = x2;
+				y = y2;
+				xe = x1;
+			}
+			if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
+			t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+			for (i = 0; x<xe; i++)
+			{
+				x = x + 1;
+				if (px<0)
+				{
+					px = px + 2 * dy1;
+				}
+				else
+				{
+					if ((dx<0 && dy<0) || (dx>0 && dy>0))
+					{
+						y = y + 1;
+					}
+					else
+					{
+						y = y - 1;
+					}
+					px = px + 2 * (dy1 - dx1);
+				}
+				if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
+				t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+			}
+		}
+		else
+		{
+			if (dy >= 0)
+			{
+				x = x1;
+				y = y1;
+				ye = y2;
+			}
+			else
+			{
+				x = x2;
+				y = y2;
+				ye = y1;
+			}
+			if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
+			t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+			for (i = 0; y<ye; i++)
+			{
+				y = y + 1;
+				if (py <= 0)
+				{
+					py = py + 2 * dx1;
+				}
+				else
+				{
+					if ((dx<0 && dy<0) || (dx>0 && dy>0))
+					{
+						x = x + 1;
+					}
+					else
+					{
+						x = x - 1;
+					}
+					py = py + 2 * (dx1 - dy1);
+				}
+				if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
+				t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+			}
+		}
+	}
+
+	void newline(int x1, int y1, int x2, int y2)
+	{
+		btf32 fx = (btf32)x1;
+		btf32 fy = (btf32)y1;
+
+		for (btui32 i = 0u; i < 32u; ++i)
+		{
+			bti32 x = (bti32)roundf(fx);
+			bti32 y = (bti32)roundf(fy);
+			t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+			//if (t_EnvLightmap.GetPixel(x, y).g < 255ui8 - 8ui8)
+			//	t_EnvLightmap.SetPixelChannelG(x, y, t_EnvLightmap.GetPixel(x, y).g + 8ui8);
+			if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
+			fx = m::Lerp((btf32)x1, (btf32)x2, (btf32)i * (1.f / 32.f));
+			fy = m::Lerp((btf32)y1, (btf32)y2, (btf32)i * (1.f / 32.f));
+		}
+	}
+
+	void flood_fill_temp_2(btui16 x_origin, btui16 y_origin, btui16 x, btui16 y, graphics::colour col)
+	{
+		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
+		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
+		{
+			t_EnvLightmap.SetPixelChannelG(x, y, col.g);
+			if (col.g > 7ui8)
+			{
+				col.g -= 8ui8;
+				if (x_origin < x) flood_fill_temp_2(x_origin, y_origin, x + 1, y, col);
+				if (x_origin > x) flood_fill_temp_2(x_origin, y_origin, x - 1, y, col);
+				if (y_origin < y) flood_fill_temp_2(x_origin, y_origin, x, y + 1, col);
+				if (y_origin > y) flood_fill_temp_2(x_origin, y_origin, x, y - 1, col);
+			}
+		}
+	}
 	void flood_fill_temp(btui16 x, btui16 y, graphics::colour col)
 	{
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
 		{
 			t_EnvLightmap.SetPixelChannelG(x, y, col.g);
-			if (col.g > 31ui8)
+			if (col.g > 7ui8)
 			{
-				col.g -= 32ui8;
-				flood_fill_temp(x + 1, y, col);
-				flood_fill_temp(x - 1, y, col);
-				flood_fill_temp(x, y + 1, col);
-				flood_fill_temp(x, y - 1, col);
+				col.g -= 8ui8;
+				flood_fill_temp_2(x, y, x + 1, y, col);
+				flood_fill_temp_2(x, y, x - 1, y, col);
+				flood_fill_temp_2(x, y, x, y + 1, col);
+				flood_fill_temp_2(x, y, x, y - 1, col);
 			}
 		}
 	}
@@ -191,8 +387,23 @@ namespace index
 		t_EnvLightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(255ui8, 0ui8, 0ui8, 255ui8));
 
 		//flood_fill_temp(1024, 1024, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
-		flood_fill_temp(1005, 1003, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
-		flood_fill_temp(1016, 1016, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+		//flood_fill_temp(1005, 1003, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+		//flood_fill_temp(1016, 1016, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+
+		const int origin_x = 1024;
+		const int origin_y = 1024;
+		const int linedist = 16;
+
+		/*
+		for (int y = origin_y - linedist; y <= origin_y + linedist; ++y)
+			newline(origin_x, origin_y, origin_x + linedist, y);
+		for (int y = origin_y + linedist; y >= origin_y - linedist; --y)
+			newline(origin_x, origin_y, origin_x - linedist, y);
+		for (int x = origin_x - linedist; x <= origin_x + linedist; ++x)
+			newline(origin_x, origin_y, x, origin_x + linedist);
+		for (int x = origin_x + linedist; x >= origin_x - linedist; --x)
+			newline(origin_x, origin_y, x, origin_x - linedist);
+		//*/
 
 		t_EnvLightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
@@ -211,7 +422,7 @@ namespace index
 		//players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1.f, 1.f), 0.f);
 		//players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(4.f, 4.f), 0.f);
 		if (cfg::bEditMode)
-			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
+			players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
 			//players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
 		else
 			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
@@ -393,14 +604,20 @@ namespace index
 
 	void Draw(bool oob)
 	{
-		//btf32 time2 = Time::time * 0.0003f + 0.3f;
+		btf32 time2 = Time::time * 0.02f + 0.2f;
 		//btf32 time2 = 0.27f;
-		btf32 time2 = 0.31f;
+		//btf32 time2 = 0.22f;
 
 		m::Vector2 sunrot = m::AngToVec2(glm::radians((floor(time2 * 360.f * 16.f) / 16.f) + 180.f));
 		//m::Vector2 sunrot = m::AngToVec2(glm::radians(time2 * 360.f + 180.f));
 		//glm::vec3 sunrot2 = glm::vec3(sunrot.x, sunrot.y, 0.f);
-		glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x, sunrot.y, sunrot.y * 1.2f));
+		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x, sunrot.y, sunrot.y * 1.2f));
+
+		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x * 0.25f, 1.f, sunrot.x * 0.25f));
+		glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(0.25f, 1.f, 0.25f));
+
+
+		culling.Update(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.position.y, ACTOR(players[0])->viewYaw.Deg());
 
 
 		graphics::Matrix4x4 matrix; // Matrix used for rendering env. props (so far...)
@@ -525,7 +742,6 @@ namespace index
 
 			graphics::MatrixTransform(matrix, m::Vector3(0.f, 0.f, 0.f));
 			DrawMesh(ID_NULL, res::GetM(res::m_terrain_oob), res::GetT(res::t_terrain_sanddirt), SS_TERRAIN, matrix);
-			//DrawMesh(ID_NULL, res::GetM(res::m_terrain_oob), res::GetT(res::t_terrain_sanddirt), SS_NORMAL, matrix);
 
 			graphics::MatrixTransform(matrix, m::Vector3(2048.f, 340.f, 2048.f), 34.f);
 			//graphics::MatrixTransform(matrix, m::Vector3(2048.f, 340.f, 2048.f));
@@ -579,15 +795,15 @@ namespace index
 		matrix = graphics::Matrix4x4();
 		if (oob)
 		{
-			graphics::MatrixTransform(matrix, m::Vector3(roundf(ENTITY(activePlayer)->t.position.x / 8) * 8, 0.f, roundf(ENTITY(activePlayer)->t.position.y / 8) * 8));
-			DrawMesh(ID_NULL, res::GetM(res::m_terrain_near), res::GetT(res::t_terrain_sanddirt), SS_TERRAIN, matrix);
+			//graphics::MatrixTransform(matrix, m::Vector3(roundf(ENTITY(activePlayer)->t.position.x / 8) * 8, 0.f, roundf(ENTITY(activePlayer)->t.position.y / 8) * 8));
+			//DrawMesh(ID_NULL, res::GetM(res::m_terrain_near), res::GetT(res::t_terrain_sanddirt), SS_TERRAIN, matrix);
 		}
 
 		//-------------------------------- DRAW ENTITIES AND PROPS
 
 		if (cfg::bEditMode)
 		{
-			btui32 drawrange = 32u; // Create min/max draw coordinates
+			btui32 drawrange = 8u; // Create min/max draw coordinates
 			bti32 minx = ENTITY(activePlayer)->csi.c[0].x - drawrange; if (minx < 0) minx = 0;
 			bti32 maxx = ENTITY(activePlayer)->csi.c[0].x + drawrange; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
 			bti32 miny = ENTITY(activePlayer)->csi.c[0].y - drawrange; if (miny < 0) miny = 0;
@@ -602,20 +818,31 @@ namespace index
 						DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), res::GetT(res::t_debug_bb), SS_NORMAL, matrix);
 					}
 					if (env::eCells[x][y].prop == ID_NULL) env::eCells[x][y].prop = 0u;
-					if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
+
+					if (oob)
+					{
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
+						DrawMesh(ID_NULL, res::GetM(res::m_terrain_tile_neutral), res::GetT(res::t_terrain_sanddirt), SS_NORMAL, matrix);
+						//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
+						if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
+						{
+							DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
+						}
+					}
+					/*if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
 					{
 						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
 						DrawMesh(ID_NULL,
 							res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
 							res::GetT(acv::props[env::eCells[x][y].prop].idTxtr),
 							SS_NORMAL, matrix);
-					}
+					}*/
 				}
 			}
 		}
 		else
 		{
-			#define DRAWRANGE 32u
+			#define DRAWRANGE 16u
 			// Set min/max draw coordinates
 			bti32 minx = ENTITY(activePlayer)->csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
 			bti32 maxx = ENTITY(activePlayer)->csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
@@ -623,15 +850,22 @@ namespace index
 			bti32 maxy = ENTITY(activePlayer)->csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
 			for (bti32 x = minx; x <= maxx; x++) {
 				for (bti32 y = miny; y < maxy; y++) {
-					//-------------------------------- DRAW ENTITIES ON THIS CELL
-					for (int e = 0; e <= cells[x][y].ents.end(); e++)
-						if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]])
-							ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
-					//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
-					if (oob && env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
+					if (culling.Get(x, y))
 					{
-						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
-						DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
+						//-------------------------------- DRAW ENTITIES ON THIS CELL
+						for (int e = 0; e <= cells[x][y].ents.end(); e++)
+							if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]])
+								ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
+						if (oob)
+						{
+							graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
+							DrawMesh(ID_NULL, res::GetM(res::m_terrain_tile_neutral), res::GetT(res::t_terrain_sanddirt), SS_NORMAL, matrix);
+							//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
+							if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
+							{
+								DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
+							}
+						}
 					}
 				}
 			}
@@ -772,17 +1006,17 @@ namespace index
 
 	void SetInput(btID index, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool atk_hit, bool atk2, bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C)
 	{
-		CHARA(index)->input = input;
-		CHARA(index)->viewYaw.Rotate(rot_x);
-		CHARA(index)->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
-		CHARA(index)->inputBV.setto(Actor::IN_USE, atk);
-		CHARA(index)->inputBV.setto(Actor::IN_USE_HIT, atk_hit);
-		CHARA(index)->inputBV.setto(Actor::IN_USE_ALT, atk2);
-		CHARA(index)->inputBV.setto(Actor::IN_RUN, run);
-		CHARA(index)->inputBV.setto(Actor::IN_AIM, aim);
-		CHARA(index)->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
-		CHARA(index)->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
-		CHARA(index)->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
+		ACTOR(index)->input = input;
+		ACTOR(index)->viewYaw.Rotate(rot_x);
+		ACTOR(index)->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
+		ACTOR(index)->inputBV.setto(Actor::IN_USE, atk);
+		ACTOR(index)->inputBV.setto(Actor::IN_USE_HIT, atk_hit);
+		ACTOR(index)->inputBV.setto(Actor::IN_USE_ALT, atk2);
+		ACTOR(index)->inputBV.setto(Actor::IN_RUN, run);
+		ACTOR(index)->inputBV.setto(Actor::IN_AIM, aim);
+		ACTOR(index)->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
+		ACTOR(index)->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
+		ACTOR(index)->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)

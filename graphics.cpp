@@ -345,10 +345,11 @@ namespace graphics
 	{
 		// this is not.... good.....
 		#define T ((Transform3D*)t)
-		//view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.23f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
 		view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
-		mat_view = glm::lookAt((glm::vec3)view, (glm::vec3)view + (T->GetForward()) * glm::vec3(1.f, 1.f, -1.f),
-			(glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
+		mat_view = glm::lookAt((glm::vec3)view, (glm::vec3)view + (T->GetForward()) * glm::vec3(1.f, 1.f, -1.f), (glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
+
+		//view = m::Vector3((T->pos_glm * glm::vec3(1.f, 1.f, -1.f)));
+		//mat_view = glm::lookAt((glm::vec3)view + (T->GetForward() * -15.f * glm::vec3(1.f, 1.f, -1.f)), (glm::vec3)view, glm::vec3(0.f, 1.f, 0.f));
 		#undef T
 	}
 	// Lightsource

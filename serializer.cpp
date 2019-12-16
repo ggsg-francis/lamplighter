@@ -532,7 +532,6 @@ namespace serializer
 				}
 			}
 			//*/
-			debug_output();
 			fclose(file); // Close file
 
 			std::cout << "LOAD COMPLETE!" << std::endl;

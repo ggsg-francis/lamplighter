@@ -38,9 +38,6 @@
     <ClInclude Include="global.h">
       <Filter>0global</Filter>
     </ClInclude>
-    <ClInclude Include="memory.hpp">
-      <Filter>framework</Filter>
-    </ClInclude>
     <ClInclude Include="maths.hpp">
       <Filter>framework</Filter>
     </ClInclude>
@@ -94,6 +91,9 @@
       <Filter>Resource Files</Filter>
     </ClInclude>
     <ClInclude Include="graphics_structures.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="memory.hpp">
       <Filter>framework</Filter>
     </ClInclude>
   </ItemGroup>
@@ -177,6 +177,8 @@
     <None Include="0000gamecontents.uwu" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="000config.txt" />
+    <Text Include="000config.txt">
+      <Filter>0global</Filter>
+    </Text>
   </ItemGroup>
 </Project>

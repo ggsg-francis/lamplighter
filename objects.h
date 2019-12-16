@@ -255,30 +255,26 @@ protected:
 };
 struct EditorPawn : public Actor
 {
-	enum CharaState : btui8
+	enum equipmode : btui8
+	{
+		spell,
+		weapon,
+	};
+
+	enum CharaStaticProperties : btui8
+	{
+		eLEFT_HANDED = (0x1ui8 << 0x0ui8),
+	};
+	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
+
+	enum CharaActiveState : btui8
 	{
 		ani_right_foot = (0x1ui8 << 0x0ui8),
-		reloading = (0x1ui8 << 0x1ui8),
 	};
-	// Animation stuff
-	bool aniStepR = false; // Which foot is forwards right now
-	mem::bv<btui8, CharaState> charastatebv;
-	btID lookTarget = BUF_NULL; // What it's looking at
+	mem::bv<btui8, CharaActiveState> charastatebv;
 
-	HeldItem* heldItem;
 
 	Transform3D t_body, t_head;
-
-	m::Vector3 foot_pos_l, foot_pos_r, foot_pos_l_interp, foot_pos_r_interp;
-	enum foot_state : btui8
-	{
-		eL_DOWN,
-		eR_DOWN,
-		eBOTH_DOWN,
-	};
-	foot_state foot_state = eBOTH_DOWN;
-
-	m::Vector2 ani_body_lean;
 
 	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
 	virtual void Draw(btID INDEX);

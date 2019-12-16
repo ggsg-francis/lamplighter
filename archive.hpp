@@ -46,6 +46,7 @@ namespace res
 		// terrain
 		m_terrain_near,
 		m_terrain_oob,
+		m_terrain_tile_neutral,
 		// Chara textures
 		t_skin_template,
 		t_skin2,

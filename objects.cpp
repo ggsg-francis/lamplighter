@@ -419,7 +419,7 @@ void Chara::Tick(btID index, btf32 dt)
 	t_body = Transform3D();
 	t_head = Transform3D();
 
-	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.7f, t.position.y));
+	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.6f, t.position.y));
 	t_body.Rotate(yaw.Rad(), m::Vector3(0, 1, 0));
 
 	ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
@@ -519,8 +519,7 @@ void Chara::Draw(btID index)
 	{
 		if (m::Length(t.velocity) < 0.025f) // if below a certain speed, switch to standing pose
 		{
-			if (m::Length(jointPosR - footPosTargR) > leglen)
-				footPosTargR = SetFootPos(t.position + right * hip_width);
+			footPosTargR = SetFootPos(m::Vector2(footPosTargR.x, footPosTargR.z));
 			if (m::Length(jointPosL - footPosTargL) > leglen)
 				footPosTargL = SetFootPos(t.position + right * -hip_width);
 			//foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width;
@@ -542,8 +541,7 @@ void Chara::Draw(btID index)
 	{
 		if (m::Length(t.velocity) < 0.025f) // if below a certain speed, switch to standing pose
 		{
-			if (m::Length(jointPosR - footPosTargR) > leglen)
-				footPosTargL = SetFootPos(t.position + right * -hip_width);
+			footPosTargL = SetFootPos(m::Vector2(footPosTargL.x, footPosTargL.z));
 			if (m::Length(jointPosR - footPosTargR) > leglen)
 				footPosTargR = SetFootPos(t.position + right * hip_width);
 			//foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width;
@@ -638,20 +636,48 @@ void Chara::Draw(btID index)
 
 m::Vector3 Chara::SetFootPos(m::Vector2 position)
 {
-	
 	CellSpace cs;
 	index::GetCellSpaceInfo(position, cs);
 	btf32 height;
 	env::GetHeight(height, cs);
-	return m::Vector3(position.x, height + 0.1f, position.y);
+	return m::Vector3(position.x, height, position.y);
 }
 
 void EditorPawn::Tick(btID index, btf32 dt)
 {
+	bool can_move = true;
+	bool can_turn = true;
+	if (inventory.items.Used(inv_active_slot))
+	{
+		#define HELDINSTANCE inventory.items[inv_active_slot].heldInstance
+		can_move = !HELDINSTANCE->BlockMove();
+		can_turn = !HELDINSTANCE->BlockTurn();
+		#undef HELDINSTANCE
+	}
+
 	if (state.properties.get(ActiveState::eALIVE))
 	{
-		input.x = -input.x;
-		t.velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
+		if (cfg::bEditMode)
+		{
+			//ENTITY[index]->t.velocity = fw::Lerp(ENTITY[index]->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
+			input.x = -input.x;
+			t.velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
+		}
+		else
+		{
+			if (can_move)
+			{
+				input.x = -input.x;
+				t.velocity = m::Lerp(t.velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed, 0.2f);
+			}
+			else
+			{
+				input = m::Vector2(0.f, 0.f);
+				t.velocity = m::Lerp(t.velocity, m::Vector2(0.f, 0.f), 0.2f);
+			}
+			if (can_turn && abs(m::AngDif(yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
+				yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
+		}
 
 		//-------------------------------- APPLY MOVEMENT
 
@@ -674,8 +700,24 @@ void EditorPawn::Tick(btID index, btf32 dt)
 		//-------------------------------- SET HEIGHT AND CELL SPACE
 
 		env::GetHeight(t.height, csi);
+
+		//-------------------------------- RUN COLLISION & AI
+
+		if (!cfg::bEditMode)
+		{
+			index::EntDeintersect(this, csi, viewYaw.Deg(), true);
+			if (aiControlled) index::ActorRunAI(index); // Run AI
+			else atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
+			//atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
+		}
 	} // End if alive
 
+	if (inventory.items.Used(inv_active_slot))
+	{
+		#define HELDINSTANCE inventory.items[inv_active_slot].heldInstance
+		if (HELDINSTANCE != nullptr) HELDINSTANCE->Tick(this);
+		#undef HELDINSTANCE
+	}
 
 	//________________________________________________________________
 	//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
@@ -684,7 +726,7 @@ void EditorPawn::Tick(btID index, btf32 dt)
 	t_body = Transform3D();
 	t_head = Transform3D();
 
-	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.75f, t.position.y));
+	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.7f, t.position.y));
 	t_body.Rotate(yaw.Rad(), m::Vector3(0, 1, 0));
 
 	// Set head transform
@@ -692,14 +734,15 @@ void EditorPawn::Tick(btID index, btf32 dt)
 	t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
 	t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
 	t_head.Translate(t_body.GetUp() * 0.7f);
+	t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
 }
 
 void EditorPawn::Draw(btID index)
 {
 	// need a good way of knowing own index
-	DrawBlendMesh(index, res::GetMB(res::md_chr_body), 0, res::skin_t[t_skin], SS_CHARA, t_body.getMatrix());
+	DrawMesh(index, res::GetM(res::m_debug_bb), res::skin_t[t_skin], SS_NORMAL, t_body.getMatrix());
 
 	// draw head
 
-	DrawBlendMesh(index, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], SS_CHARA, t_head.getMatrix());
+	//DrawBlendMesh(index, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], SS_CHARA, t_head.getMatrix());
 }

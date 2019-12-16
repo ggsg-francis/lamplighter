@@ -25,10 +25,16 @@ namespace env
 
 	void GetHeight(btf32& out_height, CellSpace& csinf)
 	{
+		// NEAREST
+		out_height = (btf32)eCells[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y].height / TERRAIN_HEIGHT_DIVISION;
+
+		// BILINEAR
+		/*
 		out_height = m::Lerp(
 			m::Lerp((btf32)eCells[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y].height, (btf32)eCells[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y].height, abs(csinf.offsetx)),
 			m::Lerp((btf32)eCells[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y].height, (btf32)eCells[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y].height, abs(csinf.offsetx)),
 			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
+		*/
 	}
 
 	void Tick()
@@ -76,61 +82,45 @@ namespace env
 		{
 			for (int y = 1; y < WORLD_SIZE - 1; y++)
 			{
-				env::UnSet(x, y, eflag::eSurfN);
-				env::UnSet(x, y, eflag::eSurfS);
-				env::UnSet(x, y, eflag::eSurfE);
-				env::UnSet(x, y, eflag::eSurfW);
-				env::UnSet(x, y, eflag::eCorOutNE);
-				env::UnSet(x, y, eflag::eCorOutNW);
-				env::UnSet(x, y, eflag::eCorOutSE);
-				env::UnSet(x, y, eflag::eCorOutSW);
+				UnSet(x, y, eflag::eSurfN);
+				UnSet(x, y, eflag::eSurfS);
+				UnSet(x, y, eflag::eSurfE);
+				UnSet(x, y, eflag::eSurfW);
+				UnSet(x, y, eflag::eCorOutNE);
+				UnSet(x, y, eflag::eCorOutNW);
+				UnSet(x, y, eflag::eCorOutSE);
+				UnSet(x, y, eflag::eCorOutSW);
 
 				//don't bother doing anything if this tile is not solid
-				if (!env::Get(x, y, eflag::eIMPASSABLE))
-					//if (!ltrmem::bitget(env::nodes[x][y].flags, EF_IMPASSABLE))
+				if (!Get(x, y, eflag::eIMPASSABLE))
+					//if (!ltrmem::bitget(nodes[x][y].flags, EF_IMPASSABLE))
 				{
 					//edges
 					//n
-					if (env::Get(x, y + 1, eflag::eIMPASSABLE))
-						env::Set(x, y, eflag::eSurfN);
-					//if (mem::bitget32_auto(env::nodes[x][y + 1].flags, envflag::EF_IMPASSABLE))
-					//mem::bitset32_auto(env::nodes[x][y].flags, envflag::EF_BLOCKED_N);
-				//s
-					if (env::Get(x, y - 1, eflag::eIMPASSABLE))
-						env::Set(x, y, eflag::eSurfS);
-					//if (mem::bitget32_auto(env::nodes[x][y - 1].flags, envflag::EF_IMPASSABLE))
-					//mem::bitset32_auto(env::nodes[x][y].flags, envflag::EF_BLOCKED_S);
-				//e
-					if (env::Get(x + 1, y, eflag::eIMPASSABLE))
-						env::Set(x, y, eflag::eSurfE);
-					//if (mem::bitget32_auto(env::nodes[x + 1][y].flags, envflag::EF_IMPASSABLE))
-					//mem::bitset32_auto(env::nodes[x][y].flags, envflag::EF_BLOCKED_E);
-				//w
-					if (env::Get(x - 1, y, eflag::eIMPASSABLE))
-						env::Set(x, y, eflag::eSurfW);
-					//if (mem::bitget32_auto(env::nodes[x - 1][y].flags, envflag::EF_IMPASSABLE))
-					//mem::bitset32_auto(env::nodes[x][y].flags, envflag::EF_BLOCKED_W);
-				//corners
-				//ne
-					if (env::Get(x + 1, y + 1, eflag::eIMPASSABLE))
-						env::Set(x, y, eflag::eCorOutNE);
-					//if (mem::bitget32_auto(env::nodes[x + 1][y + 1].flags, envflag::EF_IMPASSABLE) && !mem::bitget32_auto(env::nodes[x + 1][y].flags, envflag::EF_IMPASSABLE) && !mem::bitget32_auto(env::nodes[x][y + 1].flags, envflag::EF_IMPASSABLE))
-					//mem::bitset32_auto(env::nodes[x][y].flags, envflag::EF_BLOKCOR_NE);
-				//nw
-					if (env::Get(x - 1, y + 1, eflag::eIMPASSABLE))
-						env::Set(x, y, eflag::eCorOutNW);
-					//if (mem::bitget32_auto(env::nodes[x - 1][y + 1].flags, envflag::EF_IMPASSABLE) && !mem::bitget32_auto(env::nodes[x - 1][y].flags, envflag::EF_IMPASSABLE) && !mem::bitget32_auto(env::nodes[x][y + 1].flags, envflag::EF_IMPASSABLE))
-					//mem::bitset32_auto(env::nodes[x][y].flags, envflag::EF_BLOKCOR_NW);
-				//se
-					if (env::Get(x + 1, y - 1, eflag::eIMPASSABLE))
-						env::Set(x, y, eflag::eCorOutSE);
-					//if (mem::bitget32_auto(env::nodes[x + 1][y - 1].flags, envflag::EF_IMPASSABLE) && !mem::bitget32_auto(env::nodes[x + 1][y].flags, envflag::EF_IMPASSABLE) && !mem::bitget32_auto(env::nodes[x][y - 1].flags, envflag::EF_IMPASSABLE))
-					//mem::bitset32_auto(env::nodes[x][y].flags, envflag::EF_BLOKCOR_SE);
-				//sw
-					if (env::Get(x - 1, y - 1, eflag::eIMPASSABLE))
-						env::Set(x, y, eflag::eCorOutSW);
-					//if (mem::bitget32_auto(env::nodes[x - 1][y - 1].flags, envflag::EF_IMPASSABLE) && !mem::bitget32_auto(env::nodes[x - 1][y].flags, envflag::EF_IMPASSABLE) && !mem::bitget32_auto(env::nodes[x][y - 1].flags, envflag::EF_IMPASSABLE))
-					//mem::bitset32_auto(env::nodes[x][y].flags, envflag::EF_BLOKCOR_SW);
+					if (Get(x, y + 1, eflag::eIMPASSABLE) || eCells[x][y + 1].height > eCells[x][y].height + 2ui8)
+						Set(x, y, eflag::eSurfN);
+					//s
+					if (Get(x, y - 1, eflag::eIMPASSABLE) || eCells[x][y - 1].height > eCells[x][y].height + 2ui8)
+						Set(x, y, eflag::eSurfS);
+					//e
+					if (Get(x + 1, y, eflag::eIMPASSABLE) || eCells[x + 1][y].height > eCells[x][y].height + 2ui8)
+						Set(x, y, eflag::eSurfE);
+					//w
+					if (Get(x - 1, y, eflag::eIMPASSABLE) || eCells[x - 1][y].height > eCells[x][y].height + 2ui8)
+						Set(x, y, eflag::eSurfW);
+					//corners
+					//ne
+					if (Get(x + 1, y + 1, eflag::eIMPASSABLE) || eCells[x + 1][y + 1].height > eCells[x][y].height + 2ui8)
+						Set(x, y, eflag::eCorOutNE);
+					//nw
+					if (Get(x - 1, y + 1, eflag::eIMPASSABLE) || eCells[x - 1][y + 1].height > eCells[x][y].height + 2ui8)
+						Set(x, y, eflag::eCorOutNW);
+					//se
+					if (Get(x + 1, y - 1, eflag::eIMPASSABLE) || eCells[x + 1][y - 1].height > eCells[x][y].height + 2ui8)
+						Set(x, y, eflag::eCorOutSE);
+					//sw
+					if (Get(x - 1, y - 1, eflag::eIMPASSABLE) || eCells[x + 1][y - 1].height > eCells[x][y].height + 2ui8)
+						Set(x, y, eflag::eCorOutSW);
 				}
 			}
 		}

@@ -95,6 +95,10 @@ item mesh
 hndl MTerrOOB
 srca resources/Terrain_LOD.obj
 <<<<
+item mesh
+hndl MTTileNe
+srca resources/environment/terrain/tile_neutral.fbx
+<<<<
 **** ------------------------------------------------------------------------------------ CHARACTER TEXTURES
 item txtr
 **** character skin 1
