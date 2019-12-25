@@ -60,6 +60,7 @@ void main()
     //FragColor = texture(screenTexture, TexCoords);
 	
 	// blur part
+	/*
 	//sample diffuse colour
     vec3 sampleTex[9];
 
@@ -80,23 +81,10 @@ void main()
     vec3 col = vec3(0.0);
     for(int i = 0; i < 9; i++)
         col += sampleTex[i] * kernel[i];
+	*/
 	
 	// temp activate to disable blur	
-	//col = vec3(texture(screenTexture, TexCoords));		
-	
-	//dither part (wip)
-	//col.r = round(col.r * 16) / 16;
-	//col.g = round(col.g * 16) / 16;
-	//col.b = round(col.b * 16) / 16;
-    
-	
-	//int dx = int(mod(gl_FragCoord.x, 4));
-	//int dy = int(mod(gl_FragCoord.y, 4));
-	//float index_value = indexMatrix4x4[(dx + dy * 4)] / 16.0;
-	
-	//int dx = int(mod(gl_FragCoord.x, 8));
-	//int dy = int(mod(gl_FragCoord.y, 8));
-	//float index_value = indexMatrix8x8[(dx + dy * 8)] / 16.0;
+	vec3 col = vec3(texture(screenTexture, TexCoords));		
 	
 	//darken
 	//FragColor = vec4(col - (0.045 * (1 - col)), 1.0);
@@ -163,7 +151,7 @@ void main()
 	else { uv = TexCoords.xy; }
 	vec4 c = texture2D(screenTexture, uv);
 	FragColor = c;
-	*/
+	//*/
 	
 	//modified fisheye
 	/*
@@ -175,5 +163,5 @@ void main()
 	vec4 c = texture2D(screenTexture, uv);
 	FragColor = c;
 	//FragColor = vec4(d);
-	*/
+	//*/
 }

@@ -24,14 +24,16 @@ namespace index
 			btf32 fx = (btf32)x1;
 			btf32 fy = (btf32)y1;
 
+			const btf32 stepLength = 1.f; // 1 by default
+
 			for (btui32 i = 0u; i < 16u; ++i)
 			{
 				bti32 x = (bti32)roundf(fx);
 				bti32 y = (bti32)roundf(fy);
 				buf[x][y] = 1ui8; // NOTE: For computing AI visibility, put return check BEFORE this
 				if (env::Get(x + posX - 16, y + posY - 16, env::eflag::eIMPASSABLE)) return;
-				fx = m::Lerp((btf32)x1, (btf32)x2, (btf32)i * (1.f / 16.f));
-				fy = m::Lerp((btf32)y1, (btf32)y2, (btf32)i * (1.f / 16.f));
+				fx = m::Lerp((btf32)x1, (btf32)x2, (btf32)i * (stepLength / 16.f));
+				fy = m::Lerp((btf32)y1, (btf32)y2, (btf32)i * (stepLength / 16.f));
 			}
 		}
 		void Update(const btf32 nx, const btf32 ny, const btf32 ang)
@@ -51,7 +53,7 @@ namespace index
 			btf32 origin_x = 16.f + offset_x;
 			btf32 origin_y = 16.f + offset_y;
 
-			for (btf32 i = ang - 60.f; i < ang + 60.f; i += 2.f)
+			for (btf32 i = ang - 55.f; i < ang + 55.f; i += 3.f)
 			{
 				m::Vector2 vectemp = m::AngToVec2(glm::radians(i));
 				DrawLine(origin_x, origin_y, origin_x + vectemp.x * 14.f, origin_y + vectemp.y * 14.f);
@@ -251,40 +253,22 @@ namespace index
 		}
 	}
 
-	void flood_fill_temp_2(btui16 x_origin, btui16 y_origin, btui16 x, btui16 y, graphics::colour col)
-	{
-		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
-		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
-		{
-			t_EnvLightmap.SetPixelChannelG(x, y, col.g);
-			if (col.g > 7ui8)
-			{
-				col.g -= 8ui8;
-				if (x_origin < x) flood_fill_temp_2(x_origin, y_origin, x + 1, y, col);
-				if (x_origin > x) flood_fill_temp_2(x_origin, y_origin, x - 1, y, col);
-				if (y_origin < y) flood_fill_temp_2(x_origin, y_origin, x, y + 1, col);
-				if (y_origin > y) flood_fill_temp_2(x_origin, y_origin, x, y - 1, col);
-			}
-		}
-	}
 	void flood_fill_temp(btui16 x, btui16 y, graphics::colour col)
 	{
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
 		{
 			t_EnvLightmap.SetPixelChannelG(x, y, col.g);
-			if (col.g > 7ui8)
+			if (col.g > 31ui8)
 			{
-				col.g -= 8ui8;
-				flood_fill_temp_2(x, y, x + 1, y, col);
-				flood_fill_temp_2(x, y, x - 1, y, col);
-				flood_fill_temp_2(x, y, x, y + 1, col);
-				flood_fill_temp_2(x, y, x, y - 1, col);
+				col.g -= 32ui8;
+				flood_fill_temp(x + 1, y, col);
+				flood_fill_temp(x - 1, y, col);
+				flood_fill_temp(x, y + 1, col);
+				flood_fill_temp(x, y - 1, col);
 			}
 		}
 	}
-
-	Transform3D t_moon;
 
 	GLuint shadowtex;
 	glm::mat4 shadowmat_temp;
@@ -308,23 +292,6 @@ namespace index
 			glUniform1i(glGetUniformLocation(graphics::GetShader((graphics::eShader)i).ID, "ts"), 3);
 			glBindTexture(GL_TEXTURE_2D, res::GetT(res::t_sky).glID); // Bind the texture
 		}
-
-		graphics::GetShader(graphics::S_TERRAIN).Use();
-		glActiveTexture(GL_TEXTURE1); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_TERRAIN).ID, "tlm"), 1);
-		glBindTexture(GL_TEXTURE_2D, t_EnvLightmap.glID); // Bind the texture
-		glActiveTexture(GL_TEXTURE2); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_TERRAIN).ID, "thm"), 2);
-		glBindTexture(GL_TEXTURE_2D, t_EnvHeightmap.glID); // Bind the texture
-		glActiveTexture(GL_TEXTURE3); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_TERRAIN).ID, "ts"), 3);
-		glBindTexture(GL_TEXTURE_2D, res::GetT(res::t_sky).glID); // Bind the texture
-
-		// terrain textures
-		glActiveTexture(GL_TEXTURE6); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_TERRAIN).ID, "tt1"), 6);
-		glBindTexture(GL_TEXTURE_2D, res::GetT(res::t_terrain_scorch).glID); // Bind the texture
-
 	}
 
 	void Init()
@@ -346,64 +313,29 @@ namespace index
 
 		text_version.ReGen(buffinal, cfg::iWinX * -0.125f, cfg::iWinX * 0.125f, cfg::iWinY * 0.25f);
 
-		//temp
-		t_moon.SetRotation(glm::radians(0.f));
-		t_moon.SetPosition(m::Vector3(0.f, 0.f, 0.f));
-		t_moon.SetScale(m::Vector3(1.f,1.f,1.f));
-
 		env::LoadBin();
 
 		/*
-		graphics::ModifiableTexture modt;
-		modt.LoadFile("res/TTerrain");
-
 		for (int x = 0; x < WORLD_SIZE; x++)
 		{
 			for (int y = 0; y < WORLD_SIZE; y++)
 			{
-				//env::UnSet(x, y, env::eflag::eIMPASSABLE);
-				if (x < modt.width && y < modt.height)
-					env::eCells[x][y].height = modt.GetPixel(x, y).r;
+				env::eCells[x][y].height = 128ui8;
 			}
 		}
-		//env::GeneratePhysicsSurfaces();
-
-		//env::SaveBin();
-		//*/
-
-		/*
-		for (btui16 x = 0; x < WORLD_SIZE; x++)
-		{
-			for (btui16 y = 0; y < WORLD_SIZE; y++)
-			{
-				env::eCells[x][y].model = ID_NULL;
-			}
-		}
+		env::GeneratePhysicsSurfaces();
 		env::SaveBin();
-		*/
+		//*/
 
 		// Lightmap
 
 		t_EnvLightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(255ui8, 0ui8, 0ui8, 255ui8));
 
-		//flood_fill_temp(1024, 1024, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
-		//flood_fill_temp(1005, 1003, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
-		//flood_fill_temp(1016, 1016, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+		for (btui32 x = 0u; x < WORLD_SIZE; ++x)
+			for (btui32 y = 0u; y < WORLD_SIZE; ++y)
+				if (env::Get(x, y, env::eflag::EF_LIGHTSRC))
+					flood_fill_temp(x, y, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
 
-		const int origin_x = 1024;
-		const int origin_y = 1024;
-		const int linedist = 16;
-
-		/*
-		for (int y = origin_y - linedist; y <= origin_y + linedist; ++y)
-			newline(origin_x, origin_y, origin_x + linedist, y);
-		for (int y = origin_y + linedist; y >= origin_y - linedist; --y)
-			newline(origin_x, origin_y, origin_x - linedist, y);
-		for (int x = origin_x - linedist; x <= origin_x + linedist; ++x)
-			newline(origin_x, origin_y, x, origin_x + linedist);
-		for (int x = origin_x + linedist; x >= origin_x - linedist; --x)
-			newline(origin_x, origin_y, x, origin_x - linedist);
-		//*/
 
 		t_EnvLightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
@@ -528,8 +460,6 @@ namespace index
 			}
 		} //*/
 
-		t_moon.Rotate(-0.01f * dt, m::Vector3(1.f, 0.f, 0.f));
-
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
@@ -566,10 +496,22 @@ namespace index
 			{
 				//env::GeneratePaths();
 			}
-			if (input::GetHit(input::key::ACTIVATE))
+			else if (input::GetHit(input::key::ACTIVATE))
 			{
 				env::GeneratePhysicsSurfaces();
 				env::SaveBin();
+			}
+			else if (input::GetHit(input::key::FUNCTION_1)) // COPY
+			{
+				editor_prop = env::eCells[GetCellX][GetCellY].prop;
+			}
+			else if (input::GetHit(input::key::FUNCTION_2)) // PASTE
+			{
+				env::eCells[GetCellX][GetCellY].prop = editor_prop;
+			}
+			else if (input::GetHit(input::key::FUNCTION_3)) // TOGGLE LIGHT
+			{
+				env::Get(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC) ? env::UnSet(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC) : env::Set(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC);
 			}
 			else if (input::GetHit(input::key::ACTION_A))
 			{
@@ -614,10 +556,11 @@ namespace index
 		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x, sunrot.y, sunrot.y * 1.2f));
 
 		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x * 0.25f, 1.f, sunrot.x * 0.25f));
-		glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(0.25f, 1.f, 0.25f));
+		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(0.25f, 1.f, 0.25f));
+		glm::vec3 sunrot2 = (glm::vec3)m::Vector3(0.f, 1.f, 0.f);
 
 
-		culling.Update(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.position.y, ACTOR(players[0])->viewYaw.Deg());
+		culling.Update(ENTITY(players[activePlayer])->t.position.x, ENTITY(players[activePlayer])->t.position.y, ACTOR(players[activePlayer])->viewYaw.Deg());
 
 
 		graphics::Matrix4x4 matrix; // Matrix used for rendering env. props (so far...)
@@ -627,15 +570,6 @@ namespace index
 			//-------------------------------- UPDATE SHADERS
 
 			#define PCAM (glm::vec3)graphics::GetViewPos()
-
-			graphics::GetShader(graphics::S_TERRAIN).Use();
-			graphics::GetShader(graphics::S_TERRAIN).setMat4("lightProj", shadowmat_temp);
-			graphics::GetShader(graphics::S_TERRAIN).SetFloat("ft", (float)time2);
-			graphics::GetShader(graphics::S_TERRAIN).setVec3("pcam", PCAM);
-			graphics::GetShader(graphics::S_TERRAIN).setVec3("vsun", sunrot2);
-			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_TERRAIN).ID, "tshadow"), 5);
-			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
 
 			graphics::GetShader(graphics::S_SOLID).Use();
 			graphics::GetShader(graphics::S_SOLID).setMat4("lightProj", shadowmat_temp);
@@ -703,51 +637,13 @@ namespace index
 			graphics::SetFrontFace();
 			graphics::SetMatProj();
 
-
-			t_moon.SetPosition(m::Vector3(ENTITY(activePlayer)->t.position.x, ENTITY(activePlayer)->t.height + 1.f, ENTITY(activePlayer)->t.position.y));
-
-
-			//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-			// Setup sky matrix
-			graphics::MatrixTransform(matrix, m::Vector3(ENTITY(activePlayer)->t.position.x, ENTITY(activePlayer)->t.height + 1.f, ENTITY(activePlayer)->t.position.y));
-			// Draw stars
-			glDisable(GL_DEPTH_TEST);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-			//DrawMesh(ID_NULL, res::m_skystars, res::t_sky, graphics::shader_sky, matrix);
-			// Draw Moon
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			graphics::GetShader(graphics::S_SOLID).Use();
-			graphics::GetShader(graphics::S_SOLID).SetBool("lit", false);
-			DrawMesh(ID_NULL, res::GetM(res::m_skymoon), res::GetT(res::t_skymoon), SS_NORMAL, t_moon.getMatrix());
-			graphics::GetShader(graphics::S_SOLID).Use();
-			graphics::GetShader(graphics::S_SOLID).SetBool("lit", true);
-			// Draw Sky
-			glBlendFunc(GL_ONE, GL_ONE);
-			glBlendEquation(GL_FUNC_ADD);
-			glEnable(GL_BLEND);
-			DrawMesh(ID_NULL, res::GetM(res::m_skydome), res::GetT(res::t_sky), SS_SKY, matrix);
-			// Reset
-			glBlendFunc(GL_ONE, GL_ZERO);
-			glDisable(GL_BLEND);
-			glClear(GL_DEPTH_BUFFER_BIT);
-			glEnable(GL_DEPTH_TEST);
-
 			//-------------------------------- DRAW OOB TERRAIN
 
-			//glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+			//graphics::SetMatProj(128.f); // Set projection matrix for long-distance rendering
 
-			graphics::SetMatProj(128.f); // Set projection matrix for long-distance rendering
-
-			graphics::MatrixTransform(matrix, m::Vector3(0.f, 0.f, 0.f));
-			DrawMesh(ID_NULL, res::GetM(res::m_terrain_oob), res::GetT(res::t_terrain_sanddirt), SS_TERRAIN, matrix);
-
-			graphics::MatrixTransform(matrix, m::Vector3(2048.f, 340.f, 2048.f), 34.f);
-			//graphics::MatrixTransform(matrix, m::Vector3(2048.f, 340.f, 2048.f));
-			DrawMesh(ID_NULL, res::GetM(res::m_ex1e_air_carrier), res::GetT(res::t_default), SS_NORMAL, matrix);
-
-			graphics::SetMatProj(); // Reset projection matrix
+			// draw any OOB stuff here
+			
+			//graphics::SetMatProj(); // Reset projection matrix
 
 			//-------------------------------- DRAW ENTITIES
 
@@ -759,7 +655,8 @@ namespace index
 		{
 			m::Vector3 lightPos(ENTITY(activePlayer)->t.position.x, ENTITY(activePlayer)->t.height, -ENTITY(activePlayer)->t.position.y);
 			m::Vector3 lightVecForw(-sunrot2.x, -sunrot2.y, -sunrot2.z);
-			m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 1.f, 0.f)));
+			//m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 1.f, 0.f)));
+			m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 0.f, 1.f)));
 			m::Vector3 LightVecUp = m::Normalize(m::Cross(lightVecForw, LightVecSide));
 
 			#define LIGHT_RND ((SHADOW_WIDTH / LIGHT_WIDTH) / 2)
@@ -801,6 +698,10 @@ namespace index
 
 		//-------------------------------- DRAW ENTITIES AND PROPS
 
+		#ifdef DEF_DRAW_WIREFRAME
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		#endif // DEF_DRAW_WIREFRAME
+
 		if (cfg::bEditMode)
 		{
 			btui32 drawrange = 8u; // Create min/max draw coordinates
@@ -817,17 +718,17 @@ namespace index
 						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
 						DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), res::GetT(res::t_debug_bb), SS_NORMAL, matrix);
 					}
-					if (env::eCells[x][y].prop == ID_NULL) env::eCells[x][y].prop = 0u;
-
-					if (oob)
+					if (env::Get(x, y, env::eflag::EF_LIGHTSRC))
 					{
 						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
-						DrawMesh(ID_NULL, res::GetM(res::m_terrain_tile_neutral), res::GetT(res::t_terrain_sanddirt), SS_NORMAL, matrix);
-						//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
-						if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
-						{
-							DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
-						}
+						DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), res::GetT(res::t_default), SS_NORMAL, matrix);
+					}
+					if (env::eCells[x][y].prop == ID_NULL) env::eCells[x][y].prop = 0u;
+					//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
+					if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
+					{
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
+						DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
 					}
 					/*if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
 					{
@@ -858,11 +759,10 @@ namespace index
 								ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
 						if (oob)
 						{
-							graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
-							DrawMesh(ID_NULL, res::GetM(res::m_terrain_tile_neutral), res::GetT(res::t_terrain_sanddirt), SS_NORMAL, matrix);
 							//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
 							if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
 							{
+								graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
 								DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
 							}
 						}
@@ -870,6 +770,10 @@ namespace index
 				}
 			}
 		}
+
+		#ifdef DEF_DRAW_WIREFRAME
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		#endif // DEF_DRAW_WIREFRAME
 
 		/*
 		m::Vector3 lightPos(ENTITY(activePlayer)->t.position.x, ENTITY(activePlayer)->t.height, ENTITY(activePlayer)->t.position.y);
@@ -892,7 +796,7 @@ namespace index
 
 		if (oob)
 		{
-			graphics::MatrixTransform(matrix, m::Vector3(1024, 21.75, 1024.5));
+			graphics::MatrixTransform(matrix, m::Vector3(1024, 128 / TERRAIN_HEIGHT_DIVISION, 1024.5));
 
 			//DrawMesh(0u, res::GetM(res::m_debug_sphere), res::GetT(res::t_meat_test), SS_NORMAL, matrix);
 			graphics::Shader* shd = &graphics::GetShader(graphics::S_MEAT);
@@ -904,7 +808,7 @@ namespace index
 			shd->setMat4("matm", matrix);
 			// Render the mesh
 			res::GetM(res::m_debug_sphere).Draw(res::GetT(res::t_meat_test).glID, shd->ID);
-			graphics::MatrixTransform(matrix, m::Vector3(1024, 21.6, 1023.5));
+			graphics::MatrixTransform(matrix, m::Vector3(1024, 128 / TERRAIN_HEIGHT_DIVISION, 1023.5));
 			shd->setMat4("matm", matrix);
 			res::GetM(res::m_debug_sphere).Draw(res::GetT(res::t_meat_test).glID, shd->ID);
 		}

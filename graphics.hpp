@@ -202,7 +202,6 @@ namespace graphics
 		S_SOLID_BLEND_CHARA, // Used for drawing blended meshes
 		S_SOLID_DEFORM, // Used for drawing deformed meshes
 		S_MEAT,
-		S_TERRAIN, // Used for drawing objects adjusted to the world heightmap
 		S_SKY, // Used for drawing... the sky
 		S_GUI, // GUI shader
 		S_POST, // Framebuffer postprocessing shader

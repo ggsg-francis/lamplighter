@@ -101,8 +101,7 @@ namespace graphics
 	{
 		if (!cfg::bEditMode)
 		{
-			//btui32 scale = x / 1280u + 1u;
-			btui32 scale = x / 2000u + 1u;
+			btui32 scale = x / SCREEN_UPSCALE_THRESHOLD + 1u;
 			btui32 scale_half = scale * 2u;
 			gPtr->frameSizeX = cfg::iWinX / scale_half;
 			gPtr->frameSizeY = cfg::iWinY / scale;
@@ -143,7 +142,6 @@ namespace graphics
 		
 		gPtr->shaders[S_MEAT] = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_meat.glsl");
 
-		gPtr->shaders[S_TERRAIN] = graphics::Shader("shaders/vert_3d_terrain.glsl", "shaders/frag_terrain.glsl");
 		gPtr->shaders[S_SKY] = graphics::Shader("shaders/vert_3d_sky.glsl", "shaders/frag_sky.glsl");
 		gPtr->shaders[S_GUI] = graphics::Shader("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
 		gPtr->shaders[S_POST] = graphics::Shader("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
@@ -359,8 +357,10 @@ namespace graphics
 	}
 	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz)
 	{
+		/*mat_view = glm::lookAt(glm::vec3(x - (vx * LIGHT_HALF), y - (vy * LIGHT_HALF), z - (vz * LIGHT_HALF)),
+			glm::vec3(x, y, z), glm::vec3(0.0f, 1.0f, 0.0f));*/
 		mat_view = glm::lookAt(glm::vec3(x - (vx * LIGHT_HALF), y - (vy * LIGHT_HALF), z - (vz * LIGHT_HALF)),
-			glm::vec3(x, y, z), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	void SetMatViewEditor(void* t)

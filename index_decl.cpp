@@ -33,6 +33,8 @@ namespace index
 
 	btID activeplayer;
 
+	btui16 editor_prop;
+
 	struct cell
 	{
 		mem::idbuf ents;

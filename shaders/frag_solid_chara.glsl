@@ -20,6 +20,7 @@ uniform sampler2D ts; // texture sky
 uniform sampler2D tshadow; // texture shadow
 
 uniform vec3 vsun = normalize(vec3(-1,1,-1));
+uniform vec3 camb = vec3(0.f,0.f,0.f);
 
 uniform bool lit = true;
 
@@ -188,15 +189,10 @@ void main()
 	{
 		vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
 		
-		//vec3 skycol = mix(texture(ts, vec2(ft, 16.5f / 32.f)).rgb, texture(ts, vec2(ft, 0.f)).rgb, ndotl_amb * shadow_heightmap.g);
-		//vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb * shadow_heightmap.g);
-		vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb);
-		
-		vec3 suncol = texture(ts, vec2(ft, 30.5f / 32.f)).rgb * 2.f;
-		//vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (Pos.y / 256.f))).rgb;
-		vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (clamp(Pos.y, 0.f, 1.f) / 512.f))).rgb; // todo: clamp position to the maximum terrain height, not just 1
-		vec3 litcol = texture(ts, vec2(ft, 29.5f / 32.f)).rgb * 4.f;
-		
+		vec3 suncol = vec3(0.0,0.0,0.0);
+		vec3 skycol = vec3(0.0,0.0,0.0);
+		vec3 fogcol = vec3(0.1,0.1,0.1);
+		vec3 litcol = vec3(1.25f,1.25f,1.25f);
 		
 		float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
 		//float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened
@@ -236,12 +232,11 @@ void main()
 		//*/
 		
 		// Dither
-		///*
+		/*
 		int dx = int(mod(gl_FragCoord.x, 4));
 		int dy = int(mod(gl_FragCoord.y, 4));
-		float rndBy = 24.f;
+		float rndBy = 16.f;
 		FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
-		// Posterize
 		FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
 		//*/
 	}

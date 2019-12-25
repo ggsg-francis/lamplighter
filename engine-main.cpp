@@ -512,7 +512,7 @@ int main()
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
-				index::DrawPostDraw();
+				if (cfg::bShowConsole) index::DrawPostDraw();
 
 				glFrontFace(GL_CCW);
 

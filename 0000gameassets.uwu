@@ -88,14 +88,6 @@ tedg clamp
 <<<<
 **** TERRAIN
 item mesh
-hndl MTerNear
-srca resources/Terrain_Near.obj
-<<<<
-item mesh
-hndl MTerrOOB
-srca resources/Terrain_LOD.obj
-<<<<
-item mesh
 hndl MTTileNe
 srca resources/environment/terrain/tile_neutral.fbx
 <<<<
@@ -260,10 +252,6 @@ tfil linear
 tedg clamp
 <<<<
 **** ENVIRONMENT
-item mesh
-hndl Mkitflor
-srca resources/kit_floor.obj
-<<<<
 item txtr
 hndl TTSndDrt
 **** srca resources/t_marshmud_01.tga
@@ -353,8 +341,60 @@ tedg clamp
 ****srca resources/Terrain_HMAP.tga
 ****<<<<
 item mesh
-hndl MEnvWall
-srca resources/environment/made/wall_c_solid.fbx
+hndl MKitWall
+srca resources/environment/intkit/int_wall_01.fbx
+<<<<
+item mesh
+hndl MKitMid1
+srca resources/environment/intkit/int_mid_01.fbx
+<<<<
+item txtr
+hndl TKitGTil
+srca resources/environment/intkit/floor_greentile.tga
+tfil linear
+tedg repeat
+<<<<
+item txtr
+hndl TKitCarp
+srca resources/environment/intkit/floor_carpet_base.tga
+tfil linear
+tedg repeat
+<<<<
+item txtr
+hndl TKitWTmb
+srca resources/environment/intkit/wall_timber.tga
+tfil linear
+tedg repeat
+<<<<
+item txtr
+hndl TKitCon1
+srca resources/environment/intkit/concrete_wall_01.tga
+tfil linear
+tedg repeat
+<<<<
+item txtr
+hndl TKitCon2
+srca resources/environment/intkit/redstar_concStack.tga
+tfil linear
+tedg repeat
+<<<<
+item txtr
+hndl TKitCon3
+srca resources/environment/intkit/concrete_01.tga
+tfil linear
+tedg repeat
+<<<<
+item txtr
+hndl TKitCTil
+srca resources/environment/intkit/redstar_concTile.tga
+tfil linear
+tedg repeat
+<<<<
+item txtr
+hndl TKitDCTi
+srca resources/environment/intkit/redstar_greyTile.tga
+tfil linear
+tedg repeat
 <<<<
 **** NATURE
 item mesh

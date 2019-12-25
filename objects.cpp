@@ -23,8 +23,8 @@ ItemSlot::ItemSlot(btID _item)
 		heldInstance = new HeldMel;
 		break;
 	case acv::types::ITEM_WPN_MATCHGUN:
-		//heldInstance = new HeldGun;
-		heldInstance = new HeldGunMatchLock;
+		heldInstance = new HeldGun;
+		//heldInstance = new HeldGunMatchLock;
 		break;
 	case acv::types::ITEM_WPN_MAGIC:
 		heldInstance = new HeldMgc;
@@ -110,9 +110,6 @@ void DrawMesh(btID id, graphics::Mesh mdl, graphics::TextureBase tex, ShaderStyl
 	case SS_CHARA:
 		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
 		break;
-	case SS_TERRAIN:
-		shd = &graphics::GetShader(graphics::S_TERRAIN);
-		break;
 	case SS_SKY:
 		shd = &graphics::GetShader(graphics::S_SKY);
 		break;
@@ -141,9 +138,6 @@ void DrawMesh(btID id, graphics::Mesh mdl, graphics::TextureBase tex, ShaderStyl
 	case SS_CHARA:
 		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
 		break;
-	case SS_TERRAIN:
-		shd = &graphics::GetShader(graphics::S_TERRAIN);
-		break;
 	case SS_SKY:
 		shd = &graphics::GetShader(graphics::S_SKY);
 		break;
@@ -171,9 +165,6 @@ void DrawMesh(btID id, graphics::Mesh mdl, ShaderStyle charashader, graphics::Ma
 		break;
 	case SS_CHARA:
 		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
-		break;
-	case SS_TERRAIN:
-		shd = &graphics::GetShader(graphics::S_TERRAIN);
 		break;
 	case SS_SKY:
 		shd = &graphics::GetShader(graphics::S_SKY);

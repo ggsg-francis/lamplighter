@@ -10,6 +10,7 @@
 #define DEF_MULTISAMPLE_DEPTH 4
 #define DEF_HDR
 //#define DEF_LINEAR_FB
+//#define DEF_DRAW_WIREFRAME
 
 // Any debug only defines
 #ifdef _DEBUG
@@ -25,6 +26,9 @@
 //#define SHADOW_WIDTH 2048
 //#define SHADOW_HEIGHT 2048
 
+//#define SCREEN_UPSCALE_THRESHOLD 1280u
+#define SCREEN_UPSCALE_THRESHOLD 2048u
+
 #define LIGHT_FAR 256.f
 #define LIGHT_HALF 128.f
 #define LIGHT_WIDTH 12.f
@@ -35,7 +39,7 @@
 #define VERSION_BUILD 2u
 #define VERSION_SERVER_MAJOR 0u
 #define VERSION_SERVER_MINOR 14u
-#define VERSION_COMMENT "test"
+#define VERSION_COMMENT "Raycast"
 
 #define MD_MATRIX_COUNT 4u
 

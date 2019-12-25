@@ -63,7 +63,7 @@ namespace env
 			eCorOutSW = (0x1u << 0xbu),
 			// Unused flag spaces (reserved for special collision, such as diagonal edges?)
 			eBLOCK_LIGHT_SKY = (0x1u << 0xcu),
-			EF_UNUSED_13 = (0x1u << 0xdu),
+			EF_LIGHTSRC = (0x1u << 0xdu),
 			EF_UNUSED_14 = (0x1u << 0xeu),
 			EF_UNUSED_15 = (0x1u << 0xfu),
 			// Status effects

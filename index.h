@@ -62,7 +62,6 @@ namespace index
 	void SetShadowTexture(btui32 ID);
 
 	extern btID players[2];
-	extern btID activeplayer;
 
 	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack, bool use_hit, bool WantAttack2,
 		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C);

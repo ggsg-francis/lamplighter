@@ -11,12 +11,28 @@ srcm MTRcks01
 srct TTRcks01
 <<<<
 prop envp
-srcm MEnvWall
-srct TTScorch
+srcm MKitWall
+srct TKitCon2
 <<<<
 prop envp
-srcm MNFern01
-srct TNFern01
+srcm MKitMid1
+srct TKitCTil
+<<<<
+prop envp
+srcm MKitMid1
+srct TKitDCTi
+<<<<
+prop envp
+srcm MKitWall
+srct TKitWTmb
+<<<<
+prop envp
+srcm MKitMid1
+srct TKitCon3
+<<<<
+prop envp
+srcm MKitMid1
+srct TKitCarp
 <<<<
 item wgun
 name Coolweapon Longname

@@ -45,7 +45,6 @@ enum ShaderStyle
 {
 	SS_NORMAL,
 	SS_CHARA,
-	SS_TERRAIN,
 	SS_SKY,
 };
 

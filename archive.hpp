@@ -44,8 +44,6 @@ namespace res
 		m_skymoon,
 		t_skymoon,
 		// terrain
-		m_terrain_near,
-		m_terrain_oob,
 		m_terrain_tile_neutral,
 		// Chara textures
 		t_skin_template,
@@ -81,7 +79,6 @@ namespace res
 		t_proj_2,
 		mb_smoke_trail_segment,
 		t_smoke_trail,
-		m_kitfloor,
 		t_terrain_sanddirt,
 		t_terrain_scorch,
 		// Gui stuff

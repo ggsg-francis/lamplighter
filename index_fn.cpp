@@ -580,7 +580,7 @@ namespace index
 	btID GetViewTargetEntity(btID index, btf32 dist, fac::facalleg allegiance)
 	{
 		btID current_closest = BUF_NULL;
-		btf32 closest_angle = 35.f;
+		btf32 closest_angle = 15.f;
 		for (int index_other = 0; index_other <= block_entity.index_end; index_other++)
 		{
 			// If used, not me, and is alive
@@ -726,7 +726,7 @@ namespace index
 		CHARA(id)->t_skin = 0u;
 		CHARA(id)->aiControlled = false;
 		CHARA(id)->speed = 4.f;
-		CHARA(id)->inventory.AddItem(0u);
+		CHARA(id)->inventory.AddItem(6u);
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)

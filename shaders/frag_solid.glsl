@@ -20,6 +20,7 @@ uniform sampler2D ts; // texture sky
 uniform sampler2D tshadow; // texture shadow
 
 uniform vec3 vsun = normalize(vec3(-1,1,-1));
+uniform vec3 camb = vec3(0.f,0.f,0.f);
 
 uniform bool lit = true;
 
@@ -166,7 +167,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 void main()
 {
 	FragColor = texture(texture_diffuse1, TexCoords);
-	//FragColor = texture(texture_diffuse1, TexCoords + vec2(ft * 1024.f, 0.f));
+	//FragColor = texture(texture_diffuse1, vec2(Pos.x * 0.25f, Pos.z * 0.25f));
 	if (FragColor.a < 0.5) discard;
 
 	//float ndotl = clamp(dot(normalize(Normal), vsun), 0, 1);
@@ -179,15 +180,10 @@ void main()
 	{
 		vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
 		
-		//vec3 skycol = mix(texture(ts, vec2(ft, 16.5f / 32.f)).rgb, texture(ts, vec2(ft, 0.f)).rgb, ndotl_amb * shadow_heightmap.g);
-		//vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb * shadow_heightmap.g);
-		vec3 skycol = mix(texture(ts, vec2(ft, 0.f)).rgb, texture(ts, vec2(ft, 16.5f / 32.f)).rgb, ndotl_amb);
-		
-		vec3 suncol = texture(ts, vec2(ft, 30.5f / 32.f)).rgb * 2.f;
-		//vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (Pos.y / 256.f))).rgb;
-		vec3 fogcol = texture(ts, vec2(ft, (29.f / 32.f) - clamp(Pos.y / 2048.f, 0.f, 1.f / 8.f))).rgb;
-		//vec3 fogcol = texture(ts, vec2(ft, (28.5f / 32.f) - (clamp(Pos.y, 0.f, 1.f) / 512.f))).rgb; // todo: clamp position to the maximum terrain height, not just 1
-		vec3 litcol = texture(ts, vec2(ft, 29.5f / 32.f)).rgb * 4.f;
+		vec3 suncol = vec3(0.0,0.0,0.0);
+		vec3 skycol = vec3(0.0,0.0,0.0);
+		vec3 fogcol = vec3(0.1,0.1,0.1);
+		vec3 litcol = vec3(1.25f,1.25f,1.25f);
 		
 		
 		float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
@@ -210,8 +206,10 @@ void main()
 		// Ambient
 		// max: if the sky is lighter than the sun, override it
 		//FragColor.rgb *= mix(mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g, vec3(1.f), Col.g);
-		FragColor.rgb *= mix(mix(skycol, max(suncol, skycol), ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g, vec3(1.f), Col.g);
-		FragColor.rgb *= (clamp(shadow + (1 - clamp(dot(Normal, vsun) * 4.f, 0.f, 1.f)), 0.f, 1.f)) * 0.4f + 0.6f;		
+		//FragColor.rgb *= mix(mix(skycol, max(suncol, skycol), ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g, vec3(1.f), Col.g);
+		//FragColor.rgb *= skycol + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g * (ndotl * shadow * 0.4f + 0.6f);
+		FragColor.rgb *= mix(skycol + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g * (shadow * 0.4f + 0.6f), vec3(1.f), Col.g);
+		//FragColor.rgb *= (clamp(shadow + (1 - clamp(dot(Normal, vsun) * 4.f, 0.f, 1.f)), 0.f, 1.f)) * 0.4f + 0.6f;		
 		//fres test
 		//FragColor.rgb = vec3(dot(normalize(ViewDir), Normal)) + 1;
 		
@@ -233,24 +231,6 @@ void main()
 		float rndBy = 16.f;
 		FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
 		FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-		//*/
-		
-		// Dither
-		///*
-		int dx = int(mod(gl_FragCoord.x, 4));
-		int dy = int(mod(gl_FragCoord.y, 4));
-		if (max(max(FragColor.r, FragColor.g), FragColor.b) > 1.f)
-		{
-			float rndBy = 12.f;
-			FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
-			FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-		}
-		else
-		{
-			float rndBy = 24.f;
-			FragColor.rgb += indexMat4x4PSX[(dx + dy * 4)] / (rndBy * 4.f);
-			FragColor.rgb = round(FragColor.rgb * rndBy) / rndBy;
-		}
 		//*/
 		
 		// Add fog
