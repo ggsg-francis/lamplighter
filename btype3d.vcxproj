@@ -152,7 +152,7 @@
     <ClCompile Include="entity.cpp" />
     <ClCompile Include="env.cpp" />
     <ClCompile Include="factions.cpp" />
-    <ClCompile Include="index.cpp" />
+    <ClCompile Include="core.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="maths.cpp" />
     <ClCompile Include="memory.cpp" />
@@ -180,9 +180,9 @@
     <ClInclude Include="entity.h" />
     <ClInclude Include="env.h" />
     <ClInclude Include="factions.h" />
-    <ClInclude Include="index_decl.cpp" />
-    <ClInclude Include="index_fn.cpp" />
-    <ClInclude Include="index.h" />
+    <ClInclude Include="core_decl.cpp" />
+    <ClInclude Include="core_func.cpp" />
+    <ClInclude Include="core.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="memory.hpp" />
     <ClInclude Include="maths.hpp" />

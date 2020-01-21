@@ -45,7 +45,7 @@
 #include "cfg.h"
 #include "network_client.h"
 #include "audio.hpp"
-#include "index.h"
+#include "core.h"
 #include "weather.h"
 #include "time.hpp"
 #include "test_zone.h"

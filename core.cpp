@@ -1,5 +1,5 @@
-#include "index.h"
-#include "index_fn.cpp"
+#include "core.h"
+#include "core_func.cpp"
 #include "weather.h"
 
 unsigned int activePlayer = 0u;

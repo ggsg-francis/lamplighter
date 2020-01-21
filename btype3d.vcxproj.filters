@@ -53,16 +53,7 @@
     <ClInclude Include="3rdparty\cute_sound.h">
       <Filter>framework\3rdparty</Filter>
     </ClInclude>
-    <ClInclude Include="index.h">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
     <ClInclude Include="test_zone.h" />
-    <ClInclude Include="index_fn.cpp">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
-    <ClInclude Include="index_decl.cpp">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
     <ClInclude Include="time.hpp">
       <Filter>framework</Filter>
     </ClInclude>
@@ -96,6 +87,15 @@
     <ClInclude Include="memory.hpp">
       <Filter>framework</Filter>
     </ClInclude>
+    <ClInclude Include="core_decl.cpp">
+      <Filter>gamework\index</Filter>
+    </ClInclude>
+    <ClInclude Include="core_func.cpp">
+      <Filter>gamework\index</Filter>
+    </ClInclude>
+    <ClInclude Include="core.h">
+      <Filter>gamework\index</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tga_reader.cpp">
@@ -127,9 +127,6 @@
     <ClCompile Include="Transform.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="index.cpp">
-      <Filter>gamework\index</Filter>
-    </ClCompile>
     <ClCompile Include="test_zone.cpp" />
     <ClCompile Include="time.cpp">
       <Filter>framework</Filter>
@@ -154,6 +151,9 @@
     </ClCompile>
     <ClCompile Include="memory_c.c">
       <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="core.cpp">
+      <Filter>gamework\index</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

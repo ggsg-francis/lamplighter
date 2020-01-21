@@ -17,7 +17,7 @@
 
 //try cut down on some of these
 #include "cfg.h"
-#include "index.h"
+#include "core.h"
 #include "maths.hpp"
 
 //void SetTitle(btui8 id);

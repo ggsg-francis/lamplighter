@@ -6,7 +6,7 @@
 
 #include "archive.hpp"
 
-#include "index.h"
+#include "core.h"
 #include "cfg.h"
 
 graphics::GUIText text_inventory_temp;

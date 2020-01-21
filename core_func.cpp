@@ -1,6 +1,6 @@
 // Included in index.cpp
 
-#include "index_decl.cpp"
+#include "core_decl.cpp"
 
 namespace index
 {
