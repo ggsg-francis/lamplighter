@@ -56,6 +56,7 @@ namespace index
 	mem::objbuf block_entity; // Entity buffer
 	Entity* _entities[BUF_SIZE]; // Character buffer
 
+	/*
 	mem::objbuf_caterpillar block_proj; // Projectile buffer
 	// Projectile variables
 	#define PROJ_TRAIL_NUM 32
@@ -70,6 +71,7 @@ namespace index
 		btf32 distance_travelled = 0.f;
 	};
 	Proj proj[BUF_SIZE];
+	*/
 
 	/*
 	mem::objbuf_caterpillar block_effect; // Effect buffer

@@ -2,6 +2,8 @@
 #include "core_func.cpp"
 #include "weather.h"
 
+#include "indexC.h"
+
 unsigned int activePlayer = 0u;
 
 namespace index
@@ -85,16 +87,16 @@ namespace index
 			}
 			if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
 			t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
-			for (i = 0; x<xe; i++)
+			for (i = 0; x < xe; i++)
 			{
 				x = x + 1;
-				if (px<0)
+				if (px < 0)
 				{
 					px = px + 2 * dy1;
 				}
 				else
 				{
-					if ((dx<0 && dy<0) || (dx>0 && dy>0))
+					if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0))
 					{
 						y = y + 1;
 					}
@@ -124,7 +126,7 @@ namespace index
 			}
 			if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
 			t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
-			for (i = 0; y<ye; i++)
+			for (i = 0; y < ye; i++)
 			{
 				y = y + 1;
 				if (py <= 0)
@@ -133,7 +135,7 @@ namespace index
 				}
 				else
 				{
-					if ((dx<0 && dy<0) || (dx>0 && dy>0))
+					if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0))
 					{
 						x = x + 1;
 					}
@@ -218,6 +220,8 @@ namespace index
 
 	void Init()
 	{
+		IndexInitialize();
+
 		char buffinal[32] = "TSOA R";
 		char buffer[4];
 		char buffer2[4];
@@ -268,7 +272,7 @@ namespace index
 		for (btui16 x = 0; x < WORLD_SIZE; x++)
 			for (btui16 y = 0; y < WORLD_SIZE; y++)
 				t_EnvHeightmap.SetPixelChannelR(x, y, env::eCells[x][y].height);
-		
+
 		t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
 		// Spawnz
@@ -277,10 +281,10 @@ namespace index
 		//players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(4.f, 4.f), 0.f);
 		if (cfg::bEditMode)
 			players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
-			//players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
+		//players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
 		else
 			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
-			//players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(2.f, 2.f), 0.f);
+		//players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(2.f, 2.f), 0.f);
 		players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
 		//CHARA(players[1])->t_skin = 1u;
 		//CHARA(players[1])->faction = fac::playerhunter;
@@ -343,7 +347,7 @@ namespace index
 	void End()
 	{
 		for (int i = 0; i < BUF_SIZE; i++)
-		//for (int i = 0; i <= block_entity.index_end; i++)
+			//for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			if (block_entity.used[i])
 				DestroyEntity(i);
@@ -365,7 +369,7 @@ namespace index
 				SpawnEntity(prefab::prefab_zombie, m::Vector2(1024, 1024) + m::Normalize(m::Vector2(m::Random(-1.f, 1.f), m::Random(-1.f, 1.f))) * 25.f, 0.f);
 				SpawnEntity(prefab::prefab_zombie, m::Vector2(1024, 1024) + m::Normalize(m::Vector2(m::Random(-1.f, 1.f), m::Random(-1.f, 1.f))) * 25.f, 0.f);
 				SpawnEntity(prefab::prefab_zombie, m::Vector2(1024, 1024) + m::Normalize(m::Vector2(m::Random(-1.f, 1.f), m::Random(-1.f, 1.f))) * 25.f, 0.f);
-				
+
 				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
 				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
 				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
@@ -437,7 +441,7 @@ namespace index
 			}
 			else if (input::GetHit(input::key::ACTION_B))
 			{
-				if(env::eCells[GetCellX][GetCellY].prop > 0u)
+				if (env::eCells[GetCellX][GetCellY].prop > 0u)
 					--env::eCells[GetCellX][GetCellY].prop;
 			}
 			else if (input::GetHit(input::key::ACTION_C))
@@ -495,7 +499,7 @@ namespace index
 			//graphics::SetMatProj(128.f); // Set projection matrix for long-distance rendering
 
 			// draw any OOB stuff here
-			
+
 			//graphics::SetMatProj(); // Reset projection matrix
 
 			//-------------------------------- DRAW ENTITIES
@@ -529,7 +533,7 @@ namespace index
 				ENTITY(activePlayer)->t.height,
 				-ENTITY(activePlayer)->t.position.y,
 				-sunrot2.x, -sunrot2.y, -sunrot2.z);//*/
-			//*
+				//*
 			graphics::SetMatProjLight(); graphics::SetMatViewLight(
 				lightPos.x,
 				lightPos.y,
@@ -696,7 +700,7 @@ namespace index
 				ACTOR(players[activePlayer])->IncrEquipSlot();
 			if (input::GetHit(input::key::ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsRestingItem())
-						ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
+					ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
 				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsActor())
 				{
 					// SOUL TRANSFER
@@ -716,7 +720,7 @@ namespace index
 				ACTOR(players[activePlayer])->IncrEquipSlot();
 			if (input::GetHit(input::key::C_ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsRestingItem())
-						ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
+					ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
 				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsActor())
 				{
 					// SOUL TRANSFER
@@ -763,7 +767,7 @@ namespace index
 			guibox.Draw(&res::GetT(res::t_gui_box));
 			text_temp.Draw(&res::GetT(res::t_gui_font));
 			if (ENTITY(viewtarget[activePlayer])->IsRestingItem())
-			graphics::DrawGUITexture(&res::GetT(res::t_gui_icon_pick_up), textboxX + 16, textboxY + 32, 32, 32);
+				graphics::DrawGUITexture(&res::GetT(res::t_gui_icon_pick_up), textboxX + 16, textboxY + 32, 32, 32);
 		}
 		// inventory
 		CHARA(players[activePlayer])->inventory.Draw(ACTOR(players[activePlayer])->inv_active_slot);
@@ -808,28 +812,24 @@ namespace index
 		yaw += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add horizontal spread
 		pitch += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add vertical spread
 
-		btID id = block_proj.add();
-		proj[id].t.position = pos;
+		btID id = IndexSpawnProjectile();
+		proj[id].t.position_x = pos.x;
+		proj[id].t.position_y = pos.y;
 		//proj[id].t.height = 0.9f + height;
 		//proj[id].t.height = 1.3f + height;
-		proj[id].t.height = height;
+		proj[id].t.position_h = height;
 
-		proj[id].t.height_velocity = -sin(pitch);
-		proj[id].t.velocity = m::AngToVec2(yaw) * cos(pitch); // '* cos(pitch)' makes it move less horizontally if shot upwards
+		proj[id].t.velocity_h = -sin(pitch);
+		proj[id].t.velocity_x = (m::AngToVec2(yaw) * cos(pitch)).x; // '* cos(pitch)' makes it move less horizontally if shot upwards
+		proj[id].t.velocity_y = (m::AngToVec2(yaw) * cos(pitch)).y; // '* cos(pitch)' makes it move less horizontally if shot upwards
 		proj[id].ttd = Time::time + 2.0;
 
 		proj[id].faction = faction;
-
-		proj[id].distance_travelled = 0.f;
-		proj[id].smokePointIndex = 0ui8;
-
-		for (int i = 0; i < PROJ_TRAIL_NUM; i++) // Set all smoke points to start pos (temporary, maybe)
-			graphics::MatrixTransform(proj[id].smokePoints[i], m::Vector3(pos.x, pos.y, height));
 	}
 
 	void DestroyProjectile(btID id)
 	{
-		block_proj.remove(id);
+		IndexDestroyProjectileC(id);
 	}
 
 	btID SpawnItem(btID itemid, m::Vector2 pos, btf32 dir)
@@ -894,20 +894,23 @@ namespace index
 			if (block_proj.used[index])
 			{
 				// out of bounds check
-				if (proj[index].t.position.x <= 1.f || proj[index].t.position.x >= WORLD_SIZE - 1 ||
-					proj[index].t.position.y <= 1.f || proj[index].t.position.y >= WORLD_SIZE - 1)
+				if (proj[index].t.position_x <= 1.f || proj[index].t.position_x >= WORLD_SIZE - 1 ||
+					proj[index].t.position_y <= 1.f || proj[index].t.position_y >= WORLD_SIZE - 1)
 					DestroyProjectile(index);
 				// If it's time to die, or collided
 				if (Time::time > proj[index].ttd || ProjectileDoesIntersectEnv(index))
 					DestroyProjectile(index);
 				else // Otherwise
 				{
-					proj[index].t.height_velocity -= 0.001f;
-					proj[index].t.position += proj[index].t.velocity * dt * 24.f; // Use speed variable
-					proj[index].t.height += proj[index].t.height_velocity * dt * 24.f;
+					proj[index].t.velocity_h -= 0.001f;
+					proj[index].t.position_x += proj[index].t.velocity_x * dt * 24.f; // Use speed variable
+					proj[index].t.position_y += proj[index].t.velocity_y * dt * 24.f; // Use speed variable
+					proj[index].t.position_h += proj[index].t.velocity_h * dt * 24.f;
+
 					//proj[index].t.position += proj[index].t.velocity * dt * 2.f; // Use speed variable
 					//proj[index].t.height += proj[index].t.height_velocity * dt * 2.f;
-					proj[index].distance_travelled += m::Length(m::Vector3(proj[index].t.velocity.x * dt * 24.f, proj[index].t.velocity.y * dt * 24.f, proj[index].t.height_velocity * dt * 24.f));
+					//proj[index].distance_travelled += m::Length(m::Vector3(proj[index].t.velocity.x * dt * 24.f, proj[index].t.velocity.y * dt * 24.f, proj[index].t.height_velocity * dt * 24.f));
+					
 					ProjectileHitCheck();
 				}
 			}
@@ -928,42 +931,17 @@ namespace index
 				stop = true;
 			if (block_proj.used[index])
 			{
-				glm::vec3 pos(proj[index].t.position.x, proj[index].t.height, proj[index].t.position.y);
-				glm::vec3 dir(proj[index].t.velocity.x, proj[index].t.height_velocity, proj[index].t.velocity.y);
+				glm::vec3 pos(proj[index].t.position_x, proj[index].t.position_h, proj[index].t.position_y);
+				glm::vec3 dir(proj[index].t.velocity_x, proj[index].t.velocity_h, proj[index].t.velocity_y);
 
 				//m::Vector3 velocity3d = m::Normalize(m::Vector3(proj[index].t.velocity.x, proj[index].t.height_velocity, proj[index].t.velocity.y));
 
 				graphics::Matrix4x4 model; // Create identity matrix
-				/* // All-in-one transform/pitch/yaw
-				graphics::MatrixTransform(model, pos,
-					m::Vec2ToAng(m::Normalize(proj[index].t.velocity)), //yaw
-					m::Vec2ToAng(m::Normalize(m::Vector2(-proj[index].t.height_velocity, m::Length(proj[index].t.velocity))))); // pitch
-				//*/
 				// All-in-one transform
-				graphics::MatrixTransform(model, pos, m::Normalize(m::Vector3(proj[index].t.velocity.x, proj[index].t.height_velocity, proj[index].t.velocity.y)), m::Vector3(0, 1, 0));
+				graphics::MatrixTransform(model, pos, m::Normalize(m::Vector3(proj[index].t.velocity_x, proj[index].t.velocity_h, proj[index].t.velocity_y)), m::Vector3(0, 1, 0));
 
 				// Draw projectile mesh
 				DrawMesh(ID_NULL, res::GetM(res::m_proj), res::GetT(res::t_proj), SS_NORMAL, model);
-				// Iterate smokepoint transformation (distance_travelled is way off real scale for some reason)
-				/*
-				if (proj[index].distance_travelled > 16.f)
-				{
-					proj[index].distance_travelled -= 16.f;
-					++proj[index].smokePointIndex;
-					if (proj[index].smokePointIndex >= PROJ_TRAIL_NUM)
-						proj[index].smokePointIndex = 0ui8;
-					proj[index].smokePoints[proj[index].smokePointIndex] = model; // Set this matrix
-					proj[index].smokePointTime[proj[index].smokePointIndex] = 0.f; // Set this smokepoint time
-				}
-				// Draw smoke trail
-				for (int i = 0; i < PROJ_TRAIL_NUM; i++) // For all smoke matrices
-				{
-					proj[index].smokePointTime[i] += 0.001f;
-					//proj[index].smokePointTime[i] = m::Lerp(proj[index].smokePointTime[i], 1.f, 0.01f);
-					DrawBlendMesh(ID_NULL, res::mb_smoke_trail_segment, proj[index].smokePointTime[i], res::t_smoke_trail, graphics::shader_blend, proj[index].smokePoints[i]);
-					//DrawMesh(ID_NULL, res::mb_smoke_trail_segment, res::t_smoke_trail, graphics::shader_solid, proj[index].smokePoints[i]);
-				}
-				*/
 			}
 			if (stop)
 				break;
@@ -986,30 +964,30 @@ namespace index
 				if (Time::time > proj[index].ttd || ProjectileDoesIntersectEnv(index)) // If it's time to die
 				{
 					DestroyProjectile(index);
-					btui16 x = (btui16)roundf(proj[index].t.position.x);
-					btui16 y = (btui16)roundf(proj[index].t.position.y);
-					m::Vector2 vec = m::Normalize(proj[index].t.velocity);
+					btui16 x = (btui16)roundf(proj[index].t.position_x);
+					btui16 y = (btui16)roundf(proj[index].t.position_y);
+					m::Vector2 vec = m::Normalize(m::Vector2(proj[index].t.velocity_x, proj[index].t.velocity_y));
 					btui16 x2 = (btui16)((bti16)x + (bti16)roundf(vec.x));
 					btui16 y2 = (btui16)((bti16)y + (bti16)roundf(vec.y));
 					//t_EnvHeightmap.SetPixelChannelG((btui16)roundf(proj[index].t.position.x), (btui16)roundf(proj[index].t.position.y), 255ui8);
-					
-					if (!env::Get(x, y, env::eflag::eIMPASSABLE) && !env::Get(x2, y2, env::eflag::eIMPASSABLE))
-					{
-						if (env::eCells[x2][y2].height < env::eCells[x][y].height + 3ui8) // If the height difference is low
-						{
-							--env::eCells[x][y].height;
-							t_EnvHeightmap.SetPixelChannelR(x, y, env::eCells[x][y].height);
-							++env::eCells[x2][y2].height;
-							t_EnvHeightmap.SetPixelChannelR(x2, y2, env::eCells[x2][y2].height);
-						}
-					}
 
-					t_EnvHeightmap.SetPixelChannelG(x, y, 255ui8);
-					t_EnvHeightmap.SetPixelChannelG(x + 1, y, 255ui8);
-					t_EnvHeightmap.SetPixelChannelG(x - 1, y, 255ui8);
-					t_EnvHeightmap.SetPixelChannelG(x, y + 1, 255ui8);
-					t_EnvHeightmap.SetPixelChannelG(x, y - 1, 255ui8);
-					t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
+					//if (!env::Get(x, y, env::eflag::eIMPASSABLE) && !env::Get(x2, y2, env::eflag::eIMPASSABLE))
+					//{
+					//	if (env::eCells[x2][y2].height < env::eCells[x][y].height + 3ui8) // If the height difference is low
+					//	{
+					//		--env::eCells[x][y].height;
+					//		t_EnvHeightmap.SetPixelChannelR(x, y, env::eCells[x][y].height);
+					//		++env::eCells[x2][y2].height;
+					//		t_EnvHeightmap.SetPixelChannelR(x2, y2, env::eCells[x2][y2].height);
+					//	}
+					//}
+
+					//t_EnvHeightmap.SetPixelChannelG(x, y, 255ui8);
+					//t_EnvHeightmap.SetPixelChannelG(x + 1, y, 255ui8);
+					//t_EnvHeightmap.SetPixelChannelG(x - 1, y, 255ui8);
+					//t_EnvHeightmap.SetPixelChannelG(x, y + 1, 255ui8);
+					//t_EnvHeightmap.SetPixelChannelG(x, y - 1, 255ui8);
+					//t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 				}
 				else // Otherwise
 				{
@@ -1019,13 +997,13 @@ namespace index
 					{
 						if (block_entity.used[i] && ENTITY(i)->properties.get(Entity::eCOLLIDE_PRJ))
 						{
-							if (fac::GetAllegiance(ENTITY(i)->faction, proj[index].faction) != fac::allied)
+							if (fac::GetAllegiance(ENTITY(i)->faction, (fac::faction)proj[index].faction) != fac::allied)
 							{
 								//check height difference
-								if (proj[index].t.height > ENTITY(i)->t.height && proj[index].t.height < ENTITY(i)->t.height + ENTITY(i)->height)
+								if (proj[index].t.position_h > ENTITY(i)->t.height && proj[index].t.position_h < ENTITY(i)->t.height + ENTITY(i)->height)
 								{
 									//get difference between positions
-									m::Vector2 vec = proj[index].t.position - ENTITY(i)->t.position;
+									m::Vector2 vec = m::Vector2(proj[index].t.position_x, proj[index].t.position_y) - ENTITY(i)->t.position;
 									//get distance
 									float dist = m::Length(vec);
 									if (dist < 0.5f)
@@ -1094,16 +1072,16 @@ namespace index
 
 	bool ProjectileDoesIntersectEnv(btID index)
 	{
-		int x = (int)roundf(proj[index].t.position.x);
-		int y = (int)roundf(proj[index].t.position.y);
+		int x = (int)roundf(proj[index].t.position_x);
+		int y = (int)roundf(proj[index].t.position_y);
 		if (env::Get(x, y, env::eflag::eIMPASSABLE)) // if hit an impassable tile
 			return true;
 
 		CellSpace csi;
-		GetCellSpaceInfo(proj[index].t.position, csi);
+		GetCellSpaceInfo(m::Vector2(proj[index].t.position_x, proj[index].t.position_y), csi);
 		btf32 height;
 		env::GetHeight(height, csi);
-		if (proj[index].t.height < height) // if below the ground surface
+		if (proj[index].t.position_h < height) // if below the ground surface
 			return true;
 
 		return false;

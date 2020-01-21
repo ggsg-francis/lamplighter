@@ -96,6 +96,12 @@
     <ClInclude Include="core.h">
       <Filter>gamework\index</Filter>
     </ClInclude>
+    <ClInclude Include="memoryC.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="indexC.h">
+      <Filter>gamework\index</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tga_reader.cpp">
@@ -149,10 +155,13 @@
     <ClCompile Include="audio.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="memory_c.c">
+    <ClCompile Include="core.cpp">
+      <Filter>gamework\index</Filter>
+    </ClCompile>
+    <ClCompile Include="memoryC.c">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="core.cpp">
+    <ClCompile Include="indexC.c">
       <Filter>gamework\index</Filter>
     </ClCompile>
   </ItemGroup>

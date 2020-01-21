@@ -12,6 +12,49 @@
 #include "maths.hpp"
 #include "Transform.h"
 
+//-------------------------------- VERTEX ATTRIBUTES
+
+// This looks ridiculous, but the 'offsetof' macro was on the fritz in release builds for some reason.
+enum v_i : btui32 { // Vert Indices
+	VI_POS, VI_NOR, VI_UVC, VI_COL,
+};
+enum v_o : size_t { // Vert Offsets
+	VO_POS = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->pos))),
+	VO_NOR = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->nor))),
+	VO_UVC = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->uvc))),
+	VO_COL = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->col))),
+};
+enum vb_i : btui32 { // VertBlend Indices
+	vbi_pos_a, vbi_pos_b, vbi_nor_a, vbi_nor_b, vbi_uvc, vbi_col,
+};
+enum vb_o : size_t { // VertBlend Offsets
+	vb_pos_a = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->pos_a))),
+	vb_pos_b = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->pos_b))),
+	vb_nor_a = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->nor_a))),
+	vb_nor_b = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->nor_b))),
+	vb_uvc = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->uvc))),
+	vb_col = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->col))),
+};
+enum vd_i : btui32 { // VertDeform Indices
+	vdi_pos, vdi_nor, vdi_uvc, vdi_col, vdi_mat,
+};
+enum vd_o : size_t { // VertDeform Offsets
+	vd_pos = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->pos))),
+	vd_nor = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->nor))),
+	vd_uvc = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->uvc))),
+	vd_col = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->col))),
+	vd_mat = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->mat))),
+};
+enum vt_i : btui32 { // VertTerrain Indices
+	VT_I_POS, VT_I_NOR, VT_I_UVC, VT_I_COL,
+};
+enum vt_o : size_t { // VertTerrain Offsets
+	VT_O_POS = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->pos))),
+	VT_O_NOR = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->nor))),
+	VT_O_UVC = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->uvc))),
+	VT_O_COL = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->col))),
+};
+
 extern TGA_ORDER *TGA_READER_ARGB;
 extern TGA_ORDER *TGA_READER_ABGR;
 
@@ -1062,21 +1105,21 @@ namespace graphics
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
-			glEnableVertexAttribArray(graphics::vbi_pos_a); // Set Vertex positions
-			glVertexAttribPointer(graphics::vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_pos_a);
-			glEnableVertexAttribArray(graphics::vbi_pos_b);
-			glVertexAttribPointer(graphics::vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_pos_b);
+			glEnableVertexAttribArray(vbi_pos_a); // Set Vertex positions
+			glVertexAttribPointer(vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_a);
+			glEnableVertexAttribArray(vbi_pos_b);
+			glVertexAttribPointer(vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_b);
 
-			glEnableVertexAttribArray(graphics::vbi_nor_a); // Set Vertex normals
-			glVertexAttribPointer(graphics::vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_nor_a);
-			glEnableVertexAttribArray(graphics::vbi_nor_b);
-			glVertexAttribPointer(graphics::vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_nor_b);
+			glEnableVertexAttribArray(vbi_nor_a); // Set Vertex normals
+			glVertexAttribPointer(vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_nor_a);
+			glEnableVertexAttribArray(vbi_nor_b);
+			glVertexAttribPointer(vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_nor_b);
 
-			glEnableVertexAttribArray(graphics::vbi_uvc); // Set Vertex texture coords
-			glVertexAttribPointer(graphics::vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_uvc);
+			glEnableVertexAttribArray(vbi_uvc); // Set Vertex texture coords
+			glVertexAttribPointer(vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_uvc);
 
-			glEnableVertexAttribArray(graphics::vbi_col); // Set Vertex colour
-			glVertexAttribPointer(graphics::vbi_col, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_col);
+			glEnableVertexAttribArray(vbi_col); // Set Vertex colour
+			glVertexAttribPointer(vbi_col, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_col);
 
 			glBindVertexArray(0); // Bind default vertex array
 			free(vces);
