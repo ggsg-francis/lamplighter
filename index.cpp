@@ -9,92 +9,6 @@ namespace index
 	btID viewtarget[2]{ ID_NULL,ID_NULL };
 	btID viewtarget_last_tick[2]{ ID_NULL,ID_NULL };
 
-	struct ViewCulling
-	{
-		enum testenum : btui8
-		{
-			test,
-		};
-		btui8 buf[32u][32u];
-		btui8 buf_half[32u][32u];
-		btf32 posX = 0.f;
-		btf32 posY = 0.f;
-		void DrawLine(btf32 x1, btf32 y1, btf32 x2, btf32 y2)
-		{
-			btf32 fx = (btf32)x1;
-			btf32 fy = (btf32)y1;
-
-			const btf32 stepLength = 1.f; // 1 by default
-
-			for (btui32 i = 0u; i < 16u; ++i)
-			{
-				bti32 x = (bti32)roundf(fx);
-				bti32 y = (bti32)roundf(fy);
-				buf[x][y] = 1ui8; // NOTE: For computing AI visibility, put return check BEFORE this
-				if (env::Get(x + posX - 16, y + posY - 16, env::eflag::eIMPASSABLE)) return;
-				fx = m::Lerp((btf32)x1, (btf32)x2, (btf32)i * (stepLength / 16.f));
-				fy = m::Lerp((btf32)y1, (btf32)y2, (btf32)i * (stepLength / 16.f));
-			}
-		}
-		void Update(const btf32 nx, const btf32 ny, const btf32 ang)
-		{
-			posX = nx;
-			posY = ny;
-
-			memset(&buf, 0, 32u * 32u);
-			memset(&buf_half, 0, 32u * 32u);
-
-			
-			const int linedist = 14;
-
-			btf32 offset_x = nx - floorf(nx);
-			btf32 offset_y = ny - floorf(ny);
-
-			btf32 origin_x = 16.f + offset_x;
-			btf32 origin_y = 16.f + offset_y;
-
-			for (btf32 i = ang - 55.f; i < ang + 55.f; i += 3.f)
-			{
-				m::Vector2 vectemp = m::AngToVec2(glm::radians(i));
-				DrawLine(origin_x, origin_y, origin_x + vectemp.x * 14.f, origin_y + vectemp.y * 14.f);
-			}
-			for (btui32 X = 1u; X < 31u; ++X)
-			{
-				for (btui32 Y = 1u; Y < 31u; ++Y)
-				{
-					if (buf[X][Y] == 1ui8)
-					{
-						buf_half[X + 1u][Y] = 1ui8;
-						buf_half[X - 1u][Y] = 1ui8;
-						buf_half[X][Y + 1u] = 1ui8;
-						buf_half[X][Y - 1u] = 1ui8;
-					}
-				}
-			}
-			for (btui32 X = 17u - 4u; X <= 17u + 3u; ++X)
-				for (btui32 Y = 17u - 4u; Y <= 17u + 3u; ++Y)
-					buf[X][Y] = 1ui8;
-		}
-		bool Get(btui32 x, btui32 y)
-		{
-			if (x < posX + 16 && x > posX - 16 && y < posY + 16 && y > posY - 16)
-				return buf[x - (btui32)posX + 16][y - (btui32)posY + 16] == 1ui8 || buf_half[x - (btui32)posX + 16][y - (btui32)posY + 16] == 1ui8;
-			else return false;
-		}
-	};
-	ViewCulling culling;
-
-	//// temp
-	//btui32 GetCellX()
-	//{
-	//	return ENTITY(0)->t.cellx;
-	//}
-	////temp
-	//btui32 GetCellY()
-	//{
-	//	return ENTITY(0)->t.celly;
-	//}
-
 	// temp
 	#define GetCellX ENTITY(0)->csi.c[0].x
 	//temp
@@ -124,12 +38,12 @@ namespace index
 	void SetViewFocus(btID index)
 	{
 		activePlayer = index;
-		viewpos = ENTITY(activePlayer)->t.position * -1.f;
+		viewpos = ENTITY(players[activePlayer])->t.position * -1.f;
 
 		#define h 1.6f + m::Lerp(resAniStep.height_start, resAniStep.height_end, aniLower.aniTime / resAniStep.time)
 		cfg::bEditMode ?
-			graphics::SetMatViewEditor(&CHARA(activePlayer)->t_head) :
-			graphics::SetMatView(&CHARA(activePlayer)->t_head);
+			graphics::SetMatViewEditor(&CHARA(players[activePlayer])->t_head) :
+			graphics::SetMatView(&CHARA(players[activePlayer])->t_head);
 		#undef h
 	}
 
@@ -282,16 +196,24 @@ namespace index
 		for (int i = graphics::S_UTIL_FIRST_LIT; i <= graphics::S_UTIL_LAST_LIT; ++i)
 		{
 			graphics::GetShader((graphics::eShader)i).Use();
-			glActiveTexture(GL_TEXTURE1); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader((graphics::eShader)i).ID, "tlm"), 1);
-			glBindTexture(GL_TEXTURE_2D, t_EnvLightmap.glID); // Bind the texture
-			glActiveTexture(GL_TEXTURE2); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader((graphics::eShader)i).ID, "thm"), 2);
-			glBindTexture(GL_TEXTURE_2D, t_EnvHeightmap.glID); // Bind the texture
-			glActiveTexture(GL_TEXTURE3); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader((graphics::eShader)i).ID, "ts"), 3);
-			glBindTexture(GL_TEXTURE_2D, res::GetT(res::t_sky).glID); // Bind the texture
+			graphics::GetShader((graphics::eShader)i).SetTexture(graphics::Shader::texLightMap, t_EnvLightmap.glID, graphics::Shader::TXTR_LIGHTMAP);
+			graphics::GetShader((graphics::eShader)i).SetTexture(graphics::Shader::texSkyMap, res::GetT(res::t_sky).glID, graphics::Shader::TXTR_SKY);
 		}
+	}
+
+	void UpdateOtherShaderParams(btf32 time2, m::Vector3 sunVec)
+	{
+		#define PCAM (glm::vec3)graphics::GetViewPos()
+		for (int i = graphics::S_UTIL_FIRST_LIT; i <= graphics::S_UTIL_LAST_LIT; ++i)
+		{
+			graphics::GetShader((graphics::eShader)i).Use();
+			graphics::GetShader((graphics::eShader)i).setMat4(graphics::Shader::matLightProj, *(graphics::Matrix4x4*)&shadowmat_temp);
+			graphics::GetShader((graphics::eShader)i).SetFloat(graphics::Shader::fTime, (float)time2);
+			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::vecPCam, PCAM);
+			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::vecVSun, (glm::vec3)sunVec);
+			graphics::GetShader((graphics::eShader)i).SetTexture(graphics::Shader::texShadowMap, shadowtex, graphics::Shader::TXTR_SHADOWMAP);
+		}
+		#undef PCAM
 	}
 
 	void Init()
@@ -360,8 +282,8 @@ namespace index
 			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 			//players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(2.f, 2.f), 0.f);
 		players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
-		CHARA(players[1])->t_skin = 1u;
-		CHARA(players[1])->faction = fac::playerhunter;
+		//CHARA(players[1])->t_skin = 1u;
+		//CHARA(players[1])->faction = fac::playerhunter;
 
 		SpawnItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
 		SpawnItem(4ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
@@ -372,12 +294,8 @@ namespace index
 		if (!cfg::bEditMode)
 		{
 
-			/*SpawnEntity(prefab::prefab_zombie, m::Vector2(1000, 1002), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(1000, 1004), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(1000, 1006), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(1000, 1008), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(1000, 1010), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(1000, 1012), 0.f);*/
+			//players[0] = SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025, 1025), 0.f);
+			SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025, 1025), 0.f);
 
 
 			/*
@@ -476,13 +394,13 @@ namespace index
 				}
 				ENTITY(i)->Tick(i, dt);
 			}*/
-		SetViewTargetID(GetClosestActivator(0u), 0u);
-		SetViewTargetID(GetClosestActivator(1u), 1u);
+		SetViewTargetID(GetClosestActivator(players[0u]), 0u);
+		SetViewTargetID(GetClosestActivator(players[1u]), 1u);
 
 		ProjectileTick(dt);
 
 		//temporary destroy dead entities
-		///*
+		/*
 		for (int i = 0; i <= block_entity.index_end; i++)
 			if (block_entity.used[i])
 				if (ACTOR(i)->state.hp == 0.f && ACTOR(i)->aiControlled)
@@ -503,11 +421,11 @@ namespace index
 			}
 			else if (input::GetHit(input::key::FUNCTION_1)) // COPY
 			{
-				editor_prop = env::eCells[GetCellX][GetCellY].prop;
+				editor_node_copy = env::eCells[GetCellX][GetCellY];
 			}
 			else if (input::GetHit(input::key::FUNCTION_2)) // PASTE
 			{
-				env::eCells[GetCellX][GetCellY].prop = editor_prop;
+				env::eCells[GetCellX][GetCellY] = editor_node_copy;
 			}
 			else if (input::GetHit(input::key::FUNCTION_3)) // TOGGLE LIGHT
 			{
@@ -557,11 +475,7 @@ namespace index
 
 		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x * 0.25f, 1.f, sunrot.x * 0.25f));
 		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(0.25f, 1.f, 0.25f));
-		glm::vec3 sunrot2 = (glm::vec3)m::Vector3(0.f, 1.f, 0.f);
-
-
-		culling.Update(ENTITY(players[activePlayer])->t.position.x, ENTITY(players[activePlayer])->t.position.y, ACTOR(players[activePlayer])->viewYaw.Deg());
-
+		m::Vector3 sunVec = m::Vector3(0.f, 1.f, 0.f);
 
 		graphics::Matrix4x4 matrix; // Matrix used for rendering env. props (so far...)
 
@@ -569,68 +483,7 @@ namespace index
 		{
 			//-------------------------------- UPDATE SHADERS
 
-			#define PCAM (glm::vec3)graphics::GetViewPos()
-
-			graphics::GetShader(graphics::S_SOLID).Use();
-			graphics::GetShader(graphics::S_SOLID).setMat4("lightProj", shadowmat_temp);
-			graphics::GetShader(graphics::S_SOLID).SetFloat("ft", (float)time2);
-			graphics::GetShader(graphics::S_SOLID).setVec3("pcam", PCAM);
-			graphics::GetShader(graphics::S_SOLID).setVec3("vsun", sunrot2);
-			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_SOLID).ID, "tshadow"), 5);
-			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
-
-			graphics::GetShader(graphics::S_SOLID_CHARA).Use();
-			graphics::GetShader(graphics::S_SOLID_CHARA).setMat4("lightProj", shadowmat_temp);
-			graphics::GetShader(graphics::S_SOLID_CHARA).SetFloat("ft", (float)time2);
-			graphics::GetShader(graphics::S_SOLID_CHARA).setVec3("pcam", PCAM);
-			graphics::GetShader(graphics::S_SOLID_CHARA).setVec3("vsun", sunrot2);
-			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_SOLID_CHARA).ID, "tshadow"), 5);
-			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
-
-			graphics::GetShader(graphics::S_SOLID_BLEND).Use();
-			graphics::GetShader(graphics::S_SOLID_BLEND).setMat4("lightProj", shadowmat_temp);
-			graphics::GetShader(graphics::S_SOLID_BLEND).SetFloat("ft", (float)time2);
-			graphics::GetShader(graphics::S_SOLID_BLEND).setVec3("pcam", PCAM);
-			graphics::GetShader(graphics::S_SOLID_BLEND).setVec3("vsun", sunrot2);
-			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_SOLID_BLEND).ID, "tshadow"), 5);
-			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
-
-			graphics::GetShader(graphics::S_SOLID_BLEND_CHARA).Use();
-			graphics::GetShader(graphics::S_SOLID_BLEND_CHARA).setMat4("lightProj", shadowmat_temp);
-			graphics::GetShader(graphics::S_SOLID_BLEND_CHARA).SetFloat("ft", (float)time2);
-			graphics::GetShader(graphics::S_SOLID_BLEND_CHARA).setVec3("pcam", PCAM);
-			graphics::GetShader(graphics::S_SOLID_BLEND_CHARA).setVec3("vsun", sunrot2);
-			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_SOLID_BLEND_CHARA).ID, "tshadow"), 5);
-			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
-
-			graphics::GetShader(graphics::S_SOLID_DEFORM).Use();
-			graphics::GetShader(graphics::S_SOLID_DEFORM).setMat4("lightProj", shadowmat_temp);
-			graphics::GetShader(graphics::S_SOLID_DEFORM).SetFloat("ft", (float)time2);
-			graphics::GetShader(graphics::S_SOLID_DEFORM).setVec3("pcam", PCAM);
-			graphics::GetShader(graphics::S_SOLID_DEFORM).setVec3("vsun", sunrot2);
-			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_SOLID_DEFORM).ID, "tshadow"), 5);
-			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
-
-			graphics::GetShader(graphics::S_MEAT).Use();
-			graphics::GetShader(graphics::S_MEAT).setMat4("lightProj", shadowmat_temp);
-			graphics::GetShader(graphics::S_MEAT).SetFloat("ft", (float)time2);
-			graphics::GetShader(graphics::S_MEAT).setVec3("pcam", PCAM);
-			graphics::GetShader(graphics::S_MEAT).setVec3("vsun", sunrot2);
-			glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
-			glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_MEAT).ID, "tshadow"), 5);
-			glBindTexture(GL_TEXTURE_2D, shadowtex); // Bind the texture
-
-			graphics::GetShader(graphics::S_SKY).Use();
-			graphics::GetShader(graphics::S_SKY).SetFloat("ft", (float)time2);
-			graphics::GetShader(graphics::S_SKY).setVec3("pcam", PCAM);
-			graphics::GetShader(graphics::S_SKY).setVec3("vsun", sunrot2);
-
-			#undef PCAM
+			UpdateOtherShaderParams(time2, sunVec);
 
 			//-------------------------------- DRAW SKY
 
@@ -654,7 +507,7 @@ namespace index
 		else
 		{
 			m::Vector3 lightPos(ENTITY(activePlayer)->t.position.x, ENTITY(activePlayer)->t.height, -ENTITY(activePlayer)->t.position.y);
-			m::Vector3 lightVecForw(-sunrot2.x, -sunrot2.y, -sunrot2.z);
+			m::Vector3 lightVecForw(-sunVec.x, -sunVec.y, -sunVec.z);
 			//m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 1.f, 0.f)));
 			m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 0.f, 1.f)));
 			m::Vector3 LightVecUp = m::Normalize(m::Cross(lightVecForw, LightVecSide));
@@ -681,7 +534,7 @@ namespace index
 				lightPos.x,
 				lightPos.y,
 				lightPos.z,
-				-sunrot2.x, -sunrot2.y, -sunrot2.z);//*/
+				-sunVec.x, -sunVec.y, -sunVec.z);//*/
 			shadowmat_temp = graphics::GetMatProj() * graphics::GetMatView();
 		}
 
@@ -751,24 +604,22 @@ namespace index
 			bti32 maxy = ENTITY(activePlayer)->csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
 			for (bti32 x = minx; x <= maxx; x++) {
 				for (bti32 y = miny; y < maxy; y++) {
-					if (culling.Get(x, y))
+					//-------------------------------- DRAW ENTITIES ON THIS CELL
+					for (int e = 0; e <= cells[x][y].ents.end(); e++)
+						if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]])
+							ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
+					if (oob)
 					{
-						//-------------------------------- DRAW ENTITIES ON THIS CELL
-						for (int e = 0; e <= cells[x][y].ents.end(); e++)
-							if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]])
-								ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
-						if (oob)
+						//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
+						if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
 						{
-							//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
-							if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
-							{
-								graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
-								DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
-							}
+							//graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
+							//DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
 						}
 					}
 				}
 			}
+			env::Draw();
 		}
 
 		#ifdef DEF_DRAW_WIREFRAME
@@ -794,6 +645,8 @@ namespace index
 		DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), SS_NORMAL, matrix);
 		//*/
 
+		// GRASS DRAWING TEST
+		/*
 		if (oob)
 		{
 			graphics::MatrixTransform(matrix, m::Vector3(1024, 128 / TERRAIN_HEIGHT_DIVISION, 1024.5));
@@ -830,6 +683,7 @@ namespace index
 			shd->setMat4("matm", matrix);
 			res::GetM(res::m_debug_sphere).Draw(res::GetT(res::t_meat_test).glID, shd->ID);
 		}
+		*/
 	}
 
 	void TickGUI()
@@ -843,6 +697,14 @@ namespace index
 			if (input::GetHit(input::key::ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsRestingItem())
 						ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
+				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsActor())
+				{
+					// SOUL TRANSFER
+					// Possession, actually
+					ACTOR(players[activePlayer])->aiControlled = true;
+					players[activePlayer] = viewtarget[activePlayer];
+					ACTOR(players[activePlayer])->aiControlled = false;
+				}
 			if (input::GetHit(input::key::DROP_HELD))
 				ACTOR(players[activePlayer])->DropItem(ACTOR(players[activePlayer])->inv_active_slot);
 		}
@@ -855,6 +717,14 @@ namespace index
 			if (input::GetHit(input::key::C_ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsRestingItem())
 						ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
+				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsActor())
+				{
+					// SOUL TRANSFER
+					// Possession, actually
+					ACTOR(players[activePlayer])->aiControlled = true;
+					players[activePlayer] = viewtarget[activePlayer];
+					ACTOR(players[activePlayer])->aiControlled = false;
+				}
 			if (input::GetHit(input::key::C_DROP_HELD))
 				ACTOR(players[activePlayer])->DropItem(ACTOR(players[activePlayer])->inv_active_slot);
 		}
@@ -896,7 +766,7 @@ namespace index
 			graphics::DrawGUITexture(&res::GetT(res::t_gui_icon_pick_up), textboxX + 16, textboxY + 32, 32, 32);
 		}
 		// inventory
-		CHARA(activePlayer)->inventory.Draw(ACTOR(players[activePlayer])->inv_active_slot);
+		CHARA(players[activePlayer])->inventory.Draw(ACTOR(players[activePlayer])->inv_active_slot);
 	}
 
 	void DrawPostDraw()
@@ -910,17 +780,17 @@ namespace index
 
 	void SetInput(btID index, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool atk_hit, bool atk2, bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C)
 	{
-		ACTOR(index)->input = input;
-		ACTOR(index)->viewYaw.Rotate(rot_x);
-		ACTOR(index)->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
-		ACTOR(index)->inputBV.setto(Actor::IN_USE, atk);
-		ACTOR(index)->inputBV.setto(Actor::IN_USE_HIT, atk_hit);
-		ACTOR(index)->inputBV.setto(Actor::IN_USE_ALT, atk2);
-		ACTOR(index)->inputBV.setto(Actor::IN_RUN, run);
-		ACTOR(index)->inputBV.setto(Actor::IN_AIM, aim);
-		ACTOR(index)->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
-		ACTOR(index)->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
-		ACTOR(index)->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
+		ACTOR(players[index])->input = input;
+		ACTOR(players[index])->viewYaw.Rotate(rot_x);
+		ACTOR(players[index])->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
+		ACTOR(players[index])->inputBV.setto(Actor::IN_USE, atk);
+		ACTOR(players[index])->inputBV.setto(Actor::IN_USE_HIT, atk_hit);
+		ACTOR(players[index])->inputBV.setto(Actor::IN_USE_ALT, atk2);
+		ACTOR(players[index])->inputBV.setto(Actor::IN_RUN, run);
+		ACTOR(players[index])->inputBV.setto(Actor::IN_AIM, aim);
+		ACTOR(players[index])->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
+		ACTOR(players[index])->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
+		ACTOR(players[index])->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)

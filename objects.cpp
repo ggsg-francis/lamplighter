@@ -99,143 +99,6 @@ void Inventory::Draw(btui16 active_slot)
 	guibox_selection.Draw(&res::GetT(res::t_gui_select_box));
 }
 
-void DrawMesh(btID id, graphics::Mesh mdl, graphics::TextureBase tex, ShaderStyle charashader, glm::mat4 matrix)
-{
-	graphics::Shader* shd = nullptr;
-	switch (charashader)
-	{
-	case SS_NORMAL:
-		shd = &graphics::GetShader(graphics::S_SOLID);
-		break;
-	case SS_CHARA:
-		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
-		break;
-	case SS_SKY:
-		shd = &graphics::GetShader(graphics::S_SKY);
-		break;
-	};
-
-	// Enable the shader
-	shd->Use();
-
-	// Set matrices on shader
-	shd->setMat4("matp", graphics::GetMatProj());
-	shd->setMat4("matv", graphics::GetMatView());
-	shd->setMat4("matm", matrix);
-
-	// Render the mesh
-	mdl.Draw(tex.glID, shd->ID);
-}
-
-void DrawMesh(btID id, graphics::Mesh mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
-{
-	graphics::Shader* shd = nullptr;
-	switch (charashader)
-	{
-	case SS_NORMAL:
-		shd = &graphics::GetShader(graphics::S_SOLID);
-		break;
-	case SS_CHARA:
-		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
-		break;
-	case SS_SKY:
-		shd = &graphics::GetShader(graphics::S_SKY);
-		break;
-	};
-
-	// Enable the shader
-	shd->Use();
-
-	// Set matrices on shader
-	shd->setMat4("matp", graphics::GetMatProj());
-	shd->setMat4("matv", graphics::GetMatView());
-	shd->setMat4("matm", matrix);
-
-	// Render the mesh
-	mdl.Draw(tex.glID, shd->ID);
-}
-
-void DrawMesh(btID id, graphics::Mesh mdl, ShaderStyle charashader, graphics::Matrix4x4 matrix)
-{
-	graphics::Shader* shd = nullptr;
-	switch (charashader)
-	{
-	case SS_NORMAL:
-		shd = &graphics::GetShader(graphics::S_SOLID);
-		break;
-	case SS_CHARA:
-		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
-		break;
-	case SS_SKY:
-		shd = &graphics::GetShader(graphics::S_SKY);
-		break;
-	};
-
-	// Enable the shader
-	shd->Use();
-
-	// Set matrices on shader
-	shd->setMat4("matp", graphics::GetMatProj());
-	shd->setMat4("matv", graphics::GetMatView());
-	shd->setMat4("matm", matrix);
-
-	// Render the mesh
-	mdl.Draw(res::GetT(res::t_default).glID, shd->ID);
-}
-
-void DrawBlendMesh(btID id, graphics::MeshBlend mdl, btf32 bs, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
-{
-	graphics::Shader* shd = nullptr;
-	switch (charashader)
-	{
-	case SS_NORMAL:
-		shd = &graphics::GetShader(graphics::S_SOLID_BLEND);
-		break;
-	case SS_CHARA:
-		shd = &graphics::GetShader(graphics::S_SOLID_BLEND_CHARA);
-		break;
-	};
-
-	// Enable the shader
-	shd->Use();
-
-	// Set matrices on shader
-	shd->setMat4("matp", graphics::GetMatProj());
-	shd->setMat4("matv", graphics::GetMatView());
-	shd->SetFloat("blendState", bs);
-	shd->setMat4("matm", matrix);
-
-	// Render the mesh
-	mdl.Draw(tex.glID, shd->ID);
-}
-
-void DrawMeshDeform(
-	btID id, graphics::MeshDeform mdl, graphics::TextureBase tex,
-	ShaderStyle charashader, btui32 matrix_count,
-	graphics::Matrix4x4 transform_a = graphics::Matrix4x4(),
-	graphics::Matrix4x4 transform_b = graphics::Matrix4x4(),
-	graphics::Matrix4x4 transform_c = graphics::Matrix4x4(),
-	graphics::Matrix4x4 transform_d = graphics::Matrix4x4())
-{
-	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID_DEFORM);
-
-	// Enable the shader
-	shd->Use();
-
-	shd->SetUint("mc", matrix_count);
-	if (matrix_count >= 1u) shd->setMat4("matma", transform_a);
-	if (matrix_count >= 2u) shd->setMat4("matmb", transform_b);
-	if (matrix_count >= 3u) shd->setMat4("matmc", transform_c);
-	if (matrix_count == 4u) shd->setMat4("matmd", transform_d);
-
-	// Set matrices on shader
-	shd->setMat4("matp", graphics::GetMatProj());
-	shd->setMat4("matv", graphics::GetMatView());
-
-	// Render the mesh
-	mdl.Draw(tex.glID, shd->ID);
-}
-
 void ActiveState::Damage(btf32 amount, btf32 angle)
 {
 	hp -= amount;
@@ -620,7 +483,8 @@ void Chara::Draw(btID index)
 	//DrawMesh(index, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_default), SS_NORMAL, t_head.getMatrix());
 
 	// need a good way of knowing own index
-	DrawMeshDeform(index, res::GetMD(res::md_chr_body), res::skin_t[t_skin], SS_CHARA, 2u, t_body.getMatrix(), t_test.getMatrix());
+	DrawMeshDeform(index, res::GetMD(res::md_chr_body), res::skin_t[t_skin], SS_CHARA, 2u,
+		t_body.getMatrix(), t_test.getMatrix(), graphics::Matrix4x4(), graphics::Matrix4x4());
 	DrawMeshDeform(index, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
 		t_body.getMatrix(), t_test.getMatrix(), matLegUpL, matLegUpR);
 }

@@ -41,27 +41,6 @@ public:
 	void Draw(btui16 active_slot);
 };
 
-enum ShaderStyle
-{
-	SS_NORMAL,
-	SS_CHARA,
-	SS_SKY,
-};
-
-void DrawMesh(btID ID, graphics::Mesh MODEL, graphics::TextureBase TEXTURE, ShaderStyle SHADER, glm::mat4 MATRIX);
-
-void DrawMesh(btID ID, graphics::Mesh MODEL, graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
-
-void DrawMesh(btID ID, graphics::Mesh MODEL, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
-
-void DrawBlendMesh(btID ID, graphics::MeshBlend MODEL, btf32 BLENDSTATE,
-	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
-
-void DrawMeshDeform(btID ID, graphics::MeshDeform MODEL,
-	graphics::TextureBase TEXTURE, ShaderStyle SHADER, btui32 MATRIX_COUNT,
-	graphics::Matrix4x4 MATRIX_A, graphics::Matrix4x4 MATRIX_B,
-	graphics::Matrix4x4 MATRIX_C, graphics::Matrix4x4 MATRIX_D);
-
 //transform
 class Transform2D
 {

@@ -2,13 +2,27 @@
 #include "global.h"
 
 #include <iostream>
-#include <vector>
+//#include <vector>
+#include "memory.hpp"
 #include "maths.hpp"
+#include "graphics.hpp"
+#include "archive.hpp"
+
+// TODO: temporary until 'draw x soso' is removed from this file
+//#include "objects.h"
+
+#define NUM_COMPOSITES 8u
 
 namespace env
 {
 	//get these tf out of here
-	node_v001 eCells[WORLD_SIZE][WORLD_SIZE];
+	EnvNode eCells[WORLD_SIZE][WORLD_SIZE];
+
+	//mem::CkBuffer<graphics::CompositeMesh> wldMeshes;
+	graphics::CompositeMesh wldMeshes[NUM_COMPOSITES];
+	//graphics::CompositeMesh wldMesh;
+	btID wldTxtr[NUM_COMPOSITES];
+	btui32 wldNumTextures = 0u;
 
 	bool Get(uint x, uint y, eflag::flag bit)
 	{
@@ -37,9 +51,39 @@ namespace env
 		*/
 	}
 
+	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2)
+	{
+		btf32 fx = x1;
+		btf32 fy = y1;
+
+		btf32 ofsx = x1 - x2;
+		btf32 ofsy = y1 - y2;
+		btf32 len = sqrt(ofsx * ofsx + ofsy * ofsy);
+		const btf32 stepLength = 0.5f; // 1 by default
+		btui32 nbSteps = (btui32)floorf(len / stepLength);
+
+		for (int i = 0; i < nbSteps; ++i)
+		{
+			bti32 ix = (bti32)roundf(fx);
+			bti32 iy = (bti32)roundf(fy);
+			if (env::Get(ix, iy, env::eflag::eIMPASSABLE)) return false;
+			fx = m::Lerp((btf32)x1, (btf32)x2, (btf32)i * (stepLength / (btf32)nbSteps));
+			fy = m::Lerp((btf32)y1, (btf32)y2, (btf32)i * (stepLength / (btf32)nbSteps));
+		}
+		return true;
+	}
+
 	void Tick()
 	{
-		//
+		// eventually, this function could contain any 'propagation' like fire
+	}
+
+	void Draw()
+	{
+		for (btui32 i = 0u; i < wldNumTextures; ++i)
+		{
+			DrawCompositeMesh(ID_NULL, wldMeshes[i], res::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
+		}
 	}
 
 	void SaveBin()
@@ -50,7 +94,7 @@ namespace env
 		{
 			fseek(out, 0, SEEK_SET); // Seek the beginning of the file
 			for (int x = 0; x < WORLD_SIZE; x++)
-				const size_t wrote = fwrite(&eCells[x][0], sizeof(node_v001), WORLD_SIZE, out);
+				const size_t wrote = fwrite(&eCells[x][0], sizeof(EnvNode), WORLD_SIZE, out);
 			fclose(out);
 		}
 	}
@@ -62,7 +106,7 @@ namespace env
 		{
 			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
 			for (int x = 0; x < WORLD_SIZE; x++)
-				const size_t read = fread(&eCells[x][0], sizeof(node_v001), WORLD_SIZE, in);
+				const size_t read = fread(&eCells[x][0], sizeof(EnvNode), WORLD_SIZE, in);
 			fclose(in);
 		}
 
@@ -71,7 +115,47 @@ namespace env
 		//set_node_dir(8, 8, 4, 5, nbit::E);
 		//node_coord nc = get_node_from(8, 8, 5, 5);
 
-
+		//*
+		//wldMeshes.Add(new graphics::CompositeMesh());
+		int tile_radius = 24;
+		for (int x = 1024 - tile_radius; x < 1024 + tile_radius; ++x)
+		{
+			for (int y = 1024 - tile_radius; y < 1024 + tile_radius; ++y)
+			{
+				if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop != 0u)
+				{
+					bool foundTxtr = false;
+					// are we using a new texture on this asset
+					for (btui32 i = 0; i < wldNumTextures; ++i)
+					{
+						if (acv::props[env::eCells[x][y].prop].idTxtr == wldTxtr[i])
+						{
+							wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
+								m::Vector3((btf32)x, (btf32)eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, (btf32)y));
+							foundTxtr = true;
+						}
+					}
+					if (!foundTxtr)
+					{
+						for (btui32 i = 0; i < NUM_COMPOSITES; ++i)
+						{
+							if (wldTxtr[i] == 0u)
+							{
+								wldTxtr[i] = acv::props[env::eCells[x][y].prop].idTxtr;
+								wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
+									m::Vector3((btf32)x, (btf32)eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, (btf32)y));
+								++wldNumTextures;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		for (btui32 i = 0; i < wldNumTextures; ++i)
+		{
+			wldMeshes[i].ReBindGL();
+		}
 	}
 
 	void GeneratePhysicsSurfaces()

@@ -100,7 +100,7 @@ namespace graphics
 		Assimp::Importer importer;
 		//const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices);
 		//const aiScene* scene = importer.ReadFile(path, aiProcess_FlipUVs | aiProcess_PreTransformVertices); // try aiProcess_PreTransformVertices?
-		const aiScene* scene = importer.ReadFile(path, aiProcess_FlipUVs); // try aiProcess_PreTransformVertices?
+		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs); // try aiProcess_PreTransformVertices?
 		
 		// check for errors
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
@@ -138,6 +138,9 @@ namespace graphics
 		// data to fill
 		std::vector<Vert_ALL> vertices;
 		std::vector<unsigned int> indices;
+
+		int i1 = mesh->mNumVertices;
+		int i2 = mesh->mNumFaces;
 
 		// Walk through each of the mesh's vertices
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -276,6 +279,10 @@ namespace graphics
 		{
 			aiFace face = mesh->mFaces[i];
 			// retrieve all indices of the face and store them in the indices vector
+			//for (unsigned int j = 0; j < face.mNumIndices; j++)
+			if (face.mNumIndices != 3u)
+				std::cout << "ERROR! Non-triangle face detected!" << std::endl;
+
 			for (unsigned int j = 0; j < face.mNumIndices; j++)
 				indices.push_back(face.mIndices[j]);
 		}
@@ -361,20 +368,25 @@ namespace graphics
 		Model ma = Model(sfn);
 		Mesh a = ma.meshes[0];
 
-		std::vector<Vert> vces; // Vertices
+		std::vector<Vertex> vces; // Vertices
 		std::vector<btui32> ices; // Indices
 
 		// For each vertex
 		for (int i = 0; i < a.vertices.size(); i++)
 		{
-			vces.push_back(Vert());
+			vces.push_back(Vertex());
 			vces[i].pos = a.vertices[i].pos;
 			vces[i].nor = a.vertices[i].nor;
 			vces[i].uvc = a.vertices[i].uvc;
 			vces[i].col = a.vertices[i].col;
 		}
+		// For each index
+		for (int i = 0; i < a.indices.size(); i++)
+		{
+			ices.push_back(a.indices[i]);
+		}
 		// Copy indices straight from mesh A, as they should be identical in each mesh
-		ices = a.indices;
+		//ices = a.indices;
 
 		FILE* out = fopen(dfn, "wb");
 		if (out != NULL)
@@ -387,7 +399,7 @@ namespace graphics
 			// Write vertices
 			size_t i = vces.size(); // Get number of vertices
 			fwrite(&i, sizeof(size_t), 1, out);
-			fwrite(&vces[0], sizeof(Vert), vces.size(), out);
+			fwrite(&vces[0], sizeof(Vertex), vces.size(), out);
 			// Write indices
 			i = ices.size(); // Get number of indices
 			fwrite(&i, sizeof(size_t), 1, out);
@@ -402,7 +414,7 @@ namespace graphics
 		Mesh a = ma.meshes[0];
 		Mesh b = mb.meshes[0];
 
-		std::vector<VertBlend> vces; // Vertices
+		std::vector<VertexBlend> vces; // Vertices
 		std::vector<unsigned int> ices; // Indices
 
 		// Progress if mesh A and B have same number of verts
@@ -411,7 +423,7 @@ namespace graphics
 			// For each vertex
 			for (int i = 0; i < a.vertices.size(); i++)
 			{
-				vces.push_back(VertBlend());
+				vces.push_back(VertexBlend());
 				vces[i].pos_a = a.vertices[i].pos;
 				vces[i].pos_b = b.vertices[i].pos;
 				vces[i].nor_a = a.vertices[i].nor;
@@ -433,7 +445,7 @@ namespace graphics
 				// Write vertices
 				size_t i = vces.size(); // Get number of vertices
 				fwrite(&i, sizeof(size_t), 1, out);
-				fwrite(&vces[0], sizeof(VertBlend), vces.size(), out);
+				fwrite(&vces[0], sizeof(VertexBlend), vces.size(), out);
 				// Write indices
 				i = ices.size(); // Get number of indices
 				fwrite(&i, sizeof(size_t), 1, out);
@@ -451,13 +463,13 @@ namespace graphics
 		Model ma = Model(sfn);
 		Mesh a = ma.meshes[0];
 
-		std::vector<VertDeform> vces; // Vertices
+		std::vector<VertexDeform> vces; // Vertices
 		std::vector<btui32> ices; // Indices
 
 		// For each vertex
 		for (btui32 iVert = 0; iVert < a.vertices.size(); ++iVert)
 		{
-			vces.push_back(VertDeform());
+			vces.push_back(VertexDeform());
 			vces[iVert].pos = a.vertices[iVert].pos;
 			vces[iVert].nor = a.vertices[iVert].nor;
 			vces[iVert].uvc = a.vertices[iVert].uvc;
@@ -480,7 +492,7 @@ namespace graphics
 			// Write vertices
 			size_t i = vces.size(); // Get number of vertices
 			fwrite(&i, sizeof(size_t), 1, out);
-			fwrite(&vces[0], sizeof(VertDeform), vces.size(), out);
+			fwrite(&vces[0], sizeof(VertexDeform), vces.size(), out);
 			// Write indices
 			i = ices.size(); // Get number of indices
 			fwrite(&i, sizeof(size_t), 1, out);

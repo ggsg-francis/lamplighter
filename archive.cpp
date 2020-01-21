@@ -180,7 +180,7 @@ namespace acv
 				return;
 			case types::ASSET_MESH_FILE:
 				assets[i].asset = new graphics::Mesh;
-				((graphics::Mesh*)assets[i].asset)->LoadFile(assets[i].filename);
+				((graphics::Mesh*)assets[i].asset)->LoadFile(assets[i].filename, false);
 				assets[i].loaded = true;
 				return;
 			case types::ASSET_MESHBLEND_FILE:
@@ -201,7 +201,22 @@ namespace acv
 	{
 		// Old (seems to leak)
 		if (assets[i].asset != nullptr && assets[i].loaded)
+		{
+			switch (assets[i].type)
+			{
+			case types::ASSET_TEXTURE_FILE:
+				return;
+			case types::ASSET_MESH_FILE:
+				((graphics::Mesh*)assets[i].asset)->Unload();
+				return;
+			case types::ASSET_MESHBLEND_FILE:
+				return;
+			case types::ASSET_MESHDEFORM_FILE:
+				return;
+			};
+			assets[i].loaded = false;
 			delete assets[i].asset;
+		}
 	};
 
 	#endif // DEF_ARCHIVER

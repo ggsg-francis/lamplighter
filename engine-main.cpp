@@ -476,7 +476,7 @@ int main()
 				mat_fb = glm::translate(mat_fb, glm::vec3(-0.5f, 0.f, 0.f));
 				mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
 				// get matrix's uniform location and set matrix
-				graphics::GetShader(graphics::S_POST).setMat4("transform", mat_fb);
+				graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
 
 				glBindVertexArray(quadVAO);
 				glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
@@ -497,7 +497,7 @@ int main()
 				mat_fb = glm::translate(mat_fb, glm::vec3(0.5f, 0.f, 0.f));
 				mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
 				// get matrix's uniform location and set matrix
-				graphics::GetShader(graphics::S_POST).setMat4("transform", mat_fb);
+				graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
 
 				glBindVertexArray(quadVAO);
 				glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture

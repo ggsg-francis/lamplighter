@@ -21,10 +21,17 @@
 #define DEF_INPUT_MOUSE_1ST_PERSON
 //#define DEF_INPUT_MOUSE_HIDDEN
 
-#define SHADOW_WIDTH 1024
-#define SHADOW_HEIGHT 1024
-//#define SHADOW_WIDTH 2048
-//#define SHADOW_HEIGHT 2048
+//#define SHADOW_WIDTH 1024
+//#define SHADOW_HEIGHT 1024
+#define SHADOW_WIDTH 2048
+#define SHADOW_HEIGHT 2048
+
+//world width and height in tiles
+#define WORLD_SIZE 2048
+#define WORLD_SIZE_SQUARED WORLD_SIZE * WORLD_SIZE
+//values used when accessing the world bit vector
+#define WORLD_BYTE_DEPTH 16
+#define WORLD_BIT_DEPTH WORLD_BYTE_DEPTH * 8
 
 //#define SCREEN_UPSCALE_THRESHOLD 1280u
 #define SCREEN_UPSCALE_THRESHOLD 2048u

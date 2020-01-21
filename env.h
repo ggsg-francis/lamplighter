@@ -2,13 +2,6 @@
 
 #include "memory.hpp"
 
-//world width and height in tiles
-#define WORLD_SIZE 2048
-#define WORLD_SIZE_SQUARED WORLD_SIZE * WORLD_SIZE
-//values used when accessing the world bit vector
-#define WORLD_BYTE_DEPTH 16
-#define WORLD_BIT_DEPTH WORLD_BYTE_DEPTH * 8
-
 typedef btui32 btcoord;
 //duplicate struct (of what?)
 struct CellCoord
@@ -102,7 +95,7 @@ namespace env
 		}
 	};
 
-	struct node_v001
+	struct EnvNode
 	{
 		eflag::flag flags = eflag::eNULL;
 
@@ -121,7 +114,7 @@ namespace env
 		btui8 num_08 = 0ui8;
 	};
 
-	extern node_v001 eCells[WORLD_SIZE][WORLD_SIZE];
+	extern EnvNode eCells[WORLD_SIZE][WORLD_SIZE];
 
 	bool Get(uint x, uint y, eflag::flag bit);
 	void Set(uint x, uint y, eflag::flag bit);
@@ -130,7 +123,10 @@ namespace env
 	//void GetHeight(btf32& OUT_HEIGHT, CellGroup& CELL_GROUP);
 	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
 
+	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2);
+
 	//void Tick();
+	void Draw();
 
 	//load world setting from binary file
 	void SaveBin();

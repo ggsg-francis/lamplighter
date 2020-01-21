@@ -78,10 +78,11 @@ namespace index
 	// Removes this entity from the local vector of this cell
 	void RemoveEntityCell(btui32 X, btui32 Y, btID ENTITY);
 
-	btID GetClosestPlayer(btID index);
-	btID GetClosestEntity(btID index, btf32 dist);
-	btID GetViewTargetEntity(btID index, btf32 dist, fac::facalleg allegiance);
-	btID GetClosestEntityAlleg(btID index, btf32 dist, fac::facalleg allegiance);
-	btID GetClosestEntityWeighted(btID index, btf32 dist, fac::facalleg weight);
-	btID GetClosestActivator(btID index);
+	bool LOSCheck(btID ENT_THIS, btID ENT_TARG);
+	btID GetClosestPlayer(btID INDEX);
+	btID GetClosestEntity(btID INDEX, btf32 DISTANCE);
+	btID GetViewTargetEntity(btID INDEX, btf32 DISTANCE, fac::facalleg ALLEGIANCE);
+	btID GetClosestEntityAlleg(btID INDEX, btf32 DISTANCE, fac::facalleg ALLEGIANCE);
+	btID GetClosestEntityAllegLOS(btID INDEX, btf32 DISTANCE, fac::facalleg ALLEGIANCE);
+	btID GetClosestActivator(btID INDEX);
 }

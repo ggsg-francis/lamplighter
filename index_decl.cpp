@@ -33,7 +33,7 @@ namespace index
 
 	btID activeplayer;
 
-	btui16 editor_prop;
+	env::EnvNode editor_node_copy;
 
 	struct cell
 	{

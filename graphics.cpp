@@ -23,6 +23,16 @@ typedef btui16 version_t;
 
 namespace graphics
 {
+	// TODO: MOVE TO MATHS!!!
+	m::Vector3 operator*(const m::Vector3& vector, const Matrix4x4& matrix)
+	{
+		return m::Vector3(
+			(vector.x * matrix[0][0] + vector.y * matrix[0][1] + vector.z * matrix[0][2] + matrix[0][3]), // X
+			(vector.x * matrix[1][0] + vector.y * matrix[1][1] + vector.z * matrix[1][2] + matrix[1][3]), // Y
+			(vector.x * matrix[2][0] + vector.y * matrix[2][1] + vector.z * matrix[2][2] + matrix[2][3])  // Z
+		);
+	}
+
 	/*btui8 font_kerning[] =
 	{
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
@@ -113,8 +123,8 @@ namespace graphics
 		}
 
 		gPtr->shaders[S_POST].Use();
-		gPtr->shaders[S_POST].SetFloat("wx", (GLfloat)x * 0.5f);
-		gPtr->shaders[S_POST].SetFloat("wy", (GLfloat)y);
+		gPtr->shaders[S_POST].SetFloat(gPtr->shaders[S_POST].fWindowX, (GLfloat)x * 0.5f);
+		gPtr->shaders[S_POST].SetFloat(gPtr->shaders[S_POST].fWindowY, (GLfloat)y);
 	}
 
 	glm::mat4 mat_proj;
@@ -132,19 +142,18 @@ namespace graphics
 
 		guibmp.Init();
 
-		gPtr->shaders[S_SOLID] = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
-		gPtr->shaders[S_SOLID_CHARA] = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_solid_chara.glsl");
+		gPtr->shaders[S_SOLID].Init("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
+		gPtr->shaders[S_SOLID_CHARA].Init("shaders/vert_3d.glsl", "shaders/frag_solid_chara.glsl");
 
-		gPtr->shaders[S_SOLID_BLEND] = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
-		gPtr->shaders[S_SOLID_BLEND_CHARA] = graphics::Shader("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
+		gPtr->shaders[S_SOLID_BLEND].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
+		gPtr->shaders[S_SOLID_BLEND_CHARA].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
 
-		gPtr->shaders[S_SOLID_DEFORM] = graphics::Shader("shaders/vert_3d_deform.glsl", "shaders/frag_solid_chara.glsl");
+		gPtr->shaders[S_SOLID_DEFORM].Init("shaders/vert_3d_deform.glsl", "shaders/frag_solid_chara.glsl");
 		
-		gPtr->shaders[S_MEAT] = graphics::Shader("shaders/vert_3d.glsl", "shaders/frag_meat.glsl");
+		gPtr->shaders[S_MEAT].Init("shaders/vert_3d.glsl", "shaders/frag_meat.glsl");
 
-		gPtr->shaders[S_SKY] = graphics::Shader("shaders/vert_3d_sky.glsl", "shaders/frag_sky.glsl");
-		gPtr->shaders[S_GUI] = graphics::Shader("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
-		gPtr->shaders[S_POST] = graphics::Shader("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
+		gPtr->shaders[S_GUI].Init("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
+		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
 
 		SetFrameSize(cfg::iWinX, cfg::iWinY);
 	}
@@ -232,6 +241,11 @@ namespace graphics
 		return matr;
 	}
 	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos)
+	{
+		// Translate matrix
+		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
+	}
+	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos)
 	{
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
@@ -357,8 +371,6 @@ namespace graphics
 	}
 	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz)
 	{
-		/*mat_view = glm::lookAt(glm::vec3(x - (vx * LIGHT_HALF), y - (vy * LIGHT_HALF), z - (vz * LIGHT_HALF)),
-			glm::vec3(x, y, z), glm::vec3(0.0f, 1.0f, 0.0f));*/
 		mat_view = glm::lookAt(glm::vec3(x - (vx * LIGHT_HALF), y - (vy * LIGHT_HALF), z - (vz * LIGHT_HALF)),
 			glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
@@ -395,22 +407,22 @@ namespace graphics
 	}
 
 	// good, but replace the std::vectors
-	void BindBuffers(std::vector<Vert> &vertices, std::vector<btui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO)
+	void BindBuffers(std::vector<Vertex> &vertices, std::vector<btui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO)
 	{
 		glBindVertexArray(VAO); // Bind this vertex array
 		glBindBuffer(GL_ARRAY_BUFFER, VBO); // Create vertex buffer in opengl
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vert), &vertices[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // Create index buffer in opengl
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(btui32), &indices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
-		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_POS);
+		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
 		glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
-		glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_NOR);
+		glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_NOR);
 		glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
-		glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_UVC);
+		glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
 		glEnableVertexAttribArray(VI_COL); // Set Vertex colour
-		glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_COL);
+		glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
 	}
 
 	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h)
@@ -429,7 +441,7 @@ namespace graphics
 	Shader::Shader()
 	{
 	}
-	Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
+	void Shader::Init(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
 	{
 		// 1. retrieve the vertex/fragment source code from filePath
 		std::string vertexCode;
@@ -510,26 +522,54 @@ namespace graphics
 		glDeleteShader(fragment);
 		if (geometryPath != nullptr)
 			glDeleteShader(geometry);
+		///*
+		std::cout << "SHADER VERT: " << vertexPath << " FRAG: " << fragmentPath << std::endl;
+		for (btui32 i = 0u; i < LOCATION_COUNT; ++i)
+		{
+		location[i] = glGetUniformLocation(ID, names[i]);
+		if (location[i] != -1)
+			std::cout << "Got shader property ID: " << location[i] << " STR: " << names[i] << std::endl;
+		}//*/
+		/*
+		location[matModel] = glGetUniformLocation(ID, "matm");
+		location[uiMatrixCount] = glGetUniformLocation(ID, "mc");
+		location[matModelA] = glGetUniformLocation(ID, "matma");
+		location[matModelB] = glGetUniformLocation(ID, "matmb");
+		location[matModelC] = glGetUniformLocation(ID, "matmc");
+		location[matModelD] = glGetUniformLocation(ID, "matmd");
+		location[matView] = glGetUniformLocation(ID, "matv");
+		location[matProject] = glGetUniformLocation(ID, "matp");
+		location[fBlendState] = glGetUniformLocation(ID, "blendState");
+		location[fWindowX] = glGetUniformLocation(ID, "wx");
+		location[fWindowY] = glGetUniformLocation(ID, "wy");
+		location[fTime] = glGetUniformLocation(ID, "ft");
+		location[matLightProj] = glGetUniformLocation(ID, "lightProj");
+		location[vecPCam] = glGetUniformLocation(ID, "pcam");
+		location[vecVSun] = glGetUniformLocation(ID, "vsun");
+		location[matTransform] = glGetUniformLocation(ID, "transform");
+		location[fLit_TEMP] = glGetUniformLocation(ID, "lit");
+		location[texShadowMap] = glGetUniformLocation(ID, "tshadow");
+		//*/
 	}
 	void Shader::Use()
 	{
 		glUseProgram(ID);
 	}
-	void Shader::SetBool(const std::string &name, bool value) const
+	void Shader::SetBool(const PIndex index, bool value) const
 	{
-		glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
+		glUniform1i(location[index], (int)value);
 	}
-	void Shader::SetInt(const std::string &name, int value) const
+	void Shader::SetInt(const PIndex index, int value) const
 	{
-		glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
+		glUniform1i(location[index], value);
 	}
-	void Shader::SetUint(const std::string &name, unsigned int value) const
+	void Shader::SetUint(const PIndex index, unsigned int value) const
 	{
-		glUniform1ui(glGetUniformLocation(ID, name.c_str()), value);
+		glUniform1ui(location[index], value);
 	}
-	void Shader::SetFloat(const std::string &name, float value) const
+	void Shader::SetFloat(const PIndex index, float value) const
 	{
-		glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+		glUniform1f(location[index], value);
 	}
 	void Shader::setVec2(const std::string &name, const glm::vec2 &value) const
 	{
@@ -539,13 +579,13 @@ namespace graphics
 	{
 		glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y);
 	}
-	void Shader::setVec3(const std::string &name, const glm::vec3 &value) const
+	void Shader::setVec3(const PIndex index, const glm::vec3 &value) const
 	{
-		glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+		glUniform3fv(location[index], 1, &value[0]);
 	}
-	void Shader::setVec3(const std::string &name, float x, float y, float z) const
+	void Shader::setVec3(const PIndex index, float x, float y, float z) const
 	{
-		glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
+		glUniform3f(location[index], x, y, z);
 	}
 	void Shader::setVec4(const std::string &name, const glm::vec4 &value) const
 	{
@@ -563,13 +603,16 @@ namespace graphics
 	{
 		glUniformMatrix3fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
-	void Shader::setMat4(const std::string &name, const glm::mat4 &mat) const
+	void Shader::setMat4(const PIndex index, const Matrix4x4& mat) const
 	{
-		glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+		glUniformMatrix4fv(location[index], 1, GL_FALSE, &mat[0][0]);
 	}
-	void Shader::setMat4(const std::string& name, const Matrix4x4& mat) const
+	void Shader::SetTexture(const PIndex index, GLuint texture, TIndex textureIndex)
 	{
-		glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+		glActiveTexture(temp[textureIndex]); // active proper texture unit before binding
+		//glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
+		glUniform1i(location[index], textureIndex);
+		glBindTexture(GL_TEXTURE_2D, texture); // Bind the texture
 	}
 	void Shader::CheckCompileErrors(GLuint shader, const std::string type)
 	{
@@ -884,10 +927,10 @@ namespace graphics
 		glUniform1i(glGetUniformLocation(shd, "texture_diffuse1"), 0);
 		glBindTexture(GL_TEXTURE_2D, tex); // Bind the texture
 		glBindVertexArray(vao); // Bind vertex array
-		glDrawElements(GL_TRIANGLES, glID, GL_UNSIGNED_INT, 0); // Draw call
+		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
 		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
 	}
-	void Mesh::LoadFile(char* fn)
+	void Mesh::LoadFile(char* fn, bool clearmem)
 	{
 		std::cout << "Loading " << fn << "... ";
 
@@ -896,10 +939,10 @@ namespace graphics
 		FILE* in = fopen(fn, "rb");
 		if (in != NULL)
 		{
-			Vert* vces; // Vertices
-			size_t vces_size;
-			btui32* ices; // Indices
-			size_t ices_size;
+			//Vert* vces; // Vertices
+			//size_t vces_size;
+			//btui32* ices; // Indices
+			//size_t ices_size;
 
 			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
 			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
@@ -907,8 +950,8 @@ namespace graphics
 			//-------------------------------- READ VERTICES
 
 			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
-			vces = (Vert*)malloc(sizeof(Vert) * vces_size); // Allocate buffer to hold our vertices
-			fread(&vces[0], sizeof(Vert), vces_size, in); // Read vertices
+			vces = (Vertex*)malloc(sizeof(Vertex) * vces_size); // Allocate buffer to hold our vertices
+			fread(&vces[0], sizeof(Vertex), vces_size, in); // Read vertices
 
 			//-------------------------------- READ INDICES
 
@@ -918,7 +961,7 @@ namespace graphics
 
 			fclose(in);
 
-			glID = (GLuint)ices_size; // Set number of indices used in Draw()
+			//glID = (GLuint)ices_size; // Set number of indices used in Draw()
 
 			//-------------------------------- INITIALIZE OPENGL BUFFER
 
@@ -927,25 +970,34 @@ namespace graphics
 
 			glBindVertexArray(vao); // Bind this vertex array
 			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vert), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 			glEnableVertexAttribArray(VI_POS); // Set Vertex positions
-			glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_POS);
+			glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
 			glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
-			glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_NOR);
+			glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_NOR);
 			glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
-			glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_UVC);
+			glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
 			glEnableVertexAttribArray(VI_COL); // Set Vertex colour
-			glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)VO_COL);
+			glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
 
 			glBindVertexArray(0); // Bind default vertex array
-			free(vces);
-			free(ices);
+
+			if (clearmem)
+			{
+				free(vces);
+				free(ices);
+			}
 
 			std::cout << "Generated Mesh!" << std::endl;
 		}
+	}
+	void Mesh::Unload()
+	{
+		free(vces);
+		free(ices);
 	}
 
 	//________________________________________________________________________________________________________________________________
@@ -961,7 +1013,7 @@ namespace graphics
 		// draw mesh
 		glBindVertexArray(vao);
 		//glDrawElements(GL_TRIANGLES, ices.size(), GL_UNSIGNED_INT, 0);
-		glDrawElements(GL_TRIANGLES, glID, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		// always good practice to set everything back to defaults once configured.
@@ -976,10 +1028,9 @@ namespace graphics
 		FILE* in = fopen(fn, "rb");
 		if (in != NULL)
 		{
-			VertBlend* vces; // Vertices
+			VertexBlend* vces; // Vertices
 			size_t vces_size;
 			btui32* ices; // Indices
-			size_t ices_size;
 
 			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
 			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
@@ -987,8 +1038,8 @@ namespace graphics
 			//-------------------------------- READ VERTICES
 
 			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
-			vces = (VertBlend*)malloc(sizeof(VertBlend) * vces_size); // Allocate buffer to hold our vertices
-			fread(&vces[0], sizeof(VertBlend), vces_size, in); // Read vertices
+			vces = (VertexBlend*)malloc(sizeof(VertexBlend) * vces_size); // Allocate buffer to hold our vertices
+			fread(&vces[0], sizeof(VertexBlend), vces_size, in); // Read vertices
 
 			//-------------------------------- READ INDICES
 
@@ -998,7 +1049,7 @@ namespace graphics
 
 			fclose(in);
 
-			glID = (GLuint)ices_size; // Set number of indices used in Draw()
+			ices_size = (GLuint)ices_size; // Set number of indices used in Draw()
 
 			//-------------------------------- INITIALIZE OPENGL BUFFER
 
@@ -1007,25 +1058,25 @@ namespace graphics
 
 			glBindVertexArray(vao); // Bind this vertex array
 			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertBlend), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexBlend), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 			glEnableVertexAttribArray(graphics::vbi_pos_a); // Set Vertex positions
-			glVertexAttribPointer(graphics::vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_pos_a);
+			glVertexAttribPointer(graphics::vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_pos_a);
 			glEnableVertexAttribArray(graphics::vbi_pos_b);
-			glVertexAttribPointer(graphics::vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_pos_b);
+			glVertexAttribPointer(graphics::vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_pos_b);
 
 			glEnableVertexAttribArray(graphics::vbi_nor_a); // Set Vertex normals
-			glVertexAttribPointer(graphics::vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_nor_a);
+			glVertexAttribPointer(graphics::vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_nor_a);
 			glEnableVertexAttribArray(graphics::vbi_nor_b);
-			glVertexAttribPointer(graphics::vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_nor_b);
+			glVertexAttribPointer(graphics::vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_nor_b);
 
 			glEnableVertexAttribArray(graphics::vbi_uvc); // Set Vertex texture coords
-			glVertexAttribPointer(graphics::vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_uvc);
+			glVertexAttribPointer(graphics::vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_uvc);
 
 			glEnableVertexAttribArray(graphics::vbi_col); // Set Vertex colour
-			glVertexAttribPointer(graphics::vbi_col, 3, GL_FLOAT, GL_FALSE, sizeof(VertBlend), (void*)graphics::vb_col);
+			glVertexAttribPointer(graphics::vbi_col, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)graphics::vb_col);
 
 			glBindVertexArray(0); // Bind default vertex array
 			free(vces);
@@ -1048,7 +1099,7 @@ namespace graphics
 		// draw mesh
 		glBindVertexArray(vao);
 		//glDrawElements(GL_TRIANGLES, ices.size(), GL_UNSIGNED_INT, 0);
-		glDrawElements(GL_TRIANGLES, glID, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		// always good practice to set everything back to defaults once configured.
@@ -1064,10 +1115,9 @@ namespace graphics
 		FILE* in = fopen(fn, "rb");
 		if (in != NULL)
 		{
-			VertDeform* vces; // Vertices
+			VertexDeform* vces; // Vertices
 			size_t vces_size;
 			btui32* ices; // Indices
-			size_t ices_size;
 
 			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
 			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
@@ -1075,8 +1125,8 @@ namespace graphics
 			//-------------------------------- READ VERTICES
 
 			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
-			vces = (VertDeform*)malloc(sizeof(VertDeform) * vces_size); // Allocate buffer to hold our vertices
-			fread(&vces[0], sizeof(VertDeform), vces_size, in); // Read vertices
+			vces = (VertexDeform*)malloc(sizeof(VertexDeform) * vces_size); // Allocate buffer to hold our vertices
+			fread(&vces[0], sizeof(VertexDeform), vces_size, in); // Read vertices
 
 			//-------------------------------- READ INDICES
 
@@ -1086,7 +1136,7 @@ namespace graphics
 
 			fclose(in);
 
-			glID = (GLuint)ices_size; // Set number of indices used in Draw()
+			ices_size = (GLuint)ices_size; // Set number of indices used in Draw()
 
 			//-------------------------------- INITIALIZE OPENGL BUFFER
 
@@ -1095,23 +1145,23 @@ namespace graphics
 
 			glBindVertexArray(vao); // Bind this vertex array
 			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertDeform), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexDeform), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 			glEnableVertexAttribArray(vdi_pos); // Set Vertex positions
-			glVertexAttribPointer(vdi_pos, 3u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)vd_pos);
+			glVertexAttribPointer(vdi_pos, 3u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_pos);
 			glEnableVertexAttribArray(vdi_nor); // Set Vertex normals
-			glVertexAttribPointer(vdi_nor, 3u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)vd_nor);
+			glVertexAttribPointer(vdi_nor, 3u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_nor);
 			glEnableVertexAttribArray(vdi_uvc); // Set Vertex texture coords
-			glVertexAttribPointer(vdi_uvc, 2u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)vd_uvc);
+			glVertexAttribPointer(vdi_uvc, 2u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_uvc);
 			glEnableVertexAttribArray(vdi_col); // Set Vertex colour
-			glVertexAttribPointer(vdi_col, 4u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)vd_col);
+			glVertexAttribPointer(vdi_col, 4u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_col);
 			// Set the matrix value array
 			for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
 			{
 				glEnableVertexAttribArray(vdi_mat + i); // Set Vertex colour
-				glVertexAttribPointer(vdi_mat + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertDeform), (void*)(vd_mat + (sizeof(btf32) * i)));
+				glVertexAttribPointer(vdi_mat + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)(vd_mat + (sizeof(btf32) * i)));
 			}
 
 			glBindVertexArray(0); // Bind default vertex array
@@ -1122,6 +1172,514 @@ namespace graphics
 		}
 	}
 	
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- COMPOSITE MESH
+
+	CompositeMesh::CompositeMesh()
+	{
+		//int i = 0;
+	}
+	CompositeMesh::~CompositeMesh()
+	{
+		if (vces != nullptr)
+			delete[] vces;
+		if (ices != nullptr)
+			delete[] ices;
+	}
+	void CompositeMesh::Draw(unsigned int tex, unsigned int shd)
+	{
+		glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
+		glUniform1i(glGetUniformLocation(shd, "texture_diffuse1"), 0);
+		glBindTexture(GL_TEXTURE_2D, tex); // Bind the texture
+		glBindVertexArray(vao); // Bind vertex array
+		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
+		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
+	}
+	// TODO: add matrix offset
+	// read/search: c++ multiply vector3 x matrix4x4
+	void CompositeMesh::AddMesh(Mesh* mesh, Matrix4x4 position)
+	{
+		glm::vec3 vector;
+		glm::mat4x4 matr;
+
+		//glm::vec3 vc2 = vector * matr;
+
+		//
+		size_t old_vces_size = vces_size;
+		size_t old_ices_size = ices_size;
+		//
+		vces_size += mesh->VcesSize();
+		ices_size += mesh->IcesSize();
+		//
+		Vertex* vces_2 = new Vertex[vces_size];
+		btui32* ices_2 = new btui32[ices_size];
+		// copy existing vertices into the new buffer
+		for (int i = 0; i < old_vces_size; ++i)
+			vces_2[i] = vces[i];
+		for (int i = 0; i < old_ices_size; ++i)
+			ices_2[i] = ices[i];
+		// Copy in the things from the new mesh
+		for (int i = old_vces_size; i < vces_size; ++i)
+		{
+			vces_2[i] = mesh->Vces()[i - old_vces_size];
+			// temp
+			m::Vector3 vector = m::Vector3(vces_2[i].pos.x, vces_2[i].pos.y, vces_2[i].pos.z);
+			vector = vector * position;
+			vces_2[i].pos.x = vector.x;
+			vces_2[i].pos.y = vector.y;
+			vces_2[i].pos.z = vector.z;
+		}
+		for (int i = old_ices_size; i < ices_size; ++i)
+			ices_2[i] = mesh->Ices()[i - old_vces_size] + (btui32)old_vces_size;
+		// Clear the old buffers from memory
+		delete[] vces; vces = vces_2;
+		delete[] ices; ices = ices_2;
+
+		//-------------------------------- INITIALIZE OPENGL BUFFER
+
+		if (old_vces_size == 0)
+		{
+			glGenVertexArrays(1, &vao); // Create vertex buffer
+			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
+		}
+
+		//-------------------------------- UPDATE OPENGL BUFFER
+
+		glBindVertexArray(vao); // Bind this vertex array
+		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
+		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+
+		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
+		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
+		glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
+		glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_NOR);
+		glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
+		glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
+		glEnableVertexAttribArray(VI_COL); // Set Vertex colour
+		glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
+
+		glBindVertexArray(0); // Bind default vertex array
+	}
+
+	void CompositeMesh::AddMesh(Mesh* mesh, m::Vector3 position)
+	{
+		glm::vec3 vector;
+		glm::mat4x4 matr;
+
+		//glm::vec3 vc2 = vector * matr;
+
+		//
+		size_t old_vces_size = vces_size;
+		size_t old_ices_size = ices_size;
+		//
+		vces_size += mesh->VcesSize();
+		ices_size += mesh->IcesSize();
+		//
+		Vertex* vces_2 = new Vertex[vces_size];
+		btui32* ices_2 = new btui32[ices_size];
+		// copy existing vertices into the new buffer
+		for (int i = 0; i < old_vces_size; ++i)
+			vces_2[i] = vces[i];
+		for (int i = 0; i < old_ices_size; ++i)
+			ices_2[i] = ices[i];
+		// Copy in the things from the new mesh
+		for (int i = old_vces_size; i < vces_size; ++i)
+		{
+			vces_2[i] = mesh->Vces()[i - old_vces_size];
+			// temp
+			m::Vector3 vector = m::Vector3(vces_2[i].pos.x, vces_2[i].pos.y, vces_2[i].pos.z);
+			vector = vector + position;
+			//vector = vector + position * m::Vector3(1.f, 0.f, 1.f);
+
+			//vector.y += m::Lerp(height_s, height_n, vces_2[i].pos.z * 2.f) + m::Lerp(height_w, height_e, vces_2[i].pos.x * 2.f);
+			//vector.y *= 0.5f;
+			//vector.z += vces_2[i].pos.x;
+
+			// BILINEAR
+			/*
+			out_height = m::Lerp(
+			m::Lerp((btf32)eCells[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y].height, (btf32)eCells[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y].height, abs(csinf.offsetx)),
+			m::Lerp((btf32)eCells[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y].height, (btf32)eCells[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y].height, abs(csinf.offsetx)),
+			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
+			*/
+
+			vces_2[i].pos.x = vector.x;
+			vces_2[i].pos.y = vector.y;
+			vces_2[i].pos.z = vector.z;
+		}
+		for (int i = old_ices_size; i < ices_size; ++i)
+			ices_2[i] = mesh->Ices()[i - old_vces_size] + (btui32)old_vces_size;
+		// Clear the old buffers from memory
+		delete[] vces; vces = vces_2;
+		delete[] ices; ices = ices_2;
+
+		//-------------------------------- INITIALIZE OPENGL BUFFER
+
+		if (old_vces_size == 0)
+		{
+			glGenVertexArrays(1, &vao); // Create vertex buffer
+			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
+		}
+	}
+
+	void CompositeMesh::AddTerrainTile(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE])
+	{
+		glm::vec3 vector;
+		glm::mat4x4 matr;
+
+		//glm::vec3 vc2 = vector * matr;
+
+		int tile_radius = 128;
+
+		vces_size = 4u * (tile_radius * tile_radius);
+		ices_size = 6u * (tile_radius * tile_radius);
+		//
+		vces = new Vertex[vces_size];
+		ices = new btui32[ices_size];
+
+		btf32 uvscale = 0.5f;
+		int v = 0;
+		int i = 0;
+		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x)
+		{
+			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 4, i += 6)
+			{
+				bool cliffNS = false;
+				bool cliffEW = false;
+
+				if (HEIGHTMAP[x][y] > HEIGHTMAP[x + 1][y] + 5ui16 || HEIGHTMAP[x][y] < HEIGHTMAP[x + 1][y] - 5ui16)
+					cliffNS = true;
+				if (HEIGHTMAP[x][y] > HEIGHTMAP[x][y + 1] + 5ui16 || HEIGHTMAP[x][y] < HEIGHTMAP[x][y + 1] - 5ui16)
+					cliffEW = true;
+				
+				// Copy in the things from the new mesh
+				vces[v + 0].pos.x = (btf32)x;
+				vces[v + 0].pos.z = (btf32)y;
+				//vces[v + 0].pos.y = (((btf32)HEIGHTMAP[x - 1][y - 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 0].pos.y = (((btf32)HEIGHTMAP[x][y])) / TERRAIN_HEIGHT_DIVISION;
+				if (cliffEW)
+				{
+					vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
+					vces[v + 0].uvc.y = -vces[v + 0].pos.y * uvscale;
+				}
+				else if (cliffNS)
+				{
+					vces[v + 0].uvc.x = vces[v + 0].pos.z * uvscale;
+					vces[v + 0].uvc.y = -vces[v + 0].pos.y * uvscale;
+				}
+				else
+				{
+					vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
+					vces[v + 0].uvc.y = vces[v + 0].pos.z * uvscale;
+				}
+				vces[v + 0].nor.y = 1.f;
+				vces[v + 0].nor.x = 0.f;
+				vces[v + 0].nor.z = 0.f;
+				vces[v + 0].col.y = 1.f;
+
+				vces[v + 1u].pos.x = (btf32)x;
+				vces[v + 1u].pos.z = (btf32)y + 0.25f;
+				//vces[v + 1u].pos.y = (((btf32)HEIGHTMAP[x - 1][y + 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 1u].pos.y = (((btf32)HEIGHTMAP[x][y + 1])) / TERRAIN_HEIGHT_DIVISION;
+				if (cliffEW)
+				{
+					vces[v + 1].uvc.x = vces[v + 1].pos.x * uvscale;
+					vces[v + 1].uvc.y = -vces[v + 1].pos.y * uvscale;
+				}
+				else if (cliffNS)
+				{
+					vces[v + 1].uvc.x = vces[v + 1].pos.z * uvscale;
+					vces[v + 1].uvc.y = -vces[v + 1].pos.y * uvscale;
+				}
+				else
+				{
+					vces[v + 1].uvc.x = vces[v + 1].pos.x * uvscale;
+					vces[v + 1].uvc.y = vces[v + 1].pos.z * uvscale;
+				}
+				vces[v + 1].nor.y = 1.f;
+				vces[v + 1].nor.x = 0.f;
+				vces[v + 1].nor.z = 0.f;
+				vces[v + 1].col.y = 1.f;
+
+				vces[v + 2u].pos.x = (btf32)x + 0.25f;
+				vces[v + 2u].pos.z = (btf32)y;
+				//vces[v + 2u].pos.y = (((btf32)HEIGHTMAP[x + 1][y - 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 2u].pos.y = (((btf32)HEIGHTMAP[x + 1][y])) / TERRAIN_HEIGHT_DIVISION;
+				if (cliffEW)
+				{
+					vces[v + 2].uvc.x = vces[v + 2].pos.x * uvscale;
+					vces[v + 2].uvc.y = -vces[v + 2].pos.y * uvscale;
+				}
+				else if (cliffNS)
+				{
+					vces[v + 2].uvc.x = vces[v + 2].pos.z * uvscale;
+					vces[v + 2].uvc.y = -vces[v + 2].pos.y * uvscale;
+				}
+				else
+				{
+					vces[v + 2].uvc.x = vces[v + 2].pos.x * uvscale;
+					vces[v + 2].uvc.y = vces[v + 2].pos.z * uvscale;
+				}
+				vces[v + 2].nor.y = 1.f;
+				vces[v + 2].nor.x = 0.f;
+				vces[v + 2].nor.z = 0.f;
+				vces[v + 2].col.y = 1.f;
+
+				vces[v + 3u].pos.x = (btf32)x + 0.25f;
+				vces[v + 3u].pos.z = (btf32)y + 0.25f;
+				//vces[v + 3u].pos.y = (((btf32)HEIGHTMAP[x + 1][y + 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 3u].pos.y = (((btf32)HEIGHTMAP[x + 1][y + 1])) / TERRAIN_HEIGHT_DIVISION;
+				if (cliffEW)
+				{
+					vces[v + 3].uvc.x = vces[v + 3].pos.x * uvscale;
+					vces[v + 3].uvc.y = -vces[v + 3].pos.y * uvscale;
+				}
+				else if (cliffNS)
+				{
+					vces[v + 3].uvc.x = vces[v + 3].pos.z * uvscale;
+					vces[v + 3].uvc.y = -vces[v + 3].pos.y * uvscale;
+				}
+				else
+				{
+					vces[v + 3].uvc.x = vces[v + 3].pos.x * uvscale;
+					vces[v + 3].uvc.y = vces[v + 3].pos.z * uvscale;
+				}
+				vces[v + 3].nor.y = 1.f;
+				vces[v + 3].nor.x = 0.f;
+				vces[v + 3].nor.z = 0.f;
+				vces[v + 3].col.y = 1.f;
+
+				ices[i + 0u] = v + 0u;
+				ices[i + 1u] = v + 3u;
+				ices[i + 2u] = v + 1u;
+				ices[i + 3u] = v + 2u;
+				ices[i + 4u] = v + 3u;
+				ices[i + 5u] = v + 0u;
+			}
+		}
+
+		//-------------------------------- INITIALIZE OPENGL BUFFER
+
+		//if (old_vces_size == 0)
+		{
+			glGenVertexArrays(1, &vao); // Create vertex buffer
+			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
+		}
+	}
+
+	void CompositeMesh::ReBindGL()
+	{
+		//-------------------------------- UPDATE OPENGL BUFFER
+
+		glBindVertexArray(vao); // Bind this vertex array
+		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
+		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+
+		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
+		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
+		glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
+		glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_NOR);
+		glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
+		glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
+		glEnableVertexAttribArray(VI_COL); // Set Vertex colour
+		glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
+
+		glBindVertexArray(0); // Bind default vertex array
+	}
+
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- TERRAIN MESH
+
+	void MeshTerrain::Draw()
+	{
+		glBindVertexArray(vao); // Bind vertex array
+		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
+		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
+	}
+
+	void MeshTerrain::GenerateFromHMap(
+		btui16(&hmap)[WORLD_SIZE][WORLD_SIZE],
+		btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE])
+	{
+		glm::vec3 vector;
+		glm::mat4x4 matr;
+
+		//glm::vec3 vc2 = vector * matr;
+
+		int tile_radius = 128;
+
+		vces_size = 4u * (tile_radius * tile_radius);
+		ices_size = 6u * (tile_radius * tile_radius);
+		//
+		vces = new VertexTerrain[vces_size];
+		ices = new btui32[ices_size];
+
+		btf32 uvscale = 0.5f;
+		int v = 0;
+		int i = 0;
+		btf32 tile_width = 1.f;
+		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x)
+		{
+			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 4, i += 6)
+			{
+				bool cliffNS = false;
+				bool cliffEW = false;
+
+				if (hmap[x][y] > hmap[x + 1][y] + 5ui16 || hmap[x][y] < hmap[x + 1][y] - 5ui16)
+					cliffNS = true;
+				if (hmap[x][y] > hmap[x][y + 1] + 5ui16 || hmap[x][y] < hmap[x][y + 1] - 5ui16)
+					cliffEW = true;
+
+				// Copy in the things from the new mesh
+				vces[v + 0].pos.x = (btf32)x;
+				vces[v + 0].pos.z = (btf32)y;
+				//vces[v + 0].pos.y = (((btf32)HEIGHTMAP[x - 1][y - 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 0].pos.y = (((btf32)hmap[x][y])) / TERRAIN_HEIGHT_DIVISION;
+				/*if (cliffEW)
+				{
+					vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
+					vces[v + 0].uvc.y = -vces[v + 0].pos.y * uvscale;
+				}
+				else if (cliffNS)
+				{
+					vces[v + 0].uvc.x = vces[v + 0].pos.z * uvscale;
+					vces[v + 0].uvc.y = -vces[v + 0].pos.y * uvscale;
+				}
+				else*/
+				{
+					vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
+					vces[v + 0].uvc.y = vces[v + 0].pos.z * uvscale;
+				}
+				vces[v + 0].nor.y = 1.f;
+				vces[v + 0].nor.x = 0.f;
+				vces[v + 0].nor.z = 0.f;
+				vces[v + 0].col.y = 1.f;
+
+				vces[v + 1u].pos.x = (btf32)x;
+				vces[v + 1u].pos.z = (btf32)y + tile_width;
+				//vces[v + 1u].pos.y = (((btf32)HEIGHTMAP[x - 1][y + 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 1u].pos.y = (((btf32)hmap[x][y + 1])) / TERRAIN_HEIGHT_DIVISION;
+				/*if (cliffEW)
+				{
+					vces[v + 1].uvc.x = vces[v + 1].pos.x * uvscale;
+					vces[v + 1].uvc.y = -vces[v + 1].pos.y * uvscale;
+				}
+				else if (cliffNS)
+				{
+					vces[v + 1].uvc.x = vces[v + 1].pos.z * uvscale;
+					vces[v + 1].uvc.y = -vces[v + 1].pos.y * uvscale;
+				}
+				else*/
+				{
+					vces[v + 1].uvc.x = vces[v + 1].pos.x * uvscale;
+					vces[v + 1].uvc.y = vces[v + 1].pos.z * uvscale;
+				}
+				vces[v + 1].nor.y = 1.f;
+				vces[v + 1].nor.x = 0.f;
+				vces[v + 1].nor.z = 0.f;
+				vces[v + 1].col.y = 1.f;
+
+				vces[v + 2u].pos.x = (btf32)x + tile_width;
+				vces[v + 2u].pos.z = (btf32)y;
+				//vces[v + 2u].pos.y = (((btf32)HEIGHTMAP[x + 1][y - 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 2u].pos.y = (((btf32)hmap[x + 1][y])) / TERRAIN_HEIGHT_DIVISION;
+				/*if (cliffEW)
+				{
+					vces[v + 2].uvc.x = vces[v + 2].pos.x * uvscale;
+					vces[v + 2].uvc.y = -vces[v + 2].pos.y * uvscale;
+				}
+				else if (cliffNS)
+				{
+					vces[v + 2].uvc.x = vces[v + 2].pos.z * uvscale;
+					vces[v + 2].uvc.y = -vces[v + 2].pos.y * uvscale;
+				}
+				else*/
+				{
+					vces[v + 2].uvc.x = vces[v + 2].pos.x * uvscale;
+					vces[v + 2].uvc.y = vces[v + 2].pos.z * uvscale;
+				}
+				vces[v + 2].nor.y = 1.f;
+				vces[v + 2].nor.x = 0.f;
+				vces[v + 2].nor.z = 0.f;
+				vces[v + 2].col.y = 1.f;
+
+				vces[v + 3u].pos.x = (btf32)x + tile_width;
+				vces[v + 3u].pos.z = (btf32)y + tile_width;
+				//vces[v + 3u].pos.y = (((btf32)HEIGHTMAP[x + 1][y + 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 3u].pos.y = (((btf32)hmap[x + 1][y + 1])) / TERRAIN_HEIGHT_DIVISION;
+				/*if (cliffEW)
+				{
+					vces[v + 3].uvc.x = vces[v + 3].pos.x * uvscale;
+					vces[v + 3].uvc.y = -vces[v + 3].pos.y * uvscale;
+				}
+				else if (cliffNS)
+				{
+					vces[v + 3].uvc.x = vces[v + 3].pos.z * uvscale;
+					vces[v + 3].uvc.y = -vces[v + 3].pos.y * uvscale;
+				}
+				else*/
+				{
+					vces[v + 3].uvc.x = vces[v + 3].pos.x * uvscale;
+					vces[v + 3].uvc.y = vces[v + 3].pos.z * uvscale;
+				}
+				vces[v + 3].nor.y = 1.f;
+				vces[v + 3].nor.x = 0.f;
+				vces[v + 3].nor.z = 0.f;
+				vces[v + 3].col.y = 1.f;
+
+				if (MATMAP[x][y] == 1ui8)
+					vces[v + 0].col.x = 1.f;
+				if (MATMAP[x][y + 1] == 1ui8)
+					vces[v + 1].col.x = 1.f;
+				if (MATMAP[x + 1][y] == 1ui8)
+					vces[v + 2].col.x = 1.f;
+				if (MATMAP[x + 1][y + 1] == 1ui8)
+					vces[v + 3].col.x = 1.f;
+
+				ices[i + 0u] = v + 0u;
+				ices[i + 1u] = v + 3u;
+				ices[i + 2u] = v + 1u;
+				ices[i + 3u] = v + 2u;
+				ices[i + 4u] = v + 3u;
+				ices[i + 5u] = v + 0u;
+			}
+		}
+
+		//-------------------------------- INITIALIZE OPENGL BUFFER
+
+		//if (old_vces_size == 0)
+		{
+			glGenVertexArrays(1, &vao); // Create vertex buffer
+			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
+		}
+	}
+
+	void MeshTerrain::ReBindGL()
+	{
+		//-------------------------------- UPDATE OPENGL BUFFER
+
+		glBindVertexArray(vao); // Bind this vertex array
+		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
+		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+
+		glEnableVertexAttribArray(VT_I_POS); // Set Vertex positions
+		glVertexAttribPointer(VT_I_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_POS);
+		glEnableVertexAttribArray(VT_I_NOR); // Set Vertex normals
+		glVertexAttribPointer(VT_I_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_NOR);
+		glEnableVertexAttribArray(VT_I_UVC); // Set Vertex texture coords
+		glVertexAttribPointer(VT_I_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_UVC);
+		glEnableVertexAttribArray(VT_I_COL); // Set Vertex colour
+		glVertexAttribPointer(VT_I_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_COL);
+
+		glBindVertexArray(0); // Bind default vertex array
+	}
+
 	//________________________________________________________________________________________________________________________________
 	//-------------------------------- GUI BITMAP
 
@@ -1232,9 +1790,9 @@ namespace graphics
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	// (copied from ltr, yet to be optimized, integrated or fixed
 
-	Vert createvert(float x, float y, float z, float r, float g, float b, float u, float v)
+	Vertex createvert(float x, float y, float z, float r, float g, float b, float u, float v)
 	{
-		Vert v2;
+		Vertex v2;
 
 		v2.pos.x = x;
 		v2.pos.y = y;
@@ -1260,7 +1818,7 @@ namespace graphics
 			v1 = _v1; v2 = _v2;
 		}
 	};
-	void AddQuad(std::vector<Vert>& vertices, std::vector<unsigned int>& indices, quad p, int index)
+	void AddQuad(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, quad p, int index)
 	{
 		// Create vertices
 		vertices.push_back(createvert(p.x1, p.y2, 0.f, 1.f, 1.f, 1.f, p.u1, p.v1)); // Top left
@@ -1296,7 +1854,7 @@ namespace graphics
 		transform = glm::mat4(1.0f);
 
 		//manual vector version
-		std::vector<Vert> vertices;
+		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
 
 		bti16 xA = _xA - bl;
@@ -1384,7 +1942,7 @@ namespace graphics
 		transform = glm::mat4(1.0f);
 
 		//manual vector version
-		std::vector<Vert> vertices;
+		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
 
 		//character height
@@ -1528,4 +2086,108 @@ namespace graphics
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, cnum * 6, GL_UNSIGNED_INT, 0);
 	}
+}
+
+void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
+{
+	graphics::Shader* shd = nullptr;
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
+		break;
+	};
+
+	// Enable the shader
+	shd->Use();
+
+	// Set matrices on shader
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
+
+	// Render the mesh
+	mdl.Draw(tex.glID, shd->ID);
+}
+
+void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
+{
+	graphics::Shader* shd = nullptr;
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
+		break;
+	};
+
+	// Enable the shader
+	shd->Use();
+
+	// Set matrices on shader
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
+
+	// Render the mesh
+	mdl.Draw(tex.glID, shd->ID);
+}
+
+void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
+{
+	graphics::Shader* shd = nullptr;
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID_BLEND);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_BLEND_CHARA);
+		break;
+	};
+
+	// Enable the shader
+	shd->Use();
+
+	// Set matrices on shader
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	shd->setMat4(shd->matModel, matrix);
+	// Set blend state
+	shd->SetFloat(shd->fBlendState, bs);
+
+	// Render the mesh
+	mdl.Draw(tex.glID, shd->ID);
+}
+
+void DrawMeshDeform(
+	btID id, graphics::MeshDeform& mdl, graphics::TextureBase tex,
+	ShaderStyle charashader, btui32 matrix_count,
+	graphics::Matrix4x4 transform_a = graphics::Matrix4x4(),
+	graphics::Matrix4x4 transform_b = graphics::Matrix4x4(),
+	graphics::Matrix4x4 transform_c = graphics::Matrix4x4(),
+	graphics::Matrix4x4 transform_d = graphics::Matrix4x4())
+{
+	// Get the shader reference
+	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID_DEFORM);
+
+	// Enable the shader
+	shd->Use();
+
+	// Set shader properties
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	shd->SetUint(shd->uiMatrixCount, matrix_count);
+	if (matrix_count >= 1u) shd->setMat4(shd->matModelA, transform_a);
+	if (matrix_count >= 2u) shd->setMat4(shd->matModelB, transform_b);
+	if (matrix_count >= 3u) shd->setMat4(shd->matModelC, transform_c);
+	if (matrix_count == 4u) shd->setMat4(shd->matModelD, transform_d);
+
+	// Render the mesh
+	mdl.Draw(tex.glID, shd->ID);
 }

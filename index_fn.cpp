@@ -26,18 +26,32 @@ namespace index
 		actor->input.y = 1.f;
 		actor->input.x = -1.f;
 
-		// If ally is null or deleted or dead
-		if (actor->ai_target_ent == BUF_NULL || !block_entity.used[actor->ai_target_ent]
-			|| !ENTITY(actor->ai_target_ent)->state.properties.get(ActiveState::eALIVE))
+	updatetarg:
+		// If is null OR deleted OR dead OR no LOS
+		if (actor->ai_target_ent == BUF_NULL 
+			|| !block_entity.used[actor->ai_target_ent]
+			|| !ENTITY(actor->ai_target_ent)->state.properties.get(ActiveState::eALIVE)/*
+			|| !LOSCheck(id, actor->ai_target_ent)*/)
 		{
-			actor->ai_target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
+			
+			actor->ai_target_ent = GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
 			actor->atk_target = actor->ai_target_ent;
 		}
-
-		// If ally is null or deleted or dead
-		if (actor->ai_ally_ent == BUF_NULL || !block_entity.used[actor->ai_ally_ent]
-			|| !ENTITY(actor->ai_ally_ent)->state.properties.get(ActiveState::eALIVE))
-			actor->ai_ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
+		//// umm
+		//if (actor->ai_target_ent != BUF_NULL)
+		//{
+		//	if (!LOSCheck(id, actor->ai_target_ent))
+		//	{
+		//		int i = 0;
+		//	}
+		//}
+	updateally:
+		// If is null OR deleted OR dead
+		if (actor->ai_ally_ent == BUF_NULL
+			|| !block_entity.used[actor->ai_ally_ent]
+			|| !ENTITY(actor->ai_ally_ent)->state.properties.get(ActiveState::eALIVE)
+			|| !LOSCheck(id, actor->ai_ally_ent))
+			actor->ai_ally_ent = GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
 
 		if (actor->ai_target_ent == BUF_NULL)
 		{
@@ -546,6 +560,13 @@ namespace index
 				}
 	}
 
+	bool LOSCheck(btID enta, btID entb)
+	{
+		return env::LineTrace(
+			ENTITY(enta)->t.position.x, ENTITY(enta)->t.position.y,
+			ENTITY(entb)->t.position.x, ENTITY(entb)->t.position.y);
+	}
+
 	btID GetClosestPlayer(btID index)
 	{
 		btf32 check_distance_0 = m::Length(ENTITY(players[0])->t.position - ENTITY(index)->t.position);
@@ -633,29 +654,29 @@ namespace index
 		return current_closest;
 	}
 
-	btID GetClosestEntityWeighted(btID index, btf32 dist, fac::facalleg weight)
+	btID GetClosestEntityAllegLOS(btID index, btf32 dist, fac::facalleg allegiance)
 	{
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
+			// If used, not me, and is alive
 			if (block_entity.used[i] && i != index && ENTITY(i)->state.properties.get(ActiveState::eALIVE))
 			{
-				// Calculate the distance between this entity and the other
-				btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
-				// Weight
-				if (check_distance < dist)
+				// do I like THEM
+				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == allegiance)
 				{
-					if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == weight) // do I like THEM
+					btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
+					if (check_distance < closest_distance)
 					{
-						check_distance *= 0.5f;
+						// Linetrace environment to see if the character is visible
+						if (env::LineTrace(ENTITY(index)->t.position.x, ENTITY(index)->t.position.y,
+							               ENTITY(i)->t.position.x,     ENTITY(i)->t.position.y))
+						{
+							current_closest = i;
+							closest_distance = check_distance;
+						}
 					}
-				}
-				// Is this closer than the last one we looked at?
-				if (check_distance < closest_distance)
-				{
-					current_closest = i;
-					closest_distance = check_distance;
 				}
 			}
 		}
@@ -665,11 +686,13 @@ namespace index
 	btID GetClosestActivator(btID index)
 	{
 		btID id = BUF_NULL;
-		btf32 closestDist = 1.f;
-		// Iterate through all 9 closest cells
-		for (int x = ENTITY(index)->csi.c[eCELL_I].x - 1u; x < ENTITY(index)->csi.c[eCELL_I].x + 1u; x++)
+		btf32 closestDist = 2.f;
+		btf32 closest_angle = 20.f;
+
+		// Iterate through nearby cells
+		for (int x = ENTITY(index)->csi.c[eCELL_I].x - 3u; x < ENTITY(index)->csi.c[eCELL_I].x + 3u; x++)
 		{
-			for (int y = ENTITY(index)->csi.c[eCELL_I].y - 1u; y < ENTITY(index)->csi.c[eCELL_I].y + 1u; y++)
+			for (int y = ENTITY(index)->csi.c[eCELL_I].y - 3u; y < ENTITY(index)->csi.c[eCELL_I].y + 3u; y++)
 			{
 				// Iterate through every entity space in this cell
 				for (int e = 0; e <= cells[x][y].ents.end(); e++)
@@ -677,12 +700,19 @@ namespace index
 					//if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->Type() == Entity::eITEM)
 					if (cells[x][y].ents[e] != ID_NULL && cells[x][y].ents[e] != index && block_entity.used[cells[x][y].ents[e]])
 					{
-						m::Vector2 vec = ENTITY(index)->t.position - ENTITY(cells[x][y].ents[e])->t.position;
-						btf32 dist = m::Length(vec);
-						if (dist < closestDist)
+						btf32 check_distance = m::Length(ENTITY(cells[x][y].ents[e])->t.position - ENTITY(index)->t.position);
+						if (check_distance < closestDist)
 						{
-							closestDist = dist;
-							id = cells[x][y].ents[e];
+							m::Vector2 targetoffset = m::Normalize(ENTITY(cells[x][y].ents[e])->t.position - (ENTITY(index)->t.position));
+
+							m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
+
+							btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
+							if (abs(angdif) < closest_angle)
+							{
+								closest_angle = angdif;
+								id = cells[x][y].ents[e];
+							}
 						}
 					}
 				}
@@ -739,7 +769,7 @@ namespace index
 		CHARA(id)->t_skin = 1u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 6.f;
-		CHARA(id)->inventory.AddItem(0u);
+		CHARA(id)->inventory.AddItem(6u);
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)

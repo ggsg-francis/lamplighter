@@ -152,6 +152,9 @@
     <ClCompile Include="audio.cpp">
       <Filter>framework</Filter>
     </ClCompile>
+    <ClCompile Include="memory_c.c">
+      <Filter>framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="btype3d.rc">

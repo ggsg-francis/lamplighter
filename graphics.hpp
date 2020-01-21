@@ -87,11 +87,12 @@ namespace graphics
 	btui32 FrameSizeY();
 	void SetFrameSize(btui32 x, btui32 y);
 
+	// TODO: MOVE TO MATHS!!!
 	struct Matrix3x3
 	{
 		btf32 m[3][3];
 	};
-
+	// TODO: MOVE TO MATHS!!!
 	struct FRow4
 	{
 		btf32 e[4]; // Elements
@@ -102,14 +103,27 @@ namespace graphics
 		btf32& operator[](const bti32 index) { return e[index]; };
 		btf32 const& operator[](const bti32 index) const { return e[index]; };
 	};
+	// TODO: MOVE TO MATHS!!!
 	struct Matrix4x4
 	{
 		//FRow4 v[4]{ FRow4(1.f, 0.f, 0.f, 0.f), FRow4(0.f, 1.f, 0.f, 0.f), FRow4(0.f, 0.f, 1.f, 0.f), FRow4(0.f, 0.f, 0.f, 1.f) };
 		// Initialize with mirrored Z axis
 		FRow4 v[4]{ FRow4(1.f, 0.f, 0.f, 0.f), FRow4(0.f, 1.f, 0.f, 0.f), FRow4(-0.f, -0.f, -1.f, -0.f), FRow4(0.f, 0.f, 0.f, 1.f) };
+		void Initialize(bool FLIP = true)
+		{
+			v[0] = FRow4(1.f, 0.f, 0.f, 0.f);
+			v[1] = FRow4(0.f, 1.f, 0.f, 0.f);
+			if (FLIP)
+				v[2] = FRow4(-0.f, -0.f, -1.f, -0.f);
+			else
+				v[2] = FRow4(0.f, 0.f, 1.f, 0.f);
+			v[3] = FRow4(0.f, 0.f, 0.f, 1.f);
+		}
 		FRow4& operator[](const bti32 index) { return v[index]; };
 		FRow4 const& operator[](const bti32 index) const { return v[index]; };
 	};
+	// TODO: MOVE TO MATHS!!!
+	m::Vector3 operator*(const m::Vector3& VECTOR, const Matrix4x4& MATRIX);
 
 	// to do CLEAR THE RETURNS ON ALL OF THESE
 
@@ -123,6 +137,8 @@ namespace graphics
 	Matrix4x4 MatrixLookAt(Matrix4x4 const& MATRIX, m::Vector3 const& SOURCE_POINT, m::Vector3 const& TARGET_POINT, m::Vector3 const& UP_DIRECTION);
 	// Generate model location matrix
 	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR);
+	// Generate model location matrix
+	void MatrixTransformXFlip(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR);
 	// Generate model location and yaw matrix
 	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, btf32 YAW);
 	// Generate model location and yaw/pitch matrix
@@ -168,27 +184,138 @@ namespace graphics
 	class Shader
 	{
 	public:
-		unsigned int ID;
+		GLuint ID;
+		enum PIndex
+		{
+			matModel,
+			uiMatrixCount, // Deform shader
+			matModelA, // Deform shader
+			matModelB, // Deform shader
+			matModelC, // Deform shader
+			matModelD, // Deform shader
+			matProject,
+			matView,
+			fBlendState, // Blend shader
+			fWindowX, // Screen shader
+			fWindowY, // Screen shader
+			fTime,
+			matLightProj,
+			vecPCam,
+			vecVSun,
+			matTransform, // GUI shader
+			fLit_TEMP,
+			texShadowMap,
+			texLightMap,
+			texSkyMap,
+			texTerrain1, // Terrain shader
+			texTerrain2, // Terrain shader
+			texTerrain3, // Terrain shader
+			texTerrain4, // Terrain shader
+			LOCATION_COUNT,
+		};
+	private:
+		// This stuff all takes up memory, so it will get duplicated with every shader
+		// TODO: move it all into a single 'graphics struct'
+		const char* names[LOCATION_COUNT]
+		{
+			"matm",
+			"mc",
+			"matma",
+			"matmb",
+			"matmc",
+			"matmd",
+			"matp",
+			"matv",
+			"blendState",
+			"wx",
+			"wy",
+			"ft",
+			"lightProj",
+			"pcam",
+			"vsun",
+			"transform",
+			"lit",
+			"tshadow",
+			"tlm",
+			"ts",
+			"tt1",
+			"tt2",
+			"tt3",
+			"tt4",
+		};
+	public:
+		// To ensure that there is no conflic with texture locations
+		enum TIndex : GLint
+		{
+			TXTR_DIFFUSE0,
+			TXTR_LIGHTMAP,
+			TXTR_SKY,
+			TXTR_UNKN_3, // Doesnt seem to be used for anything
+			TXTR_UNKN_4, // Doesnt seem to be used for anything
+			TXTR_SHADOWMAP,
+			TXTR_TERRAIN1,
+			TXTR_TERRAIN2,
+			TXTR_TERRAIN3,
+			TXTR_TERRAIN4,
+		};
+	private:
+		const GLenum temp[32u]
+		{
+			GL_TEXTURE0,
+			GL_TEXTURE1,
+			GL_TEXTURE2,
+			GL_TEXTURE3,
+			GL_TEXTURE4,
+			GL_TEXTURE5,
+			GL_TEXTURE6,
+			GL_TEXTURE7,
+			GL_TEXTURE8,
+			GL_TEXTURE9,
+			GL_TEXTURE10,
+			GL_TEXTURE11,
+			GL_TEXTURE12,
+			GL_TEXTURE13,
+			GL_TEXTURE14,
+			GL_TEXTURE15,
+			GL_TEXTURE16,
+			GL_TEXTURE17,
+			GL_TEXTURE18,
+			GL_TEXTURE19,
+			GL_TEXTURE20,
+			GL_TEXTURE21,
+			GL_TEXTURE22,
+			GL_TEXTURE23,
+			GL_TEXTURE24,
+			GL_TEXTURE25,
+			GL_TEXTURE26,
+			GL_TEXTURE27,
+			GL_TEXTURE28,
+			GL_TEXTURE29,
+			GL_TEXTURE30,
+			GL_TEXTURE31,
+		};
+		GLint location[LOCATION_COUNT];
+	public:
 		Shader();
 		// constructor generates the shader on the fly
-		Shader(const char*, const char*, const char* = nullptr);
+		void Init(const char*, const char*, const char* = nullptr);
 		// Set this shader as current for rendering
 		void Use();
 		// Utility uniform functions
-		void SetBool(const std::string &name, bool value) const;
-		void SetInt(const std::string &name, int value) const;
-		void SetUint(const std::string &name, unsigned int value) const;
-		void SetFloat(const std::string &name, float value) const;
+		void SetBool(const PIndex index, bool value) const;
+		void SetInt(const PIndex index, int value) const;
+		void SetUint(const PIndex index, unsigned int value) const;
+		void SetFloat(const PIndex index, float value) const;
 		void setVec2(const std::string &name, const glm::vec2 &value) const;
 		void setVec2(const std::string &name, float x, float y) const;
-		void setVec3(const std::string &name, const glm::vec3 &value) const;
-		void setVec3(const std::string &name, float x, float y, float z) const;
+		void setVec3(const PIndex index, const glm::vec3 &value) const;
+		void setVec3(const PIndex index, float x, float y, float z) const;
 		void setVec4(const std::string &name, const glm::vec4 &value) const;
 		void setVec4(const std::string &name, float x, float y, float z, float w);
 		void setMat2(const std::string &name, const glm::mat2 &mat) const;
 		void setMat3(const std::string &name, const glm::mat3 &mat) const;
-		void setMat4(const std::string &name, const glm::mat4 &mat) const;
-		void setMat4(const std::string &name, const Matrix4x4 &mat) const;
+		void setMat4(const PIndex index, const Matrix4x4 &mat) const;
+		void SetTexture(const PIndex index, GLuint texture, TIndex textureIndex);
 	private:
 		// Utility function for checking shader compilation/linking errors
 		void CheckCompileErrors(GLuint shader, std::string type);
@@ -202,7 +329,6 @@ namespace graphics
 		S_SOLID_BLEND_CHARA, // Used for drawing blended meshes
 		S_SOLID_DEFORM, // Used for drawing deformed meshes
 		S_MEAT,
-		S_SKY, // Used for drawing... the sky
 		S_GUI, // GUI shader
 		S_POST, // Framebuffer postprocessing shader
 
@@ -280,20 +406,29 @@ namespace graphics
 	class Mesh
 	{
 	public:
-		GLuint glID;
 		GLuint vao; // Vertex Array Object
 		void Draw(unsigned int TEXTURE, unsigned int SHADER);
-		void LoadFile(char* FILENAME);
-		// add void unload?
+		void LoadFile(char* FILENAME, bool CLEARMEM);
+		void Unload();
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
+		Vertex* vces; // Vertices
+		btui32* ices; // Indices
+		size_t vces_size;
+		size_t ices_size;
+	public:
+		// Probably all temporary
+		Vertex* Vces() { return vces; };
+		btui32* Ices() { return ices; };
+		size_t VcesSize() { return vces_size; };
+		size_t IcesSize() { return ices_size; };
 	};
 
 	class MeshBlend
 	{
 	public:
-		GLuint glID;
+		size_t ices_size;
 		GLuint vao; // Vertex Array Object
 		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void LoadFile(char* FILENAME);
@@ -306,7 +441,7 @@ namespace graphics
 	class MeshDeform
 	{
 	public:
-		GLuint glID;
+		size_t ices_size;
 		GLuint vao; // Vertex Array Object
 		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void LoadFile(char* FILENAME);
@@ -314,6 +449,47 @@ namespace graphics
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
+	};
+
+	// Multiple meshes combine powers to become one megamesh
+	class CompositeMesh
+	{
+	public:
+		GLuint vao; // Vertex Array Object
+		CompositeMesh();
+		~CompositeMesh();
+		void Draw(unsigned int TEXTURE, unsigned int SHADER);
+		void AddMesh(Mesh* MESH, Matrix4x4 position);
+		void AddMesh(Mesh* MESH, m::Vector3 position);
+		// todo: remove me
+		void AddTerrainTile(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE]);
+		void ReBindGL();
+		// add void unload?
+	private:
+		GLuint vbo; // Vertex Buffer Object
+		GLuint ebo; // Element Buffer Object
+		Vertex* vces; // Vertices
+		btui32* ices; // Indices
+		size_t vces_size;
+		size_t ices_size;
+	};
+
+	// Like a composite mesh but uses a different vertex type
+	class MeshTerrain
+	{
+	public:
+		GLuint vao; // Vertex Array Object
+		void Draw();
+		void GenerateFromHMap(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE], btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]);
+		void ReBindGL();
+		// add void unload?
+	private:
+		GLuint vbo; // Vertex Buffer Object
+		GLuint ebo; // Element Buffer Object
+		VertexTerrain* vces; // Vertices
+		btui32* ices; // Indices
+		size_t vces_size;
+		size_t ices_size;
 	};
 
 	class GUIBitmap
@@ -401,3 +577,23 @@ namespace graphics
 		int lines = 1;
 	};
 }
+
+enum ShaderStyle
+{
+	SS_NORMAL,
+	SS_CHARA,
+};
+
+void DrawMesh(btID ID, graphics::Mesh& MESH,
+	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+
+void DrawCompositeMesh(btID ID, graphics::CompositeMesh& MESH,
+	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+
+void DrawBlendMesh(btID ID, graphics::MeshBlend& MODEL, btf32 BLENDSTATE,
+	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+
+void DrawMeshDeform(btID ID, graphics::MeshDeform& MODEL,
+	graphics::TextureBase TEXTURE, ShaderStyle SHADER, btui32 MATRIX_COUNT,
+	graphics::Matrix4x4 MATRIX_A, graphics::Matrix4x4 MATRIX_B,
+	graphics::Matrix4x4 MATRIX_C, graphics::Matrix4x4 MATRIX_D);

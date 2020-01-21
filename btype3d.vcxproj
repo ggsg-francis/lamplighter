@@ -98,7 +98,7 @@
       <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;_CRTDBG_MAP_ALLOC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <ForcedIncludeFiles>global.h;stdlib.h;crtdbg.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>..\libraries\bin</AdditionalLibraryDirectories>
@@ -145,6 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="memory_c.c" />
     <ClCompile Include="network_client.cpp" />
     <ClCompile Include="audio.cpp" />
     <ClCompile Include="cfg.cpp" />

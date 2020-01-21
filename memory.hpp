@@ -44,7 +44,7 @@ namespace mem
 				{
 					for (btui32 iElement = 0u; iElement < CHUNK_SIZE; ++iChunk)
 						// If this space is used, call it's destructor
-						if (mem::bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement))
+						if (bvget<CHUNK_BITVEC>(chunks[iChunk]->buffer_used, (CHUNK_BITVEC)(1ui32 << iElement)))
 							chunks[iChunk]->buffer[iElement].~type();
 					// Delete the chunk
 					delete (void*)chunks[iChunk];
@@ -59,9 +59,9 @@ namespace mem
 				// If this chunk is not created, create it
 				if (chunks[iChunk] == nullptr) chunks[iChunk] = new Chunk<type>;
 				// If this space is free, copy what we created into it
-				if (!mem::bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement))
+				if (!bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement))
 				{
-					mem::bvset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+					bvset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
 					chunks[iChunk]->buffer[iElement] = *element;
 					delete (void*)element;
 					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
@@ -77,7 +77,7 @@ namespace mem
 			{
 				btui32 iChunk = index / CHUNK_SIZE;
 				btui32 iElement = index - iChunk * CHUNK_SIZE;
-				mem::bvunset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+				bvunset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
 				chunks[iChunk]->buffer[iElement].~type();
 				if (index == index_end && index > 0u)
 				{
@@ -93,7 +93,7 @@ namespace mem
 			btui32 iChunk = index / CHUNK_SIZE;
 			btui32 iElement = index - iChunk * CHUNK_SIZE;
 			if (chunks[iChunk] != nullptr)
-				return mem::bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+				return bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement);
 			else return false;
 		}
 		btui32 Size() { return index_end + 1ui32; }
