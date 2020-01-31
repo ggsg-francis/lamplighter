@@ -9,6 +9,22 @@
 #define DEFAULT_MESHBLEND 2u
 #define DEFAULT_MESHDEFORM 3u
 
+// test definitions (this is still really not necessary for C, enums still work)
+/*
+#define ITEM_TYPE_ROOT         0u
+#define ITEM_TYPE_EQUIP        1u
+#define ITEM_TYPE_WPN_MELEE    2u
+#define ITEM_TYPE_WPN_MATCHGUN 3u
+#define ITEM_TYPE_WPN_MAGIC    4u
+#define ITEM_TYPE_CONS         5u
+
+#define ASSET_TYPE_NONE            0u
+#define ASSET_TYPE_TEXTURE_FILE    1u
+#define ASSET_TYPE_MESH_FILE       2u
+#define ASSET_TYPE_MESHBLEND_FILE  3u
+#define ASSET_TYPE_MESHDEFORM_FILE 4u
+*/
+
 typedef btui16 assetID;
 
 namespace res
@@ -124,7 +140,7 @@ namespace acv
 
 	namespace types
 	{
-		enum ItemType : btui8
+		/*enum ItemType : btui8
 		{
 			ITEM_ROOT,
 			ITEM_EQUIP,
@@ -140,7 +156,7 @@ namespace acv
 			ASSET_MESH_FILE,
 			ASSET_MESHBLEND_FILE,
 			ASSET_MESHDEFORM_FILE,
-		};
+		};*/
 	}
 
 	struct item
@@ -196,14 +212,14 @@ namespace acv
 	{
 		char handle[8];
 		char filename[FN_SIZE];
-		types::AssetType type = types::ASSET_NONE;
+		AssetType type = ASSET_NONE;
 		bool loaded;
 		void* asset = nullptr;
 	};
 
 	//items (also make inaccessable)
 	extern item* items[ITEMS_COUNT];
-	extern types::ItemType item_types[ITEMS_COUNT];
+	extern ItemType item_types[ITEMS_COUNT];
 	extern btui32 item_index; // number of items, I think
 
 	extern EnvProp props[PROPS_COUNT];

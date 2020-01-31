@@ -22,6 +22,7 @@ namespace m
 // Base item instance
 struct HeldItem
 {
+	btID item_template = ID_NULL;
 	Transform3D t_item;
 	virtual void Tick(Actor* owner);
 	virtual void Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);

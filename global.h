@@ -9,7 +9,7 @@
 //#define DEF_MULTISAMPLE
 #define DEF_MULTISAMPLE_DEPTH 4
 #define DEF_HDR
-//#define DEF_LINEAR_FB
+#define DEF_LINEAR_FB
 //#define DEF_DRAW_WIREFRAME
 
 // Any debug only defines
@@ -33,8 +33,8 @@
 #define WORLD_BYTE_DEPTH 16
 #define WORLD_BIT_DEPTH WORLD_BYTE_DEPTH * 8
 
-//#define SCREEN_UPSCALE_THRESHOLD 1280u
-#define SCREEN_UPSCALE_THRESHOLD 2048u
+#define SCREEN_UPSCALE_THRESHOLD 1280u
+//#define SCREEN_UPSCALE_THRESHOLD 2048u
 
 #define LIGHT_FAR 256.f
 #define LIGHT_HALF 128.f
@@ -42,8 +42,7 @@
 
 // Program Version
 #define VERSION_MAJOR 0u
-#define VERSION_MINOR 15u
-#define VERSION_BUILD 2u
+#include "version.h"
 #define VERSION_SERVER_MAJOR 0u
 #define VERSION_SERVER_MINOR 14u
 #define VERSION_COMMENT "Raycast"
@@ -58,6 +57,9 @@
 #define BUF_PLAYER_ALLOC 128
 //#define ID_NULL 65535
 #define ID_NULL 0b1111111111111111
+
+#define INV_SIZE 256
+#define INV_NULL 256 // ????
 
 // Time to pass in seconds before one single tick
 #define FRAME_TIME 1. / 30.
@@ -91,6 +93,47 @@ extern "C" {
 	#else
 	#error Using different c++ version than written for, please review! (global.h) 
 	#endif
+
+	typedef btui8 EntityType;
+	#define ENTITY_TYPE_EDITOR_PAWN 7ui8
+	#define ENTITY_TYPE_RESTING_ITEM 8ui8
+	#define ENTITY_TYPE_CHARA 9ui8
+
+	typedef btui8 ItemType;
+	#define ITEM_ROOT 1ui8
+	#define ITEM_EQUIP 2ui8
+	#define ITEM_WPN_MELEE 3ui8
+	#define ITEM_WPN_MATCHGUN 4ui8
+	#define ITEM_WPN_MAGIC 5ui8
+	#define ITEM_CONS 6ui8
+	///*
+	typedef btui8 AssetType;
+	#define ASSET_NONE 0ui8
+	#define ASSET_TEXTURE_FILE 1ui8
+	#define ASSET_MESH_FILE 2ui8
+	#define ASSET_MESHBLEND_FILE 3ui8
+	#define ASSET_MESHDEFORM_FILE 4ui8
+	//*/
+
+	/*
+	enum ItemType : btui8
+	{
+		ITEM_ROOT,
+		ITEM_EQUIP,
+		ITEM_WPN_MELEE,
+		ITEM_WPN_MATCHGUN,
+		ITEM_WPN_MAGIC,
+		ITEM_CONS,
+	};
+	enum AssetType : btui8
+	{
+		ASSET_NONE,
+		ASSET_TEXTURE_FILE,
+		ASSET_MESH_FILE,
+		ASSET_MESHBLEND_FILE,
+		ASSET_MESHDEFORM_FILE,
+	};
+	//*/
 
 	#ifdef __cplusplus
 }

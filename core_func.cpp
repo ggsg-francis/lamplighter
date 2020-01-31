@@ -12,11 +12,6 @@ namespace index
 			return nullptr;
 	}
 
-	#define CHARA(a) ((Chara*)_entities[a])
-	#define ACTOR(a) ((Actor*)_entities[a])
-	#define ENTITY(a) ((Entity*)_entities[a])
-	#define ITEM(a) ((EItem*)_entities[a])
-
 	#define HEAD_TURN_SPEED 8.f
 
 	void ActorRunAI(btID id)
@@ -383,8 +378,6 @@ namespace index
 		overlapE = offsetx > 0;
 		overlapW = offsetx < 0;
 
-		ent->freeTurn = true;
-
 		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eSurfN) && overlapN) // N
 		{
 			ent->t.position.y = ent->csi.c[eCELL_I].y; // + (1 - radius)
@@ -408,23 +401,6 @@ namespace index
 			ent->t.position.x = ent->csi.c[eCELL_I].x; // - (1 - radius)
 			ent->t.velocity.x = 0.f;
 			touchEW = true;
-		}
-
-		if (touchNS && !touchEW) // Touching north or south wall
-		{
-			if (rot < 180.f)
-				ent->yaw.RotateTowards(90.f, rotdeg);
-			else
-				ent->yaw.RotateTowards(270.f, rotdeg);
-			ent->freeTurn = false;
-		}
-		else if (touchEW && !touchNS) // Touching east or west wall
-		{
-			if (rot > 90.f && rot < 270.f)
-				ent->yaw.RotateTowards(180.f, rotdeg);
-			else
-				ent->yaw.RotateTowards(0.f, rotdeg);
-			ent->freeTurn = false;
 		}
 
 		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eCorOutNE) && overlapN && overlapE) // NE
@@ -721,6 +697,78 @@ namespace index
 		return id;
 	}
 
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	//--------------------------- PREFABS --------------------------------------------------------------------------------------------
+	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+	void InitializeNewEntity(btID id, EntityType type)
+	{
+		//if (block_entity.used[id])
+			//delete ENTITY(id);
+
+		switch (type)
+		{
+		case ENTITY_TYPE_EDITOR_PAWN:
+			_entities[id] = new EditorPawn();
+			break;
+		case ENTITY_TYPE_RESTING_ITEM:
+			_entities[id] = new EItem();
+			break;
+		case ENTITY_TYPE_CHARA:
+			_entities[id] = new Chara();
+			break;
+		default:
+			//error
+			break;
+		}
+
+		//free((void*)_entities[id]);
+
+		//switch (type)
+		//{
+		//case ENTITY_TYPE_EDITOR_PAWN:
+		//	_entities[id] = malloc(sizeof(EditorPawn));
+		//	break;
+		//case ENTITY_TYPE_RESTING_ITEM:
+		//	_entities[id] = malloc(sizeof(EItem));
+		//	break;
+		//case ENTITY_TYPE_CHARA:
+		//	_entities[id] = malloc(sizeof(Chara));
+		//	break;
+		//default:
+		//	//error
+		//	break;
+		//}
+	}
+	void InitializeNewItem(btID id, ItemType type)
+	{
+		if (block_item.used[id])
+			delete items[id];
+
+		switch (type)
+		{
+		case ITEM_EQUIP:
+			items[id] = new HeldItem;
+			break;
+		case ITEM_WPN_MELEE:
+			items[id] = new HeldMel;
+			break;
+		case ITEM_WPN_MATCHGUN:
+			items[id] = new HeldGun;
+			//heldInstance = new HeldGunMatchLock;
+			break;
+		case ITEM_WPN_MAGIC:
+			items[id] = new HeldMgc;
+			break;
+		case ITEM_CONS:
+			items[id] = new HeldItem;
+			break;
+		default:
+			items[id] = new HeldItem;
+			break;
+		}
+	}
+
 	inline void spawn_setup_t(btID index, m::Vector2 pos, btf32 dir)
 	{
 		ePos = pos;
@@ -729,10 +777,6 @@ namespace index
 		env::GetHeight(eHgt, eCSI);
 		AddEntityCell(eCSI.c[eCELL_I].x, eCSI.c[eCELL_I].y, index);
 	}
-
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	//--------------------------- PREFABS --------------------------------------------------------------------------------------------
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	namespace prefab
 	{
@@ -748,7 +792,7 @@ namespace index
 
 	void prefab_pc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		ENTITY(id) = new Chara();
+		InitializeNewEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
@@ -756,12 +800,12 @@ namespace index
 		CHARA(id)->t_skin = 0u;
 		CHARA(id)->aiControlled = false;
 		CHARA(id)->speed = 4.f;
-		CHARA(id)->inventory.AddItem(6u);
+		CHARA(id)->inventory.AddNew(6u);
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		ENTITY(id) = new Chara();
+		InitializeNewEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::player;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
@@ -769,12 +813,12 @@ namespace index
 		CHARA(id)->t_skin = 1u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 6.f;
-		CHARA(id)->inventory.AddItem(6u);
+		CHARA(id)->inventory.AddNew(6u);
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		ENTITY(id) = new Chara();
+		InitializeNewEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
@@ -782,12 +826,12 @@ namespace index
 		CHARA(id)->t_skin = 2u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 5.f;
-		CHARA(id)->inventory.AddItem(0u);
+		CHARA(id)->inventory.AddNew(0u);
 	}
 
 	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)
 	{
-		ENTITY(id) = new Chara();
+		InitializeNewEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::undead;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
@@ -795,12 +839,12 @@ namespace index
 		CHARA(id)->t_skin = 3u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 1.f;
-		CHARA(id)->inventory.AddItem(4u);
+		CHARA(id)->inventory.AddNew(4u);
 	}
 
 	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)
 	{
-		ENTITY(id) = new EditorPawn();
+		InitializeNewEntity(id, ENTITY_TYPE_EDITOR_PAWN);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
@@ -812,18 +856,12 @@ namespace index
 
 	void(*PrefabEntity[])(btID, m::Vector2, btf32) = { prefab_pc, prefab_aipc, prefab_npc, prefab_zombie, prefab_editorpawn };
 
-	// THESE FUNCTION DECLARATIONS ARE KEPT HERE TEMPORARILY
-
-	// Creates an Entity instance, adds it to the index and allocates it an ID
-	btID SpawnEntity(prefab::prefabtype TYPE, m::Vector2 pos, float dir);
-	// Removes a given Entity from the index
-	void DestroyEntity(btID ID);
-
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- CELL STUFF -----------------------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-	enum gcg_dir : btui8 { eN = 1u, eE = 2u };
+	#define eN 1ui8
+	#define eE 2ui8
 
 	// Order is always: This -> X -> Y -> Diagonal
 
@@ -882,4 +920,7 @@ namespace index
 
 		GetCellNeighbors[dir](cs.c[eCELL_I].x, cs.c[eCELL_I].y, cs.c); // Get cell group from direction
 	}
+
+	#undef eN
+	#undef eE
 }

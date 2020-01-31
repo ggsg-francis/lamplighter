@@ -4,6 +4,8 @@
 #include "3rdparty/cute_c2.h"
 
 #include "objects.h"
+#include "objects_items.h"
+#include "memoryC.h"
 
 struct Index
 {
@@ -54,40 +56,16 @@ namespace index
 
 	//block of IDs in memory, tracks the numbers and IDs of any type of object
 	mem::objbuf block_entity; // Entity buffer
-	Entity* _entities[BUF_SIZE]; // Character buffer
+	void* _entities[BUF_SIZE];
 
-	/*
-	mem::objbuf_caterpillar block_proj; // Projectile buffer
-	// Projectile variables
-	#define PROJ_TRAIL_NUM 32
-	struct Proj
-	{
-		Transform2D t;
-		btf64 ttd = 0.f;
-		fac::faction faction = fac::none;
-		graphics::Matrix4x4 smokePoints[PROJ_TRAIL_NUM];
-		btf32 smokePointTime[PROJ_TRAIL_NUM] { 0.f };
-		btui8 smokePointIndex = 0ui8;
-		btf32 distance_travelled = 0.f;
-	};
-	Proj proj[BUF_SIZE];
-	*/
-
-	/*
-	mem::objbuf_caterpillar block_effect; // Effect buffer
-	// Effect variables
-	struct Effect
-	{
-		Transform2D t;
-		btf64 time2;
-	};
-	Effect effects[BUF_SIZE];
-	*/
+	ObjBuf block_item; // Item buffer
+	HeldItem* items[BUF_SIZE];
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- DEFINES FOR 'EASY ACCESS' ;3 ---------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
+	// TODO: fuck this honestly
 	namespace def
 	{
 		btui8 index = 0ui8; // waste of a byte
@@ -96,7 +74,7 @@ namespace index
 		#define eCSI ((Entity*)_entities[index])->csi
 		#define ePos ((Entity*)_entities[index])->t.position
 		#define eHgt ((Entity*)_entities[index])->t.height
-		#define eYaw2 ((Entity*)_entities[index])->yaw
+		#define eYaw2 ((Entity*)_entities[index])->t.yaw
 
 		#define accel 0.025f // Accelleration speed (now not relevant due to animation based motion)
 		#define rotdeg 4.f // Rotation in degrees per frame when we hit a wall

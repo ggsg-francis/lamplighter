@@ -11,45 +11,45 @@ namespace res
 {
 	graphics::Texture& GetT(btui32 index)
 	{
-		if (acv::assets[index].type == acv::types::ASSET_TEXTURE_FILE)
+		if (index < acv::assetCount && acv::assets[index].type == ASSET_TEXTURE_FILE)
 			return *(graphics::Texture*)acv::assets[index].asset;
-		else return *(graphics::Texture*)acv::assets[DEFAULT_TEXTURE].asset;
+		return *(graphics::Texture*)acv::assets[DEFAULT_TEXTURE].asset;
 	}
 
 	graphics::Mesh& GetM(btui32 index)
 	{
-		if (acv::assets[index].type == acv::types::ASSET_MESH_FILE)
+		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESH_FILE)
 			return *(graphics::Mesh*)acv::assets[index].asset;
-		else return *(graphics::Mesh*)acv::assets[DEFAULT_MESH].asset;
+		return *(graphics::Mesh*)acv::assets[DEFAULT_MESH].asset;
 	}
 
 	graphics::MeshBlend& GetMB(btui32 index)
 	{
-		if (acv::assets[index].type == acv::types::ASSET_MESHBLEND_FILE)
+		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHBLEND_FILE)
 			return *(graphics::MeshBlend*)acv::assets[index].asset;
-		else return *(graphics::MeshBlend*)acv::assets[DEFAULT_MESHBLEND].asset;
+		return *(graphics::MeshBlend*)acv::assets[DEFAULT_MESHBLEND].asset;
 	}
 
 	graphics::MeshDeform& GetMD(btui32 index)
 	{
-		if (acv::assets[index].type == acv::types::ASSET_MESHDEFORM_FILE)
+		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHDEFORM_FILE)
 			return *(graphics::MeshDeform*)acv::assets[index].asset;
-		else return *(graphics::MeshDeform*)acv::assets[DEFAULT_MESHDEFORM].asset;
+		return *(graphics::MeshDeform*)acv::assets[DEFAULT_MESHDEFORM].asset;
 	}
 
 	bool IsTexture(btui32 index)
 	{
-		return acv::assets[index].type == acv::types::ASSET_TEXTURE_FILE;
+		return acv::assets[index].type == ASSET_TEXTURE_FILE;
 	}
 
 	bool IsMesh(btui32 index)
 	{
-		return acv::assets[index].type == acv::types::ASSET_MESH_FILE;
+		return acv::assets[index].type == ASSET_MESH_FILE;
 	}
 
 	bool IsMeshBlend(btui32 index)
 	{
-		return acv::assets[index].type == acv::types::ASSET_MESHBLEND_FILE;
+		return acv::assets[index].type == ASSET_MESHBLEND_FILE;
 	}
 
 	graphics::ModifiableTexture skin_t[4];
@@ -153,7 +153,7 @@ namespace acv
 {
 	//items
 	item* items[ITEMS_COUNT]{ nullptr };
-	types::ItemType item_types[ITEMS_COUNT];
+	ItemType item_types[ITEMS_COUNT];
 	btui32 item_index = 0;
 
 	EnvProp props[PROPS_COUNT];
@@ -173,22 +173,22 @@ namespace acv
 		{
 			switch (assets[i].type)
 			{
-			case types::ASSET_TEXTURE_FILE:
+			case ASSET_TEXTURE_FILE:
 				assets[i].asset = new graphics::Texture;
 				((graphics::Texture*)assets[i].asset)->LoadFile(assets[i].filename);
 				assets[i].loaded = true; 
 				return;
-			case types::ASSET_MESH_FILE:
+			case ASSET_MESH_FILE:
 				assets[i].asset = new graphics::Mesh;
 				((graphics::Mesh*)assets[i].asset)->LoadFile(assets[i].filename, false);
 				assets[i].loaded = true;
 				return;
-			case types::ASSET_MESHBLEND_FILE:
+			case ASSET_MESHBLEND_FILE:
 				assets[i].asset = new graphics::MeshBlend;
 				((graphics::MeshBlend*)assets[i].asset)->LoadFile(assets[i].filename);
 				assets[i].loaded = true;
 				return;
-			case types::ASSET_MESHDEFORM_FILE:
+			case ASSET_MESHDEFORM_FILE:
 				assets[i].asset = new graphics::MeshDeform;
 				((graphics::MeshDeform*)assets[i].asset)->LoadFile(assets[i].filename);
 				assets[i].loaded = true;
@@ -204,14 +204,14 @@ namespace acv
 		{
 			switch (assets[i].type)
 			{
-			case types::ASSET_TEXTURE_FILE:
+			case ASSET_TEXTURE_FILE:
 				return;
-			case types::ASSET_MESH_FILE:
+			case ASSET_MESH_FILE:
 				((graphics::Mesh*)assets[i].asset)->Unload();
 				return;
-			case types::ASSET_MESHBLEND_FILE:
+			case ASSET_MESHBLEND_FILE:
 				return;
-			case types::ASSET_MESHDEFORM_FILE:
+			case ASSET_MESHDEFORM_FILE:
 				return;
 			};
 			assets[i].loaded = false;

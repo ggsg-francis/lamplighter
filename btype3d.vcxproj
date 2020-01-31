@@ -145,7 +145,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="indexC.c" />
+    <ClCompile Include="core_save_load.cpp" />
+    <ClCompile Include="index.c" />
     <ClCompile Include="memoryC.c" />
     <ClCompile Include="network_client.cpp" />
     <ClCompile Include="audio.cpp" />
@@ -173,8 +174,9 @@
   <ItemGroup>
     <ClInclude Include="3rdparty\cute_c2.h" />
     <ClInclude Include="3rdparty\cute_sound.h" />
+    <ClInclude Include="core_save_load.h" />
     <ClInclude Include="graphics_structures.h" />
-    <ClInclude Include="indexC.h" />
+    <ClInclude Include="index.h" />
     <ClInclude Include="memoryC.h" />
     <ClInclude Include="network_client.h" />
     <ClInclude Include="network_common.h" />

@@ -151,7 +151,7 @@ namespace network
 
 			msg::ClientConnect msg;
 			msg.version_major = VERSION_MAJOR;
-			msg.version_minor = VERSION_MINOR;
+			msg.version_minor = VERSION_BUILD;
 			SendMsg(eCLIENT_CONNECT, &msg);
 		}
 

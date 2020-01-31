@@ -1,4 +1,4 @@
-bFullScreen=1
+bFullScreen=0
 bShowConsole=0
 bEditMode=0
 iIPA=127
@@ -6,8 +6,8 @@ iIPB=0
 iIPC=0
 iIPD=1
 sIPPORT=1111
-iWinX=1366
-iWinY=768
+iWinX=1300
+iWinY=700
 iRenX=640
 iRenY=480
 fCameraFOV=100

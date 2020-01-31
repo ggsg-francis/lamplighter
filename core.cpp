@@ -2,7 +2,9 @@
 #include "core_func.cpp"
 #include "weather.h"
 
-#include "indexC.h"
+#include "index.h"
+
+#include "core_save_load.h"
 
 unsigned int activePlayer = 0u;
 
@@ -30,11 +32,6 @@ namespace index
 	btID GetViewTargetID(btui32 player)
 	{
 		return viewtarget[player];
-	}
-
-	void* GetEntity(btID id)
-	{
-		return _entities[id];
 	}
 
 	void SetViewFocus(btID index)
@@ -227,7 +224,7 @@ namespace index
 		char buffer2[4];
 		//char buffer3[4];
 		_itoa(VERSION_MAJOR, buffer, 10);
-		_itoa(VERSION_MINOR, buffer2, 10);
+		_itoa(VERSION_BUILD, buffer2, 10);
 		//_itoa(VERSION_BUILD, buffer3, 10);
 		strcat(buffinal, buffer);
 		strcat(buffinal, "-");
@@ -289,11 +286,11 @@ namespace index
 		//CHARA(players[1])->t_skin = 1u;
 		//CHARA(players[1])->faction = fac::playerhunter;
 
-		SpawnItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
-		SpawnItem(4ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
-		SpawnItem(1ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
-		SpawnItem(2ui16, m::Vector2(1025.8f, 1024.f), 15.f);
-		SpawnItem(3ui16, m::Vector2(1026.8f, 1026.f), 15.f);
+		SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
+		SpawnNewEntityItem(4ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
+		SpawnNewEntityItem(1ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
+		SpawnNewEntityItem(2ui16, m::Vector2(1025.8f, 1024.f), 15.f);
+		SpawnNewEntityItem(3ui16, m::Vector2(1026.8f, 1026.f), 15.f);
 
 		if (!cfg::bEditMode)
 		{
@@ -343,14 +340,21 @@ namespace index
 		graphics::SetMatProj(); // does not need to be continually called
 		UpdateGlobalShaderParams();
 	}
-	//destroy all data
 	void End()
+	{
+		ClearBuffers();
+	}
+
+	//destroy all data
+	void ClearBuffers()
 	{
 		for (int i = 0; i < BUF_SIZE; i++)
 			//for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			if (block_entity.used[i])
 				DestroyEntity(i);
+			if (block_item.used[i])
+				DestroyItem(i);
 		}
 	}
 
@@ -462,6 +466,18 @@ namespace index
 					--env::eCells[GetCellX][GetCellY].height;
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells[GetCellX][GetCellY].height);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
+			}
+		}
+		else
+		{
+			if (input::GetHit(input::key::FUNCTION_5)) // SAVE
+			{
+				SaveState();
+			}
+			else if (input::GetHit(input::key::FUNCTION_9)) // LOAD
+			{
+				if (SaveExists())
+					LoadState();
 			}
 		}
 	}
@@ -762,7 +778,7 @@ namespace index
 				text_temp.ReGen(ENTITY(viewtarget[activePlayer])->GetDisplayName(), textboxX, textboxX + 512, textboxY);
 				guibox.ReGen(textboxX, textboxX + text_temp.sizex, textboxY - text_temp.sizey, textboxY, 4, 10);
 			}
-			if (ENTITY(viewtarget[activePlayer])->IsActor())
+				if (ENTITY(viewtarget[activePlayer])->IsActor())
 				graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(index::GetHP(viewtarget[activePlayer]) * 64.f), 16);
 			guibox.Draw(&res::GetT(res::t_gui_box));
 			text_temp.Draw(&res::GetT(res::t_gui_font));
@@ -832,27 +848,40 @@ namespace index
 		IndexDestroyProjectileC(id);
 	}
 
-	btID SpawnItem(btID itemid, m::Vector2 pos, btf32 dir)
+	btID SpawnNewEntityItem(btID item_template, m::Vector2 pos, btf32 dir)
 	{
 		btID id = block_entity.add();
 
-		ENTITY(id) = new EItem();
+		InitializeNewEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
-		ITEM(id)->itemid = itemid;
+		ITEM(id)->item_instance = SpawnItem(item_template);
+
+		return id;
+	}
+	btID SpawnEntityItem(btID itemid, m::Vector2 pos, btf32 dir)
+	{
+		btID id = block_entity.add();
+
+		InitializeNewEntity(id, ENTITY_TYPE_RESTING_ITEM);
+		spawn_setup_t(id, pos, dir);
+		ENTITY(id)->faction = fac::faction::none;
+		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
+		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ITEM(id)->item_instance = itemid;
 
 		return id;
 	}
 
-	btID SpawnEntity(prefab::prefabtype type, m::Vector2 pos, float dir)
+	btID SpawnEntity(btui8 type, m::Vector2 pos, float dir)
 	{
+	//prefab::prefabtype
 		btID id = block_entity.add();
 		PrefabEntity[type](id, pos, dir);
 		return id;
 	}
-
 	void DestroyEntity(btID id)
 	{
 		RemoveAllReferences(id);
@@ -860,10 +889,33 @@ namespace index
 		block_entity.remove(id);
 		std::cout << "Destroyed entity " << id << std::endl;
 	}
+	void* GetEntity(btID id)
+	{
+		return _entities[id];
+	}
+
+	btID SpawnItem(btID item_template)
+	{
+		btID id = ObjBuf_add(&block_item);
+		InitializeNewItem(id, acv::item_types[item_template]);
+		items[id]->item_template = item_template;
+		std::cout << "Created item " << id << std::endl;
+		return id;
+	}
+	void DestroyItem(btID id)
+	{
+		delete items[id];
+		ObjBuf_remove(&block_item, id); 
+		std::cout << "Destroyed item " << id << std::endl;
+	}
+	HeldItem* GetItem(btID id)
+	{
+		return items[id];
+	}
 
 	void ActorCastProj(btID i)
 	{
-		SpawnProjectile(ENTITY(i)->faction, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->yaw.Rad()) * 0.55f), ENTITY(i)->t.height, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
+		SpawnProjectile(ENTITY(i)->faction, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->t.yaw.Rad()) * 0.55f), ENTITY(i)->t.height, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
 	}
 
 	int cater_loop_index(int i)

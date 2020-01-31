@@ -187,7 +187,7 @@ void HeldGun::Tick(Actor* owner)
 
 			Entity* target = (Entity*)index::GetEntity(owner->atk_target);
 			//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
-			m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f)));
+			m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
 			m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(t_item.GetPosition().x, t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - t_item.GetPosition().y);
 			btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 			btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
@@ -277,15 +277,15 @@ void HeldGun::Tick(Actor* owner)
 
 				Entity* target = (Entity*)index::GetEntity(owner->atk_target);
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
-				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f)));
+				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
 				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(t_item.GetPosition().x, t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - t_item.GetPosition().y);
 				btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
-				index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
+				index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
 			}
 			else
 			{
-				index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+				index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 			}
 		}
 	}
@@ -553,7 +553,7 @@ void HeldGunMatchLock::Tick(Actor* owner)
 
 				Entity* target = (Entity*)index::GetEntity(owner->atk_target);
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
-				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f)));
+				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
 				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(t_item.GetPosition().x, t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - t_item.GetPosition().y);
 				btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));

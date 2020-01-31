@@ -32,13 +32,46 @@ inline void bvunset(btui32& flags, btui32 modflag)
 	flags &= ~modflag;
 }*/
 
+#define BUF_IMPL_C \
+btID BUF_NAME_INI(BUF_NAME* const buf) {\
+ for (btui32 i = 0u; i < BUF_NMBR; ++i)\
+  buf->used[i] = false;\
+ buf->index_end = 0u; buf->size = buf->index_end + 1u; }\
+btID BUF_NAME_ADD(BUF_NAME* const buf, BUF_TYPE add) {\
+ for (btID i = 0; i < BUF_NMBR; i++) {\
+  if (!buf->used[i]) {\
+   buf->used[i] = true; buf->buffer[i] = add;\
+   if (i > buf->index_end) buf->index_end = i;\
+   return i;\
+ }} return BUF_NULL; }\
+void BUF_NAME_RMV(BUF_NAME* const buf, btID i) {\
+ buf->used[i] = false;\
+ if (i == buf->index_end) {\
+  --buf->index_end;\
+  while (!buf->used[buf->index_end]) --buf->index_end; }}
+
+#define BUF_NAME Buf64ID
+#define BUF_NAME_INI Buf64_ini
+#define BUF_NAME_ADD Buf64_add
+#define BUF_NAME_RMV Buf64_rmv
+#define BUF_TYPE btID
+#define BUF_NMBR 64u
+
+BUF_IMPL_C
+
+#undef BUF_NAME
+#undef BUF_NAME_INI
+#undef BUF_NAME_ADD
+#undef BUF_NAME_RMV
+#undef BUF_TYPE
+#undef BUF_NMBR
+
 btID ObjBuf_init(ObjBuf* const buf)
 {
 	for (btui32 i = 0u; i < BUF_SIZE; ++i)
 		buf->used[i] = false;
 	buf->index_end = 0u;
 }
-
 btID ObjBuf_add(ObjBuf* const buf)
 {
 	for (btID i = 0; i < BUF_SIZE; i++) // For every space in the buffer
@@ -52,7 +85,6 @@ btID ObjBuf_add(ObjBuf* const buf)
 	}
 	return BUF_NULL;
 }
-
 void ObjBuf_remove(ObjBuf* const buf, btID i)
 {
 	buf->used[i] = false;
@@ -70,7 +102,6 @@ btID ObjBufCP_init(ObjBufCP* const buf)
 	buf->index_first = 0u;
 	buf->index_last = 0u;
 }
-
 btID ObjBufCP_add(ObjBufCP* const buf)
 {
 	buf->used[buf->index_last] = true; // Index is taken
@@ -80,7 +111,6 @@ btID ObjBufCP_add(ObjBufCP* const buf)
 		buf->index_last = 0; // Wrap around
 	return index; // Return added ID
 }
-
 // i was focused on when 0 was removed, when really i should have noticed how 511 was the last removed
 // ^ what in the shit hell was this in reference to, idiot?
 void ObjBufCP_remove(ObjBufCP* const buf, btID i)

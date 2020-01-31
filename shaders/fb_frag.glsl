@@ -60,13 +60,13 @@ void main()
     //FragColor = texture(screenTexture, TexCoords);
 	
 	// blur part
-	/*
+	///*
 	//sample diffuse colour
     vec3 sampleTex[9];
 
 	// 0.9 is like PS 0.5px blur
-	float ofsx = 1.0f / wx;
-	float ofsy = 1.0f / wy;
+	float ofsx = 1.f / wx;
+	float ofsy = 1.f / wy;
 	
 	sampleTex[0] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, ofsy)));
 	sampleTex[1] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f,  ofsy)));
@@ -81,13 +81,13 @@ void main()
     vec3 col = vec3(0.0);
     for(int i = 0; i < 9; i++)
         col += sampleTex[i] * kernel[i];
-	*/
+	//*/
 	
 	// temp activate to disable blur	
-	vec3 col = vec3(texture(screenTexture, TexCoords));		
+	//vec3 col = vec3(texture(screenTexture, TexCoords));		
 	
 	//darken
-	//FragColor = vec4(col - (0.045 * (1 - col)), 1.0);
+	FragColor = vec4(col - (0.045 * (1 - col)), 1.0);
 	
 	// Gamma correction
 	//*

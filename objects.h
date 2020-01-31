@@ -8,37 +8,29 @@
 #include "time.hpp"
 #include "input.h"
 #include "memory.h"
+#include "memoryC.h"
 #include "Transform.h"
 #include "maths.hpp"
 #include "graphics.hpp"
 
+// these entire 2 includes only for one line...
+#include "objects_items.h"
+#include "core.h"
+
 struct HeldItem;
-
-struct ItemSlot
-{
-	btID item = ID_NULL;
-	btui32 count = 1.f;
-	HeldItem* heldInstance = nullptr;
-
-	ItemSlot() {}
-	ItemSlot(btID _item);
-	~ItemSlot();
-};
 
 class Inventory
 {
 public:
-	mem::CkBuffer<ItemSlot> items;
-	Inventory() {};
-	~Inventory() {};
-private:
-	inline void IncrStack(btui32 index);
-	inline void DecrStack(btui32 index);
+	mem::BufferInventoryTest<btID> items;
 public:
-	void AddItem(btID itemid);
-	void RemvItem(btID itemid);
-	void RemvItemAt(btui32 index);
-	void Draw(btui16 active_slot);
+	void AddNew(btID ITEM_TEMPLATE);
+	void DestroyIndex(btui32 INDEX);
+	void Destroy(btID ITEM_TEMPLATE);
+	void TransferItemRecv(btID ITEM_ID);
+	void TransferItemSendIndex(btui32 INDEX);
+	void TransferItemSend(btID ITEM_ID);
+	void Draw(btui16 ACTIVE_SLOT);
 };
 
 //transform
@@ -50,8 +42,7 @@ public:
 	m::Vector2 velocity;
 	btf32 height = 0.f;
 	btf32 height_velocity = 0.f;
-	btui8 cellx = 0ui8;
-	btui8 celly = 0ui8;
+	m::Angle yaw;
 };
 
 class TransformEntity
@@ -63,6 +54,17 @@ class TransformEntity
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //------------- ENTITY STRUCTS -----------------------------------
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+/*
+enum EntityType : btui8
+{
+	// whatever else
+	ENTITY_EDITOR_PAWN = 7ui8,
+	// game use
+	ENTITY_RESTING_ITEM = 8ui8,
+	ENTITY_CHARA = 9ui8,
+};
+*/
 
 struct ActiveState
 {
@@ -86,6 +88,10 @@ struct Entity
 	virtual bool IsActivator() { return false; };
 	virtual bool IsRestingItem() { return false; };
 	virtual char* GetDisplayName() { return "Entity";};
+	// an idea for writing file, but it won't support version compatibility well
+	//virtual size_t GetSize() { return sizeof(Entity); };
+
+	EntityType type;
 
 	enum EntityFlags : btui8
 	{
@@ -110,11 +116,9 @@ struct Entity
 	ActiveState state;
 	btui8 statebuffer[32 - sizeof(ActiveState)]; // reserved space for save / load data
 
-	bool freeTurn;
 	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
 	btf32 height = 1.9f; // Height of the entity cylinder
 	Transform2D t;
-	m::Angle yaw;
 
 	CellSpace csi; // Where we are in cell space
 
@@ -126,9 +130,9 @@ struct EItem : public Entity
 {
 	virtual bool IsActivator() { return true; };
 	virtual bool IsRestingItem() { return true; };
-	virtual char* GetDisplayName() { return (char*)acv::items[itemid]->name; };
+	virtual char* GetDisplayName() { return (char*)acv::items[index::GetItem(item_instance)->item_template]->name; };
 
-	btID itemid;
+	btID item_instance;
 	Transform3D t_item;
 
 	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
@@ -184,7 +188,7 @@ struct Actor : public Entity
 
 	void PickUpItem(btID ID);
 	void DropItem(btID SLOT);
-	void SetEquipSlot();
+	void SetEquipSlot(btui32 slot);
 	void IncrEquipSlot();
 	void DecrEquipSlot();
 

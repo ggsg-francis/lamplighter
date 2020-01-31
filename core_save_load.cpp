@@ -1,0 +1,192 @@
+#include "core_save_load.h"
+
+#include "core.h"
+#include "objects.h"
+
+#include <stdio.h>
+
+#define SIZE_8 1
+#define SIZE_16 2
+#define SIZE_32 4
+#define SIZE_64 8
+
+bool SaveExists()
+{
+	FILE* file = fopen("save/save.bin", "rb"); // Open file
+	return file != NULL;
+}
+
+void SaveState()
+{
+	btui32 FILE_VER = 001u;
+
+	FILE* file = fopen("save/save.bin", "wb"); // Open file
+	if (file != NULL)
+	{
+		fseek(file, 0, SEEK_SET); // Seek file beginning
+
+		fwrite(&FILE_VER, SIZE_32, 1, file);
+
+		// Actual game state
+		fwrite(&index::players, SIZE_16, 2, file);
+
+		//-------------------------------- ENTITIES
+
+		fwrite(&index::block_entity.index_end, SIZE_16, 1, file);
+		fwrite(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1ui16), file);
+
+		for (btID i = 0; i <= index::block_entity.index_end; i++) // For every entity
+		{
+			if (index::block_entity.used[i])
+			{
+				fwrite(&ENTITY(i)->type, SIZE_8, 1, file);
+
+				fwrite(&ENTITY(i)->radius, SIZE_32, 1, file);
+				fwrite(&ENTITY(i)->height, SIZE_32, 1, file);
+				fwrite(&ENTITY(i)->properties, SIZE_8, 1, file);
+				fwrite(&ENTITY(i)->faction, SIZE_8, 1, file);
+				fwrite(&ENTITY(i)->state.hp, SIZE_32, 1, file);
+				fwrite(&ENTITY(i)->state.properties, SIZE_64, 1, file);
+				fwrite(&ENTITY(i)->t.position.x, SIZE_32, 1, file);
+				fwrite(&ENTITY(i)->t.position.y, SIZE_32, 1, file);
+				fwrite(&ENTITY(i)->t.height, SIZE_32, 1, file);
+				fwrite(&ENTITY(i)->t.yaw, SIZE_32, 1, file);
+
+				switch (ENTITY(i)->type)
+				{
+				case ENTITY_TYPE_RESTING_ITEM:
+					fwrite(&ITEM(i)->item_instance, SIZE_16, 1, file);
+				case ENTITY_TYPE_CHARA:
+					fwrite(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
+					fwrite(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
+					fwrite(&ACTOR(i)->t_skin, SIZE_16, 1, file);
+					fwrite(&ACTOR(i)->speed, SIZE_32, 1, file);
+					fwrite(&ACTOR(i)->agility, SIZE_32, 1, file);
+					fwrite(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
+					fwrite(&ACTOR(i)->inv_active_slot, SIZE_32, 1, file);
+					fwrite(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
+				}
+			}
+		}
+
+		//-------------------------------- ITEMS
+
+		fwrite(&index::block_item.index_end, SIZE_16, 1, file);
+		fwrite(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1ui16), file);
+
+		for (btID i = 0; i <= index::block_item.index_end; i++) // For every entity
+		{
+			if (index::block_item.used[i])
+			{
+				fwrite(&index::items[i]->item_template, SIZE_16, 1, file);
+			}
+		}
+
+		fclose(file); // Close file
+	}
+}
+void LoadStateFileV001()
+{
+	btui32 FILE_VER = 0b11111111111111111111111111111111;
+
+	FILE* file = fopen("save/save.bin", "rb"); // Open file
+	if (file != NULL)
+	{
+		fseek(file, 0, SEEK_SET); // Seek file beginning
+
+		fread(&FILE_VER, SIZE_32, 1, file);
+
+		// Actual game state
+		fread(&index::players, SIZE_16, 2, file);
+
+		//-------------------------------- ENTITIES
+
+		fread(&index::block_entity.index_end, SIZE_16, 1, file);
+		fread(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1ui16), file);
+
+		for (btID i = 0; i <= index::block_entity.index_end; i++) // For every entity
+		{
+			if (index::block_entity.used[i])
+			{
+				EntityType type_temp;
+				fread(&type_temp, SIZE_8, 1, file);
+
+				// initialize entity here (eg. new) 
+				//index::InitializeNewEntity(i, type_temp);
+
+				ENTITY(i)->type = type_temp;
+				fread(&ENTITY(i)->radius, SIZE_32, 1, file);
+				fread(&ENTITY(i)->height, SIZE_32, 1, file);
+				fread(&ENTITY(i)->properties, SIZE_8, 1, file);
+				fread(&ENTITY(i)->faction, SIZE_8, 1, file);
+				fread(&ENTITY(i)->state.hp, SIZE_32, 1, file);
+				fread(&ENTITY(i)->state.properties, SIZE_64, 1, file);
+				fread(&ENTITY(i)->t.position.x, SIZE_32, 1, file);
+				fread(&ENTITY(i)->t.position.y, SIZE_32, 1, file);
+				fread(&ENTITY(i)->t.height, SIZE_32, 1, file);
+				fread(&ENTITY(i)->t.yaw, SIZE_32, 1, file);
+
+				switch (ENTITY(i)->type)
+				{
+				case ENTITY_TYPE_RESTING_ITEM:
+					fread(&ITEM(i)->item_instance, SIZE_16, 1, file);
+				case ENTITY_TYPE_CHARA:
+					fread(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
+					fread(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
+					fread(&ACTOR(i)->t_skin, SIZE_16, 1, file);
+					fread(&ACTOR(i)->speed, SIZE_32, 1, file);
+					fread(&ACTOR(i)->agility, SIZE_32, 1, file);
+					fread(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
+					fread(&ACTOR(i)->inv_active_slot, SIZE_32, 1, file);
+					fread(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
+				}
+			}
+		}
+
+		//-------------------------------- ITEMS
+
+		//fread(&index::block_item.index_end, SIZE_16, 1, file);
+		//fread(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1ui16), file);
+
+		//for (btID i = 0; i <= index::block_item.index_end; i++) // For every entity
+		//{
+		//	if (index::block_item.used[i])
+		//	{
+		//		btID template_temp;
+		//		fread(&template_temp, SIZE_16, 1, file);
+
+		//		index::InitializeNewItem(i, acv::item_types[template_temp]);
+
+		//		index::items[i]->item_template = template_temp;
+		//	}
+		//}
+
+		fclose(file); // Close file
+	}
+}
+void LoadState()
+{
+	btui32 FILE_VER = 0b11111111111111111111111111111111;
+
+	FILE* file = fopen("save/save.bin", "rb"); // Open file
+	if (file != NULL)
+	{
+		//index::ClearBuffers();
+
+		fseek(file, 0, SEEK_SET); // Seek file beginning
+		fread(&FILE_VER, SIZE_32, 1, file); // Load file version
+		fclose(file); // Close file
+
+		switch (FILE_VER)
+		{
+		case 001u:
+			LoadStateFileV001();
+			break;
+		}
+	}
+}
+
+#undef SIZE_8
+#undef SIZE_16
+#undef SIZE_32
+#undef SIZE_64

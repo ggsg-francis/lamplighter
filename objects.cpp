@@ -12,71 +12,45 @@
 graphics::GUIText text_inventory_temp;
 graphics::GUIBox guibox_selection;
 
-ItemSlot::ItemSlot(btID _item)
+void Inventory::AddNew(btID item_template)
 {
-	switch (acv::item_types[_item])
-	{
-	case acv::types::ITEM_EQUIP:
-		heldInstance = new HeldItem;
-		break;
-	case acv::types::ITEM_WPN_MELEE:
-		heldInstance = new HeldMel;
-		break;
-	case acv::types::ITEM_WPN_MATCHGUN:
-		heldInstance = new HeldGun;
-		//heldInstance = new HeldGunMatchLock;
-		break;
-	case acv::types::ITEM_WPN_MAGIC:
-		heldInstance = new HeldMgc;
-		break;
-	case acv::types::ITEM_CONS:
-		heldInstance = new HeldItem;
-		break;
-	default:
-		heldInstance = new HeldItem;
-		break;
-	}
-	item = _item;
+	items.Add(index::SpawnItem(item_template));
 }
-ItemSlot::~ItemSlot()
+void Inventory::DestroyIndex(btui32 index)
 {
-	delete heldInstance;
+	items.Remove(index);
+	index::DestroyItem(items[index]);
 }
-
-inline void Inventory::IncrStack(btui32 index)
+void Inventory::Destroy(btID item_template)
 {
-	++items[index].count;
-}
-inline void Inventory::DecrStack(btui32 index)
-{
-	if (items[index].count > 1u)
-		--items[index].count;
-	else
-		items.Remove(index);
-}
-void Inventory::AddItem(btID itemid)
-{
-	//bool added = false;
-	//for (int i = 0; i < items.Size(); ++i)
-	//	if (items.Used(i) && items[i].item == itemid) // if we already have a stack of this item
-	//	{
-	//		IncrStack(i); added = true; // Add to existing stack
-	//	}
-	////if (!added) items.Add(new ItemSlot(HeldItem(), itemid));
-	//if (!added) items.Add(new ItemSlot(itemid));
-	items.Add(new ItemSlot(itemid));
-}
-void Inventory::RemvItem(btID itemid)
-{
-	//for (int i = 0; i < items.Size(); ++i)
-	//	if (items[i].item == itemid) // if we already have a stack of this item
-	//		DecrStack(i);
 	for (int i = 0; i < items.Size(); ++i)
-		if (items[i].item == itemid) // if we already have a stack of this item
-			items.Remove(i);
+	{
+		if (index::GetItem(items[i])->item_template == item_template) // if we already have a stack of this item
+		{
+			DestroyIndex(i);
+			return;
+		}
+	}
 }
-//void Inventory::RemvItemAt(btui32 index) { DecrStack(index); }
-void Inventory::RemvItemAt(btui32 index) { items.Remove(index); }
+void Inventory::TransferItemRecv(btID item_ID)
+{
+	items.Add(item_ID); // Add the item without creating a new instance
+}
+void Inventory::TransferItemSendIndex(btui32 index)
+{
+	items.Remove(index); // Remove the item from inventory without deleting the instance
+}
+void Inventory::TransferItemSend(btID item_ID)
+{
+	for (int i = 0; i < items.Size(); ++i)
+	{
+		if (items[i] == item_ID) // if we have this item instance
+		{
+			items.Remove(i); // Remove the item from inventory without deleting the instance
+			return;
+		}
+	}
+}
 void Inventory::Draw(btui16 active_slot)
 {
 	int p1_x_start = -(int)graphics::FrameSizeX() / 2;
@@ -85,14 +59,14 @@ void Inventory::Draw(btui16 active_slot)
 	const bti32 invspace = 38;
 
 	bti32 offset = p1_x_start + 96 - 16;
-	for (btui16 i = 0; i < 10; i++)
+	for (btui16 i = 0; i < items.Size(); i++)
 	{
-		if (i < items.Size() && items.Used(i))
+		if (items.Used(i))
 		{
 			if (i == active_slot)
-				graphics::DrawGUITexture(&res::GetT(acv::items[items[i].item]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[index::GetItem(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
 			else
-				graphics::DrawGUITexture(&res::GetT(acv::items[items[i].item]->id_icon), offset + i * invspace, p1_y_start + 16, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[index::GetItem(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 16, 64, 64);
 		}
 	}
 	guibox_selection.ReGen((offset + active_slot * invspace) - 12, (offset + active_slot * invspace) + 12, p1_y_start + 12, p1_y_start + 36, 8, 8);
@@ -132,20 +106,20 @@ void EItem::Tick(btID index, btf32 dt)
 	}*/
 
 	//env::GetHeight(t.height, csi);
-	t_item.SetPosition(m::Vector3(t.position.x, t.height + acv::items[itemid]->f_model_height, t.position.y));
-	t_item.SetRotation(yaw.Rad());
+	t_item.SetPosition(m::Vector3(t.position.x, t.height + acv::items[index::GetItem(item_instance)->item_template]->f_model_height, t.position.y));
+	t_item.SetRotation(t.yaw.Rad());
 }
 
 void EItem::Draw(btID index)
 {
 	// Draw the mesh of our item id
-	DrawMesh(index, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, t_item.getMatrix());
+	DrawMesh(index, res::GetM(acv::items[index::GetItem(item_instance)->item_template]->id_mesh), res::GetT(acv::items[index::GetItem(item_instance)->item_template]->id_tex), SS_NORMAL, t_item.getMatrix());
 }
 
 void Actor::PickUpItem(btID id)
 {
 	EItem* item = (EItem*)index::GetEntity(id);
-	inventory.AddItem(item->itemid);
+	inventory.TransferItemRecv(item->item_instance);
 	index::DestroyEntity(id);
 }
 
@@ -153,13 +127,20 @@ void Actor::DropItem(btID slot)
 {
 	if (slot < inventory.items.Size() && inventory.items.Used(slot))
 	{
-		index::SpawnItem(inventory.items[slot].item, t.position, yaw.Deg());
-		inventory.RemvItemAt(slot);
+		index::SpawnEntityItem(inventory.items[slot], t.position, t.yaw.Deg());
+		inventory.TransferItemSendIndex(slot);
+		DecrEquipSlot();
 	}
 }
 
-void Actor::SetEquipSlot()
+void Actor::SetEquipSlot(btui32 index)
 {
+	if (index < inventory.items.Size())
+	{
+		inv_active_slot = index;
+		if (inventory.items.Used(inv_active_slot))
+			((HeldItem*)index::GetItem(inventory.items[inv_active_slot]))->OnEquip();
+	}
 }
 
 void Actor::IncrEquipSlot()
@@ -168,7 +149,7 @@ void Actor::IncrEquipSlot()
 	{
 		++inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			inventory.items[inv_active_slot].heldInstance->OnEquip();
+			((HeldItem*)index::GetItem(inventory.items[inv_active_slot]))->OnEquip();
 	}
 }
 
@@ -178,7 +159,7 @@ void Actor::DecrEquipSlot()
 	{
 		--inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			inventory.items[inv_active_slot].heldInstance->OnEquip();
+			((HeldItem*)index::GetItem(inventory.items[inv_active_slot]))->OnEquip();
 	}
 }
 
@@ -196,7 +177,7 @@ void Chara::Tick(btID index, btf32 dt)
 	bool can_turn = true;
 	if (inventory.items.Used(inv_active_slot))
 	{
-		#define HELDINSTANCE inventory.items[inv_active_slot].heldInstance
+		#define HELDINSTANCE ((HeldItem*)index::GetItem(inventory.items[inv_active_slot]))
 		can_move = !HELDINSTANCE->BlockMove();
 		can_turn = !HELDINSTANCE->BlockTurn();
 		#undef HELDINSTANCE
@@ -222,8 +203,8 @@ void Chara::Tick(btID index, btf32 dt)
 				input = m::Vector2(0.f, 0.f);
 				t.velocity = m::Lerp(t.velocity, m::Vector2(0.f, 0.f), 0.2f);
 			}
-			if (can_turn && abs(m::AngDif(yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
-				yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
+			if (can_turn && abs(m::AngDif(t.yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
+				t.yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
 		}
 
 		//-------------------------------- APPLY MOVEMENT
@@ -261,7 +242,7 @@ void Chara::Tick(btID index, btf32 dt)
 
 	if (inventory.items.Used(inv_active_slot))
 	{
-		#define HELDINSTANCE inventory.items[inv_active_slot].heldInstance
+		#define HELDINSTANCE ((HeldItem*)index::GetItem(inventory.items[inv_active_slot]))
 		if (HELDINSTANCE != nullptr) HELDINSTANCE->Tick(this);
 		#undef HELDINSTANCE
 	}
@@ -274,7 +255,7 @@ void Chara::Tick(btID index, btf32 dt)
 	t_head = Transform3D();
 
 	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.6f, t.position.y));
-	t_body.Rotate(yaw.Rad(), m::Vector3(0, 1, 0));
+	t_body.Rotate(t.yaw.Rad(), m::Vector3(0, 1, 0));
 
 	ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
 
@@ -297,7 +278,7 @@ void Chara::Draw(btID index)
 	#define velocityStepMult 0.5f
 
 	Transform3D t_test = t_body;
-	t_test.Rotate(glm::radians(m::AngDif(viewYaw.Deg(), yaw.Deg())), m::Vector3(0, 1, 0));
+	t_test.Rotate(glm::radians(m::AngDif(viewYaw.Deg(), t.yaw.Deg())), m::Vector3(0, 1, 0));
 
 	btf32 lerpAmt = 0.05f * speed;
 
@@ -315,7 +296,7 @@ void Chara::Draw(btID index)
 
 	if (inventory.items.Used(inv_active_slot))
 	{
-		#define HELDINSTANCE inventory.items[inv_active_slot].heldInstance
+		#define HELDINSTANCE ((HeldItem*)index::GetItem(inventory.items[inv_active_slot]))
 
 		m::Vector3 handPosR = HELDINSTANCE->GetRightHandPos();
 		m::Vector3 handPosL = HELDINSTANCE->GetLeftHandPos();
@@ -350,7 +331,7 @@ void Chara::Draw(btID index)
 		DrawMeshDeform(index, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 
 		// draw item
-		HELDINSTANCE->Draw(inventory.items[inv_active_slot].item, t.position, t.height, viewYaw, viewPitch);
+		HELDINSTANCE->Draw(index::GetItem(inventory.items[inv_active_slot])->item_template, t.position, t.height, viewYaw, viewPitch);
 
 		#undef HELDINSTANCE
 	}
@@ -504,7 +485,7 @@ void EditorPawn::Tick(btID index, btf32 dt)
 	bool can_turn = true;
 	if (inventory.items.Used(inv_active_slot))
 	{
-		#define HELDINSTANCE inventory.items[inv_active_slot].heldInstance
+		#define HELDINSTANCE ((HeldItem*)index::GetItem(inventory.items[inv_active_slot]))
 		can_move = !HELDINSTANCE->BlockMove();
 		can_turn = !HELDINSTANCE->BlockTurn();
 		#undef HELDINSTANCE
@@ -530,8 +511,8 @@ void EditorPawn::Tick(btID index, btf32 dt)
 				input = m::Vector2(0.f, 0.f);
 				t.velocity = m::Lerp(t.velocity, m::Vector2(0.f, 0.f), 0.2f);
 			}
-			if (can_turn && abs(m::AngDif(yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
-				yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
+			if (can_turn && abs(m::AngDif(t.yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
+				t.yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
 		}
 
 		//-------------------------------- APPLY MOVEMENT
@@ -569,7 +550,7 @@ void EditorPawn::Tick(btID index, btf32 dt)
 
 	if (inventory.items.Used(inv_active_slot))
 	{
-		#define HELDINSTANCE inventory.items[inv_active_slot].heldInstance
+		#define HELDINSTANCE ((HeldItem*)index::GetItem(inventory.items[inv_active_slot]))
 		if (HELDINSTANCE != nullptr) HELDINSTANCE->Tick(this);
 		#undef HELDINSTANCE
 	}
@@ -582,7 +563,7 @@ void EditorPawn::Tick(btID index, btf32 dt)
 	t_head = Transform3D();
 
 	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.7f, t.position.y));
-	t_body.Rotate(yaw.Rad(), m::Vector3(0, 1, 0));
+	t_body.Rotate(t.yaw.Rad(), m::Vector3(0, 1, 0));
 
 	// Set head transform
 	t_head.SetPosition(t_body.GetPosition());

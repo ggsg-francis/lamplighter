@@ -11,7 +11,7 @@
 
 namespace serializer
 {
-	btID GetIDFromHandle(char* handle, acv::types::AssetType type)
+	btID GetIDFromHandle(char* handle, AssetType type)
 	{
 		btID retid = ID_NULL;
 		for (btID i = 0; i < acv::assetCount; ++i)
@@ -60,13 +60,13 @@ namespace serializer
 			std::cout << "MESH ID              " << ITEMI->id_mesh << std::endl;
 			std::cout << "TEXTURE ID           " << ITEMI->id_tex << std::endl;
 
-			if (acv::item_types[i] == acv::types::ITEM_WPN_MELEE)
+			if (acv::item_types[i] == ITEM_WPN_MELEE)
 			{
 				std::cout << "DAMAGE PIERCE        " << WMELI->f_dam_pierce << std::endl;
 				std::cout << "DAMAGE SLASH         " << WMELI->f_dam_slash << std::endl;
 				std::cout << "DAMAGE SLAM          " << WMELI->f_dam_slam << std::endl;
 			}
-			if (acv::item_types[i] == acv::types::ITEM_CONS)
+			if (acv::item_types[i] == ITEM_CONS)
 			{
 				std::cout << "EFFECT               " << CONSI->effect << std::endl;
 				std::cout << "EFFECT VALUE         " << CONSI->effect_value << std::endl;
@@ -122,7 +122,7 @@ namespace serializer
 
 					//....................................... SET ITEM TYPE
 
-					acv::types::AssetType type;
+					AssetType type;
 					graphics::TextureFilterMode t_filter_mode = graphics::eLINEAR;
 					graphics::TextureEdgeMode t_edge_mode = graphics::eREPEAT;
 					char cdest[FN_SIZE];
@@ -130,16 +130,16 @@ namespace serializer
 					char csrcb[FN_SIZE];
 
 					if (strcmp(elem, "txtr") == 0) { // Texture
-						type = acv::types::ASSET_TEXTURE_FILE;
+						type = ASSET_TEXTURE_FILE;
 					}
 					else if (strcmp(elem, "mesh") == 0) { // Mesh
-						type = acv::types::ASSET_MESH_FILE;
+						type = ASSET_MESH_FILE;
 					}
 					else if (strcmp(elem, "mshb") == 0) { // Mesh Blend
-						type = acv::types::ASSET_MESHBLEND_FILE;
+						type = ASSET_MESHBLEND_FILE;
 					}
 					else if (strcmp(elem, "mshd") == 0) { // Mesh Deform
-						type = acv::types::ASSET_MESHDEFORM_FILE;
+						type = ASSET_MESHDEFORM_FILE;
 					}
 
 					//....................................... READ ITEM PROPERTIES
@@ -207,40 +207,40 @@ namespace serializer
 
 					//....................................... CONVERT AND SAVE ASSETS
 
-					if (type == acv::types::ASSET_TEXTURE_FILE)
+					if (type == ASSET_TEXTURE_FILE)
 					{
 						std::cout << "CONV TEXTURE         [" << cdest << "]" << std::endl;
 						graphics::ConvertTex(csrca, cdest, t_filter_mode, t_edge_mode); // Create source file
 						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
 						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
-						acv::assets[index].type = acv::types::ASSET_TEXTURE_FILE;
+						acv::assets[index].type = ASSET_TEXTURE_FILE;
 						std::cout << "---------------------" << std::endl;
 					}
-					else if (type == acv::types::ASSET_MESH_FILE)
+					else if (type == ASSET_MESH_FILE)
 					{
 						std::cout << "CONV MESH            [" << cdest << "]" << std::endl;
 						graphics::ConvertMesh(csrca, cdest); // Create source file
 						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
 						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
-						acv::assets[index].type = acv::types::ASSET_MESH_FILE;
+						acv::assets[index].type = ASSET_MESH_FILE;
 						std::cout << "---------------------" << std::endl;
 					}
-					else if (type == acv::types::ASSET_MESHBLEND_FILE)
+					else if (type == ASSET_MESHBLEND_FILE)
 					{
 						std::cout << "CONV MESHBLEND       [" << cdest << "]" << std::endl;
 						graphics::ConvertMB(csrca, csrcb, cdest); // Create source file
 						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
 						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
-						acv::assets[index].type = acv::types::ASSET_MESHBLEND_FILE;
+						acv::assets[index].type = ASSET_MESHBLEND_FILE;
 						std::cout << "---------------------" << std::endl;
 					}
-					else if (type == acv::types::ASSET_MESHDEFORM_FILE)
+					else if (type == ASSET_MESHDEFORM_FILE)
 					{
 						std::cout << "CONV MESHDEFORM      [" << cdest << "]" << std::endl;
 						graphics::ConvertMD(csrca, cdest); // Create source file
 						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
 						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
-						acv::assets[index].type = acv::types::ASSET_MESHDEFORM_FILE;
+						acv::assets[index].type = ASSET_MESHDEFORM_FILE;
 						std::cout << "---------------------" << std::endl;
 					}
 
@@ -314,9 +314,9 @@ namespace serializer
 					fgets(&value[0], (int)(end - start) - 1, file); // Get element name
 
 					if (strcmp(elem, "srct") == 0) // Texture
-						acv::props[acv::prop_index].idTxtr = GetIDFromHandle(value, acv::types::ASSET_TEXTURE_FILE);
+						acv::props[acv::prop_index].idTxtr = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "srcm") == 0) // Mesh
-						acv::props[acv::prop_index].idMesh = GetIDFromHandle(value, acv::types::ASSET_MESH_FILE);
+						acv::props[acv::prop_index].idMesh = GetIDFromHandle(value, ASSET_MESH_FILE);
 
 					//++acv::prop_index; // Iterate prop count
 
@@ -342,30 +342,30 @@ namespace serializer
 				{
 					if (strcmp(elem, "wmel") == 0) {
 						acv::items[acv::item_index] = new acv::item_w_melee();
-						acv::item_types[acv::item_index] = acv::types::ITEM_WPN_MELEE;
+						acv::item_types[acv::item_index] = ITEM_WPN_MELEE;
 					}
 					else if (strcmp(elem, "wgun") == 0) {
 						acv::items[acv::item_index] = new acv::item_w_gun();
-						acv::item_types[acv::item_index] = acv::types::ITEM_WPN_MATCHGUN;
+						acv::item_types[acv::item_index] = ITEM_WPN_MATCHGUN;
 					}
 					else if (strcmp(elem, "wmgc") == 0) {
 						acv::items[acv::item_index] = new acv::item_w_magic();
-						acv::item_types[acv::item_index] = acv::types::ITEM_WPN_MAGIC;
+						acv::item_types[acv::item_index] = ITEM_WPN_MAGIC;
 					}
 				}
 				else
 				{
 					if (strcmp(elem, "misc") == 0) {
 						acv::items[acv::item_index] = new acv::item();
-						acv::item_types[acv::item_index] = acv::types::ITEM_ROOT;
+						acv::item_types[acv::item_index] = ITEM_ROOT;
 					}
 					else if (strcmp(elem, "aprl") == 0) {
 						acv::items[acv::item_index] = new acv::item_aprl();
-						acv::item_types[acv::item_index] = acv::types::ITEM_EQUIP;
+						acv::item_types[acv::item_index] = ITEM_EQUIP;
 					}
 					else if (strcmp(elem, "cons") == 0) {
 						acv::items[acv::item_index] = new acv::item_pton();
-						acv::item_types[acv::item_index] = acv::types::ITEM_CONS;
+						acv::item_types[acv::item_index] = ITEM_CONS;
 					}
 				}
 
@@ -408,7 +408,7 @@ namespace serializer
 					}
 					else if (strcmp(elem, "icon") == 0) // Icon (change to string?)
 						//ITEM_ITEM->id_icon = (btID)atoi(value);
-						ITEM_ITEM->id_icon = GetIDFromHandle(value, acv::types::ASSET_TEXTURE_FILE);
+						ITEM_ITEM->id_icon = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "name") == 0) // Name
 						memcpy(ITEM_ITEM->name, value, end - start);
 					else if (strcmp(elem, "wght") == 0) // Carry weight
@@ -420,11 +420,11 @@ namespace serializer
 					else if (strcmp(elem, "mdlh") == 0) // Model height when placed
 						ITEM_ITEM->f_model_height = (btf32)atof(value);
 					else if (strcmp(elem, "srct") == 0) // Texture
-						ITEM_ITEM->id_tex = GetIDFromHandle(value, acv::types::ASSET_TEXTURE_FILE);
+						ITEM_ITEM->id_tex = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "srcm") == 0) // Mesh
-						ITEM_ITEM->id_mesh = GetIDFromHandle(value, acv::types::ASSET_MESH_FILE);
+						ITEM_ITEM->id_mesh = GetIDFromHandle(value, ASSET_MESH_FILE);
 					else if (strcmp(elem, "scmb") == 0) // Mesh
-						ITEM_ITEM->id_mesh = GetIDFromHandle(value, acv::types::ASSET_MESHBLEND_FILE);
+						ITEM_ITEM->id_mesh = GetIDFromHandle(value, ASSET_MESHBLEND_FILE);
 					// Weapon value
 					else if (strcmp(elem, "held") == 0) // Damage pierce
 					{
@@ -513,19 +513,19 @@ namespace serializer
 					acv::items[i] = new acv::item();
 					fread(acv::items[i], sizeof(acv::item), 1, file);
 					break;
-				case acv::types::ITEM_WPN_MELEE:
+				case ITEM_WPN_MELEE:
 					acv::items[i] = new acv::item_w_melee();
 					fread(acv::items[i], sizeof(acv::item_w_melee), 1, file);
 					break;
-				case acv::types::ITEM_WPN_MATCHGUN:
+				case ITEM_WPN_MATCHGUN:
 					acv::items[i] = new acv::item_w_gun();
 					fread(acv::items[i], sizeof(acv::item_w_gun), 1, file);
 					break;
-				case acv::types::ITEM_WPN_MAGIC:
+				case ITEM_WPN_MAGIC:
 					acv::items[i] = new acv::item_w_magic();
 					fread(acv::items[i], sizeof(acv::item_w_magic), 1, file);
 					break;
-				case acv::types::ITEM_CONS:
+				case ITEM_CONS:
 					acv::items[i] = new acv::item_pton();
 					fread(acv::items[i], sizeof(acv::item_pton), 1, file);
 					break;
@@ -583,19 +583,19 @@ namespace serializer
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::item), 1, file);
 					break;
-				case acv::types::ITEM_WPN_MELEE:
+				case ITEM_WPN_MELEE:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::item_w_melee), 1, file);
 					break;
-				case acv::types::ITEM_WPN_MATCHGUN:
+				case ITEM_WPN_MATCHGUN:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::item_w_gun), 1, file);
 					break;
-				case acv::types::ITEM_WPN_MAGIC:
+				case ITEM_WPN_MAGIC:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::item_w_magic), 1, file);
 					break;
-				case acv::types::ITEM_CONS:
+				case ITEM_CONS:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::item_pton), 1, file);
 					break;

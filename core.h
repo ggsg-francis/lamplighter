@@ -23,11 +23,27 @@ struct CellGroup;
 struct CellSpace;
 
 struct Entity;
+struct Chara;
+struct Actor;
+struct EItem;
+
+//extern enum EntityType;
+
+struct HeldItem;
+
+namespace mem
+{
+	struct objbuf;
+}
+
+struct ObjBuf;
 
 namespace index
 {
 	void Init();
 	void End();
+
+	void ClearBuffers();
 
 	void Tick(btf32 DELTA);
 	void TickGUI();
@@ -40,17 +56,31 @@ namespace index
 	void SetViewFocus(btID i);
 	m::Vector2 GetViewOffset();
 
+	// Creates an Entity instance, adds it to the index and allocates it an ID
+	btID SpawnEntity(btui8 TYPE_PREFAB_TEMP, m::Vector2 pos, float dir);
+	// Removes a given Entity from the index
+	void DestroyEntity(btID ID);
 	// Get the pointer address of the entity at X ID
 	void* GetEntity(btID ID);
-	// Destroy the entity at X ID
-	void DestroyEntity(btID ID);
 
-	btID SpawnItem(btID ITEMID, m::Vector2 POSITION, btf32 DIRECTION);
+	btID SpawnNewEntityItem(btID ITEM_TEMPLATE, m::Vector2 POSITION, btf32 DIRECTION);
+	btID SpawnEntityItem(btID ITEMID, m::Vector2 POSITION, btf32 DIRECTION);
+
+	// Create a new item instance of type TYPE
+	btID SpawnItem(btID ITEM_TEMPLATE);
+	// Destroy the item at ID
+	void DestroyItem(btID ID);
+	// Get the pointer of the item at ID
+	HeldItem* GetItem(btID ID);
 
 	//	Creates a projectile instance, allocates an ID and sends a network message
 	void SpawnProjectile(fac::faction FACTION, m::Vector2 POSITION, btf32 HEIGHT, float YAW, float PITCH, float SPREAD);
 	// Removes a given projectile from the index
 	void DestroyProjectile(btID ID);
+
+	// TODO: move to index
+	void InitializeNewEntity(btID id, EntityType type);
+	void InitializeNewItem(btID id, ItemType type);
 
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg);
 	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& csi);
@@ -61,7 +91,19 @@ namespace index
 	// Set shadow texture ID (to do: hacky, get rid of this)
 	void SetShadowTexture(btui32 ID);
 
+	// TODO: MOVE THIS SECTION TO INDEX
+
 	extern btID players[2];
+	extern mem::objbuf block_entity; // Entity buffer
+	extern void* _entities[BUF_SIZE];
+
+	extern ObjBuf block_item; // Item buffer
+	extern HeldItem* items[BUF_SIZE];
+
+	#define CHARA(a) ((Chara*)index::_entities[a])
+	#define ACTOR(a) ((Actor*)index::_entities[a])
+	#define ENTITY(a) ((Entity*)index::_entities[a])
+	#define ITEM(a) ((EItem*)index::_entities[a])
 
 	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack, bool use_hit, bool WantAttack2,
 		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C);
