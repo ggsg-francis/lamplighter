@@ -116,6 +116,16 @@ extern "C" {
 	//*/
 
 	/*
+	enum EntityType : btui8
+	{
+	// whatever else
+	ENTITY_EDITOR_PAWN = 7ui8,
+	// game use
+	ENTITY_RESTING_ITEM = 8ui8,
+	ENTITY_CHARA = 9ui8,
+	};
+	*/
+	/*
 	enum ItemType : btui8
 	{
 		ITEM_ROOT,

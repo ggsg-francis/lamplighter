@@ -460,9 +460,9 @@ namespace index
 
 								if (knockback)
 								{
-									if (ent->IsActor())
+									if (ent->type == ENTITY_TYPE_CHARA)
 										ent->t.velocity = hit2.surface * -0.1f; // set my velocity
-									if (ENTITY(cells[x][y].ents[e])->IsActor())
+									if (ENTITY(cells[x][y].ents[e])->type == ENTITY_TYPE_CHARA)
 										ENTITY(cells[x][y].ents[e])->t.velocity = hit2.surface * 0.3f; // set their velocity
 								}
 							}
@@ -527,7 +527,7 @@ namespace index
 	{
 		for (int i = 0; i <= block_entity.index_end; i++)
 			if (block_entity.used[i] && i != index) // If entity exists and is not me
-				if (ENTITY(i)->IsActor()) // and is actor
+				if (ENTITY(i)->type == ENTITY_TYPE_CHARA) // and is actor
 				{
 					if (ACTOR(i)->ai_target_ent == index) // and is targeting me
 						ACTOR(i)->ai_target_ent = BUF_NULL; // Reset it's target
@@ -710,15 +710,21 @@ namespace index
 		{
 		case ENTITY_TYPE_EDITOR_PAWN:
 			_entities[id] = new EditorPawn();
+			((Entity*)_entities[id])->fpName = DisplayNameActor;
+			((Entity*)_entities[id])->fpDraw = DrawEditorPawn;
 			break;
 		case ENTITY_TYPE_RESTING_ITEM:
 			_entities[id] = new EItem();
+			((Entity*)_entities[id])->fpName = DisplayNameRestingItem;
+			((Entity*)_entities[id])->fpDraw = DrawRestingItem;
 			break;
 		case ENTITY_TYPE_CHARA:
 			_entities[id] = new Chara();
+			((Entity*)_entities[id])->fpName = DisplayNameActor;
+			((Entity*)_entities[id])->fpDraw = DrawChara;
 			break;
 		default:
-			//error
+			std::cout << "Tried to initialize entity of no valid type" << std::endl;
 			break;
 		}
 

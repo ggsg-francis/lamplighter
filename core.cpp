@@ -627,7 +627,8 @@ namespace index
 					//-------------------------------- DRAW ENTITIES ON THIS CELL
 					for (int e = 0; e <= cells[x][y].ents.end(); e++)
 						if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]])
-							ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
+							ENTITY(cells[x][y].ents[e])->fpDraw(cells[x][y].ents[e]);
+							//ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
 					if (oob)
 					{
 						//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
@@ -715,9 +716,9 @@ namespace index
 			if (input::GetHit(input::key::INV_CYCLE_R))
 				ACTOR(players[activePlayer])->IncrEquipSlot();
 			if (input::GetHit(input::key::ACTIVATE)) // Pick up items
-				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsRestingItem())
+				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
 					ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
-				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsActor())
+				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
 				{
 					// SOUL TRANSFER
 					// Possession, actually
@@ -735,9 +736,9 @@ namespace index
 			if (input::GetHit(input::key::C_INV_CYCLE_R))
 				ACTOR(players[activePlayer])->IncrEquipSlot();
 			if (input::GetHit(input::key::C_ACTIVATE)) // Pick up items
-				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsRestingItem())
+				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
 					ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
-				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->IsActor())
+				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
 				{
 					// SOUL TRANSFER
 					// Possession, actually
@@ -775,14 +776,15 @@ namespace index
 			int textboxY = p1_y_start + 64;
 			if (viewtarget[activePlayer] != viewtarget_last_tick[activePlayer]) // if target has changed
 			{
-				text_temp.ReGen(ENTITY(viewtarget[activePlayer])->GetDisplayName(), textboxX, textboxX + 512, textboxY);
+				//text_temp.ReGen(ENTITY(viewtarget[activePlayer])->GetDisplayName(), textboxX, textboxX + 512, textboxY);
+				text_temp.ReGen(ENTITY(viewtarget[activePlayer])->fpName(viewtarget[activePlayer]), textboxX, textboxX + 512, textboxY);
 				guibox.ReGen(textboxX, textboxX + text_temp.sizex, textboxY - text_temp.sizey, textboxY, 4, 10);
 			}
-				if (ENTITY(viewtarget[activePlayer])->IsActor())
+			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
 				graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(index::GetHP(viewtarget[activePlayer]) * 64.f), 16);
 			guibox.Draw(&res::GetT(res::t_gui_box));
 			text_temp.Draw(&res::GetT(res::t_gui_font));
-			if (ENTITY(viewtarget[activePlayer])->IsRestingItem())
+			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
 				graphics::DrawGUITexture(&res::GetT(res::t_gui_icon_pick_up), textboxX + 16, textboxY + 32, 32, 32);
 		}
 		// inventory

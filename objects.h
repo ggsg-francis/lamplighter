@@ -55,17 +55,6 @@ class TransformEntity
 //------------- ENTITY STRUCTS -----------------------------------
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-/*
-enum EntityType : btui8
-{
-	// whatever else
-	ENTITY_EDITOR_PAWN = 7ui8,
-	// game use
-	ENTITY_RESTING_ITEM = 8ui8,
-	ENTITY_CHARA = 9ui8,
-};
-*/
-
 struct ActiveState
 {
 	// Global properties, ultimately to be used by every object in the game, incl. environment tiles
@@ -81,15 +70,20 @@ struct ActiveState
 	void Damage(btf32 AMOUNT, btf32 ANGLE);
 };
 
+char* DisplayNameActor(btID ent);
+char* DisplayNameRestingItem(btID ent);
+void DrawRestingItem(btID ent);
+m::Vector3 SetFootPos(m::Vector2 position);
+void DrawChara(btID ent);
+void DrawEditorPawn(btID ent);
+
 // Base entity class
 struct Entity
 {
-	virtual bool IsActor() { return false; };
-	virtual bool IsActivator() { return false; };
-	virtual bool IsRestingItem() { return false; };
-	virtual char* GetDisplayName() { return "Entity";};
-	// an idea for writing file, but it won't support version compatibility well
-	//virtual size_t GetSize() { return sizeof(Entity); };
+	char*(*fpName)(btID ent);
+
+	//void(*fpTick)(void* ent);
+	void(*fpDraw)(btID ent);
 
 	EntityType type;
 
@@ -123,26 +117,17 @@ struct Entity
 	CellSpace csi; // Where we are in cell space
 
 	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
-	virtual void Draw(btID INDEX);
 };
 // Entity type representing placed items
 struct EItem : public Entity
 {
-	virtual bool IsActivator() { return true; };
-	virtual bool IsRestingItem() { return true; };
-	virtual char* GetDisplayName() { return (char*)acv::items[index::GetItem(item_instance)->item_template]->name; };
-
 	btID item_instance;
 	Transform3D t_item;
 
 	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
-	virtual void Draw(btID INDEX);
 };
 struct Actor : public Entity
 {
-	virtual bool IsActor() { return true; };
-	virtual char* GetDisplayName() { return "Actor"; };
-
 	enum ActorInput : btui8
 	{
 		IN_RUN = 0x1ui8 << 0x0ui8,
@@ -193,7 +178,12 @@ struct Actor : public Entity
 	void DecrEquipSlot();
 
 	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
-	virtual void Draw(btID INDEX);
+};
+enum FootState : btui8
+{
+	eL_DOWN,
+	eR_DOWN,
+	eBOTH_DOWN,
 };
 struct Chara : public Actor
 {
@@ -221,19 +211,10 @@ struct Chara : public Actor
 	m::Vector2 ani_body_lean;
 	graphics::Matrix4x4 matLegHipR, matLegUpR, matLegLoR, matLegFootR;
 	graphics::Matrix4x4 matLegHipL, matLegUpL, matLegLoL, matLegFootL;
-	enum FootState : btui8
-	{
-		eL_DOWN,
-		eR_DOWN,
-		eBOTH_DOWN,
-	};
+
 	FootState foot_state = eBOTH_DOWN;
 
 	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
-	virtual void Draw(btID INDEX);
-
-protected:
-	m::Vector3 SetFootPos(m::Vector2 POSITION);
 };
 struct EditorPawn : public Actor
 {
@@ -259,5 +240,4 @@ struct EditorPawn : public Actor
 	Transform3D t_body, t_head;
 
 	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
-	virtual void Draw(btID INDEX);
 };
