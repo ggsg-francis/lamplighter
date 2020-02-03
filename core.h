@@ -25,7 +25,7 @@ struct CellSpace;
 struct Entity;
 struct Chara;
 struct Actor;
-struct EItem;
+struct RestingItem;
 
 //extern enum EntityType;
 
@@ -79,8 +79,10 @@ namespace index
 	void DestroyProjectile(btID ID);
 
 	// TODO: move to index
-	void InitializeNewEntity(btID id, EntityType type);
-	void InitializeNewItem(btID id, ItemType type);
+	void IndexInitEntity(btID id, EntityType type);
+	void IndexFreeEntity(btID id);
+	void IndexInitItem(btID id, ItemType type);
+	void IndexFreeItem(btID id);
 
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg);
 	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& csi);
@@ -103,7 +105,7 @@ namespace index
 	#define CHARA(a) ((Chara*)index::_entities[a])
 	#define ACTOR(a) ((Actor*)index::_entities[a])
 	#define ENTITY(a) ((Entity*)index::_entities[a])
-	#define ITEM(a) ((EItem*)index::_entities[a])
+	#define ITEM(a) ((RestingItem*)index::_entities[a])
 
 	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack, bool use_hit, bool WantAttack2,
 		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C);

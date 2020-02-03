@@ -369,6 +369,7 @@ namespace mem
 		~idbuf(); // Destructor
 		void add(btID ID);
 		void remove(btID ID);
+		void clear();
 		btui32 end();
 		btID operator[] (btui32 x);
 	};

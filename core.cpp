@@ -273,69 +273,49 @@ namespace index
 		t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
 		// Spawnz
-
-		//players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1.f, 1.f), 0.f);
-		//players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(4.f, 4.f), 0.f);
-		if (cfg::bEditMode)
-			players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
-		//players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
-		else
-			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
-		//players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(2.f, 2.f), 0.f);
-		players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
-		//CHARA(players[1])->t_skin = 1u;
-		//CHARA(players[1])->faction = fac::playerhunter;
-
-		SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
-		SpawnNewEntityItem(4ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
-		SpawnNewEntityItem(1ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
-		SpawnNewEntityItem(2ui16, m::Vector2(1025.8f, 1024.f), 15.f);
-		SpawnNewEntityItem(3ui16, m::Vector2(1026.8f, 1026.f), 15.f);
-
-		if (!cfg::bEditMode)
+		//if (SaveExists())
 		{
-
-			//players[0] = SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025, 1025), 0.f);
-			SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025, 1025), 0.f);
-
-
-			/*
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			*/
-
-			// This is going to blow up extremely fast if I don't automate it somehow
-
-			fac::SetAllegiance(fac::player, fac::player, fac::allied);
-			fac::SetAllegiance(fac::player, fac::playerhunter, fac::enemy);
-			//fac::SetAllegiance(fac::player, fac::playerhunter, fac::neutral);
-			fac::SetAllegiance(fac::player, fac::undead, fac::enemy);
-
-			fac::SetAllegiance(fac::undead, fac::player, fac::enemy);
-			fac::SetAllegiance(fac::undead, fac::playerhunter, fac::enemy);
-			fac::SetAllegiance(fac::undead, fac::undead, fac::allied);
-
-			fac::SetAllegiance(fac::playerhunter, fac::undead, fac::enemy);
-			fac::SetAllegiance(fac::playerhunter, fac::player, fac::enemy);
-			//fac::SetAllegiance(fac::playerhunter, fac::player, fac::neutral);
-			fac::SetAllegiance(fac::playerhunter, fac::playerhunter, fac::allied);
+		//	LoadState();
 		}
+		//else
+		{
+			if (cfg::bEditMode)
+				players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
+			else
+				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
+			players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
+			//CHARA(players[1])->t_skin = 1u;
+			//CHARA(players[1])->faction = fac::playerhunter;
+
+			SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
+			SpawnNewEntityItem(4ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
+			SpawnNewEntityItem(1ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
+			SpawnNewEntityItem(2ui16, m::Vector2(1025.8f, 1024.f), 15.f);
+			SpawnNewEntityItem(3ui16, m::Vector2(1026.8f, 1026.f), 15.f);
+
+			if (!cfg::bEditMode)
+			{
+				//players[0] = SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025, 1025), 0.f);
+				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025, 1025), 0.f);
+				SpawnEntity(prefab::prefab_zombie, m::Vector2(1025, 1025), 0.f);
+			}
+		}
+
+		// This is going to blow up extremely fast if I don't automate it somehow
+
+		fac::SetAllegiance(fac::player, fac::player, fac::allied);
+		fac::SetAllegiance(fac::player, fac::playerhunter, fac::enemy);
+		//fac::SetAllegiance(fac::player, fac::playerhunter, fac::neutral);
+		fac::SetAllegiance(fac::player, fac::undead, fac::enemy);
+
+		fac::SetAllegiance(fac::undead, fac::player, fac::enemy);
+		fac::SetAllegiance(fac::undead, fac::playerhunter, fac::enemy);
+		fac::SetAllegiance(fac::undead, fac::undead, fac::allied);
+
+		fac::SetAllegiance(fac::playerhunter, fac::undead, fac::enemy);
+		fac::SetAllegiance(fac::playerhunter, fac::player, fac::enemy);
+		//fac::SetAllegiance(fac::playerhunter, fac::player, fac::neutral);
+		fac::SetAllegiance(fac::playerhunter, fac::playerhunter, fac::allied);
 
 		graphics::SetMatProj(); // does not need to be continually called
 		UpdateGlobalShaderParams();
@@ -352,9 +332,24 @@ namespace index
 			//for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			if (block_entity.used[i])
-				DestroyEntity(i);
+			{
+				//DestroyEntity(i);
+				IndexFreeEntity(i);
+				block_entity.remove(i);
+			}
 			if (block_item.used[i])
-				DestroyItem(i);
+			{
+				//DestroyItem(i);
+				IndexFreeItem(i);
+				ObjBuf_remove(&block_item, i);
+			}
+		}
+		for (int x = 0; x < WORLD_SIZE; ++x)
+		{
+			for (int y = 0; y < WORLD_SIZE; ++y)
+			{
+				cells[x][y].ents.clear();
+			}
 		}
 	}
 
@@ -389,26 +384,18 @@ namespace index
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
-			if (block_entity.used[i]) ENTITY(i)->Tick(i, dt); // Call tick on entity
-		/*for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 			if (block_entity.used[i])
-			{
-				Entity* ent = ENTITY(i);
-				bool isitem = ent->IsRestingItem();
-				if (isitem)
-				{
-					EItem* item = ITEM(i);
-					int bbb = 0;
-				}
-				ENTITY(i)->Tick(i, dt);
-			}*/
+				ENTITY(i)->fpTick(i, dt); // Call tick on entity
+
+		void* v = _entities[0];
+
 		SetViewTargetID(GetClosestActivator(players[0u]), 0u);
 		SetViewTargetID(GetClosestActivator(players[1u]), 1u);
 
 		ProjectileTick(dt);
 
 		//temporary destroy dead entities
-		/*
+		///*
 		for (int i = 0; i <= block_entity.index_end; i++)
 			if (block_entity.used[i])
 				if (ACTOR(i)->state.hp == 0.f && ACTOR(i)->aiControlled)
@@ -640,7 +627,7 @@ namespace index
 					}
 				}
 			}
-			env::Draw();
+			if (oob) env::Draw();
 		}
 
 		#ifdef DEF_DRAW_WIREFRAME
@@ -854,7 +841,7 @@ namespace index
 	{
 		btID id = block_entity.add();
 
-		InitializeNewEntity(id, ENTITY_TYPE_RESTING_ITEM);
+		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
@@ -867,7 +854,7 @@ namespace index
 	{
 		btID id = block_entity.add();
 
-		InitializeNewEntity(id, ENTITY_TYPE_RESTING_ITEM);
+		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
@@ -879,7 +866,6 @@ namespace index
 
 	btID SpawnEntity(btui8 type, m::Vector2 pos, float dir)
 	{
-	//prefab::prefabtype
 		btID id = block_entity.add();
 		PrefabEntity[type](id, pos, dir);
 		return id;
@@ -887,8 +873,7 @@ namespace index
 	void DestroyEntity(btID id)
 	{
 		RemoveAllReferences(id);
-		delete ENTITY(id);
-		block_entity.remove(id);
+		IndexFreeEntity(id);
 		std::cout << "Destroyed entity " << id << std::endl;
 	}
 	void* GetEntity(btID id)
@@ -899,15 +884,14 @@ namespace index
 	btID SpawnItem(btID item_template)
 	{
 		btID id = ObjBuf_add(&block_item);
-		InitializeNewItem(id, acv::item_types[item_template]);
+		IndexInitItem(id, acv::item_types[item_template]);
 		items[id]->item_template = item_template;
 		std::cout << "Created item " << id << std::endl;
 		return id;
 	}
 	void DestroyItem(btID id)
 	{
-		delete items[id];
-		ObjBuf_remove(&block_item, id); 
+		IndexFreeItem(id);
 		std::cout << "Destroyed item " << id << std::endl;
 	}
 	HeldItem* GetItem(btID id)

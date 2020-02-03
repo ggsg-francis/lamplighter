@@ -525,6 +525,8 @@ namespace index
 
 	void RemoveAllReferences(btID index)
 	{
+		//for (int i = 0; i < eCELL_COUNT; ++i)
+		//	cells[ENTITY(i)->csi.c[i].x][ENTITY(i)->csi.c[i].y].ents.remove(index);
 		for (int i = 0; i <= block_entity.index_end; i++)
 			if (block_entity.used[i] && i != index) // If entity exists and is not me
 				if (ENTITY(i)->type == ENTITY_TYPE_CHARA) // and is actor
@@ -701,56 +703,82 @@ namespace index
 	//--------------------------- PREFABS --------------------------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-	void InitializeNewEntity(btID id, EntityType type)
+	void IndexInitEntity(btID id, EntityType type)
 	{
+		// this doesnt work, because this point will already be set by the function that gets the ID in the first place
 		//if (block_entity.used[id])
-			//delete ENTITY(id);
+		//{
+		//	//free(_entities[id]);
+		//	IndexFreeEntity(id);
+		//}
+
+		block_entity.used[id] = true;
+
+		bool type_recognized = false;
 
 		switch (type)
 		{
 		case ENTITY_TYPE_EDITOR_PAWN:
 			_entities[id] = new EditorPawn();
+			memset(_entities[id], 0, sizeof(EditorPawn));
+			//((EditorPawn)*((EditorPawn*)_entities[id])) = EditorPawn();
 			((Entity*)_entities[id])->fpName = DisplayNameActor;
+			((Entity*)_entities[id])->fpTick = TickEditorPawn;
 			((Entity*)_entities[id])->fpDraw = DrawEditorPawn;
+			type_recognized = true;
 			break;
 		case ENTITY_TYPE_RESTING_ITEM:
-			_entities[id] = new EItem();
+			_entities[id] = malloc(sizeof(RestingItem));
+			memset(_entities[id], 0, sizeof(RestingItem));
+			//((RestingItem)*((RestingItem*)_entities[id])) = RestingItem();
 			((Entity*)_entities[id])->fpName = DisplayNameRestingItem;
+			((Entity*)_entities[id])->fpTick = TickRestingItem;
 			((Entity*)_entities[id])->fpDraw = DrawRestingItem;
+			type_recognized = true;
 			break;
 		case ENTITY_TYPE_CHARA:
-			_entities[id] = new Chara();
+			_entities[id] = malloc(sizeof(Chara));
+			memset(_entities[id], 0, sizeof(Chara));
+			((Chara)*((Chara*)_entities[id])) = Chara();
 			((Entity*)_entities[id])->fpName = DisplayNameActor;
+			((Entity*)_entities[id])->fpTick = TickChara;
 			((Entity*)_entities[id])->fpDraw = DrawChara;
+			type_recognized = true;
 			break;
 		default:
 			std::cout << "Tried to initialize entity of no valid type" << std::endl;
 			break;
 		}
 
-		//free((void*)_entities[id]);
-
-		//switch (type)
-		//{
-		//case ENTITY_TYPE_EDITOR_PAWN:
-		//	_entities[id] = malloc(sizeof(EditorPawn));
-		//	break;
-		//case ENTITY_TYPE_RESTING_ITEM:
-		//	_entities[id] = malloc(sizeof(EItem));
-		//	break;
-		//case ENTITY_TYPE_CHARA:
-		//	_entities[id] = malloc(sizeof(Chara));
-		//	break;
-		//default:
-		//	//error
-		//	break;
-		//}
+		if (type_recognized)
+		{
+			((Entity*)_entities[id])->type = type;
+		}
 	}
-	void InitializeNewItem(btID id, ItemType type)
+	void IndexFreeEntity(btID id)
 	{
-		if (block_item.used[id])
-			delete items[id];
-
+		if (block_entity.used[id])
+		{
+			switch (ENTITY(id)->type)
+			{
+			case ENTITY_TYPE_EDITOR_PAWN:
+				delete _entities[id];
+				break;
+			case ENTITY_TYPE_RESTING_ITEM:
+				free(_entities[id]);
+				//_entities[id] = NULL;
+				break;
+			case ENTITY_TYPE_CHARA:
+				//delete _entities[id];
+				free(_entities[id]);
+				//_entities[id] = NULL;
+				break;
+			}
+		}
+		block_entity.remove(id);
+	}
+	void IndexInitItem(btID id, ItemType type)
+	{
 		switch (type)
 		{
 		case ITEM_EQUIP:
@@ -774,14 +802,34 @@ namespace index
 			break;
 		}
 	}
+	void IndexFreeItem(btID id)
+	{
+		if (block_item.used[id])
+		{
+			delete items[id];
+		}
+		ObjBuf_remove(&block_item, id);
+	}
 
 	inline void spawn_setup_t(btID index, m::Vector2 pos, btf32 dir)
 	{
 		ePos = pos;
+		ENTITY(index)->t.velocity = 0.f;
+		ENTITY(index)->t.height_velocity = 0.f;
 		eYaw2.Set(dir);
 		GetCellSpaceInfo(ePos, eCSI);
 		env::GetHeight(eHgt, eCSI);
 		AddEntityCell(eCSI.c[eCELL_I].x, eCSI.c[eCELL_I].y, index);
+		ENTITY(index)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(index)->state.hp = 1.f;
+		ENTITY(index)->radius = 0.5f;
+		ENTITY(index)->height = 1.9f;
+		if (ENTITY(index)->type == ENTITY_TYPE_CHARA)
+		{
+			CHARA(index)->atk_target = BUF_NULL;
+			CHARA(index)->ai_target_ent = BUF_NULL;
+			CHARA(index)->ai_ally_ent = BUF_NULL;
+		}
 	}
 
 	namespace prefab
@@ -798,7 +846,7 @@ namespace index
 
 	void prefab_pc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		InitializeNewEntity(id, ENTITY_TYPE_CHARA);
+		IndexInitEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
@@ -806,12 +854,14 @@ namespace index
 		CHARA(id)->t_skin = 0u;
 		CHARA(id)->aiControlled = false;
 		CHARA(id)->speed = 4.f;
+		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u);
+		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		InitializeNewEntity(id, ENTITY_TYPE_CHARA);
+		IndexInitEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::player;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
@@ -819,12 +869,14 @@ namespace index
 		CHARA(id)->t_skin = 1u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 6.f;
+		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u);
+		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		InitializeNewEntity(id, ENTITY_TYPE_CHARA);
+		IndexInitEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
@@ -832,12 +884,14 @@ namespace index
 		CHARA(id)->t_skin = 2u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 5.f;
+		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(0u);
+		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
 	}
 
 	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)
 	{
-		InitializeNewEntity(id, ENTITY_TYPE_CHARA);
+		IndexInitEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::undead;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
@@ -845,12 +899,14 @@ namespace index
 		CHARA(id)->t_skin = 3u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 1.f;
+		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(4u);
+		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
 	}
 
 	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)
 	{
-		InitializeNewEntity(id, ENTITY_TYPE_EDITOR_PAWN);
+		IndexInitEntity(id, ENTITY_TYPE_EDITOR_PAWN);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);

@@ -72,6 +72,11 @@ struct ActiveState
 
 char* DisplayNameActor(btID ent);
 char* DisplayNameRestingItem(btID ent);
+
+void TickRestingItem(btID ent, btf32 dt);
+void TickChara(btID ent, btf32 dt);
+void TickEditorPawn(btID ent, btf32 dt);
+
 void DrawRestingItem(btID ent);
 m::Vector3 SetFootPos(m::Vector2 position);
 void DrawChara(btID ent);
@@ -82,7 +87,7 @@ struct Entity
 {
 	char*(*fpName)(btID ent);
 
-	//void(*fpTick)(void* ent);
+	void(*fpTick)(btID ent, btf32 dt);
 	void(*fpDraw)(btID ent);
 
 	EntityType type;
@@ -115,16 +120,12 @@ struct Entity
 	Transform2D t;
 
 	CellSpace csi; // Where we are in cell space
-
-	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
 };
 // Entity type representing placed items
-struct EItem : public Entity
+struct RestingItem : public Entity
 {
 	btID item_instance;
-	Transform3D t_item;
-
-	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
+	graphics::Matrix4x4 matrix;
 };
 struct Actor : public Entity
 {
@@ -176,8 +177,6 @@ struct Actor : public Entity
 	void SetEquipSlot(btui32 slot);
 	void IncrEquipSlot();
 	void DecrEquipSlot();
-
-	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
 };
 enum FootState : btui8
 {
@@ -199,11 +198,11 @@ struct Chara : public Actor
 	};
 	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
 
-	enum CharaActiveState : btui8
-	{
-		ani_right_foot = (0x1ui8 << 0x0ui8),
-	}; 
-	mem::bv<btui8, CharaActiveState> charastatebv;
+	//enum CharaActiveState : btui8
+	//{
+	//	ani_right_foot = (0x1ui8 << 0x0ui8),
+	//}; 
+	//mem::bv<btui8, CharaActiveState> charastatebv;
 
 
 	Transform3D t_body, t_head;
@@ -213,8 +212,6 @@ struct Chara : public Actor
 	graphics::Matrix4x4 matLegHipL, matLegUpL, matLegLoL, matLegFootL;
 
 	FootState foot_state = eBOTH_DOWN;
-
-	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
 };
 struct EditorPawn : public Actor
 {
@@ -236,8 +233,5 @@ struct EditorPawn : public Actor
 	};
 	mem::bv<btui8, CharaActiveState> charastatebv;
 
-
 	Transform3D t_body, t_head;
-
-	virtual void Tick(btID INDEX, btf32 DELTA_TIME);
 };

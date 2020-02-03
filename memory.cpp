@@ -115,6 +115,15 @@ namespace mem
 		std::cout << "IDBUF attempted to remove pointer not in array" << std::endl;
 	}
 
+	void idbuf::clear()
+	{
+		for (int i = 0; i < IDBUF_SIZE; ++i)
+		{
+			ptr_id[i] = ID_NULL;
+			ptr_used[i] = false;
+		}
+	}
+
 	btui32 idbuf::end()
 	{
 		return id_end;

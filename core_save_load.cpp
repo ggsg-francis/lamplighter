@@ -112,7 +112,7 @@ void LoadStateFileV001()
 				fread(&type_temp, SIZE_8, 1, file);
 
 				// initialize entity here (eg. new) 
-				//index::InitializeNewEntity(i, type_temp);
+				index::IndexInitEntity(i, type_temp);
 
 				ENTITY(i)->type = type_temp;
 				fread(&ENTITY(i)->radius, SIZE_32, 1, file);
@@ -145,21 +145,21 @@ void LoadStateFileV001()
 
 		//-------------------------------- ITEMS
 
-		//fread(&index::block_item.index_end, SIZE_16, 1, file);
-		//fread(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1ui16), file);
+		fread(&index::block_item.index_end, SIZE_16, 1, file);
+		fread(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1ui16), file);
 
-		//for (btID i = 0; i <= index::block_item.index_end; i++) // For every entity
-		//{
-		//	if (index::block_item.used[i])
-		//	{
-		//		btID template_temp;
-		//		fread(&template_temp, SIZE_16, 1, file);
+		for (btID i = 0; i <= index::block_item.index_end; i++) // For every entity
+		{
+			if (index::block_item.used[i])
+			{
+				btID template_temp;
+				fread(&template_temp, SIZE_16, 1, file);
 
-		//		index::InitializeNewItem(i, acv::item_types[template_temp]);
+				index::IndexInitItem(i, acv::item_types[template_temp]);
 
-		//		index::items[i]->item_template = template_temp;
-		//	}
-		//}
+				index::items[i]->item_template = template_temp;
+			}
+		}
 
 		fclose(file); // Close file
 	}
@@ -171,7 +171,7 @@ void LoadState()
 	FILE* file = fopen("save/save.bin", "rb"); // Open file
 	if (file != NULL)
 	{
-		//index::ClearBuffers();
+		index::ClearBuffers();
 
 		fseek(file, 0, SEEK_SET); // Seek file beginning
 		fread(&FILE_VER, SIZE_32, 1, file); // Load file version
