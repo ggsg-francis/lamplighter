@@ -383,11 +383,11 @@ namespace index
 
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
+		int ii = block_entity_data[0].type;
+
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 			if (block_entity.used[i])
 				ENTITY(i)->fpTick(i, dt); // Call tick on entity
-
-		void* v = _entities[0];
 
 		SetViewTargetID(GetClosestActivator(players[0u]), 0u);
 		SetViewTargetID(GetClosestActivator(players[1u]), 1u);
@@ -876,10 +876,6 @@ namespace index
 		IndexFreeEntity(id);
 		std::cout << "Destroyed entity " << id << std::endl;
 	}
-	void* GetEntity(btID id)
-	{
-		return _entities[id];
-	}
 
 	btID SpawnItem(btID item_template)
 	{
@@ -893,10 +889,6 @@ namespace index
 	{
 		IndexFreeItem(id);
 		std::cout << "Destroyed item " << id << std::endl;
-	}
-	HeldItem* GetItem(btID id)
-	{
-		return items[id];
 	}
 
 	void ActorCastProj(btID i)

@@ -54,12 +54,39 @@ namespace index
 	//--------------------------- ENTITY BUFFERS -------------------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
+	//-------------------------------- ENTITIES
+
 	//block of IDs in memory, tracks the numbers and IDs of any type of object
 	mem::objbuf block_entity; // Entity buffer
-	void* _entities[BUF_SIZE];
+	EntAddr block_entity_data[BUF_SIZE];
+	// TODO: using fixed size arrays is a big memory hog, and the amount of space allocated here can never be filled
+	// just get it working for now, but use dynamic size arrays when possible
+	//mem::CkBuffer2<Chara> buf_entities;
+	mem::objbuf buf_resting_item;
+	RestingItem buf_resting_item_data[BUF_SIZE];
+	mem::objbuf buf_chara;
+	Chara       buf_chara_data[BUF_SIZE];
+
+	void* getEntEditorPawn(btID id) { return nullptr; }
+	void* getEntChara(btID id) { return &buf_chara_data[id]; }
+	void* getEntRestingItem(btID id) { return &buf_resting_item_data[id]; }
+	void*(*GetEntArray[])(btID) = { getEntEditorPawn, getEntRestingItem, getEntChara };
+	void* BufferPtr[] = { nullptr, &buf_resting_item_data, &buf_chara_data };
+	void* GetEntityPtr(btID id)
+	{
+		return GetEntArray[block_entity_data[id].type](block_entity_data[id].type_buffer_index);
+		//return (BufferPtr[type])[]
+	}
+
+	//-------------------------------- ITEMS
 
 	ObjBuf block_item; // Item buffer
 	HeldItem* items[BUF_SIZE];
+
+	HeldItem* GetItemPtr(btID id)
+	{
+		return items[id];
+	}
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- DEFINES FOR 'EASY ACCESS' ;3 ---------------------
@@ -68,14 +95,6 @@ namespace index
 	// TODO: fuck this honestly
 	namespace def
 	{
-		btui8 index = 0ui8; // waste of a byte
-		btui8 a = 0ui8; // waste of a byte
-
-		#define eCSI ((Entity*)_entities[index])->csi
-		#define ePos ((Entity*)_entities[index])->t.position
-		#define eHgt ((Entity*)_entities[index])->t.height
-		#define eYaw2 ((Entity*)_entities[index])->t.yaw
-
 		#define accel 0.025f // Accelleration speed (now not relevant due to animation based motion)
 		#define rotdeg 4.f // Rotation in degrees per frame when we hit a wall
 	}

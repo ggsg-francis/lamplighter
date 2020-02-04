@@ -60,8 +60,6 @@ namespace index
 	btID SpawnEntity(btui8 TYPE_PREFAB_TEMP, m::Vector2 pos, float dir);
 	// Removes a given Entity from the index
 	void DestroyEntity(btID ID);
-	// Get the pointer address of the entity at X ID
-	void* GetEntity(btID ID);
 
 	btID SpawnNewEntityItem(btID ITEM_TEMPLATE, m::Vector2 POSITION, btf32 DIRECTION);
 	btID SpawnEntityItem(btID ITEMID, m::Vector2 POSITION, btf32 DIRECTION);
@@ -70,8 +68,6 @@ namespace index
 	btID SpawnItem(btID ITEM_TEMPLATE);
 	// Destroy the item at ID
 	void DestroyItem(btID ID);
-	// Get the pointer of the item at ID
-	HeldItem* GetItem(btID ID);
 
 	//	Creates a projectile instance, allocates an ID and sends a network message
 	void SpawnProjectile(fac::faction FACTION, m::Vector2 POSITION, btf32 HEIGHT, float YAW, float PITCH, float SPREAD);
@@ -96,16 +92,34 @@ namespace index
 	// TODO: MOVE THIS SECTION TO INDEX
 
 	extern btID players[2];
+
+	//block of IDs in memory, tracks the numbers and IDs of any type of object
 	extern mem::objbuf block_entity; // Entity buffer
-	extern void* _entities[BUF_SIZE];
+	typedef struct EntAddr
+	{
+		EntityType type;
+		btID type_buffer_index;
+	} EntAddr;
+	extern EntAddr block_entity_data[BUF_SIZE];
+	extern mem::objbuf buf_resting_item;
+	extern RestingItem buf_resting_item_data[BUF_SIZE];
+	extern mem::objbuf buf_chara;
+	extern Chara       buf_chara_data[BUF_SIZE];
+
+	// Get the pointer address of the entity at X ID
+	void* GetEntityPtr(btID ID);
 
 	extern ObjBuf block_item; // Item buffer
 	extern HeldItem* items[BUF_SIZE];
 
-	#define CHARA(a) ((Chara*)index::_entities[a])
-	#define ACTOR(a) ((Actor*)index::_entities[a])
-	#define ENTITY(a) ((Entity*)index::_entities[a])
-	#define ITEM(a) ((RestingItem*)index::_entities[a])
+	// Get the pointer of the item at ID
+	HeldItem* GetItemPtr(btID ID);
+
+	#define ENT_VOID(a) (index::GetEntityPtr(a))
+	#define CHARA(a) ((Chara*)index::GetEntityPtr(a))
+	#define ACTOR(a) ((Actor*)index::GetEntityPtr(a))
+	#define ENTITY(a) ((Entity*)index::GetEntityPtr(a))
+	#define ITEM(a) ((RestingItem*)index::GetEntityPtr(a))
 
 	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack, bool use_hit, bool WantAttack2,
 		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C);

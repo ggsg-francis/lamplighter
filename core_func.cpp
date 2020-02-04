@@ -4,14 +4,6 @@
 
 namespace index
 {
-	Entity* GetEnt(btID id)
-	{
-		if (block_entity.used[id])
-			return ((Entity*)_entities[id]);
-		else
-			return nullptr;
-	}
-
 	#define HEAD_TURN_SPEED 8.f
 
 	void ActorRunAI(btID id)
@@ -716,33 +708,37 @@ namespace index
 
 		bool type_recognized = false;
 
+		block_entity_data[id].type = type;
+
 		switch (type)
 		{
 		case ENTITY_TYPE_EDITOR_PAWN:
-			_entities[id] = new EditorPawn();
-			memset(_entities[id], 0, sizeof(EditorPawn));
+			//_entities[id] = new EditorPawn();
+			memset(ENT_VOID(id), 0, sizeof(EditorPawn));
 			//((EditorPawn)*((EditorPawn*)_entities[id])) = EditorPawn();
-			((Entity*)_entities[id])->fpName = DisplayNameActor;
-			((Entity*)_entities[id])->fpTick = TickEditorPawn;
-			((Entity*)_entities[id])->fpDraw = DrawEditorPawn;
+			(ENTITY(id))->fpName = DisplayNameActor;
+			(ENTITY(id))->fpTick = TickEditorPawn;
+			(ENTITY(id))->fpDraw = DrawEditorPawn;
 			type_recognized = true;
 			break;
 		case ENTITY_TYPE_RESTING_ITEM:
-			_entities[id] = malloc(sizeof(RestingItem));
-			memset(_entities[id], 0, sizeof(RestingItem));
+			block_entity_data[id].type_buffer_index = buf_resting_item.add();
+			//_entities[id] = malloc(sizeof(RestingItem));
+			memset(ENT_VOID(id), 0, sizeof(RestingItem));
 			//((RestingItem)*((RestingItem*)_entities[id])) = RestingItem();
-			((Entity*)_entities[id])->fpName = DisplayNameRestingItem;
-			((Entity*)_entities[id])->fpTick = TickRestingItem;
-			((Entity*)_entities[id])->fpDraw = DrawRestingItem;
+			(ENTITY(id))->fpName = DisplayNameRestingItem;
+			(ENTITY(id))->fpTick = TickRestingItem;
+			(ENTITY(id))->fpDraw = DrawRestingItem;
 			type_recognized = true;
 			break;
 		case ENTITY_TYPE_CHARA:
-			_entities[id] = malloc(sizeof(Chara));
-			memset(_entities[id], 0, sizeof(Chara));
-			((Chara)*((Chara*)_entities[id])) = Chara();
-			((Entity*)_entities[id])->fpName = DisplayNameActor;
-			((Entity*)_entities[id])->fpTick = TickChara;
-			((Entity*)_entities[id])->fpDraw = DrawChara;
+			block_entity_data[id].type_buffer_index = buf_chara.add();
+			//_entities[id] = malloc(sizeof(Chara));
+			memset(ENT_VOID(id), 0, sizeof(Chara));
+			((Chara)*(CHARA(id))) = Chara();
+			(ENTITY(id))->fpName = DisplayNameActor;
+			(ENTITY(id))->fpTick = TickChara;
+			(ENTITY(id))->fpDraw = DrawChara;
 			type_recognized = true;
 			break;
 		default:
@@ -752,7 +748,7 @@ namespace index
 
 		if (type_recognized)
 		{
-			((Entity*)_entities[id])->type = type;
+			(ENTITY(id))->type = type;
 		}
 	}
 	void IndexFreeEntity(btID id)
@@ -762,15 +758,17 @@ namespace index
 			switch (ENTITY(id)->type)
 			{
 			case ENTITY_TYPE_EDITOR_PAWN:
-				delete _entities[id];
+				//delete _entities[id];
 				break;
 			case ENTITY_TYPE_RESTING_ITEM:
-				free(_entities[id]);
+				buf_resting_item.remove(block_entity_data[id].type_buffer_index);
+				//free(_entities[id]);
 				//_entities[id] = NULL;
 				break;
 			case ENTITY_TYPE_CHARA:
+				buf_chara.remove(block_entity_data[id].type_buffer_index);
 				//delete _entities[id];
-				free(_entities[id]);
+				//free(_entities[id]);
 				//_entities[id] = NULL;
 				break;
 			}
@@ -813,13 +811,13 @@ namespace index
 
 	inline void spawn_setup_t(btID index, m::Vector2 pos, btf32 dir)
 	{
-		ePos = pos;
+		ENTITY(index)->t.position = pos;
 		ENTITY(index)->t.velocity = 0.f;
 		ENTITY(index)->t.height_velocity = 0.f;
-		eYaw2.Set(dir);
-		GetCellSpaceInfo(ePos, eCSI);
-		env::GetHeight(eHgt, eCSI);
-		AddEntityCell(eCSI.c[eCELL_I].x, eCSI.c[eCELL_I].y, index);
+		ENTITY(index)->t.yaw.Set(dir);
+		GetCellSpaceInfo(ENTITY(index)->t.position, ENTITY(index)->csi);
+		env::GetHeight(ENTITY(index)->t.height, ENTITY(index)->csi);
+		AddEntityCell(ENTITY(index)->csi.c[eCELL_I].x, ENTITY(index)->csi.c[eCELL_I].y, index);
 		ENTITY(index)->state.properties.set(ActiveState::eALIVE);
 		ENTITY(index)->state.hp = 1.f;
 		ENTITY(index)->radius = 0.5f;

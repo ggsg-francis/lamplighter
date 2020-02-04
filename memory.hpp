@@ -104,6 +104,93 @@ namespace mem
 			return chunks[iChunk]->buffer[iElement];
 		}
 	};
+	template <class type> class CkBuffer2
+	{
+	private:
+		btui32 index_end = 0u;
+		Chunk<type>* chunks[CHUNK_BUFFER_SIZE]{ nullptr };
+		inline void DecrementEnd()
+		{
+			// test (is this the first element of this buffer)
+			btui32 iChunk = index_end / CHUNK_SIZE;
+			btui32 iElement = index_end - iChunk * CHUNK_SIZE;
+			if (iElement == 0u) {
+				delete chunks[iChunk];
+				chunks[iChunk] = nullptr;
+			}
+			// Go back one step
+			--index_end;
+		}
+	public:
+		CkBuffer2() {}
+		~CkBuffer2()
+		{
+			for (btui32 iChunk = 0u; iChunk < CHUNK_BUFFER_SIZE; ++iChunk)
+				if (chunks[iChunk] != nullptr)
+				{
+					for (btui32 iElement = 0u; iElement < CHUNK_SIZE; ++iChunk)
+						// If this space is used, call it's destructor
+						if (bvget<CHUNK_BITVEC>(chunks[iChunk]->buffer_used, (CHUNK_BITVEC)(1ui32 << iElement)))
+							chunks[iChunk]->buffer[iElement].~type();
+					// Delete the chunk
+					delete (void*)chunks[iChunk];
+				}
+		}
+		btui32 Add(type* element)
+		{
+			for (btui32 i = 0; i < CHUNK_BUFFER_MAX_INDEX; i++) // For every space in the buffer
+			{
+				btui32 iChunk = i / CHUNK_SIZE;
+				btui32 iElement = i - iChunk * CHUNK_SIZE;
+				// If this chunk is not created, create it
+				if (chunks[iChunk] == nullptr) chunks[iChunk] = new Chunk<type>;
+				// If this space is free, copy what we created into it
+				if (!bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement))
+				{
+					bvset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+					chunks[iChunk]->buffer[iElement] = *element;
+					delete (void*)element;
+					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
+					return i; // End the loop
+				}
+			}
+			return 0u;
+		}
+		void Remove(btui32 index)
+		{
+			// If within range (attempt to fix buffer overrun)
+			if (index <= index_end)
+			{
+				btui32 iChunk = index / CHUNK_SIZE;
+				btui32 iElement = index - iChunk * CHUNK_SIZE;
+				bvunset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+				chunks[iChunk]->buffer[iElement].~type();
+				if (index == index_end && index > 0u)
+				{
+					// Decrement index last (no point checking if it's not used, we already know)
+					DecrementEnd();
+					// Continue decrementing until we reach the next last full space
+					while (!Used(index_end) && index_end > 0u) DecrementEnd();
+				}
+			}
+		}
+		bool Used(btui32 index)
+		{
+			btui32 iChunk = index / CHUNK_SIZE;
+			btui32 iElement = index - iChunk * CHUNK_SIZE;
+			if (chunks[iChunk] != nullptr)
+				return bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+			else return false;
+		}
+		btui32 Size() { return index_end + 1ui32; }
+		type& operator[](btui32 index)
+		{
+			btui32 iChunk = index / CHUNK_SIZE;
+			btui32 iElement = index - iChunk * CHUNK_SIZE;
+			return chunks[iChunk]->buffer[iElement];
+		}
+	};
+
 
 	template <class type> class BufferInventoryTest
 	{

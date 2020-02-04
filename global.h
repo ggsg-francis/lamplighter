@@ -95,9 +95,9 @@ extern "C" {
 	#endif
 
 	typedef btui8 EntityType;
-	#define ENTITY_TYPE_EDITOR_PAWN 7ui8
-	#define ENTITY_TYPE_RESTING_ITEM 8ui8
-	#define ENTITY_TYPE_CHARA 9ui8
+	#define ENTITY_TYPE_EDITOR_PAWN 0ui8
+	#define ENTITY_TYPE_RESTING_ITEM 1ui8
+	#define ENTITY_TYPE_CHARA 2ui8
 
 	typedef btui8 ItemType;
 	#define ITEM_ROOT 1ui8

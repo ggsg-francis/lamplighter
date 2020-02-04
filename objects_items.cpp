@@ -69,7 +69,7 @@ void HeldMel::Tick(Actor * owner)
 			pitch = m::Lerp(pitch, 20.f, 0.3f);
 			if (owner->atk_target != BUF_NULL)
 			{
-				Entity* ent = (Entity*)index::GetEntity(owner->atk_target);
+				Entity* ent = (Entity*)index::GetEntityPtr(owner->atk_target);
 				ent->state.Damage(0.01f, yaw);
 			}
 		}
@@ -185,7 +185,7 @@ void HeldGun::Tick(Actor* owner)
 		{
 			//aud::PlayGunshotTemp(true); // Play gunshot sound
 
-			Entity* target = (Entity*)index::GetEntity(owner->atk_target);
+			Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
 			//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 			m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
 			m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(t_item.GetPosition().x, t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - t_item.GetPosition().y);
@@ -275,7 +275,7 @@ void HeldGun::Tick(Actor* owner)
 			{
 				//aud::PlayGunshotTemp(true); // Play gunshot sound
 
-				Entity* target = (Entity*)index::GetEntity(owner->atk_target);
+				Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
 				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(t_item.GetPosition().x, t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - t_item.GetPosition().y);
@@ -299,7 +299,7 @@ void HeldGun::Tick(Actor* owner)
 
 	if (owner->atk_target != BUF_NULL)
 	{
-		Entity* target = (Entity*)index::GetEntity(owner->atk_target);
+		Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
 		m::Vector2 targetoffset = m::Normalize(target->t.position - m::Vector2(t_item.GetPosition().x, t_item.GetPosition().z));
 		btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 		ang_aim_offset_temp = -m::AngDif(owner->viewYaw.Deg(), glm::degrees(angle_yaw));
@@ -551,7 +551,7 @@ void HeldGunMatchLock::Tick(Actor* owner)
 			{
 				//aud::PlayGunshotTemp(true); // Play gunshot sound
 
-				Entity* target = (Entity*)index::GetEntity(owner->atk_target);
+				Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
 				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(t_item.GetPosition().x, t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - t_item.GetPosition().y);
@@ -603,7 +603,7 @@ void HeldGunMatchLock::Tick(Actor* owner)
 
 	if (owner->atk_target != BUF_NULL)
 	{
-		Entity* target = (Entity*)index::GetEntity(owner->atk_target);
+		Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
 		m::Vector2 targetoffset = m::Normalize(target->t.position - m::Vector2(t_item.GetPosition().x, t_item.GetPosition().z));
 		btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 		ang_aim_offset_temp = -m::AngDif(owner->viewYaw.Deg(), glm::degrees(angle_yaw));
