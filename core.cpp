@@ -881,7 +881,7 @@ namespace index
 	{
 		btID id = ObjBuf_add(&block_item);
 		IndexInitItem(id, acv::item_types[item_template]);
-		items[id]->item_template = item_template;
+		GETITEM_MISC(id)->item_template = item_template;
 		std::cout << "Created item " << id << std::endl;
 		return id;
 	}

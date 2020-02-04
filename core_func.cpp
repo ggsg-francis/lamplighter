@@ -697,19 +697,9 @@ namespace index
 
 	void IndexInitEntity(btID id, EntityType type)
 	{
-		// this doesnt work, because this point will already be set by the function that gets the ID in the first place
-		//if (block_entity.used[id])
-		//{
-		//	//free(_entities[id]);
-		//	IndexFreeEntity(id);
-		//}
-
 		block_entity.used[id] = true;
-
-		bool type_recognized = false;
-
 		block_entity_data[id].type = type;
-
+		bool type_recognized = false;
 		switch (type)
 		{
 		case ENTITY_TYPE_EDITOR_PAWN:
@@ -762,14 +752,9 @@ namespace index
 				break;
 			case ENTITY_TYPE_RESTING_ITEM:
 				buf_resting_item.remove(block_entity_data[id].type_buffer_index);
-				//free(_entities[id]);
-				//_entities[id] = NULL;
 				break;
 			case ENTITY_TYPE_CHARA:
 				buf_chara.remove(block_entity_data[id].type_buffer_index);
-				//delete _entities[id];
-				//free(_entities[id]);
-				//_entities[id] = NULL;
 				break;
 			}
 		}
@@ -777,26 +762,31 @@ namespace index
 	}
 	void IndexInitItem(btID id, ItemType type)
 	{
+		block_item.used[id] = true;
+		block_item_data[id].type = type;
+		bool type_recognized = false;
 		switch (type)
 		{
 		case ITEM_EQUIP:
-			items[id] = new HeldItem;
+			*GETITEM_MISC(id) = HeldItem();
+			type_recognized = true;
 			break;
 		case ITEM_WPN_MELEE:
-			items[id] = new HeldMel;
+			*GETITEM_MISC(id) = HeldMel();
+			type_recognized = true;
 			break;
 		case ITEM_WPN_MATCHGUN:
-			items[id] = new HeldGun;
+			*GETITEM_MISC(id) = HeldGun();
 			//heldInstance = new HeldGunMatchLock;
+			type_recognized = true;
 			break;
 		case ITEM_WPN_MAGIC:
-			items[id] = new HeldMgc;
+			*GETITEM_MISC(id) = HeldMgc();
+			type_recognized = true;
 			break;
 		case ITEM_CONS:
-			items[id] = new HeldItem;
-			break;
-		default:
-			items[id] = new HeldItem;
+			*GETITEM_MISC(id) = HeldItem();
+			type_recognized = true;
 			break;
 		}
 	}
@@ -804,7 +794,24 @@ namespace index
 	{
 		if (block_item.used[id])
 		{
-			delete items[id];
+			switch (block_item_data[id].type)
+			{
+			case ITEM_EQUIP:
+				ObjBuf_remove(&buf_item_misc, block_item_data[id].type_buffer_index);
+				break;
+			case ITEM_WPN_MELEE:
+				ObjBuf_remove(&buf_item_melee, block_item_data[id].type_buffer_index);
+				break;
+			case ITEM_WPN_MATCHGUN:
+				ObjBuf_remove(&buf_item_gun, block_item_data[id].type_buffer_index);
+				break;
+			case ITEM_WPN_MAGIC:
+				ObjBuf_remove(&buf_item_mgc, block_item_data[id].type_buffer_index);
+				break;
+			case ITEM_CONS:
+				ObjBuf_remove(&buf_item_misc, block_item_data[id].type_buffer_index);
+				break;
+			}
 		}
 		ObjBuf_remove(&block_item, id);
 	}

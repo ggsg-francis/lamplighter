@@ -100,6 +100,7 @@ extern "C" {
 	#define ENTITY_TYPE_CHARA 2ui8
 
 	typedef btui8 ItemType;
+	#define ITEM_TEST 0ui8
 	#define ITEM_ROOT 1ui8
 	#define ITEM_EQUIP 2ui8
 	#define ITEM_WPN_MELEE 3ui8

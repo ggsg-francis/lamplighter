@@ -100,26 +100,27 @@ namespace index
 		EntityType type;
 		btID type_buffer_index;
 	} EntAddr;
-	extern EntAddr block_entity_data[BUF_SIZE];
-	extern mem::objbuf buf_resting_item;
-	extern RestingItem buf_resting_item_data[BUF_SIZE];
-	extern mem::objbuf buf_chara;
-	extern Chara       buf_chara_data[BUF_SIZE];
 
 	// Get the pointer address of the entity at X ID
 	void* GetEntityPtr(btID ID);
 
 	extern ObjBuf block_item; // Item buffer
-	extern HeldItem* items[BUF_SIZE];
+	//extern HeldItem* items[BUF_SIZE];
 
 	// Get the pointer of the item at ID
-	HeldItem* GetItemPtr(btID ID);
+	void* GetItemPtr(btID ID);
 
 	#define ENT_VOID(a) (index::GetEntityPtr(a))
 	#define CHARA(a) ((Chara*)index::GetEntityPtr(a))
 	#define ACTOR(a) ((Actor*)index::GetEntityPtr(a))
 	#define ENTITY(a) ((Entity*)index::GetEntityPtr(a))
 	#define ITEM(a) ((RestingItem*)index::GetEntityPtr(a))
+
+	#define GETITEM_VOID(a) (index::GetItemPtr(a))
+	#define GETITEM_MISC(a) ((HeldItem*)index::GetItemPtr(a))
+	#define GETITEM_MELEE(a) ((HeldMel*)index::GetItemPtr(a))
+	#define GETITEM_GUN(a) ((HeldGun*)index::GetItemPtr(a))
+	#define GETITEM_MAGIC(a) ((HeldMgc*)index::GetItemPtr(a))
 
 	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack, bool use_hit, bool WantAttack2,
 		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C);

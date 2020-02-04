@@ -78,7 +78,8 @@ void SaveState()
 		{
 			if (index::block_item.used[i])
 			{
-				fwrite(&index::items[i]->item_template, SIZE_16, 1, file);
+				//fwrite(&index::items[i]->item_template, SIZE_16, 1, file);
+				fwrite(&GETITEM_MISC(i)->item_template, SIZE_16, 1, file);
 			}
 		}
 
@@ -157,7 +158,8 @@ void LoadStateFileV001()
 
 				index::IndexInitItem(i, acv::item_types[template_temp]);
 
-				index::items[i]->item_template = template_temp;
+				//index::items[i]->item_template = template_temp;
+				GETITEM_MISC(i)->item_template = template_temp;
 			}
 		}
 

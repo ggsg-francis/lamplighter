@@ -25,7 +25,7 @@ void Inventory::Destroy(btID item_template)
 {
 	for (int i = 0; i < items.Size(); ++i)
 	{
-		if (index::GetItemPtr(items[i])->item_template == item_template) // if we already have a stack of this item
+		if (GETITEM_MISC(items[i])->item_template == item_template) // if we already have a stack of this item
 		{
 			DestroyIndex(i);
 			return;
@@ -64,9 +64,9 @@ void Inventory::Draw(btui16 active_slot)
 		if (items.Used(i))
 		{
 			if (i == active_slot)
-				graphics::DrawGUITexture(&res::GetT(acv::items[index::GetItemPtr(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
 			else
-				graphics::DrawGUITexture(&res::GetT(acv::items[index::GetItemPtr(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 16, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 16, 64, 64);
 		}
 	}
 	guibox_selection.ReGen((offset + active_slot * invspace) - 12, (offset + active_slot * invspace) + 12, p1_y_start + 12, p1_y_start + 36, 8, 8);
@@ -79,14 +79,14 @@ char* DisplayNameActor(btID ent)
 };
 char* DisplayNameRestingItem(btID ent)
 {
-	return (char*)acv::items[index::GetItemPtr(((RestingItem*)index::GetEntityPtr(ent))->item_instance)->item_template]->name;
+	return (char*)acv::items[GETITEM_MISC(((RestingItem*)index::GetEntityPtr(ent))->item_instance)->item_template]->name;
 };
 void DrawRestingItem(btID ent)
 {
 	RestingItem* item = (RestingItem*)index::GetEntityPtr(ent);
 	// Draw the mesh of our item id
 	//DrawMesh(ent, res::GetM(acv::items[index::GetItem(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[index::GetItem(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->t_item.getMatrix());
-	DrawMesh(ent, res::GetM(acv::items[index::GetItemPtr(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[index::GetItemPtr(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
+	DrawMesh(ent, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
 }
 m::Vector3 SetFootPos(m::Vector2 position)
 {
@@ -183,7 +183,7 @@ void DrawChara(btID ent)
 		DrawMeshDeform(ent, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 
 		// draw item
-		HELDINSTANCE->Draw(index::GetItemPtr(inventory.items[inv_active_slot])->item_template, t.position, t.height, viewYaw, viewPitch);
+		HELDINSTANCE->Draw(GETITEM_MISC(inventory.items[inv_active_slot])->item_template, t.position, t.height, viewYaw, viewPitch);
 
 		#undef HELDINSTANCE
 	}

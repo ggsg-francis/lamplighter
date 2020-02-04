@@ -80,12 +80,33 @@ namespace index
 
 	//-------------------------------- ITEMS
 
-	ObjBuf block_item; // Item buffer
-	HeldItem* items[BUF_SIZE];
+	//temp
+	//HeldItem* items[BUF_SIZE];
 
-	HeldItem* GetItemPtr(btID id)
+	ObjBuf block_item; // Item buffer
+	EntAddr block_item_data[BUF_SIZE];
+
+	ObjBuf buf_item_misc; // Item buffer
+	HeldItem buf_item_misc_data[BUF_SIZE];
+
+	ObjBuf buf_item_melee; // Item buffer
+	HeldMel buf_item_melee_data[BUF_SIZE];
+
+	ObjBuf buf_item_gun; // Item buffer
+	HeldGun buf_item_gun_data[BUF_SIZE];
+
+	ObjBuf buf_item_mgc; // Item buffer
+	HeldMgc buf_item_mgc_data[BUF_SIZE];
+
+	void* getItemMis(btID id) { return &buf_item_misc_data[id]; }
+	void* getItemMel(btID id) { return &buf_item_melee_data[id]; }
+	void* getItemGun(btID id) { return &buf_item_gun_data[id]; }
+	void* getItemMgc(btID id) { return &buf_item_mgc_data[id]; }
+	void*(*GetItemArray[])(btID) = { getItemMis, getItemMis, getItemMis, getItemMel, getItemGun, getItemMgc, getItemMis };
+	void* GetItemPtr(btID id)
 	{
-		return items[id];
+		//return items[id];
+		return GetItemArray[block_item_data[id].type](block_item_data[id].type_buffer_index);
 	}
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
