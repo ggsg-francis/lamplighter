@@ -626,22 +626,24 @@ namespace index
 
 	btID GetClosestEntityAllegLOS(btID index, btf32 dist, fac::facalleg allegiance)
 	{
+		Entity* entity_index = ENTITY(index);
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
+			Entity* entity = ENTITY(i);
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != index && ENTITY(i)->state.properties.get(ActiveState::eALIVE))
+			if (block_entity.used[i] && i != index && entity->state.properties.get(ActiveState::eALIVE))
 			{
 				// do I like THEM
-				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == allegiance)
+				if (fac::GetAllegiance(entity_index->faction, entity->faction) == allegiance)
 				{
-					btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
+					btf32 check_distance = m::Length(entity->t.position - entity_index->t.position);
 					if (check_distance < closest_distance)
 					{
 						// Linetrace environment to see if the character is visible
-						if (env::LineTrace(ENTITY(index)->t.position.x, ENTITY(index)->t.position.y,
-							               ENTITY(i)->t.position.x,     ENTITY(i)->t.position.y))
+						if (env::LineTrace(entity_index->t.position.x, entity_index->t.position.y,
+							entity->t.position.x, entity->t.position.y))
 						{
 							current_closest = i;
 							closest_distance = check_distance;
@@ -659,10 +661,11 @@ namespace index
 		btf32 closestDist = 2.f;
 		btf32 closest_angle = 20.f;
 
+		Entity* entity_index = ENTITY(index);
 		// Iterate through nearby cells
-		for (int x = ENTITY(index)->csi.c[eCELL_I].x - 3u; x < ENTITY(index)->csi.c[eCELL_I].x + 3u; x++)
+		for (int x = entity_index->csi.c[eCELL_I].x - 3u; x < entity_index->csi.c[eCELL_I].x + 3u; x++)
 		{
-			for (int y = ENTITY(index)->csi.c[eCELL_I].y - 3u; y < ENTITY(index)->csi.c[eCELL_I].y + 3u; y++)
+			for (int y = entity_index->csi.c[eCELL_I].y - 3u; y < entity_index->csi.c[eCELL_I].y + 3u; y++)
 			{
 				// Iterate through every entity space in this cell
 				for (int e = 0; e <= cells[x][y].ents.end(); e++)
@@ -670,10 +673,10 @@ namespace index
 					//if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->Type() == Entity::eITEM)
 					if (cells[x][y].ents[e] != ID_NULL && cells[x][y].ents[e] != index && block_entity.used[cells[x][y].ents[e]])
 					{
-						btf32 check_distance = m::Length(ENTITY(cells[x][y].ents[e])->t.position - ENTITY(index)->t.position);
+						btf32 check_distance = m::Length(ENTITY(cells[x][y].ents[e])->t.position - entity_index->t.position);
 						if (check_distance < closestDist)
 						{
-							m::Vector2 targetoffset = m::Normalize(ENTITY(cells[x][y].ents[e])->t.position - (ENTITY(index)->t.position));
+							m::Vector2 targetoffset = m::Normalize(ENTITY(cells[x][y].ents[e])->t.position - entity_index->t.position);
 
 							m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
 
@@ -706,9 +709,9 @@ namespace index
 			//_entities[id] = new EditorPawn();
 			memset(ENT_VOID(id), 0, sizeof(EditorPawn));
 			//((EditorPawn)*((EditorPawn*)_entities[id])) = EditorPawn();
-			(ENTITY(id))->fpName = DisplayNameActor;
-			(ENTITY(id))->fpTick = TickEditorPawn;
-			(ENTITY(id))->fpDraw = DrawEditorPawn;
+			//(ENTITY(id))->fpName = DisplayNameActor;
+			//(ENTITY(id))->fpTick = TickEditorPawn;
+			//(ENTITY(id))->fpDraw = DrawEditorPawn;
 			type_recognized = true;
 			break;
 		case ENTITY_TYPE_RESTING_ITEM:
@@ -716,9 +719,12 @@ namespace index
 			//_entities[id] = malloc(sizeof(RestingItem));
 			memset(ENT_VOID(id), 0, sizeof(RestingItem));
 			//((RestingItem)*((RestingItem*)_entities[id])) = RestingItem();
-			(ENTITY(id))->fpName = DisplayNameRestingItem;
-			(ENTITY(id))->fpTick = TickRestingItem;
-			(ENTITY(id))->fpDraw = DrawRestingItem;
+			//(ENTITY(id))->fpName = DisplayNameRestingItem;
+			//(ENTITY(id))->fpTick = TickRestingItem;
+			//(ENTITY(id))->fpDraw = DrawRestingItem;
+			// TODO: this should be properly formalized, i'm not supposed to be using this like this
+			// atm this is only supposed to make sure that the item reference is added to the cells
+			//spawn_setup_t(id, ENTITY(id)->t.position, ENTITY(id)->t.yaw.Deg());
 			type_recognized = true;
 			break;
 		case ENTITY_TYPE_CHARA:
@@ -726,9 +732,9 @@ namespace index
 			//_entities[id] = malloc(sizeof(Chara));
 			memset(ENT_VOID(id), 0, sizeof(Chara));
 			((Chara)*(CHARA(id))) = Chara();
-			(ENTITY(id))->fpName = DisplayNameActor;
-			(ENTITY(id))->fpTick = TickChara;
-			(ENTITY(id))->fpDraw = DrawChara;
+			//(ENTITY(id))->fpName = DisplayNameActor;
+			//(ENTITY(id))->fpTick = TickChara;
+			//(ENTITY(id))->fpDraw = DrawChara;
 			type_recognized = true;
 			break;
 		default:
@@ -738,6 +744,7 @@ namespace index
 
 		if (type_recognized)
 		{
+			(ENTITY(id))->id = id;
 			(ENTITY(id))->type = type;
 		}
 	}
@@ -764,29 +771,71 @@ namespace index
 	{
 		block_item.used[id] = true;
 		block_item_data[id].type = type;
-		bool type_recognized = false;
+		block_item_data[id].type_buffer_index = ObjBuf_add(ItemBufPtr[type]);
+		HeldItem* held_item = GETITEM_MISC(id);
 		switch (type)
 		{
+		case ITEM_MISC:
+			*held_item = HeldItem();
+			held_item->fpTick = HeldItemTick;
+			held_item->fpDraw = HeldItemDraw;
+			held_item->fpOnEquip = HeldItemOnEquip;
+			held_item->fpGetLeftHandPos = HeldItemGetLeftHandPos;
+			held_item->fpGetRightHandPos = HeldItemGetRightHandPos;
+			held_item->fpBlockTurn = HeldItemBlockTurn;
+			held_item->fpBlockMove = HeldItemBlockMove;
+			break;
 		case ITEM_EQUIP:
-			*GETITEM_MISC(id) = HeldItem();
-			type_recognized = true;
+			*held_item = HeldItem();
+			held_item->fpTick = HeldItemTick;
+			held_item->fpDraw = HeldItemDraw;
+			held_item->fpOnEquip = HeldItemOnEquip;
+			held_item->fpGetLeftHandPos = HeldItemGetLeftHandPos;
+			held_item->fpGetRightHandPos = HeldItemGetRightHandPos;
+			held_item->fpBlockTurn = HeldItemBlockTurn;
+			held_item->fpBlockMove = HeldItemBlockMove;
 			break;
 		case ITEM_WPN_MELEE:
-			*GETITEM_MISC(id) = HeldMel();
-			type_recognized = true;
+			*held_item = HeldMel();
+			held_item->fpTick = HeldMelTick;
+			held_item->fpDraw = HeldMelDraw;
+			held_item->fpOnEquip = HeldMelOnEquip;
+			held_item->fpGetLeftHandPos = HeldMelGetLeftHandPos;
+			held_item->fpGetRightHandPos = HeldMelGetRightHandPos;
+			held_item->fpBlockTurn = HeldMelBlockTurn;
+			held_item->fpBlockMove = HeldMelBlockMove;
 			break;
 		case ITEM_WPN_MATCHGUN:
-			*GETITEM_MISC(id) = HeldGun();
-			//heldInstance = new HeldGunMatchLock;
-			type_recognized = true;
+			*held_item = HeldGun();
+			//memset(held_item, 0, sizeof(HeldGun));
+			//*held_item = HeldGunMatchLock();
+			held_item->fpTick = HeldGunTick;
+			held_item->fpDraw = HeldGunDraw;
+			held_item->fpOnEquip = HeldGunOnEquip;
+			held_item->fpGetLeftHandPos = HeldGunGetLeftHandPos;
+			held_item->fpGetRightHandPos = HeldGunGetRightHandPos;
+			held_item->fpBlockTurn = HeldGunBlockTurn;
+			held_item->fpBlockMove = HeldGunBlockMove;
 			break;
 		case ITEM_WPN_MAGIC:
-			*GETITEM_MISC(id) = HeldMgc();
-			type_recognized = true;
+			*held_item = HeldMgc();
+			held_item->fpTick = HeldMgcTick;
+			held_item->fpDraw = HeldMgcDraw;
+			held_item->fpOnEquip = HeldMgcOnEquip;
+			held_item->fpGetLeftHandPos = HeldMgcGetLeftHandPos;
+			held_item->fpGetRightHandPos = HeldMgcGetRightHandPos;
+			held_item->fpBlockTurn = HeldMgcBlockTurn;
+			held_item->fpBlockMove = HeldMgcBlockMove;
 			break;
 		case ITEM_CONS:
-			*GETITEM_MISC(id) = HeldItem();
-			type_recognized = true;
+			*held_item = HeldItem();
+			held_item->fpTick = HeldItemTick;
+			held_item->fpDraw = HeldItemDraw;
+			held_item->fpOnEquip = HeldItemOnEquip;
+			held_item->fpGetLeftHandPos = HeldItemGetLeftHandPos;
+			held_item->fpGetRightHandPos = HeldItemGetRightHandPos;
+			held_item->fpBlockTurn = HeldItemBlockTurn;
+			held_item->fpBlockMove = HeldItemBlockMove;
 			break;
 		}
 	}

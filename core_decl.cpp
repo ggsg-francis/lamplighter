@@ -33,15 +33,12 @@ namespace index
 	btID players[2];
 	m::Vector2 viewpos;
 
-	btID activeplayer;
-
 	env::EnvNode editor_node_copy;
 
 	struct cell
 	{
 		mem::idbuf ents;
 	};
-
 	cell cells[WORLD_SIZE][WORLD_SIZE];
 
 	// inventory stuff
@@ -67,21 +64,26 @@ namespace index
 	mem::objbuf buf_chara;
 	Chara       buf_chara_data[BUF_SIZE];
 
-	void* getEntEditorPawn(btID id) { return nullptr; }
-	void* getEntChara(btID id) { return &buf_chara_data[id]; }
+	mem::objbuf* BufPtr[ENTITY_TYPE_COUNT] = { &buf_chara, &buf_resting_item, &buf_chara };
+	void* BufDataPtr[ENTITY_TYPE_COUNT] = { &buf_chara_data, &buf_resting_item_data, &buf_chara_data };
+	unsigned long long BufDataSize[ENTITY_TYPE_COUNT] = { sizeof(EditorPawn), sizeof(RestingItem), sizeof(Chara) };
+	// Return a string which will be printed to the screen when this entity is looked at
+	char*(*fpName[ENTITY_TYPE_COUNT])(void* self) { DisplayNameActor, DisplayNameRestingItem, DisplayNameActor };
+	// Tick this entity
+	void(*fpTick[ENTITY_TYPE_COUNT])(void* self, btf32 dt) { TickEditorPawn, TickRestingItem, TickChara };
+	// Render graphics of this entity
+	void(*fpDraw[ENTITY_TYPE_COUNT])(void* self) { DrawEditorPawn, DrawRestingItem, DrawChara };
+	// Get Entity address from ID
+	void* getEntEditorPawn(btID id) { return &buf_chara_data[id]; }
 	void* getEntRestingItem(btID id) { return &buf_resting_item_data[id]; }
-	void*(*GetEntArray[])(btID) = { getEntEditorPawn, getEntRestingItem, getEntChara };
-	void* BufferPtr[] = { nullptr, &buf_resting_item_data, &buf_chara_data };
+	void* getEntChara(btID id) { return &buf_chara_data[id]; }
+	void*(*GetEntArray[ENTITY_TYPE_COUNT])(btID) = { getEntEditorPawn, getEntRestingItem, getEntChara };
 	void* GetEntityPtr(btID id)
 	{
 		return GetEntArray[block_entity_data[id].type](block_entity_data[id].type_buffer_index);
-		//return (BufferPtr[type])[]
 	}
 
 	//-------------------------------- ITEMS
-
-	//temp
-	//HeldItem* items[BUF_SIZE];
 
 	ObjBuf block_item; // Item buffer
 	EntAddr block_item_data[BUF_SIZE];
@@ -99,13 +101,15 @@ namespace index
 	HeldMgc buf_item_mgc_data[BUF_SIZE];
 
 	void* getItemMis(btID id) { return &buf_item_misc_data[id]; }
+	void* getItemEqp(btID id) { return &buf_item_misc_data[id]; }
 	void* getItemMel(btID id) { return &buf_item_melee_data[id]; }
 	void* getItemGun(btID id) { return &buf_item_gun_data[id]; }
 	void* getItemMgc(btID id) { return &buf_item_mgc_data[id]; }
-	void*(*GetItemArray[])(btID) = { getItemMis, getItemMis, getItemMis, getItemMel, getItemGun, getItemMgc, getItemMis };
+	void* getItemCon(btID id) { return &buf_item_misc_data[id]; }
+	void*(*GetItemArray[])(btID) = { getItemMis, getItemEqp, getItemMel, getItemGun, getItemMgc, getItemCon };
+	ObjBuf* ItemBufPtr[] = { &buf_item_misc, &buf_item_misc, &buf_item_melee, &buf_item_gun, &buf_item_mgc, &buf_item_misc };
 	void* GetItemPtr(btID id)
 	{
-		//return items[id];
 		return GetItemArray[block_item_data[id].type](block_item_data[id].type_buffer_index);
 	}
 

@@ -13,11 +13,6 @@ namespace index
 	btID viewtarget[2]{ ID_NULL,ID_NULL };
 	btID viewtarget_last_tick[2]{ ID_NULL,ID_NULL };
 
-	// temp
-	#define GetCellX ENTITY(0)->csi.c[0].x
-	//temp
-	#define GetCellY ENTITY(0)->csi.c[0].y
-
 	btf32 GetHP(btID id)
 	{
 		return ENTITY(id)->state.hp;
@@ -39,10 +34,11 @@ namespace index
 		activePlayer = index;
 		viewpos = ENTITY(players[activePlayer])->t.position * -1.f;
 
+		Chara* chara = CHARA(players[activePlayer]);
 		#define h 1.6f + m::Lerp(resAniStep.height_start, resAniStep.height_end, aniLower.aniTime / resAniStep.time)
 		cfg::bEditMode ?
-			graphics::SetMatViewEditor(&CHARA(players[activePlayer])->t_head) :
-			graphics::SetMatView(&CHARA(players[activePlayer])->t_head);
+			graphics::SetMatViewEditor(&chara->t_head) :
+			graphics::SetMatView(&chara->t_head);
 		#undef h
 	}
 
@@ -215,6 +211,38 @@ namespace index
 		#undef PCAM
 	}
 
+	void DoSpawn()
+	{
+		// temp
+		for (int x = 0; x < WORLD_SIZE; ++x)
+		{
+			for (int y = 0; y < WORLD_SIZE; ++y)
+			{
+				if (env::Get(x, y, env::eflag::EF_SPAWN_TEST))
+				{
+					//env::UnSet(x, y, env::eflag::EF_SPAWN_TEST);
+					std::cout << "spawn flag" << std::endl;
+					//for (int i = 0; i < 8; ++i)
+					btf32 dist;
+					m::Vector2 pos1 = ENTITY(players[0])->t.position;
+					m::Vector2 pos2 = ENTITY(players[1])->t.position;
+					m::Vector2 pos3 = m::Vector2(x, y);
+					if (m::Length(pos1 - pos3) > 4.f && m::Length(pos2 - pos3) > 4.f)
+					{
+						btf32 random = m::Random(0.f, 10.f);
+						btui32 rand_rnd = (btui32)floor(random);
+						if (rand_rnd < 2u)
+							SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
+						else if (rand_rnd < 4u)
+							SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
+						else
+							SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);
+					}
+				}
+			}
+		}
+	}
+
 	void Init()
 	{
 		IndexInitialize();
@@ -273,34 +301,29 @@ namespace index
 		t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
 		// Spawnz
-		//if (SaveExists())
+		if (SaveExists())
 		{
-		//	LoadState();
+			LoadState();
+			//SpawnNewEntityItem(6ui16, m::Vector2(m::Random(1023.f, 1026.f), m::Random(1023.f, 1026.f)), m::Random(0.f, 365.f));
 		}
-		//else
+		else
 		{
 			if (cfg::bEditMode)
 				players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
 			else
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 			players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
-			//CHARA(players[1])->t_skin = 1u;
-			//CHARA(players[1])->faction = fac::playerhunter;
 
 			SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
 			SpawnNewEntityItem(4ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
 			SpawnNewEntityItem(1ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
 			SpawnNewEntityItem(2ui16, m::Vector2(1025.8f, 1024.f), 15.f);
 			SpawnNewEntityItem(3ui16, m::Vector2(1026.8f, 1026.f), 15.f);
-
-			if (!cfg::bEditMode)
-			{
-				//players[0] = SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025, 1025), 0.f);
-				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025, 1025), 0.f);
-				SpawnEntity(prefab::prefab_zombie, m::Vector2(1025, 1025), 0.f);
-			}
+			SpawnNewEntityItem(1ui16, m::Vector2(1023.5f, 1023.3f), 15.f);
 		}
 
+		ENTITY(players[0])->state.AddEffect(players[0], SE_DAMAGE_HP, 1.f, 1u);
+		
 		// This is going to blow up extremely fast if I don't automate it somehow
 
 		fac::SetAllegiance(fac::player, fac::player, fac::allied);
@@ -333,15 +356,13 @@ namespace index
 		{
 			if (block_entity.used[i])
 			{
-				//DestroyEntity(i);
 				IndexFreeEntity(i);
-				block_entity.remove(i);
+				//block_entity.remove(i);
 			}
 			if (block_item.used[i])
 			{
-				//DestroyItem(i);
 				IndexFreeItem(i);
-				ObjBuf_remove(&block_item, i);
+				//ObjBuf_remove(&block_item, i);
 			}
 		}
 		for (int x = 0; x < WORLD_SIZE; ++x)
@@ -357,37 +378,37 @@ namespace index
 
 	void Tick(btf32 dt)
 	{
-		/*
-		if (!cfg::bEditMode)
+		if (spawnz_time_temp < Time::time)
 		{
-			if (spawnz_time_temp < Time::time)
-			{
-				spawnz_time_temp = Time::time + 20.;
-				SpawnEntity(prefab::prefab_zombie, m::Vector2(1024, 1024) + m::Normalize(m::Vector2(m::Random(-1.f, 1.f), m::Random(-1.f, 1.f))) * 25.f, 0.f);
-				SpawnEntity(prefab::prefab_zombie, m::Vector2(1024, 1024) + m::Normalize(m::Vector2(m::Random(-1.f, 1.f), m::Random(-1.f, 1.f))) * 25.f, 0.f);
-				SpawnEntity(prefab::prefab_zombie, m::Vector2(1024, 1024) + m::Normalize(m::Vector2(m::Random(-1.f, 1.f), m::Random(-1.f, 1.f))) * 25.f, 0.f);
-				SpawnEntity(prefab::prefab_zombie, m::Vector2(1024, 1024) + m::Normalize(m::Vector2(m::Random(-1.f, 1.f), m::Random(-1.f, 1.f))) * 25.f, 0.f);
-				SpawnEntity(prefab::prefab_zombie, m::Vector2(1024, 1024) + m::Normalize(m::Vector2(m::Random(-1.f, 1.f), m::Random(-1.f, 1.f))) * 25.f, 0.f);
-
-				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				//SpawnEntity(prefab::prefab_zombie, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				//SpawnEntity(prefab::prefab_npc, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-				//SpawnEntity(prefab::prefab_npc, m::Vector2(m::Random(896, 1152), m::Random(896, 1152)), 0.f);
-			}
-		} //*/
+			spawnz_time_temp = Time::time + 30.f;
+			DoSpawn();
+		}
 
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
-		int ii = block_entity_data[0].type;
-
+		// slow fast version
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
+		{
 			if (block_entity.used[i])
-				ENTITY(i)->fpTick(i, dt); // Call tick on entity
+			{
+				fpTick[block_entity_data[i].type](ENTITY(i), dt); // Call tick on entity
+			}
+		}
+		/*
+		btui32 index_buf, index_ent;
+		// fast slow version
+		// start at one to skip the editor pawn buffer pointer, which points to the chara buffer
+		for (index_buf = 1; index_buf < ENTITY_TYPE_COUNT; ++index_buf)
+		{
+			for (index_ent = 0; index_ent <= BufPtr[index_buf]->index_end; ++index_ent)
+			{
+				if (BufPtr[index_buf]->used[index_ent])
+				{
+					fpTick[index_buf]((Entity*)(((btui8*)(BufDataPtr[index_buf]) + index_ent * BufDataSize[index_buf])), dt);
+				}
+			}
+		}
+		*/
 
 		SetViewTargetID(GetClosestActivator(players[0u]), 0u);
 		SetViewTargetID(GetClosestActivator(players[1u]), 1u);
@@ -405,6 +426,11 @@ namespace index
 
 		if (cfg::bEditMode)
 		{
+			Entity* entity = ENTITY(0);
+
+			#define GetCellY entity->csi.c[0].y
+			#define GetCellX entity->csi.c[0].x
+
 			if (input::GetHit(input::key::USE))
 			{
 				//env::GeneratePaths();
@@ -424,7 +450,13 @@ namespace index
 			}
 			else if (input::GetHit(input::key::FUNCTION_3)) // TOGGLE LIGHT
 			{
-				env::Get(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC) ? env::UnSet(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC) : env::Set(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC);
+				env::Get(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC)
+					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC) : env::Set(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC);
+			}
+			else if (input::GetHit(input::key::FUNCTION_4)) // TOGGLE LIGHT
+			{
+				env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST)
+					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST) : env::Set(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
 			}
 			else if (input::GetHit(input::key::ACTION_A))
 			{
@@ -454,6 +486,9 @@ namespace index
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells[GetCellX][GetCellY].height);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 			}
+
+			#undef GetCellX
+			#undef GetCellY
 		}
 		else
 		{
@@ -530,13 +565,6 @@ namespace index
 			lightPos = lightVecForw * moveF + LightVecSide * moveS + LightVecUp * moveU;
 
 			// Set light matrices
-			/*
-			graphics::SetMatProjLight(); graphics::SetMatViewLight(
-				ENTITY(activePlayer)->t.position.x,
-				ENTITY(activePlayer)->t.height,
-				-ENTITY(activePlayer)->t.position.y,
-				-sunrot2.x, -sunrot2.y, -sunrot2.z);//*/
-				//*
 			graphics::SetMatProjLight(); graphics::SetMatViewLight(
 				lightPos.x,
 				lightPos.y,
@@ -565,10 +593,10 @@ namespace index
 		if (cfg::bEditMode)
 		{
 			btui32 drawrange = 8u; // Create min/max draw coordinates
-			bti32 minx = ENTITY(activePlayer)->csi.c[0].x - drawrange; if (minx < 0) minx = 0;
-			bti32 maxx = ENTITY(activePlayer)->csi.c[0].x + drawrange; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
-			bti32 miny = ENTITY(activePlayer)->csi.c[0].y - drawrange; if (miny < 0) miny = 0;
-			bti32 maxy = ENTITY(activePlayer)->csi.c[0].y + drawrange; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
+			bti32 minx = ENTITY(players[activePlayer])->csi.c[0].x - drawrange; if (minx < 0) minx = 0;
+			bti32 maxx = ENTITY(players[activePlayer])->csi.c[0].x + drawrange; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
+			bti32 miny = ENTITY(players[activePlayer])->csi.c[0].y - drawrange; if (miny < 0) miny = 0;
+			bti32 maxy = ENTITY(players[activePlayer])->csi.c[0].y + drawrange; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
 			for (bti32 x = minx; x <= maxx; x++)
 			{
 				for (bti32 y = miny; y < maxy; y++)
@@ -582,6 +610,11 @@ namespace index
 					{
 						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
 						DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), res::GetT(res::t_default), SS_NORMAL, matrix);
+					}
+					if (env::Get(x, y, env::eflag::EF_SPAWN_TEST))
+					{
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
+						DrawMesh(ID_NULL, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_default), SS_NORMAL, matrix);
 					}
 					if (env::eCells[x][y].prop == ID_NULL) env::eCells[x][y].prop = 0u;
 					//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
@@ -604,17 +637,19 @@ namespace index
 		else
 		{
 			#define DRAWRANGE 16u
+			Entity* entity = ENTITY(activePlayer);
 			// Set min/max draw coordinates
-			bti32 minx = ENTITY(activePlayer)->csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
-			bti32 maxx = ENTITY(activePlayer)->csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
-			bti32 miny = ENTITY(activePlayer)->csi.c[0].y - DRAWRANGE; if (miny < 0) miny = 0;
-			bti32 maxy = ENTITY(activePlayer)->csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
+			bti32 minx = entity->csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
+			bti32 maxx = entity->csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
+			bti32 miny = entity->csi.c[0].y - DRAWRANGE; if (miny < 0) miny = 0;
+			bti32 maxy = entity->csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
 			for (bti32 x = minx; x <= maxx; x++) {
 				for (bti32 y = miny; y < maxy; y++) {
 					//-------------------------------- DRAW ENTITIES ON THIS CELL
 					for (int e = 0; e <= cells[x][y].ents.end(); e++)
 						if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]])
-							ENTITY(cells[x][y].ents[e])->fpDraw(cells[x][y].ents[e]);
+							//ENTITY(cells[x][y].ents[e])->fpDraw(ENT_VOID(cells[x][y].ents[e]));
+							fpDraw[block_entity_data[cells[x][y].ents[e]].type](ENT_VOID(cells[x][y].ents[e]));
 							//ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
 					if (oob)
 					{
@@ -708,9 +743,9 @@ namespace index
 				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
 				{
 					// SOUL TRANSFER
-					// Possession, actually
-					ACTOR(players[activePlayer])->aiControlled = true;
-					players[activePlayer] = viewtarget[activePlayer];
+					if (players[0] != players[1]) // If both player's arent using the same entity
+						ACTOR(players[activePlayer])->aiControlled = true; // Let the AI take over
+					players[activePlayer] = viewtarget[activePlayer]; // Set player to control player's view target
 					ACTOR(players[activePlayer])->aiControlled = false;
 				}
 			if (input::GetHit(input::key::DROP_HELD))
@@ -729,8 +764,12 @@ namespace index
 				{
 					// SOUL TRANSFER
 					// Possession, actually
-					ACTOR(players[activePlayer])->aiControlled = true;
+					// If both players aren't controlling the same entity, let the AI take over
+					if (players[0] != players[1])
+						ACTOR(players[activePlayer])->aiControlled = true;
+					// Set the player to possess their view target entity
 					players[activePlayer] = viewtarget[activePlayer];
+					// Disable the AI on the possessed entity
 					ACTOR(players[activePlayer])->aiControlled = false;
 				}
 			if (input::GetHit(input::key::C_DROP_HELD))
@@ -752,6 +791,9 @@ namespace index
 		//draw ui
 		graphics::GetShader(graphics::S_GUI).Use();
 
+		//TODO: use 'actor'?
+		Chara* chara = CHARA(players[activePlayer]);
+
 		// croshair
 		//graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), &graphics::GetShader(graphics::S_GUI), 0, 0, 32, 32);
 		// hp
@@ -764,7 +806,8 @@ namespace index
 			if (viewtarget[activePlayer] != viewtarget_last_tick[activePlayer]) // if target has changed
 			{
 				//text_temp.ReGen(ENTITY(viewtarget[activePlayer])->GetDisplayName(), textboxX, textboxX + 512, textboxY);
-				text_temp.ReGen(ENTITY(viewtarget[activePlayer])->fpName(viewtarget[activePlayer]), textboxX, textboxX + 512, textboxY);
+				//text_temp.ReGen(ENTITY(viewtarget[activePlayer])->fpName(ENT_VOID(viewtarget[activePlayer])), textboxX, textboxX + 512, textboxY);
+				text_temp.ReGen(fpName[block_entity_data[viewtarget[activePlayer]].type](ENT_VOID(viewtarget[activePlayer])), textboxX, textboxX + 512, textboxY);
 				guibox.ReGen(textboxX, textboxX + text_temp.sizex, textboxY - text_temp.sizey, textboxY, 4, 10);
 			}
 			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
@@ -775,7 +818,7 @@ namespace index
 				graphics::DrawGUITexture(&res::GetT(res::t_gui_icon_pick_up), textboxX + 16, textboxY + 32, 32, 32);
 		}
 		// inventory
-		CHARA(players[activePlayer])->inventory.Draw(ACTOR(players[activePlayer])->inv_active_slot);
+		chara->inventory.Draw(chara->inv_active_slot);
 	}
 
 	void DrawPostDraw()
@@ -840,34 +883,37 @@ namespace index
 	btID SpawnNewEntityItem(btID item_template, m::Vector2 pos, btf32 dir)
 	{
 		btID id = block_entity.add();
-
 		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = SpawnItem(item_template);
-
 		return id;
 	}
 	btID SpawnEntityItem(btID itemid, m::Vector2 pos, btf32 dir)
 	{
 		btID id = block_entity.add();
-
 		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
 		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = itemid;
-
 		return id;
 	}
 
 	btID SpawnEntity(btui8 type, m::Vector2 pos, float dir)
 	{
 		btID id = block_entity.add();
-		PrefabEntity[type](id, pos, dir);
+		if (id != ID_NULL)
+		{
+			PrefabEntity[type](id, pos, dir);
+		}
+		else
+		{
+			std::cout << "Could not spawn entity, ran out of space" << std::endl;
+		}
 		return id;
 	}
 	void DestroyEntity(btID id)
@@ -880,9 +926,16 @@ namespace index
 	btID SpawnItem(btID item_template)
 	{
 		btID id = ObjBuf_add(&block_item);
-		IndexInitItem(id, acv::item_types[item_template]);
-		GETITEM_MISC(id)->item_template = item_template;
-		std::cout << "Created item " << id << std::endl;
+		if (id != BUF_NULL)
+		{
+			IndexInitItem(id, acv::item_types[item_template]);
+			GETITEM_MISC(id)->item_template = item_template;
+			std::cout << "Created item " << id << std::endl;
+		}
+		else
+		{
+			std::cout << "Failed to create item!" << std::endl;
+		}
 		return id;
 	}
 	void DestroyItem(btID id)

@@ -10,6 +10,15 @@
 #define SIZE_32 4
 #define SIZE_64 8
 
+namespace index
+{
+	struct cell
+	{
+		mem::idbuf ents;
+	};
+	extern cell cells[WORLD_SIZE][WORLD_SIZE];
+}
+
 bool SaveExists()
 {
 	FILE* file = fopen("save/save.bin", "rb"); // Open file
@@ -47,6 +56,7 @@ void SaveState()
 				fwrite(&ENTITY(i)->faction, SIZE_8, 1, file);
 				fwrite(&ENTITY(i)->state.hp, SIZE_32, 1, file);
 				fwrite(&ENTITY(i)->state.properties, SIZE_64, 1, file);
+				fwrite(&ENTITY(i)->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
 				fwrite(&ENTITY(i)->t.position.x, SIZE_32, 1, file);
 				fwrite(&ENTITY(i)->t.position.y, SIZE_32, 1, file);
 				fwrite(&ENTITY(i)->t.height, SIZE_32, 1, file);
@@ -82,6 +92,15 @@ void SaveState()
 				fwrite(&GETITEM_MISC(i)->item_template, SIZE_16, 1, file);
 			}
 		}
+
+		//-------------------------------- CELL CACHE
+
+		// TODO: there's a glitch in the regemeration of the environment cells, we should
+		// formalize this to make sure there are no glitches in the future
+		// until then, this is a quick fix
+		// POTENTIAL FIX: in the loop where we iterate all tick functions, incl. a function call
+		// that regenerates the cells of X entity, so that i never have to worry about it again
+		fwrite(&index::cells, sizeof(index::cells), 1, file);
 
 		fclose(file); // Close file
 	}
@@ -122,6 +141,7 @@ void LoadStateFileV001()
 				fread(&ENTITY(i)->faction, SIZE_8, 1, file);
 				fread(&ENTITY(i)->state.hp, SIZE_32, 1, file);
 				fread(&ENTITY(i)->state.properties, SIZE_64, 1, file);
+				fread(&ENTITY(i)->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
 				fread(&ENTITY(i)->t.position.x, SIZE_32, 1, file);
 				fread(&ENTITY(i)->t.position.y, SIZE_32, 1, file);
 				fread(&ENTITY(i)->t.height, SIZE_32, 1, file);
@@ -141,6 +161,8 @@ void LoadStateFileV001()
 					fread(&ACTOR(i)->inv_active_slot, SIZE_32, 1, file);
 					fread(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
 				}
+
+				std::cout << "Loaded entity ID " << i << std::endl;
 			}
 		}
 
@@ -160,8 +182,14 @@ void LoadStateFileV001()
 
 				//index::items[i]->item_template = template_temp;
 				GETITEM_MISC(i)->item_template = template_temp;
+
+				std::cout << "Loaded item ID " << i << std::endl;
 			}
 		}
+
+		//-------------------------------- CELL CACHE
+
+		fread(&index::cells, sizeof(index::cells), 1, file);
 
 		fclose(file); // Close file
 	}

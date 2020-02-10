@@ -34,6 +34,7 @@ struct HeldItem;
 namespace mem
 {
 	struct objbuf;
+	struct idbuf;
 }
 
 struct ObjBuf;
@@ -64,6 +65,8 @@ namespace index
 	btID SpawnNewEntityItem(btID ITEM_TEMPLATE, m::Vector2 POSITION, btf32 DIRECTION);
 	btID SpawnEntityItem(btID ITEMID, m::Vector2 POSITION, btf32 DIRECTION);
 
+	inline void spawn_setup_t(btID index, m::Vector2 pos, btf32 dir);
+
 	// Create a new item instance of type TYPE
 	btID SpawnItem(btID ITEM_TEMPLATE);
 	// Destroy the item at ID
@@ -93,27 +96,32 @@ namespace index
 
 	extern btID players[2];
 
-	//block of IDs in memory, tracks the numbers and IDs of any type of object
-	extern mem::objbuf block_entity; // Entity buffer
 	typedef struct EntAddr
 	{
 		EntityType type;
 		btID type_buffer_index;
 	} EntAddr;
 
+	// Block of IDs in memory, tracks the numbers and types of entities
+	extern mem::objbuf block_entity;
 	// Get the pointer address of the entity at X ID
 	void* GetEntityPtr(btID ID);
 
-	extern ObjBuf block_item; // Item buffer
-	//extern HeldItem* items[BUF_SIZE];
-
+	// Block of IDs in memory, tracks the numbers and types of items
+	extern ObjBuf block_item;
 	// Get the pointer of the item at ID
 	void* GetItemPtr(btID ID);
 
+	// TODO: working on reducing the use of these functions
+	//  ok
 	#define ENT_VOID(a) (index::GetEntityPtr(a))
+	// ok-ish
 	#define CHARA(a) ((Chara*)index::GetEntityPtr(a))
+	// not ok
 	#define ACTOR(a) ((Actor*)index::GetEntityPtr(a))
+	// not ok
 	#define ENTITY(a) ((Entity*)index::GetEntityPtr(a))
+	// not ok
 	#define ITEM(a) ((RestingItem*)index::GetEntityPtr(a))
 
 	#define GETITEM_VOID(a) (index::GetItemPtr(a))

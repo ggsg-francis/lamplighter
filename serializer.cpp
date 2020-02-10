@@ -261,11 +261,11 @@ namespace serializer
 	{
 		void* item;
 
-		#define ITEM_ITEM ((acv::item*)item)
-		#define ITEM_MISC ((acv::item_misc*)item)
-		#define ITEM_APR ((acv::item_aprl*)item)
-		#define ITEM_W_MELEE ((acv::item_w_melee*)item)
-		#define ITEM_PTN ((acv::item_pton*)item)
+		#define GET2_ITEM_ITEM ((acv::item*)item)
+		#define GET2_ITEM_MISC ((acv::item_misc*)item)
+		#define GET2_ITEM_APR ((acv::item_aprl*)item)
+		#define GET2_ITEM_W_MELEE ((acv::item_w_melee*)item)
+		#define GET2_ITEM_PTN ((acv::item_pton*)item)
 
 		FILE* file = fopen(fn, "r"); // Open file
 		if (file != NULL)
@@ -357,7 +357,7 @@ namespace serializer
 				{
 					if (strcmp(elem, "misc") == 0) {
 						acv::items[acv::item_index] = new acv::item();
-						acv::item_types[acv::item_index] = ITEM_ROOT;
+						acv::item_types[acv::item_index] = ITEM_MISC;
 					}
 					else if (strcmp(elem, "aprl") == 0) {
 						acv::items[acv::item_index] = new acv::item_aprl();
@@ -372,7 +372,7 @@ namespace serializer
 				//....................................... ASSIGN ITEM ID
 
 				item = acv::items[acv::item_index];
-				ITEM_ITEM->id = acv::item_index;
+				GET2_ITEM_ITEM->id = acv::item_index;
 				acv::item_index++;
 
 				//....................................... READ ITEM PROPERTIES
@@ -408,41 +408,41 @@ namespace serializer
 					}
 					else if (strcmp(elem, "icon") == 0) // Icon (change to string?)
 						//ITEM_ITEM->id_icon = (btID)atoi(value);
-						ITEM_ITEM->id_icon = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
+						GET2_ITEM_ITEM->id_icon = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "name") == 0) // Name
-						memcpy(ITEM_ITEM->name, value, end - start);
+						memcpy(GET2_ITEM_ITEM->name, value, end - start);
 					else if (strcmp(elem, "wght") == 0) // Carry weight
-						ITEM_ITEM->f_weight = (btf32)atof(value);
+						GET2_ITEM_ITEM->f_weight = (btf32)atof(value);
 					else if (strcmp(elem, "muns") == 0) // Money base value
-						ITEM_ITEM->f_value_base = (btui32)atoi(value);
+						GET2_ITEM_ITEM->f_value_base = (btui32)atoi(value);
 					else if (strcmp(elem, "radi") == 0) // Radius when placed
-						ITEM_ITEM->f_radius = (btf32)atof(value);
+						GET2_ITEM_ITEM->f_radius = (btf32)atof(value);
 					else if (strcmp(elem, "mdlh") == 0) // Model height when placed
-						ITEM_ITEM->f_model_height = (btf32)atof(value);
+						GET2_ITEM_ITEM->f_model_height = (btf32)atof(value);
 					else if (strcmp(elem, "srct") == 0) // Texture
-						ITEM_ITEM->id_tex = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
+						GET2_ITEM_ITEM->id_tex = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "srcm") == 0) // Mesh
-						ITEM_ITEM->id_mesh = GetIDFromHandle(value, ASSET_MESH_FILE);
+						GET2_ITEM_ITEM->id_mesh = GetIDFromHandle(value, ASSET_MESH_FILE);
 					else if (strcmp(elem, "scmb") == 0) // Mesh
-						ITEM_ITEM->id_mesh = GetIDFromHandle(value, ASSET_MESHBLEND_FILE);
+						GET2_ITEM_ITEM->id_mesh = GetIDFromHandle(value, ASSET_MESHBLEND_FILE);
 					// Weapon value
 					else if (strcmp(elem, "held") == 0) // Damage pierce
 					{
 						//ITEM_WPN->damage_pierce = atof(value);
 					}
 					else if (strcmp(elem, "dmg1") == 0) // Damage pierce
-						ITEM_W_MELEE->f_dam_pierce = (float)atof(value);
+						GET2_ITEM_W_MELEE->f_dam_pierce = (float)atof(value);
 					else if (strcmp(elem, "dmg2") == 0) // Damage slash
-						ITEM_W_MELEE->f_dam_slash = (float)atof(value);
+						GET2_ITEM_W_MELEE->f_dam_slash = (float)atof(value);
 					else if (strcmp(elem, "dmg3") == 0) // Damage slam
-						ITEM_W_MELEE->f_dam_slam = (float)atof(value);
+						GET2_ITEM_W_MELEE->f_dam_slam = (float)atof(value);
 					// Apparel value
 					else if (strcmp(elem, "def1") == 0) // Defend pierce damage
-						ITEM_APR->block_pierce = (float)atof(value);
+						GET2_ITEM_APR->block_pierce = (float)atof(value);
 					else if (strcmp(elem, "def2") == 0) // Defend slash damage
-						ITEM_APR->block_slice = (float)atof(value);
+						GET2_ITEM_APR->block_slice = (float)atof(value);
 					else if (strcmp(elem, "def3") == 0) // Defend slam damage
-						ITEM_APR->block_slam = (float)atof(value);
+						GET2_ITEM_APR->block_slam = (float)atof(value);
 
 					free(value); // Free content string
 

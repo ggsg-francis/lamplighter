@@ -98,15 +98,16 @@ extern "C" {
 	#define ENTITY_TYPE_EDITOR_PAWN 0ui8
 	#define ENTITY_TYPE_RESTING_ITEM 1ui8
 	#define ENTITY_TYPE_CHARA 2ui8
+	// Count the above
+	#define ENTITY_TYPE_COUNT 3u
 
 	typedef btui8 ItemType;
-	#define ITEM_TEST 0ui8
-	#define ITEM_ROOT 1ui8
-	#define ITEM_EQUIP 2ui8
-	#define ITEM_WPN_MELEE 3ui8
-	#define ITEM_WPN_MATCHGUN 4ui8
-	#define ITEM_WPN_MAGIC 5ui8
-	#define ITEM_CONS 6ui8
+	#define ITEM_MISC 0ui8
+	#define ITEM_EQUIP 1ui8
+	#define ITEM_WPN_MELEE 2ui8
+	#define ITEM_WPN_MATCHGUN 3ui8
+	#define ITEM_WPN_MAGIC 4ui8
+	#define ITEM_CONS 5ui8
 	///*
 	typedef btui8 AssetType;
 	#define ASSET_NONE 0ui8

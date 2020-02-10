@@ -191,8 +191,12 @@ namespace mem
 		}
 	};
 
+	#undef CHUNK_SIZE
+	#undef CHUNK_BITVEC
+	#undef CHUNK_BUFFER_SIZE
+	#undef CHUNK_BUFFER_MAX_INDEX
 
-	template <class type> class BufferInventoryTest
+	template <class type> class Buffer64
 	{
 	private:
 		btui32 index_end = 0u;
@@ -206,7 +210,7 @@ namespace mem
 	public:
 		btui32 Add(type element)
 		{
-			for (btui32 i = 0; i < CHUNK_BUFFER_MAX_INDEX; i++) // For every space in the buffer
+			for (btui32 i = 0; i < 64ui32; i++) // For every space in the buffer
 			{
 				// If this space is free, copy what we created into it
 				if (!bvget(used, 1ui64 << (btui64)i))
@@ -242,10 +246,55 @@ namespace mem
 		type& operator[](btui32 index) { return buffer[index]; }
 	};
 
-	#undef CHUNK_SIZE
-	#undef CHUNK_BITVEC
-	#undef CHUNK_BUFFER_SIZE
-	#undef CHUNK_BUFFER_MAX_INDEX
+	template <class type> class Buffer32
+	{
+	private:
+		btui32 index_end = 0u;
+		btui32 used = 0ui32;
+		type buffer[32u];
+		inline void DecrementEnd()
+		{
+			// Go back one step
+			--index_end;
+		}
+	public:
+		btui32 Add(type element)
+		{
+			for (btui32 i = 0; i < 32ui32; i++) // For every space in the buffer
+			{
+				// If this space is free, copy what we created into it
+				if (!bvget(used, 1ui32 << (btui32)i))
+				{
+					bvset(used, 1ui32 << (btui32)i);
+					buffer[i] = element;
+					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
+					return i; // End the loop
+				}
+			}
+			return 0u;
+		}
+		void Remove(btui32 index)
+		{
+			// If within range (attempt to fix buffer overrun)
+			if (index <= index_end)
+			{
+				bvunset(used, 1ui32 << (btui32)index);
+				if (index == index_end && index > 0u)
+				{
+					// Decrement index last (no point checking if it's not used, we already know)
+					DecrementEnd();
+					// Continue decrementing until we reach the next last full space
+					while (!Used(index_end) && index_end > 0u) DecrementEnd();
+				}
+			}
+		}
+		bool Used(btui32 index)
+		{
+			return bvget(used, 1ui32 << (btui32)index);
+		}
+		btui32 Size() { return index_end + 1ui32; }
+		type& operator[](btui32 index) { return buffer[index]; }
+	};
 
 	template <class type> class Buffer
 	{

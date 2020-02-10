@@ -79,7 +79,14 @@ namespace mem
 
 	void idbuf::add(btID id)
 	{
-		//search this vector
+		// Search this vector ahead of time for a matching ID
+		for (btui32 i = 0; i < IDBUF_SIZE; i++)
+			if (ptr_id[i] == id)
+			{
+				std::cout << "IDBUF ID already in array!" << std::endl;
+				return;
+			}
+		// If that passes, look for the first empty space (can optimize this)
 		for (btui32 i = 0; i < IDBUF_SIZE; i++)
 			//if no ptr in this vector
 			if (ptr_used[i] == false)
@@ -87,7 +94,7 @@ namespace mem
 				ptr_used[i] = true;
 				ptr_id[i] = id;
 				if (i > id_end) id_end = i; // If we hit new ground expand the end index
-				std::cout << "IDBUF added index " << i << std::endl;
+				//std::cout << "IDBUF added index " << i << std::endl;
 				return;
 			}
 		std::cout << "IDBUF could not add ID, ran out of space" << std::endl;
@@ -109,7 +116,7 @@ namespace mem
 					--id_end; // Go back one step
 				//	while (!ptr_used[id_end]) --id_end; // Continue rolling back until we reach the next last full space
 				}
-				std::cout << "IDBUF removed index " << i << std::endl;
+				//std::cout << "IDBUF removed index " << i << std::endl;
 				return;
 			}
 		std::cout << "IDBUF attempted to remove pointer not in array" << std::endl;

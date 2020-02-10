@@ -359,7 +359,16 @@ namespace m
 	btf32 Random(btf32 min, btf32 max)
 	{
 		return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
-	};
+	}
+	btf32 Quadratic(const btf32 a = -1.f, const btf32 b = 0.f, const btf32 c = 1.f, const btf32 x = 0.f)
+	{
+		//f(x) = ax 2 + bx + c
+		return pow(a*x, 2) + (b * x) + c;
+	}
+	btf32 QuadraticFootstep(const btf32 step_height = 2.f, const btf32 x = 0.f)
+	{
+		return pow(-step_height * x, 2) + step_height;
+	}
 
 	float Vec2Angle(const Vector2 & va, const Vector2 & vb)
 	{

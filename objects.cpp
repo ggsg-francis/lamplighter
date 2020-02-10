@@ -14,7 +14,8 @@ graphics::GUIBox guibox_selection;
 
 void Inventory::AddNew(btID item_template)
 {
-	items.Add(index::SpawnItem(item_template));
+	btID id = index::SpawnItem(item_template);
+	if (id != BUF_NULL) items.Add(id);
 }
 void Inventory::DestroyIndex(btui32 index)
 {
@@ -73,20 +74,21 @@ void Inventory::Draw(btui16 active_slot)
 	guibox_selection.Draw(&res::GetT(res::t_gui_select_box));
 }
 
-char* DisplayNameActor(btID ent)
+char* DisplayNameActor(void* ent)
 {
 	return "Actor";
 };
-char* DisplayNameRestingItem(btID ent)
+char* DisplayNameRestingItem(void* ent)
 {
-	return (char*)acv::items[GETITEM_MISC(((RestingItem*)index::GetEntityPtr(ent))->item_instance)->item_template]->name;
+	//return (char*)acv::items[GETITEM_MISC(((RestingItem*)index::GetEntityPtr(ent))->item_instance)->item_template]->name;
+	return (char*)acv::items[GETITEM_MISC(((RestingItem*)ent)->item_instance)->item_template]->name;
 };
-void DrawRestingItem(btID ent)
+void DrawRestingItem(void* ent)
 {
-	RestingItem* item = (RestingItem*)index::GetEntityPtr(ent);
+	RestingItem* item = (RestingItem*)ent;
 	// Draw the mesh of our item id
 	//DrawMesh(ent, res::GetM(acv::items[index::GetItem(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[index::GetItem(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->t_item.getMatrix());
-	DrawMesh(ent, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
+	DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
 }
 m::Vector3 SetFootPos(m::Vector2 position)
 {
@@ -96,14 +98,14 @@ m::Vector3 SetFootPos(m::Vector2 position)
 	env::GetHeight(height, cs);
 	return m::Vector3(position.x, height, position.y);
 }
-void DrawChara(btID ent)
+void DrawChara(void* ent)
 {
 	#define leglen 0.75f
 	#define legDClen 1.f
 	//#define legDClen 0.75f
 	#define velocityStepMult 0.5f
 
-	Chara* chr = (Chara*)index::GetEntityPtr(ent);
+	Chara* chr = (Chara*)ent;
 
 	#define t_body chr->t_body
 	#define viewYaw chr->viewYaw
@@ -150,8 +152,8 @@ void DrawChara(btID ent)
 	{
 		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
 
-		m::Vector3 handPosR = HELDINSTANCE->GetRightHandPos();
-		m::Vector3 handPosL = HELDINSTANCE->GetLeftHandPos();
+		m::Vector3 handPosR = HELDINSTANCE->fpGetRightHandPos(inventory.items[inv_active_slot]);
+		m::Vector3 handPosL = HELDINSTANCE->fpGetLeftHandPos(inventory.items[inv_active_slot]);
 
 		m::Vector3 bodyForwardR = m::Normalize((t_test.GetRight() * -1.f) + t_test.GetUp() + t_test.GetForward());
 		m::Vector3 bodyForwardL = m::Normalize(t_test.GetRight() + t_test.GetUp() + t_test.GetForward());
@@ -167,7 +169,7 @@ void DrawChara(btID ent)
 		graphics::MatrixTransformXFlip(matLegLoR, jointPosR + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup);
 		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(ent, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 
 		len = m::Length(jointPosL - handPosL);
@@ -180,10 +182,10 @@ void DrawChara(btID ent)
 		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len + vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegLoL, jointPosL + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup);
-		DrawMeshDeform(ent, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 
 		// draw item
-		HELDINSTANCE->Draw(GETITEM_MISC(inventory.items[inv_active_slot])->item_template, t.position, t.height, viewYaw, viewPitch);
+		HELDINSTANCE->fpDraw(inventory.items[inv_active_slot], GETITEM_MISC(inventory.items[inv_active_slot])->item_template, t.position, t.height, viewYaw, viewPitch);
 
 		#undef HELDINSTANCE
 	}
@@ -286,7 +288,7 @@ void DrawChara(btID ent)
 	graphics::MatrixTransformXFlip(matLegLoR, jointPosR - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
 	graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup2);
 	graphics::SetFrontFaceInverse();
-	DrawMeshDeform(ent, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+	DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 	graphics::SetFrontFace();
 	// transform legR for cloak
 	//graphics::MatrixTransformForwardUp(matrixLegR, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
@@ -303,7 +305,7 @@ void DrawChara(btID ent)
 	graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
 	graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
 	graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup2);
-	DrawMeshDeform(ent, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+	DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 	// transform legL for cloak
 	//graphics::MatrixTransformForwardUp(matrixLegL, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
 	graphics::MatrixTransformForwardUp(matLegUpL, t_body.GetPosition(), footPosL - t_body.GetPosition(), t_body.GetForward());
@@ -311,14 +313,14 @@ void DrawChara(btID ent)
 	// draw head
 
 	//DrawBlendMeshAtTransform(index, res::mb_char_head, 0, t_skin, graphics::shader_blend, t_head);
-	DrawBlendMesh(ent, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], SS_CHARA, t_head.getMatrix());
+	DrawBlendMesh(chr->id, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], SS_CHARA, t_head.getMatrix());
 	//DrawMeshAtTransform(index, res::m_proj_2, res::t_proj_2, graphics::shader_solid, t_head);
 	//DrawMesh(index, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_default), SS_NORMAL, t_head.getMatrix());
 
 	// need a good way of knowing own index
-	DrawMeshDeform(ent, res::GetMD(res::md_chr_body), res::skin_t[t_skin], SS_CHARA, 2u,
+	DrawMeshDeform(chr->id, res::GetMD(res::md_chr_body), res::skin_t[t_skin], SS_CHARA, 2u,
 		t_body.getMatrix(), t_test.getMatrix(), graphics::Matrix4x4(), graphics::Matrix4x4());
-	DrawMeshDeform(ent, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
+	DrawMeshDeform(chr->id, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
 		t_body.getMatrix(), t_test.getMatrix(), matLegUpL, matLegUpR);
 
 	#undef t_body
@@ -345,12 +347,12 @@ void DrawChara(btID ent)
 	#undef footPosL
 	#undef t_head
 }
-void DrawEditorPawn(btID ent)
+void DrawEditorPawn(void* ent)
 {
-	Chara* chr = (Chara*)index::GetEntityPtr(ent);
+	Chara* chr = (Chara*)ent;
 
 	// need a good way of knowing own index
-	DrawMesh(ent, res::GetM(res::m_debug_bb), res::skin_t[chr->t_skin], SS_NORMAL, chr->t_body.getMatrix());
+	DrawMesh(chr->id, res::GetM(res::m_debug_bb), res::skin_t[chr->t_skin], SS_NORMAL, chr->t_body.getMatrix());
 
 	// draw head
 
@@ -367,11 +369,39 @@ void ActiveState::Damage(btf32 amount, btf32 angle)
 		hp = 0.f;
 	}
 }
-
-
-void TickRestingItem(btID ent, btf32 dt)
+void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, btui32 magnitude)
 {
-	RestingItem* chr = (RestingItem*)index::GetEntityPtr(ent);
+	StatusEffect effect;
+	effect.effect_caster_id = caster;
+	effect.effect_type = type;
+	effect.effect_duration = duration;
+	effect.effect_magnitude = magnitude;
+	effects.Add(effect);
+}
+void ActiveState::TickEffects(btf32 dt)
+{
+	for (btui32 i = 0; i < effects.Size(); ++i)
+	{
+		switch (effects[i].effect_type)
+		{
+		case SE_DAMAGE_HP:
+			// magnitude multiplied by delta time so that it functions as a value per second
+			Damage((btf32)effects[i].effect_magnitude * dt, 0.f);
+			// TODO: include AI 'notify attack' function call here
+			break;
+		case SE_RESTORE_HP:
+			break;
+		}
+		effects[i].effect_duration -= dt; // tick down the effect timer
+		if (effects[i].effect_duration < 0.f) // if the timer has run out
+			effects.Remove(i); // remove the effect
+	}
+}
+
+
+void TickRestingItem(void* ent, btf32 dt)
+{
+	RestingItem* chr = (RestingItem*)ent;
 
 	//t.position.y += 0.01f;
 
@@ -384,9 +414,6 @@ void TickRestingItem(btID ent, btf32 dt)
 		index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, index);
 		index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, index);
 	}*/
-
-	if (ent == 2)
-		int i = 0;
 
 	chr->matrix = graphics::Matrix4x4();
 	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height, chr->t.position.y), chr->t.yaw.Rad());
@@ -419,7 +446,7 @@ void Actor::SetEquipSlot(btui32 index)
 	{
 		inv_active_slot = index;
 		if (inventory.items.Used(inv_active_slot))
-			((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))->OnEquip();
+			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot]);
 	}
 }
 
@@ -429,7 +456,7 @@ void Actor::IncrEquipSlot()
 	{
 		++inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))->OnEquip();
+			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot]);
 	}
 }
 
@@ -439,13 +466,13 @@ void Actor::DecrEquipSlot()
 	{
 		--inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))->OnEquip();
+			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot]);
 	}
 }
 
-void TickChara(btID ent, btf32 dt)
+void TickChara(void* ent, btf32 dt)
 {
-	Chara* chr = (Chara*)index::GetEntityPtr(ent);
+	Chara* chr = (Chara*)ent;
 
 	#define t_body chr->t_body
 	#define viewYaw chr->viewYaw
@@ -482,8 +509,8 @@ void TickChara(btID ent, btf32 dt)
 	if (inventory.items.Used(inv_active_slot))
 	{
 		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
-		can_move = !HELDINSTANCE->BlockMove();
-		can_turn = !HELDINSTANCE->BlockTurn();
+		can_move = !HELDINSTANCE->fpBlockMove(inventory.items[inv_active_slot]);
+		can_turn = !HELDINSTANCE->fpBlockTurn(inventory.items[inv_active_slot]);
 		#undef HELDINSTANCE
 	}
 
@@ -525,8 +552,8 @@ void TickChara(btID ent, btf32 dt)
 		//I don't want this to be here
 		if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
 		{
-			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, ent);
-			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, ent);
+			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, chr->id);
+			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, chr->id);
 		}
 
 		//-------------------------------- SET HEIGHT AND CELL SPACE
@@ -538,8 +565,8 @@ void TickChara(btID ent, btf32 dt)
 		if (!cfg::bEditMode)
 		{
 			index::EntDeintersect(chr, csi, viewYaw.Deg(), true);
-			if (aiControlled) index::ActorRunAI(ent); // Run AI
-			else atk_target = index::GetViewTargetEntity(ent, 100.f, fac::enemy);
+			if (aiControlled) index::ActorRunAI(chr->id); // Run AI
+			else atk_target = index::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
 			//atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
 		}
 	} // End if alive
@@ -547,7 +574,7 @@ void TickChara(btID ent, btf32 dt)
 	if (inventory.items.Used(inv_active_slot))
 	{
 		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
-		if (HELDINSTANCE != nullptr) HELDINSTANCE->Tick(chr);
+		if (HELDINSTANCE != nullptr) HELDINSTANCE->fpTick(inventory.items[inv_active_slot], dt, chr);
 		#undef HELDINSTANCE
 	}
 
@@ -604,9 +631,9 @@ void TickChara(btID ent, btf32 dt)
 	#undef atk_target
 }
 
-void TickEditorPawn(btID ent, btf32 dt)
+void TickEditorPawn(void* ent, btf32 dt)
 {
-	EditorPawn* chr = (EditorPawn*)index::GetEntityPtr(ent);
+	EditorPawn* chr = (EditorPawn*)ent;
 
 	#define t_body chr->t_body
 	#define viewYaw chr->viewYaw
@@ -629,8 +656,8 @@ void TickEditorPawn(btID ent, btf32 dt)
 	if (inventory.items.Used(inv_active_slot))
 	{
 		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
-		can_move = !HELDINSTANCE->BlockMove();
-		can_turn = !HELDINSTANCE->BlockTurn();
+		can_move = !HELDINSTANCE->fpBlockMove(inventory.items[inv_active_slot]);
+		can_turn = !HELDINSTANCE->fpBlockTurn(inventory.items[inv_active_slot]);
 		#undef HELDINSTANCE
 	}
 
@@ -672,8 +699,8 @@ void TickEditorPawn(btID ent, btf32 dt)
 		//I don't want this to be here
 		if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
 		{
-			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, ent);
-			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, ent);
+			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, chr->id);
+			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, chr->id);
 		}
 
 		//-------------------------------- SET HEIGHT AND CELL SPACE
@@ -685,8 +712,8 @@ void TickEditorPawn(btID ent, btf32 dt)
 		if (!cfg::bEditMode)
 		{
 			index::EntDeintersect(chr, csi, viewYaw.Deg(), true);
-			if (aiControlled) index::ActorRunAI(ent); // Run AI
-			else atk_target = index::GetViewTargetEntity(ent, 100.f, fac::enemy);
+			if (aiControlled) index::ActorRunAI(chr->id); // Run AI
+			else atk_target = index::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
 			//atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
 		}
 	} // End if alive
@@ -694,7 +721,7 @@ void TickEditorPawn(btID ent, btf32 dt)
 	if (inventory.items.Used(inv_active_slot))
 	{
 		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
-		if (HELDINSTANCE != nullptr) HELDINSTANCE->Tick(chr);
+		if (HELDINSTANCE != nullptr) HELDINSTANCE->fpTick(inventory.items[inv_active_slot], dt, chr);
 		#undef HELDINSTANCE
 	}
 

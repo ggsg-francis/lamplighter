@@ -111,8 +111,6 @@ btID ObjBufCP_add(ObjBufCP* const buf)
 		buf->index_last = 0; // Wrap around
 	return index; // Return added ID
 }
-// i was focused on when 0 was removed, when really i should have noticed how 511 was the last removed
-// ^ what in the shit hell was this in reference to, idiot?
 void ObjBufCP_remove(ObjBufCP* const buf, btID i)
 {
 	buf->used[i] = false;

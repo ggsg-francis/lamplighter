@@ -57,7 +57,7 @@ namespace env
 			// Unused flag spaces (reserved for special collision, such as diagonal edges?)
 			eBLOCK_LIGHT_SKY = (0x1u << 0xcu),
 			EF_LIGHTSRC = (0x1u << 0xdu),
-			EF_UNUSED_14 = (0x1u << 0xeu),
+			EF_SPAWN_TEST = (0x1u << 0xeu),
 			EF_UNUSED_15 = (0x1u << 0xfu),
 			// Status effects
 			EF_UNUSED_16 = (0x1u << 0x10u),

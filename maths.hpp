@@ -250,11 +250,14 @@ namespace m
 
 	// Create quaternion from axis and angle (does not work)
 	Quaternion QuatFromAxisAngle(Vector3& axis, btf32 angle);
-	// Create quaternion from two vectors (does not work)
-	Quaternion QuatFromDir(Vector3& dir, Vector3& up);
 
 	// Random float between min and max
 	btf32 Random(btf32 min, btf32 max);
+
+	// Quadratic function -- Makes a parabola
+	btf32 Quadratic(const btf32 a, const btf32 b, const btf32 c, const btf32 x);
+	// Quadratic function optimized for handling character footsteps
+	btf32 QuadraticFootstep(const btf32 step_height, const btf32 x);
 
 	// Get angle between two vector2s
 	float Vec2Angle(const Vector2& VECA, const Vector2& VECB);

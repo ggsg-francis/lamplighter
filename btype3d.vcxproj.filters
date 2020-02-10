@@ -99,8 +99,10 @@
     <ClInclude Include="memoryC.h">
       <Filter>framework</Filter>
     </ClInclude>
-    <ClInclude Include="core_save_load.h" />
     <ClInclude Include="index.h">
+      <Filter>gamework\index</Filter>
+    </ClInclude>
+    <ClInclude Include="core_save_load.h">
       <Filter>gamework\index</Filter>
     </ClInclude>
   </ItemGroup>
@@ -162,8 +164,10 @@
     <ClCompile Include="memoryC.c">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="core_save_load.cpp" />
     <ClCompile Include="index.c">
+      <Filter>gamework\index</Filter>
+    </ClCompile>
+    <ClCompile Include="core_save_load.cpp">
       <Filter>gamework\index</Filter>
     </ClCompile>
   </ItemGroup>

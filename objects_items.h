@@ -19,18 +19,76 @@ namespace m
 	class Vector3;
 };
 
+//-------------------------------- HELD ITEM
+
+void HeldItemTick(btID id, btf32 dt, Actor* owner);
+void HeldItemDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
+void HeldItemOnEquip(btID id);
+m::Vector3 HeldItemGetLeftHandPos(btID id);
+m::Vector3 HeldItemGetRightHandPos(btID id);
+bool HeldItemBlockTurn(btID id);
+bool HeldItemBlockMove(btID id);
+
+//-------------------------------- HELD ITEM MELEE
+
+void HeldMelTick(btID id, btf32 dt, Actor * owner);
+void HeldMelDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle _pitch);
+void HeldMelOnEquip(btID id);
+m::Vector3 HeldMelGetLeftHandPos(btID id);
+m::Vector3 HeldMelGetRightHandPos(btID id);
+bool HeldMelBlockTurn(btID id);
+bool HeldMelBlockMove(btID id);
+
+//-------------------------------- HELD ITEM GUN
+
+void HeldGunTick(btID id, btf32 dt, Actor* owner);
+void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2);
+void HeldGunOnEquip(btID id);
+m::Vector3 HeldGunGetLeftHandPos(btID id);
+m::Vector3 HeldGunGetRightHandPos(btID id);
+bool HeldGunBlockTurn(btID id);
+bool HeldGunBlockMove(btID id);
+
+//-------------------------------- HELD ITEM MAGIC
+
+void HeldMgcTick(btID id, btf32 dt, Actor * owner);
+void HeldMgcDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
+void HeldMgcOnEquip(btID id);
+m::Vector3 HeldMgcGetLeftHandPos(btID id);
+m::Vector3 HeldMgcGetRightHandPos(btID id);
+bool HeldMgcBlockTurn(btID id);
+bool HeldMgcBlockMove(btID id);
+
+//-------------------------------- HELD ITEM MATCHLOCK
+
+void HeldGunMatchLockTick(btID id, btf32 dt, Actor* owner);
+void HeldGunMatchLockDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2);
+void HeldGunMatchLockOnEquip(btID id);
+m::Vector3 HeldGunMatchLockGetLeftHandPos(btID id);
+m::Vector3 HeldGunMatchLockGetRightHandPos(btID id);
+bool HeldGunMatchLockBlockTurn(btID id);
+bool HeldGunMatchLockBlockMove(btID id);
+
 // Base item instance
 struct HeldItem
 {
 	btID item_template = ID_NULL;
 	Transform3D t_item;
-	virtual void Tick(Actor* owner);
-	virtual void Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-	virtual void OnEquip();
-	virtual m::Vector3 GetLeftHandPos();
-	virtual m::Vector3 GetRightHandPos();
-	virtual bool BlockTurn();
-	virtual bool BlockMove();
+
+	// Tick this item
+	void(*fpTick)(btID self, btf32 dt, Actor* owner);
+	// Render graphics of this item
+	void(*fpDraw)(btID self, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
+	//
+	void(*fpOnEquip)(btID self);
+	//
+	m::Vector3(*fpGetLeftHandPos)(btID self);
+	//
+	m::Vector3(*fpGetRightHandPos)(btID self);
+	//
+	bool(*fpBlockTurn)(btID self);
+	//
+	bool(*fpBlockMove)(btID self);
 };
 
 // Magic caster instance
@@ -48,14 +106,6 @@ struct HeldMel : public HeldItem
 	m::Vector3 loc = m::Vector3(0.f, 0.9f, 0.4f);
 	btf32 pitch = -90.f;
 	btf32 yaw = 0.f;
-
-	virtual void Tick(Actor* owner);
-	virtual void Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-	virtual void OnEquip();
-	virtual m::Vector3 GetLeftHandPos();
-	virtual m::Vector3 GetRightHandPos();
-	virtual bool BlockTurn();
-	virtual bool BlockMove();
 };
 
 // Regular gun instance
@@ -102,28 +152,12 @@ struct HeldGun : public HeldItem
 	btf32 ang_aim_pitch = 0.f;
 
 	btf32 fire_time = 0.f;
-
-	virtual void Tick(Actor* owner);
-	virtual void Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-	virtual void OnEquip();
-	virtual m::Vector3 GetLeftHandPos();
-	virtual m::Vector3 GetRightHandPos();
-	virtual bool BlockTurn();
-	virtual bool BlockMove();
 };
 
 // Magic caster instance
 struct HeldMgc : public HeldItem
 {
 	btf32 charge = 1.f;
-
-	virtual void Tick(Actor* owner);
-	virtual void Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-	virtual void OnEquip();
-	virtual m::Vector3 GetLeftHandPos();
-	virtual m::Vector3 GetRightHandPos();
-	virtual bool BlockTurn();
-	virtual bool BlockMove();
 };
 
 // Matchlock gun instance
@@ -168,12 +202,4 @@ struct HeldGunMatchLock : public HeldItem
 
 	btf32 ang_aim_offset_temp = 0.f;
 	btf32 ang_aim_pitch = 0.f;
-
-	virtual void Tick(Actor* owner);
-	virtual void Draw(btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-	virtual void OnEquip();
-	virtual m::Vector3 GetLeftHandPos();
-	virtual m::Vector3 GetRightHandPos();
-	virtual bool BlockTurn();
-	virtual bool BlockMove();
 };

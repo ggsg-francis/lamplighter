@@ -22,7 +22,7 @@ struct HeldItem;
 class Inventory
 {
 public:
-	mem::BufferInventoryTest<btID> items;
+	mem::Buffer64<btID> items;
 public:
 	void AddNew(btID ITEM_TEMPLATE);
 	void DestroyIndex(btui32 INDEX);
@@ -55,6 +55,65 @@ class TransformEntity
 //------------- ENTITY STRUCTS -----------------------------------
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
+enum StatusEffectType : btui16 {
+	SE_DAMAGE_HP,
+	SE_RESTORE_HP,
+	// modify time effect?
+	// burning effect?
+	// modify item / weapon weight
+
+	// lunaris' spells
+	// Neutral
+	STASIS, DASH,
+
+	// Beneficial
+	INVULNERABLE,
+	UNTARGETABLE,
+	UNSTOPPABLE,
+	PROTECTED,
+	SPEED,
+	HASTE,
+	HEALOVERTIME,
+
+	// Harmful
+	STUN,
+	AIRBORNE,
+	SLEEP,
+
+	POLYMORPH,
+
+	MINDCONTROL,
+	CHARM,
+	FEAR,
+
+	ROOT,
+	SLOW,
+
+	SILENCE,
+	BLIND,
+
+	DAMAGEOVERTIME,
+
+	// custom
+	CUSTOM,
+
+	SHIELD,
+
+	SPELLPOWERBOOST,
+	SPELLPOWERREDUCTION,
+
+	ATTACKDAMAGEBOOST,
+	ATTACKDAMAGEREDUCTION
+};
+
+typedef struct StatusEffect {
+	btID effect_caster_id;
+	btui16 effect_type;
+	btf32 effect_duration;
+	btui32 effect_magnitude;
+	btui32 reserved;
+} StatusEffect;
+
 struct ActiveState
 {
 	// Global properties, ultimately to be used by every object in the game, incl. environment tiles
@@ -62,34 +121,34 @@ struct ActiveState
 	{
 		eALIVE = 1ui64,
 		eFLAMMABLE = 1ui64 << 1ui64,
-		eON_FIRE = 1ui64 << 2ui64,
 	};
+
 	mem::bv<btui64, globalProperty> properties;
 	btf32 hp = 1.f;
 
+	mem::Buffer32<StatusEffect> effects;
+
 	void Damage(btf32 AMOUNT, btf32 ANGLE);
+	void AddEffect(btID CASTER, StatusEffectType TYPE, btf32 DURATION, btui32 MAGNITUDE);
+	void TickEffects(btf32 DELTA_TIME);
 };
 
-char* DisplayNameActor(btID ent);
-char* DisplayNameRestingItem(btID ent);
+char* DisplayNameActor(void* ent);
+char* DisplayNameRestingItem(void* ent);
 
-void TickRestingItem(btID ent, btf32 dt);
-void TickChara(btID ent, btf32 dt);
-void TickEditorPawn(btID ent, btf32 dt);
+void TickRestingItem(void* ent, btf32 dt);
+void TickChara(void* ent, btf32 dt);
+void TickEditorPawn(void* ent, btf32 dt);
 
-void DrawRestingItem(btID ent);
+void DrawRestingItem(void* ent);
 m::Vector3 SetFootPos(m::Vector2 position);
-void DrawChara(btID ent);
-void DrawEditorPawn(btID ent);
+void DrawChara(void* ent);
+void DrawEditorPawn(void* ent);
 
 // Base entity class
 struct Entity
 {
-	char*(*fpName)(btID ent);
-
-	void(*fpTick)(btID ent, btf32 dt);
-	void(*fpDraw)(btID ent);
-
+	btID id;
 	EntityType type;
 
 	enum EntityFlags : btui8
@@ -113,7 +172,7 @@ struct Entity
 
 	fac::faction faction;
 	ActiveState state;
-	btui8 statebuffer[32 - sizeof(ActiveState)]; // reserved space for save / load data
+	//btui8 statebuffer[32 - sizeof(ActiveState)]; // reserved space for save / load data
 
 	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
 	btf32 height = 1.9f; // Height of the entity cylinder
