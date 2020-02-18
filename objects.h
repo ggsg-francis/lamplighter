@@ -44,12 +44,7 @@ public:
 	btf32 height = 0.f;
 	btf32 height_velocity = 0.f;
 	m::Angle yaw;
-};
-
-class TransformEntity
-{
-	Transform2D t;
-	CellSpace cs;
+	CellSpace csi; // Where we are in cell space
 };
 
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -116,6 +111,9 @@ struct ActiveState
 	void TickEffects(btf32 DELTA_TIME);
 };
 
+// Handle this entitiy's position, receives desired motion
+void EntityTransformTick(Entity* ENTITY, btID ID, btf32 X, btf32 Y, btf32 Z);
+
 char* DisplayNameActor(void* ent);
 char* DisplayNameRestingItem(void* ent);
 
@@ -160,8 +158,6 @@ struct Entity
 	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
 	btf32 height = 1.9f; // Height of the entity cylinder
 	Transform2D t;
-
-	CellSpace csi; // Where we are in cell space
 };
 // Entity type representing placed items
 struct RestingItem : public Entity
@@ -191,7 +187,7 @@ struct Actor : public Entity
 	m::Angle viewYaw;
 	m::Angle viewPitch;
 	// Movement stuff
-	bool moving = false;
+	//bool moving = false;
 	mem::bv<btui8, ActorInput> inputBV;
 
 	//res::AssetConstantID t_skin; // The texture we use for drawing the character

@@ -93,6 +93,45 @@ void Inventory::Draw(btui16 active_slot)
 	//itoa
 }
 
+void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
+{
+	// Regenerate csi
+
+	CellSpace cs_last = ent->t.csi;
+	index::GetCellSpaceInfo(ent->t.position, ent->t.csi);
+	// If the new CS is different, remove us from the last cell and add us to the new one
+	if (cs_last.c[eCELL_I].x != ent->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != ent->t.csi.c[eCELL_I].y)
+	{
+		index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
+		index::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
+	}
+
+	// Modify position
+
+	btf32 distBelowSand;
+	// look at how long this is
+	switch (acv::props[env::eCells[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y].prop].floorType)
+	{
+	case acv::EnvProp::FLOOR_QUICKSAND:
+		ent->t.height -= 0.0025f;
+		btf32 eheight;
+		env::GetHeight(eheight, ent->t.csi);
+		// Multiplier reduces the depth at which you can't move
+		distBelowSand = (eheight - ent->t.height) * 2.5f;
+		if (distBelowSand > ent->height)
+			ent->state.Damage(1000, 0); 
+		if (distBelowSand > 1.f) distBelowSand = 1.f;
+		ent->t.position += (ent->t.velocity * (1.f - distBelowSand)); // Apply velocity
+		break;
+	default:
+		env::GetHeight(ent->t.height, ent->t.csi);
+		ent->t.position += ent->t.velocity; // Apply velocity
+		break;
+	}
+
+	index::EntDeintersect(ent, ent->t.csi);
+}
+
 char* DisplayNameActor(void* ent)
 {
 	return "Actor";
@@ -468,24 +507,10 @@ void TickRestingItem(void* ent, btf32 dt)
 {
 	RestingItem* chr = (RestingItem*)ent;
 
-	//t.position.y += 0.01f;
-
-	//CellSpace cs_last = csi;
-
-	//index::GetCellSpaceInfo(t.position, csi);
-
-	/*if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
-	{
-		index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, index);
-		index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, index);
-	}*/
-
 	chr->matrix = graphics::Matrix4x4();
 	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)index::GetItemPtr(chr->item_instance))->item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
 
-	//env::GetHeight(t.height, csi);
-	//chr->t_item.SetPosition(m::Vector3(chr->t.position.x, chr->t.height + acv::items[index::GetItem(chr->item_instance)->item_template]->f_model_height, chr->t.position.y));
-	//chr->t_item.SetRotation(chr->t.yaw.Rad());
+	EntityTransformTick(chr, chr->id, 0.f, 0.f, 0.f);
 }
 
 void Actor::PickUpItem(btID id)
@@ -570,7 +595,6 @@ void TickChara(void* ent, btf32 dt)
 
 	#define t_body chr->t_body
 	#define viewYaw chr->viewYaw
-	#define t chr->t
 	#define speed chr->speed
 	#define inventory chr->inventory
 	#define inv_active_slot chr->inv_active_slot
@@ -593,8 +617,8 @@ void TickChara(void* ent, btf32 dt)
 	#define t_head chr->t_head
 	#define state chr->state
 	#define input chr->input
-	#define moving chr->moving
-	#define csi chr->csi
+	//#define moving chr->moving
+	#define csi chr->t.csi
 	#define aiControlled chr->aiControlled
 	#define atk_target chr->atk_target
 
@@ -617,57 +641,36 @@ void TickChara(void* ent, btf32 dt)
 	{
 		if (cfg::bEditMode)
 		{
-			//ENTITY[index]->t.velocity = fw::Lerp(ENTITY[index]->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
+			//ENTITY[index]->chr->t.velocity = fw::Lerp(ENTITY[index]->chr->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
 			input.x = -input.x;
-			t.velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
+			chr->t. velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
 		}
 		else
 		{
 			if (can_move)
 			{
 				input.x = -input.x;
-				t.velocity = m::Lerp(t.velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed, 0.2f);
+				chr->t. velocity = m::Lerp(chr->t. velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed, 0.2f);
 			}
 			else
 			{
 				input = m::Vector2(0.f, 0.f);
-				t.velocity = m::Lerp(t.velocity, m::Vector2(0.f, 0.f), 0.2f);
+				chr->t. velocity = m::Lerp(chr->t.velocity, m::Vector2(0.f, 0.f), 0.2f);
 			}
-			if (can_turn && abs(m::AngDif(t.yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
-				t.yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
+			if (can_turn && abs(m::AngDif(chr->t.yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
+				chr->t.yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
 		}
 
 		//-------------------------------- APPLY MOVEMENT
 
-		moving = (m::Length(t.velocity) > 0.016f);
-		m::Vector2 oldpos = t.position;
-		t.position += t.velocity; // Apply velocity
+		EntityTransformTick(chr, chr->id, 0, 0, 0);
 
-		CellSpace cs_last = csi;
+		//-------------------------------- RUN AI FUNCTION
 
-		//regenerate csi
-		index::GetCellSpaceInfo(t.position, csi);
-
-		//I don't want this to be here
-		if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
-		{
-			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, chr->id);
-			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, chr->id);
-		}
-
-		//-------------------------------- SET HEIGHT AND CELL SPACE
-
-		env::GetHeight(t.height, csi);
-
-		//-------------------------------- RUN COLLISION & AI
-
-		if (!cfg::bEditMode)
-		{
-			index::EntDeintersect(chr, csi, viewYaw.Deg(), true);
-			if (aiControlled) index::ActorRunAI(chr->id); // Run AI
-			else atk_target = index::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
-			//atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
-		}
+		// if AI controlled run the AI function
+		if (aiControlled) index::ActorRunAI(chr->id);
+		// if player controlled, just aim at whatever's in front of us
+		else atk_target = index::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
 
 		//-------------------------------- RUN ITEM TICK
 
@@ -688,8 +691,8 @@ void TickChara(void* ent, btf32 dt)
 		t_body = Transform3D();
 		t_head = Transform3D();
 
-		t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.6f, t.position.y));
-		t_body.Rotate(t.yaw.Rad(), m::Vector3(0, 1, 0));
+		t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.6f, chr->t.position.y));
+		t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 
 		ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
 
@@ -709,8 +712,8 @@ void TickChara(void* ent, btf32 dt)
 		t_body = Transform3D();
 		t_head = Transform3D();
 
-		t_body.SetPosition(m::Vector3(t.position.x, t.height, t.position.y));
-		t_body.Rotate(t.yaw.Rad(), m::Vector3(0, 1, 0));
+		t_body.SetPosition(m::Vector3(chr->t.position.x, chr->t.height, chr->t.position.y));
+		t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 		t_body.Rotate(glm::radians(90.f), m::Vector3(1, 0, 0));
 
 		ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
@@ -759,7 +762,6 @@ void TickEditorPawn(void* ent, btf32 dt)
 
 	#define t_body chr->t_body
 	#define viewYaw chr->viewYaw
-	#define t chr->t
 	#define speed chr->speed
 	#define inventory chr->inventory
 	#define inv_active_slot chr->inv_active_slot
@@ -768,8 +770,8 @@ void TickEditorPawn(void* ent, btf32 dt)
 	#define t_head chr->t_head
 	#define state chr->state
 	#define input chr->input
-	#define moving chr->moving
-	#define csi chr->csi
+	//#define moving chr->moving
+	#define csi chr->t.csi
 	#define aiControlled chr->aiControlled
 	#define atk_target chr->atk_target
 
@@ -789,34 +791,34 @@ void TickEditorPawn(void* ent, btf32 dt)
 		{
 			//ENTITY[index]->t.velocity = fw::Lerp(ENTITY[index]->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
 			input.x = -input.x;
-			t.velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
+			chr->t.velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
 		}
 		else
 		{
 			if (can_move)
 			{
 				input.x = -input.x;
-				t.velocity = m::Lerp(t.velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed, 0.2f);
+				chr->t.velocity = m::Lerp(chr->t.velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed, 0.2f);
 			}
 			else
 			{
 				input = m::Vector2(0.f, 0.f);
-				t.velocity = m::Lerp(t.velocity, m::Vector2(0.f, 0.f), 0.2f);
+				chr->t.velocity = m::Lerp(chr->t.velocity, m::Vector2(0.f, 0.f), 0.2f);
 			}
-			if (can_turn && abs(m::AngDif(t.yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
-				t.yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
+			if (can_turn && abs(m::AngDif(chr->t.yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
+				chr->t.yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
 		}
 
 		//-------------------------------- APPLY MOVEMENT
 
-		moving = (m::Length(t.velocity) > 0.016f);
-		m::Vector2 oldpos = t.position;
-		t.position += t.velocity; // Apply velocity
+		//moving = (m::Length(chr->t.velocity) > 0.016f);
+		m::Vector2 oldpos = chr->t.position;
+		chr->t.position += chr->t.velocity; // Apply velocity
 
 		CellSpace cs_last = csi;
 
 		//regenerate csi
-		index::GetCellSpaceInfo(t.position, csi);
+		index::GetCellSpaceInfo(chr->t.position, csi);
 
 		//I don't want this to be here
 		if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
@@ -827,17 +829,10 @@ void TickEditorPawn(void* ent, btf32 dt)
 
 		//-------------------------------- SET HEIGHT AND CELL SPACE
 
-		env::GetHeight(t.height, csi);
+		env::GetHeight(chr->t.height, csi);
 
 		//-------------------------------- RUN COLLISION & AI
 
-		if (!cfg::bEditMode)
-		{
-			index::EntDeintersect(chr, csi, viewYaw.Deg(), true);
-			if (aiControlled) index::ActorRunAI(chr->id); // Run AI
-			else atk_target = index::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
-			//atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
-		}
 	} // End if alive
 
 	if (inventory.items.Used(inv_active_slot))
@@ -854,8 +849,8 @@ void TickEditorPawn(void* ent, btf32 dt)
 	t_body = Transform3D();
 	t_head = Transform3D();
 
-	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.7f, t.position.y));
-	t_body.Rotate(t.yaw.Rad(), m::Vector3(0, 1, 0));
+	t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.7f, chr->t.position.y));
+	t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 
 	// Set head transform
 	t_head.SetPosition(t_body.GetPosition());
@@ -866,7 +861,6 @@ void TickEditorPawn(void* ent, btf32 dt)
 
 	#undef t_body
 	#undef viewYaw
-	#undef t
 	#undef speed
 	#undef inventory
 	#undef inv_active_slot
@@ -889,7 +883,7 @@ void TickEditorPawn(void* ent, btf32 dt)
 	#undef t_head
 	#undef state
 	#undef input
-	#undef moving
+	//#undef moving
 	#undef csi
 	#undef aiControlled
 	#undef atk_target

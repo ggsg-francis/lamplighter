@@ -436,8 +436,8 @@ namespace index
 		{
 			Entity* entity = ENTITY(0);
 
-			#define GetCellY entity->csi.c[0].y
-			#define GetCellX entity->csi.c[0].x
+			#define GetCellY entity->t.csi.c[0].y
+			#define GetCellX entity->t.csi.c[0].x
 
 			if (input::GetHit(input::key::USE))
 			{
@@ -601,10 +601,10 @@ namespace index
 		if (cfg::bEditMode)
 		{
 			btui32 drawrange = 8u; // Create min/max draw coordinates
-			bti32 minx = ENTITY(players[activePlayer])->csi.c[0].x - drawrange; if (minx < 0) minx = 0;
-			bti32 maxx = ENTITY(players[activePlayer])->csi.c[0].x + drawrange; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
-			bti32 miny = ENTITY(players[activePlayer])->csi.c[0].y - drawrange; if (miny < 0) miny = 0;
-			bti32 maxy = ENTITY(players[activePlayer])->csi.c[0].y + drawrange; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
+			bti32 minx = ENTITY(players[activePlayer])->t.csi.c[0].x - drawrange; if (minx < 0) minx = 0;
+			bti32 maxx = ENTITY(players[activePlayer])->t.csi.c[0].x + drawrange; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
+			bti32 miny = ENTITY(players[activePlayer])->t.csi.c[0].y - drawrange; if (miny < 0) miny = 0;
+			bti32 maxy = ENTITY(players[activePlayer])->t.csi.c[0].y + drawrange; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
 			for (bti32 x = minx; x <= maxx; x++)
 			{
 				for (bti32 y = miny; y < maxy; y++)
@@ -647,10 +647,10 @@ namespace index
 			#define DRAWRANGE 16u
 			Entity* entity = ENTITY(players[activePlayer]);
 			// Set min/max draw coordinates
-			bti32 minx = entity->csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
-			bti32 maxx = entity->csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
-			bti32 miny = entity->csi.c[0].y - DRAWRANGE; if (miny < 0) miny = 0;
-			bti32 maxy = entity->csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
+			bti32 minx = entity->t.csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
+			bti32 maxx = entity->t.csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
+			bti32 miny = entity->t.csi.c[0].y - DRAWRANGE; if (miny < 0) miny = 0;
+			bti32 maxy = entity->t.csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
 			for (bti32 x = minx; x <= maxx; x++) {
 				for (bti32 y = miny; y < maxy; y++) {
 					//-------------------------------- DRAW ENTITIES ON THIS CELL
@@ -921,6 +921,7 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = itemid;
+		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemPtr(itemid))->item_template]->f_radius;
 		return id;
 	}
 

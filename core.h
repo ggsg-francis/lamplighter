@@ -140,7 +140,7 @@ namespace index
 	void SetViewTargetID(btID ID, btui32 player);
 	btID GetViewTargetID(btui32 player);
 
-	void EntDeintersect(Entity* ENT, CellSpace& CSI, btf32 ROT, bool KNOCKBACK);
+	void EntDeintersect(Entity* ENT, CellSpace& CSI);
 	void ActorRunAI(btID ID);
 	void ActorCastProj(btID ID);
 

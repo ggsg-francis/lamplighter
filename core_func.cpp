@@ -348,69 +348,63 @@ namespace index
 		actor->viewPitch.RotateTowards(actor->ai_vp_target, HEAD_TURN_SPEED);
 	}
 
-	void EntDeintersect(Entity* ent, CellSpace& csi, btf32 rot, bool knockback)
+	void EntDeintersect(Entity* ent, CellSpace& csi)
 	{
 		btf32 offsetx, offsety;
-		bool overlapN, overlapS, overlapE, overlapW, touchNS = false, touchEW = false;
+		bool overlapN, overlapS, overlapE, overlapW;
 
 		//if (actor::moving[i]) // Add if moving check?
 
 		//-------------------------------- ENVIRONMENTAL COLLISION CHECK
 
-		/*offsetx = ent->t.position.x - ent->t.cellx;
-		offsety = ent->t.position.y - ent->t.celly;*/
-		offsetx = ent->t.position.x - ent->csi.c[eCELL_I].x;
-		offsety = ent->t.position.y - ent->csi.c[eCELL_I].y;
+		offsetx = ent->t.position.x - ent->t.csi.c[eCELL_I].x;
+		offsety = ent->t.position.y - ent->t.csi.c[eCELL_I].y;
 
 		overlapN = offsety > 0;
 		overlapS = offsety < 0;
 		overlapE = offsetx > 0;
 		overlapW = offsetx < 0;
 
-		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eSurfN) && overlapN) // N
+		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eSurfN) && overlapN) // N
 		{
-			ent->t.position.y = ent->csi.c[eCELL_I].y; // + (1 - radius)
+			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
 			ent->t.velocity.y = 0.f;
-			touchNS = true;
 		}
-		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eSurfS) && overlapS) // S
+		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eSurfS) && overlapS) // S
 		{
-			ent->t.position.y = ent->csi.c[eCELL_I].y; // - (1 - radius)
+			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
 			ent->t.velocity.y = 0.f;
-			touchNS = true;
 		}
-		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eSurfE) && overlapE) // E
+		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eSurfE) && overlapE) // E
 		{
-			ent->t.position.x = ent->csi.c[eCELL_I].x; // + (1 - radius)
+			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
 			ent->t.velocity.x = 0.f;
-			touchEW = true;
 		}
-		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eSurfW) && overlapW) // W
+		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eSurfW) && overlapW) // W
 		{
-			ent->t.position.x = ent->csi.c[eCELL_I].x; // - (1 - radius)
+			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
 			ent->t.velocity.x = 0.f;
-			touchEW = true;
 		}
 
-		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eCorOutNE) && overlapN && overlapE) // NE
+		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eCorOutNE) && overlapN && overlapE) // NE
 		{
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, 0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
-		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eCorOutNW) && overlapN && overlapW) // NW
+		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eCorOutNW) && overlapN && overlapW) // NW
 		{
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, 0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
-		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eCorOutSE) && overlapS && overlapE) // SE
+		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eCorOutSE) && overlapS && overlapE) // SE
 		{
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, -0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
-		if (env::Get(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y, env::eflag::eCorOutSW) && overlapS && overlapW) // SW
+		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eCorOutSW) && overlapS && overlapW) // SW
 		{
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, -0.5f);
 			if (m::Length(offset) < 0.5f)
@@ -420,6 +414,7 @@ namespace index
 		//-------------------------------- ACTOR COLLISION CHECK
 
 		for (int x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; x++)
+		{
 			for (int y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; y++)
 			{
 				//de-intersect entities
@@ -431,26 +426,26 @@ namespace index
 						{
 							m::Vector2 vec = ent->t.position - ENTITY(cells[x][y].ents[e])->t.position;
 							float dist = m::Length(vec);
-							if (dist < 0.8f && dist > 0.f)
+							btf32 combined_radius = ent->radius + ENTITY(cells[x][y].ents[e])->radius;
+							if (dist < combined_radius && dist > 0.f)
 							{
-								ent->t.position += m::Normalize(vec) * (0.8f - dist);
+								ent->t.position += m::Normalize(vec) * (combined_radius - dist);
 								//massively slow collide callback (we'll speed it up later k?)
 								collision::hit_info hit;
-								hit.depenetrate = m::Normalize(vec) * (0.8f - dist);
+								hit.depenetrate = m::Normalize(vec) * (combined_radius - dist);
 								hit.hit = true;
 								hit.surface = m::Normalize(vec);
 								hit.inheritedVelocity = ENTITY(cells[x][y].ents[e])->t.velocity;
 								//entity->Collide(hit);
 								collision::hit_info hit2;
-								hit2.depenetrate = m::Normalize(vec * -1.f) * (0.8f - dist);
+								hit2.depenetrate = m::Normalize(vec * -1.f) * (combined_radius - dist);
 								hit2.hit = true;
 								hit2.surface = m::Normalize(vec * -1.f);
 								hit2.inheritedVelocity = ent->t.velocity;
 
-								if (knockback)
+								if (ent->type == ENTITY_TYPE_CHARA)
 								{
-									if (ent->type == ENTITY_TYPE_CHARA)
-										ent->t.velocity = hit2.surface * -0.1f; // set my velocity
+									ent->t.velocity = hit2.surface * -0.1f; // set my velocity
 									if (ENTITY(cells[x][y].ents[e])->type == ENTITY_TYPE_CHARA)
 										ENTITY(cells[x][y].ents[e])->t.velocity = hit2.surface * 0.3f; // set their velocity
 								}
@@ -458,64 +453,14 @@ namespace index
 						}
 					} // End for each entity in cell
 				} // End if entity count of this cell is bigger than zero
-			} // End for each cell group
-
-
-		/*
-		for (int cell_group = 0; cell_group < 4; cell_group++)
-		{
-			//de-intersect entities
-			if (cells[csi.c[cell_group].x][csi.c[cell_group].y].ents.size() > 0)
-			{
-				for (int e = 0; e < cells[csi.c[cell_group].x][csi.c[cell_group].y].ents.size(); e++)
-				{
-					#define ID cells[csi.c[cell_group].x][csi.c[cell_group].y].ents[e]
-					if (block_entity.used[ID] && ENTITY(ID)->properties.get(Entity::eCOLLIDE_ENT))
-					{
-						m::Vector2 vec = ent->t.position - ENTITY(ID)->t.position;
-						float dist = m::Length(vec);
-						if (dist < 0.8f && dist > 0.f)
-						{
-							ent->t.position += m::Normalize(vec) * (0.8f - dist);
-							//massively slow collide callback (we'll speed it up later k?)
-							collision::hit_info hit;
-							hit.depenetrate = m::Normalize(vec) * (0.8f - dist);
-							hit.hit = true;
-							hit.surface = m::Normalize(vec);
-							hit.inheritedVelocity = ENTITY(ID)->t.velocity;
-							//entity->Collide(hit);
-							collision::hit_info hit2;
-							hit2.depenetrate = m::Normalize(vec * -1.f) * (0.8f - dist);
-							hit2.hit = true;
-							hit2.surface = m::Normalize(vec * -1.f);
-							hit2.inheritedVelocity = ent->t.velocity;
-
-							if (knockback)
-							{
-								if (ent->Type() == etype::chara)
-								{
-									ent->t.velocity = hit2.surface * -0.1f; // set their velocity
-									((Chara*)ent)->animPlayer.setAnim(res::a_knockback);
-								}
-								if (ENTITY(ID)->Type() == etype::chara)
-								{
-									ENTITY(ID)->t.velocity = hit2.surface * 0.2f; // set their velocity
-									CHARA(ID)->animPlayer.setAnim(res::a_knockback);
-								}
-							}
-						}
-					}
-					#undef ID
-				} // End for each entity in cell
-			} // End if entity count of this cell is bigger than zero
-		} // End for each cell group
-		*/
+			} // End for each cell group Y
+		} // End for each cell group X
 	}
 
 	void RemoveAllReferences(btID index)
 	{
 		//for (int i = 0; i < eCELL_COUNT; ++i)
-		//	cells[ENTITY(i)->csi.c[i].x][ENTITY(i)->csi.c[i].y].ents.remove(index);
+		//	cells[ENTITY(i)->t.csi.c[i].x][ENTITY(i)->t.csi.c[i].y].ents.remove(index);
 		for (int i = 0; i <= block_entity.index_end; i++)
 			if (block_entity.used[i] && i != index) // If entity exists and is not me
 				if (ENTITY(i)->type == ENTITY_TYPE_CHARA) // and is actor
@@ -535,8 +480,8 @@ namespace index
 		Entity* entity_a = ENTITY(enta);
 		Entity* entity_b = ENTITY(entb);
 		return env::LineTrace_Bresenham(
-			entity_a->csi.c[eCELL_I].x, entity_a->csi.c[eCELL_I].y,
-			entity_b->csi.c[eCELL_I].x, entity_b->csi.c[eCELL_I].y);
+			entity_a->t.csi.c[eCELL_I].x, entity_a->t.csi.c[eCELL_I].y,
+			entity_b->t.csi.c[eCELL_I].x, entity_b->t.csi.c[eCELL_I].y);
 	}
 
 	btID GetClosestPlayer(btID index)
@@ -588,8 +533,8 @@ namespace index
 						Entity* ent = ENTITY(index);
 						Entity* ent_other = ENTITY(index_other);
 						// LINE TRACE
-						if (env::LineTrace_Bresenham(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y,
-							ent_other->csi.c[eCELL_I].x, ent_other->csi.c[eCELL_I].y))
+						if (env::LineTrace_Bresenham(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y,
+							ent_other->t.csi.c[eCELL_I].x, ent_other->t.csi.c[eCELL_I].y))
 						{
 							m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
 							m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
@@ -652,8 +597,8 @@ namespace index
 						/*if (env::LineTrace(entity_index->t.position.x, entity_index->t.position.y,
 							entity->t.position.x, entity->t.position.y))*/
 						if (env::LineTrace_Bresenham(
-							entity_index->csi.c[eCELL_I].x, entity_index->csi.c[eCELL_I].y,
-							entity->csi.c[eCELL_I].x, entity->csi.c[eCELL_I].y))
+							entity_index->t.csi.c[eCELL_I].x, entity_index->t.csi.c[eCELL_I].y,
+							entity->t.csi.c[eCELL_I].x, entity->t.csi.c[eCELL_I].y))
 						{
 							current_closest = i;
 							closest_distance = check_distance;
@@ -673,9 +618,9 @@ namespace index
 
 		Entity* entity_index = ENTITY(index);
 		// Iterate through nearby cells
-		for (int x = entity_index->csi.c[eCELL_I].x - 3u; x < entity_index->csi.c[eCELL_I].x + 3u; x++)
+		for (int x = entity_index->t.csi.c[eCELL_I].x - 3u; x < entity_index->t.csi.c[eCELL_I].x + 3u; x++)
 		{
-			for (int y = entity_index->csi.c[eCELL_I].y - 3u; y < entity_index->csi.c[eCELL_I].y + 3u; y++)
+			for (int y = entity_index->t.csi.c[eCELL_I].y - 3u; y < entity_index->t.csi.c[eCELL_I].y + 3u; y++)
 			{
 				// Iterate through every entity space in this cell
 				for (int e = 0; e <= cells[x][y].ents.end(); e++)
@@ -881,9 +826,9 @@ namespace index
 		ENTITY(index)->t.velocity = 0.f;
 		ENTITY(index)->t.height_velocity = 0.f;
 		ENTITY(index)->t.yaw.Set(dir);
-		GetCellSpaceInfo(ENTITY(index)->t.position, ENTITY(index)->csi);
-		env::GetHeight(ENTITY(index)->t.height, ENTITY(index)->csi);
-		AddEntityCell(ENTITY(index)->csi.c[eCELL_I].x, ENTITY(index)->csi.c[eCELL_I].y, index);
+		GetCellSpaceInfo(ENTITY(index)->t.position, ENTITY(index)->t.csi);
+		env::GetHeight(ENTITY(index)->t.height, ENTITY(index)->t.csi);
+		AddEntityCell(ENTITY(index)->t.csi.c[eCELL_I].x, ENTITY(index)->t.csi.c[eCELL_I].y, index);
 		ENTITY(index)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(index)->state.hp = 1.f;
 		ENTITY(index)->radius = 0.5f;
@@ -917,7 +862,7 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		CHARA(id)->t_skin = 0u;
 		CHARA(id)->aiControlled = false;
-		CHARA(id)->speed = 4.f;
+		CHARA(id)->speed = 2.8f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u); // long smig
 		CHARA(id)->inventory.AddNew(8u); // magazine
@@ -934,7 +879,7 @@ namespace index
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 1u;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 6.f;
+		CHARA(id)->speed = 2.8f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u);
 		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
@@ -949,7 +894,7 @@ namespace index
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 2u;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 5.f;
+		CHARA(id)->speed = 2.8f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(0u);
 		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
