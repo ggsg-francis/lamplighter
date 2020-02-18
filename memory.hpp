@@ -292,7 +292,11 @@ namespace mem
 		{
 			return bvget(used, 1ui32 << (btui32)index);
 		}
-		btui32 Size() { return index_end + 1ui32; }
+		btui32 Size() 
+		{
+			// TODO: returns 1 on an empty array, needs to be fixed
+			return index_end + 1ui32;
+		}
 		type& operator[](btui32 index) { return buffer[index]; }
 	};
 

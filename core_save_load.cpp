@@ -55,7 +55,7 @@ void SaveState()
 				fwrite(&ENTITY(i)->properties, SIZE_8, 1, file);
 				fwrite(&ENTITY(i)->faction, SIZE_8, 1, file);
 				fwrite(&ENTITY(i)->state.hp, SIZE_32, 1, file);
-				fwrite(&ENTITY(i)->state.properties, SIZE_64, 1, file);
+				fwrite(&ENTITY(i)->state.stateFlags, SIZE_64, 1, file);
 				fwrite(&ENTITY(i)->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
 				fwrite(&ENTITY(i)->t.position.x, SIZE_32, 1, file);
 				fwrite(&ENTITY(i)->t.position.y, SIZE_32, 1, file);
@@ -140,7 +140,7 @@ void LoadStateFileV001()
 				fread(&ENTITY(i)->properties, SIZE_8, 1, file);
 				fread(&ENTITY(i)->faction, SIZE_8, 1, file);
 				fread(&ENTITY(i)->state.hp, SIZE_32, 1, file);
-				fread(&ENTITY(i)->state.properties, SIZE_64, 1, file);
+				fread(&ENTITY(i)->state.stateFlags, SIZE_64, 1, file);
 				fread(&ENTITY(i)->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
 				fread(&ENTITY(i)->t.position.x, SIZE_32, 1, file);
 				fread(&ENTITY(i)->t.position.y, SIZE_32, 1, file);

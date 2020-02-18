@@ -17,26 +17,17 @@ namespace index
 		// If is null OR deleted OR dead OR no LOS
 		if (actor->ai_target_ent == BUF_NULL 
 			|| !block_entity.used[actor->ai_target_ent]
-			|| !ENTITY(actor->ai_target_ent)->state.properties.get(ActiveState::eALIVE)/*
+			|| !ENTITY(actor->ai_target_ent)->state.stateFlags.get(ActiveState::eALIVE)/*
 			|| !LOSCheck(id, actor->ai_target_ent)*/)
 		{
-			
 			actor->ai_target_ent = GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
 			actor->atk_target = actor->ai_target_ent;
 		}
-		//// umm
-		//if (actor->ai_target_ent != BUF_NULL)
-		//{
-		//	if (!LOSCheck(id, actor->ai_target_ent))
-		//	{
-		//		int i = 0;
-		//	}
-		//}
 	updateally:
 		// If is null OR deleted OR dead
 		if (actor->ai_ally_ent == BUF_NULL
 			|| !block_entity.used[actor->ai_ally_ent]
-			|| !ENTITY(actor->ai_ally_ent)->state.properties.get(ActiveState::eALIVE)
+			|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE)
 			|| !LOSCheck(id, actor->ai_ally_ent))
 			actor->ai_ally_ent = GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
 
@@ -50,6 +41,8 @@ namespace index
 			}
 			else // if we have an ally, follow it
 			{
+				// ALLY FOLLOW!!!!!!!!!!!!!!!!!!
+
 				m::Vector2 TargetVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
 				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 				float distance_to_target = m::Length(TargetVector);
@@ -58,7 +51,7 @@ namespace index
 				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
 				actor->ai_vy_target = angle2;
 
-				if (distance_to_target > 5.f) // if ally is far away
+				if (distance_to_target > 1.5f) // if ally is far away
 					actor->input.y = 1.f;
 				else
 					actor->input.y = 0.f;
@@ -117,6 +110,8 @@ namespace index
 				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
 				//actor->viewPitch.RotateTowards(angle22, HEAD_TURN_SPEED);
 				actor->ai_vy_target = angle2;
+				if (angle22 < -80.f) angle22 = -80.f;
+				if (angle22 > 70.f) angle22 = 70.f;
 				actor->ai_vp_target = angle22;
 
 				//actor->input.y = 0.f; actor->input.x = 1.f;
@@ -135,10 +130,12 @@ namespace index
 					float distance_to_ally = m::Length(AllyVector);
 					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
 
-					// if ally is closer than enemy
+					const btf32 ally_follow_dist = 2.f;
+
+					// if ally is farther than enemy
 					if (distance_to_ally > distance_to_target || distance_to_ally < 4.f)
 					{
-						if (distance_to_ally > 2.f)
+						if (distance_to_ally > ally_follow_dist)
 							if (offsetLR_ally > 0.5f) actor->input.x = 1.f;
 							else if (offsetLR_ally < -0.5f) actor->input.x = -1.f;
 							else actor->input.x = 0.f;
@@ -153,7 +150,7 @@ namespace index
 					}
 					else
 					{
-						if (distance_to_ally > 2.f) actor->input.y = 1.f;
+						if (distance_to_ally > ally_follow_dist) actor->input.y = 1.f;
 						else actor->input.y = 0.f;
 						actor->input.x = 0.f;
 
@@ -196,7 +193,7 @@ namespace index
 
 		// If ally is null or deleted or dead
 		if (actor->ai_ally_ent == BUF_NULL || !block_entity.used[actor->ai_ally_ent]
-			|| !ENTITY(actor->ai_ally_ent)->state.properties.get(ActiveState::eALIVE))
+			|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE))
 			actor->ai_ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
 
 		if (actor->ai_target_ent == BUF_NULL)
@@ -532,9 +529,14 @@ namespace index
 
 	bool LOSCheck(btID enta, btID entb)
 	{
-		return env::LineTrace(
+		/*return env::LineTrace(
 			ENTITY(enta)->t.position.x, ENTITY(enta)->t.position.y,
-			ENTITY(entb)->t.position.x, ENTITY(entb)->t.position.y);
+			ENTITY(entb)->t.position.x, ENTITY(entb)->t.position.y);*/
+		Entity* entity_a = ENTITY(enta);
+		Entity* entity_b = ENTITY(entb);
+		return env::LineTrace_Bresenham(
+			entity_a->csi.c[eCELL_I].x, entity_a->csi.c[eCELL_I].y,
+			entity_b->csi.c[eCELL_I].x, entity_b->csi.c[eCELL_I].y);
 	}
 
 	btID GetClosestPlayer(btID index)
@@ -554,7 +556,7 @@ namespace index
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != index && ENTITY(i)->state.properties.get(ActiveState::eALIVE))
+			if (block_entity.used[i] && i != index && ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE))
 			{
 				btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
 				if (check_distance < closest_distance)
@@ -567,7 +569,7 @@ namespace index
 		return current_closest;
 	}
 
-	// TO DO ANGLE IS ALREADY CALCULATED HERE, SO REUSE IT FOR THE PROJECTILE CODE INSTEAD OF REGENNING
+	// TODO: ANGLE IS ALREADY CALCULATED HERE, SO REUSE IT FOR THE PROJECTILE CODE INSTEAD OF REGENNING
 	btID GetViewTargetEntity(btID index, btf32 dist, fac::facalleg allegiance)
 	{
 		btID current_closest = BUF_NULL;
@@ -575,7 +577,7 @@ namespace index
 		for (int index_other = 0; index_other <= block_entity.index_end; index_other++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[index_other] && index_other != index && ENTITY(index_other)->state.properties.get(ActiveState::eALIVE))
+			if (block_entity.used[index_other] && index_other != index && ENTITY(index_other)->state.stateFlags.get(ActiveState::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(index_other)->faction) == allegiance)
@@ -583,15 +585,20 @@ namespace index
 					btf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
 					if (check_distance < dist)
 					{
-						m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
-
-						m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
-
-						btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
-						if (abs(angdif) < closest_angle)
+						Entity* ent = ENTITY(index);
+						Entity* ent_other = ENTITY(index_other);
+						// LINE TRACE
+						if (env::LineTrace_Bresenham(ent->csi.c[eCELL_I].x, ent->csi.c[eCELL_I].y,
+							ent_other->csi.c[eCELL_I].x, ent_other->csi.c[eCELL_I].y))
 						{
-							closest_angle = angdif;
-							current_closest = index_other;
+							m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
+							m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
+							btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
+							if (abs(angdif) < closest_angle)
+							{
+								closest_angle = angdif;
+								current_closest = index_other;
+							}
 						}
 					}
 				}
@@ -607,7 +614,7 @@ namespace index
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != index && ENTITY(i)->state.properties.get(ActiveState::eALIVE))
+			if (block_entity.used[i] && i != index && ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == allegiance)
@@ -633,7 +640,7 @@ namespace index
 		{
 			Entity* entity = ENTITY(i);
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != index && entity->state.properties.get(ActiveState::eALIVE))
+			if (block_entity.used[i] && i != index && entity->state.stateFlags.get(ActiveState::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(entity_index->faction, entity->faction) == allegiance)
@@ -642,8 +649,11 @@ namespace index
 					if (check_distance < closest_distance)
 					{
 						// Linetrace environment to see if the character is visible
-						if (env::LineTrace(entity_index->t.position.x, entity_index->t.position.y,
-							entity->t.position.x, entity->t.position.y))
+						/*if (env::LineTrace(entity_index->t.position.x, entity_index->t.position.y,
+							entity->t.position.x, entity->t.position.y))*/
+						if (env::LineTrace_Bresenham(
+							entity_index->csi.c[eCELL_I].x, entity_index->csi.c[eCELL_I].y,
+							entity->csi.c[eCELL_I].x, entity->csi.c[eCELL_I].y))
 						{
 							current_closest = i;
 							closest_distance = check_distance;
@@ -775,7 +785,7 @@ namespace index
 		HeldItem* held_item = GETITEM_MISC(id);
 		switch (type)
 		{
-		case ITEM_MISC:
+		case ITEM_TYPE_MISC:
 			*held_item = HeldItem();
 			held_item->fpTick = HeldItemTick;
 			held_item->fpDraw = HeldItemDraw;
@@ -785,7 +795,7 @@ namespace index
 			held_item->fpBlockTurn = HeldItemBlockTurn;
 			held_item->fpBlockMove = HeldItemBlockMove;
 			break;
-		case ITEM_EQUIP:
+		case ITEM_TYPE_EQUIP:
 			*held_item = HeldItem();
 			held_item->fpTick = HeldItemTick;
 			held_item->fpDraw = HeldItemDraw;
@@ -795,7 +805,7 @@ namespace index
 			held_item->fpBlockTurn = HeldItemBlockTurn;
 			held_item->fpBlockMove = HeldItemBlockMove;
 			break;
-		case ITEM_WPN_MELEE:
+		case ITEM_TYPE_WPN_MELEE:
 			*held_item = HeldMel();
 			held_item->fpTick = HeldMelTick;
 			held_item->fpDraw = HeldMelDraw;
@@ -805,7 +815,7 @@ namespace index
 			held_item->fpBlockTurn = HeldMelBlockTurn;
 			held_item->fpBlockMove = HeldMelBlockMove;
 			break;
-		case ITEM_WPN_MATCHGUN:
+		case ITEM_TYPE_WPN_MATCHGUN:
 			*held_item = HeldGun();
 			//memset(held_item, 0, sizeof(HeldGun));
 			//*held_item = HeldGunMatchLock();
@@ -817,7 +827,7 @@ namespace index
 			held_item->fpBlockTurn = HeldGunBlockTurn;
 			held_item->fpBlockMove = HeldGunBlockMove;
 			break;
-		case ITEM_WPN_MAGIC:
+		case ITEM_TYPE_WPN_MAGIC:
 			*held_item = HeldMgc();
 			held_item->fpTick = HeldMgcTick;
 			held_item->fpDraw = HeldMgcDraw;
@@ -827,11 +837,11 @@ namespace index
 			held_item->fpBlockTurn = HeldMgcBlockTurn;
 			held_item->fpBlockMove = HeldMgcBlockMove;
 			break;
-		case ITEM_CONS:
-			*held_item = HeldItem();
-			held_item->fpTick = HeldItemTick;
-			held_item->fpDraw = HeldItemDraw;
-			held_item->fpOnEquip = HeldItemOnEquip;
+		case ITEM_TYPE_CONS:
+			*held_item = HeldCons();
+			held_item->fpTick = HeldConTick;
+			held_item->fpDraw = HeldConDraw;
+			held_item->fpOnEquip = HeldConOnEquip;
 			held_item->fpGetLeftHandPos = HeldItemGetLeftHandPos;
 			held_item->fpGetRightHandPos = HeldItemGetRightHandPos;
 			held_item->fpBlockTurn = HeldItemBlockTurn;
@@ -845,20 +855,20 @@ namespace index
 		{
 			switch (block_item_data[id].type)
 			{
-			case ITEM_EQUIP:
+			case ITEM_TYPE_EQUIP:
 				ObjBuf_remove(&buf_item_misc, block_item_data[id].type_buffer_index);
 				break;
-			case ITEM_WPN_MELEE:
+			case ITEM_TYPE_WPN_MELEE:
 				ObjBuf_remove(&buf_item_melee, block_item_data[id].type_buffer_index);
 				break;
-			case ITEM_WPN_MATCHGUN:
+			case ITEM_TYPE_WPN_MATCHGUN:
 				ObjBuf_remove(&buf_item_gun, block_item_data[id].type_buffer_index);
 				break;
-			case ITEM_WPN_MAGIC:
+			case ITEM_TYPE_WPN_MAGIC:
 				ObjBuf_remove(&buf_item_mgc, block_item_data[id].type_buffer_index);
 				break;
-			case ITEM_CONS:
-				ObjBuf_remove(&buf_item_misc, block_item_data[id].type_buffer_index);
+			case ITEM_TYPE_CONS:
+				ObjBuf_remove(&buf_item_con, block_item_data[id].type_buffer_index);
 				break;
 			}
 		}
@@ -874,7 +884,7 @@ namespace index
 		GetCellSpaceInfo(ENTITY(index)->t.position, ENTITY(index)->csi);
 		env::GetHeight(ENTITY(index)->t.height, ENTITY(index)->csi);
 		AddEntityCell(ENTITY(index)->csi.c[eCELL_I].x, ENTITY(index)->csi.c[eCELL_I].y, index);
-		ENTITY(index)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(index)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(index)->state.hp = 1.f;
 		ENTITY(index)->radius = 0.5f;
 		ENTITY(index)->height = 1.9f;
@@ -903,13 +913,15 @@ namespace index
 		IndexInitEntity(id, ENTITY_TYPE_CHARA);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
 		CHARA(id)->t_skin = 0u;
 		CHARA(id)->aiControlled = false;
 		CHARA(id)->speed = 4.f;
 		CHARA(id)->agility = 0.f;
-		CHARA(id)->inventory.AddNew(6u);
+		CHARA(id)->inventory.AddNew(6u); // long smig
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
 	}
 
@@ -919,7 +931,7 @@ namespace index
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::player;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 1u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 6.f;
@@ -934,7 +946,7 @@ namespace index
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 2u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 5.f;
@@ -949,7 +961,7 @@ namespace index
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::undead;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 3u;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 1.f;
@@ -963,7 +975,7 @@ namespace index
 		IndexInitEntity(id, ENTITY_TYPE_EDITOR_PAWN);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
 		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = false;

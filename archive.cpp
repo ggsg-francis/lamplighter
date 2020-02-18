@@ -152,12 +152,15 @@ namespace res
 namespace acv
 {
 	//items
-	item* items[ITEMS_COUNT]{ nullptr };
+	BaseItem* items[ITEMS_COUNT]{ nullptr };
 	ItemType item_types[ITEMS_COUNT];
 	btui32 item_index = 0;
 
 	EnvProp props[PROPS_COUNT];
 	btui32 prop_index = 0;
+
+	Spell spells[SPELL_COUNT];
+	btui32 spell_index = 0;
 
 	// NEW STUFF !!!!!!!!!!!!!!!!!!!!!
 

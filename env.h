@@ -124,6 +124,7 @@ namespace env
 	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
 
 	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2);
+	bool LineTrace_Bresenham(int x1, int y1, int x2, int y2);
 
 	//void Tick();
 	void Draw();

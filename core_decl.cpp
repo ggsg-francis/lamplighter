@@ -47,6 +47,9 @@ namespace index
 	graphics::GUIText text_version;
 	graphics::GUIText text_fps;
 
+	graphics::GUIText text_message[2];
+	btf64 message_time[2];
+
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- ENTITY BUFFERS -------------------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -100,17 +103,24 @@ namespace index
 	ObjBuf buf_item_mgc; // Item buffer
 	HeldMgc buf_item_mgc_data[BUF_SIZE];
 
+	ObjBuf buf_item_con; // Item buffer
+	HeldCons buf_item_con_data[BUF_SIZE];
+
 	void* getItemMis(btID id) { return &buf_item_misc_data[id]; }
 	void* getItemEqp(btID id) { return &buf_item_misc_data[id]; }
 	void* getItemMel(btID id) { return &buf_item_melee_data[id]; }
 	void* getItemGun(btID id) { return &buf_item_gun_data[id]; }
 	void* getItemMgc(btID id) { return &buf_item_mgc_data[id]; }
-	void* getItemCon(btID id) { return &buf_item_misc_data[id]; }
+	void* getItemCon(btID id) { return &buf_item_con_data[id]; }
 	void*(*GetItemArray[])(btID) = { getItemMis, getItemEqp, getItemMel, getItemGun, getItemMgc, getItemCon };
-	ObjBuf* ItemBufPtr[] = { &buf_item_misc, &buf_item_misc, &buf_item_melee, &buf_item_gun, &buf_item_mgc, &buf_item_misc };
+	ObjBuf* ItemBufPtr[] = { &buf_item_misc, &buf_item_misc, &buf_item_melee, &buf_item_gun, &buf_item_mgc, &buf_item_con };
 	void* GetItemPtr(btID id)
 	{
 		return GetItemArray[block_item_data[id].type](block_item_data[id].type_buffer_index);
+	}
+	ItemType GetItemType(btID id)
+	{
+		return block_item_data[id].type;
 	}
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

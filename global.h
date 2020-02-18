@@ -33,8 +33,8 @@
 #define WORLD_BYTE_DEPTH 16
 #define WORLD_BIT_DEPTH WORLD_BYTE_DEPTH * 8
 
-#define SCREEN_UPSCALE_THRESHOLD 1280u
-//#define SCREEN_UPSCALE_THRESHOLD 2048u
+//#define SCREEN_UPSCALE_THRESHOLD 1280u
+#define SCREEN_UPSCALE_THRESHOLD 2048u
 
 #define LIGHT_FAR 256.f
 #define LIGHT_HALF 128.f
@@ -58,7 +58,7 @@
 //#define ID_NULL 65535
 #define ID_NULL 0b1111111111111111
 
-#define INV_SIZE 256
+#define INV_SIZE 64
 #define INV_NULL 256 // ????
 
 // Time to pass in seconds before one single tick
@@ -102,12 +102,12 @@ extern "C" {
 	#define ENTITY_TYPE_COUNT 3u
 
 	typedef btui8 ItemType;
-	#define ITEM_MISC 0ui8
-	#define ITEM_EQUIP 1ui8
-	#define ITEM_WPN_MELEE 2ui8
-	#define ITEM_WPN_MATCHGUN 3ui8
-	#define ITEM_WPN_MAGIC 4ui8
-	#define ITEM_CONS 5ui8
+	#define ITEM_TYPE_MISC 0ui8
+	#define ITEM_TYPE_EQUIP 1ui8
+	#define ITEM_TYPE_WPN_MELEE 2ui8
+	#define ITEM_TYPE_WPN_MATCHGUN 3ui8
+	#define ITEM_TYPE_WPN_MAGIC 4ui8
+	#define ITEM_TYPE_CONS 5ui8
 	///*
 	typedef btui8 AssetType;
 	#define ASSET_NONE 0ui8

@@ -11,12 +11,26 @@
 
 namespace serializer
 {
-	btID GetIDFromHandle(char* handle, AssetType type)
+	btID GetAssetIDFromHandle(char* handle, AssetType type)
 	{
 		btID retid = ID_NULL;
 		for (btID i = 0; i < acv::assetCount; ++i)
 		{
 			if (memcmp(handle, acv::assets[i].handle, 8u) == 0)
+			{
+				retid = i;
+				break;
+			}
+		}
+		return retid; // Return ID of new filename
+	}
+
+	btID GetSpellIDFromHandle(char* handle)
+	{
+		btID retid = ID_NULL;
+		for (btID i = 0; i < acv::spell_index; ++i)
+		{
+			if (memcmp(handle, acv::spells[i].handle, 8u) == 0)
 			{
 				retid = i;
 				break;
@@ -42,12 +56,24 @@ namespace serializer
 			std::cout << "TEXTURE ID           " << acv::props[i].idTxtr << std::endl;
 		}
 		std::cout << "__________________________________________" << std::endl;
+		std::cout << "SPELLS" << std::endl;
+		for (int i = 0; i < acv::spell_index; i++)
+		{
+			std::cout << "---------------------" << std::endl;
+			//std::cout << "HANDLE               " << acv::spells[i].handle << std::endl;
+			std::cout << "NAME                 " << acv::spells[i].name << std::endl;
+			std::cout << "CAST TYPE            " << acv::spells[i].cast_type << std::endl;
+			std::cout << "EFFECT ON TARGET     " << acv::spells[i].target_effect_type << std::endl;
+			std::cout << "DURATION ON TARGET   " << acv::spells[i].target_effect_duration << std::endl;
+			std::cout << "MAGNITUDE ON TARGET  " << acv::spells[i].target_effect_magnitude << std::endl;
+		}
+		std::cout << "__________________________________________" << std::endl;
 		std::cout << "ITEMS" << std::endl;
 		for (int i = 0; i < acv::item_index; i++)
 		{
-			#define ITEMI ((acv::item*)acv::items[i])
-			#define WMELI ((acv::item_w_melee*)acv::items[i])
-			#define CONSI ((acv::item_pton*)acv::items[i])
+			#define ITEMI ((acv::BaseItem*)acv::items[i])
+			#define WMELI ((acv::BaseItemMel*)acv::items[i])
+			#define CONSI ((acv::BaseItemCon*)acv::items[i])
 
 			std::cout << "---------------------" << std::endl;
 			std::cout << "ID                   " << ITEMI->id << std::endl;
@@ -60,17 +86,15 @@ namespace serializer
 			std::cout << "MESH ID              " << ITEMI->id_mesh << std::endl;
 			std::cout << "TEXTURE ID           " << ITEMI->id_tex << std::endl;
 
-			if (acv::item_types[i] == ITEM_WPN_MELEE)
+			if (acv::item_types[i] == ITEM_TYPE_WPN_MELEE)
 			{
 				std::cout << "DAMAGE PIERCE        " << WMELI->f_dam_pierce << std::endl;
 				std::cout << "DAMAGE SLASH         " << WMELI->f_dam_slash << std::endl;
 				std::cout << "DAMAGE SLAM          " << WMELI->f_dam_slam << std::endl;
 			}
-			if (acv::item_types[i] == ITEM_CONS)
+			if (acv::item_types[i] == ITEM_TYPE_CONS)
 			{
 				std::cout << "EFFECT               " << CONSI->effect << std::endl;
-				std::cout << "EFFECT VALUE         " << CONSI->effect_value << std::endl;
-				std::cout << "EFFECT TIME          " << CONSI->effect_time << std::endl;
 			}
 			#undef ITEMI
 			#undef WPNI
@@ -261,37 +285,37 @@ namespace serializer
 	{
 		void* item;
 
-		#define GET2_ITEM_ITEM ((acv::item*)item)
+		#define GET2_ITEM_ITEM ((acv::BaseItem*)item)
 		#define GET2_ITEM_MISC ((acv::item_misc*)item)
-		#define GET2_ITEM_APR ((acv::item_aprl*)item)
-		#define GET2_ITEM_W_MELEE ((acv::item_w_melee*)item)
-		#define GET2_ITEM_PTN ((acv::item_pton*)item)
+		#define GET2_ITEM_APR ((acv::BaseItemEqp*)item)
+		#define GET2_ITEM_W_MELEE ((acv::BaseItemMel*)item)
+		#define GET2_ITEM_PTN ((acv::BaseItemCon*)item)
 
 		FILE* file = fopen(fn, "r"); // Open file
 		if (file != NULL)
 		{
 			fseek(file, 0, SEEK_SET); // Seek file beginning
 
-			//variables for use
-			//int id_current = 0;
-
-			//read property
 			char elem[5];
 			char oper;
+
+			//-------------------------------- PROPS
+
+		getPropElemName:
 			fgets(&elem[0], 5, file); // Get element name
-			while (strcmp(elem, "prop") == 0) // is it a new item?
+			if (strcmp(elem, "PROP") == 0) // is it a new item?
 			{
-				//....................................... GET ITEM TYPE
+				// GET TYPE
 
 				oper = fgetc(file); // Advance past equals sign
 				fgets(&elem[0], 5, file); // Get element name
 
-				//....................................... SET ITEM TYPE
+				// SET TYPE
 
 				// If it's an environment prop
-				if (strcmp(elem, "envp") == 0) ++acv::prop_index;
+				if (strcmp(elem, "prop") != 0) goto nextPropElem;
 
-				//....................................... READ ITEM PROPERTIES
+				// READ PROPERTIES
 
 				oper = fgetc(file); //  Advance past line break
 				fgets(&elem[0], 5, file); // Get element name
@@ -314,11 +338,15 @@ namespace serializer
 					fgets(&value[0], (int)(end - start) - 1, file); // Get element name
 
 					if (strcmp(elem, "srct") == 0) // Texture
-						acv::props[acv::prop_index].idTxtr = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
+						acv::props[acv::prop_index].idTxtr = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "srcm") == 0) // Mesh
-						acv::props[acv::prop_index].idMesh = GetIDFromHandle(value, ASSET_MESH_FILE);
-
-					//++acv::prop_index; // Iterate prop count
+						acv::props[acv::prop_index].idMesh = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
+					else if (strcmp(elem, "flor") == 0)
+						acv::props[acv::prop_index].floorType = (acv::EnvProp::EnvPropFloorMat)atoi(value);
+					else if (strcmp(elem, "phys") == 0)
+						acv::props[acv::prop_index].physShape = (acv::EnvProp::EnvPropPhysShape)atoi(value);
+					else if (strcmp(elem, "flag") == 0)
+						acv::props[acv::prop_index].flags = (acv::EnvProp::EnvPropFlags)atoi(value);
 
 					free(value); // Free content string
 
@@ -326,56 +354,126 @@ namespace serializer
 					oper = fgetc(file); //  Advance past line break
 					fgets(&elem[0], 5, file); // Get element name
 				}
+				++acv::prop_index;
+			nextPropElem:
 				oper = fgetc(file); //  Advance past line break
-				fgets(&elem[0], 5, file); // Get element name
+				goto getPropElemName;
 			}
-			while (strcmp(elem, "item") == 0) // is it a new item?
+			else goto skipSpelElemName;
+
+			//-------------------------------- SPELLS
+
+		getSpelElemName:
+			fgets(&elem[0], 5, file); // Get element name
+		skipSpelElemName:
+			while (strcmp(elem, "SPEL") == 0) // is it a new item?
 			{
-				//....................................... GET ITEM TYPE
+				// GET TYPE
 
 				oper = fgetc(file); // Advance past equals sign
 				fgets(&elem[0], 5, file); // Get element name
 
-				//....................................... SET ITEM TYPE
+				// SET TYPE
+
+				// If it's an environment prop
+				if (strcmp(elem, "spel") != 0) goto nextSpelElem;
+
+				// READ PROPERTIES
+
+				oper = fgetc(file); //  Advance past line break
+				fgets(&elem[0], 5, file); // Get element name
+				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
+				{
+					oper = fgetc(file); // Advance past equals sign
+					fpos_t start; fpos_t end; // Start and end points of the value (eg. name = dick; dick is the value)
+					fgetpos(file, &start);
+					while (true)
+					{
+						oper = fgetc(file); // Get character
+						if (oper == '\n')
+						{
+							fgetpos(file, &end);
+							break;
+						}
+					}
+					fseek(file, (long)start, SEEK_SET);
+					char* value = (char*)malloc(end - start); // Allocate space for value string
+					fgets(&value[0], (int)(end - start) - 1, file); // Get element name
+
+					if (strcmp(elem, "hndl") == 0) // Handle
+						memcpy(acv::spells[acv::spell_index].handle, value, 8u);
+					else if (strcmp(elem, "name") == 0) // Name
+						memcpy(acv::spells[acv::spell_index].name, value, end - start);
+					else if (strcmp(elem, "eidt") == 0) // Effect on Target
+						acv::spells[acv::spell_index].target_effect_type = (btui16)atoi(value);
+					else if (strcmp(elem, "edrt") == 0) // Duration on Target
+						acv::spells[acv::spell_index].target_effect_duration = (btf32)atof(value);
+					else if (strcmp(elem, "emgt") == 0) // Magnitude on Target
+						acv::spells[acv::spell_index].target_effect_magnitude = (btui32)atoi(value);
+
+					free(value); // Free content string
+
+					//#define NEXT_OPERATOR oper=fgetc(file);fgets(&elem[0], 5, file); // Get element name
+
+					//get name of next operator
+					oper = fgetc(file); //  Advance past line break
+					fgets(&elem[0], 5, file); // Get element name
+				}
+				++acv::spell_index;
+			nextSpelElem:
+				oper = fgetc(file); //  Advance past line break
+				goto getSpelElemName;
+			}
+
+			//-------------------------------- ITEMS
+
+			while (strcmp(elem, "ITEM") == 0) // is it a new item?
+			{
+				// GET ITEM TYPE
+
+				oper = fgetc(file); // Advance past equals sign
+				fgets(&elem[0], 5, file); // Get element name
+
+				// SET ITEM TYPE
 
 				if (elem[0] == 'w') // If it's a weapon
 				{
 					if (strcmp(elem, "wmel") == 0) {
-						acv::items[acv::item_index] = new acv::item_w_melee();
-						acv::item_types[acv::item_index] = ITEM_WPN_MELEE;
+						acv::items[acv::item_index] = new acv::BaseItemMel();
+						acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MELEE;
 					}
 					else if (strcmp(elem, "wgun") == 0) {
-						acv::items[acv::item_index] = new acv::item_w_gun();
-						acv::item_types[acv::item_index] = ITEM_WPN_MATCHGUN;
+						acv::items[acv::item_index] = new acv::BaseItemGun();
+						acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MATCHGUN;
 					}
 					else if (strcmp(elem, "wmgc") == 0) {
-						acv::items[acv::item_index] = new acv::item_w_magic();
-						acv::item_types[acv::item_index] = ITEM_WPN_MAGIC;
+						acv::items[acv::item_index] = new acv::BaseItemMgc();
+						acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MAGIC;
 					}
 				}
 				else
 				{
 					if (strcmp(elem, "misc") == 0) {
-						acv::items[acv::item_index] = new acv::item();
-						acv::item_types[acv::item_index] = ITEM_MISC;
+						acv::items[acv::item_index] = new acv::BaseItem();
+						acv::item_types[acv::item_index] = ITEM_TYPE_MISC;
 					}
 					else if (strcmp(elem, "aprl") == 0) {
-						acv::items[acv::item_index] = new acv::item_aprl();
-						acv::item_types[acv::item_index] = ITEM_EQUIP;
+						acv::items[acv::item_index] = new acv::BaseItemEqp();
+						acv::item_types[acv::item_index] = ITEM_TYPE_EQUIP;
 					}
 					else if (strcmp(elem, "cons") == 0) {
-						acv::items[acv::item_index] = new acv::item_pton();
-						acv::item_types[acv::item_index] = ITEM_CONS;
+						acv::items[acv::item_index] = new acv::BaseItemCon();
+						acv::item_types[acv::item_index] = ITEM_TYPE_CONS;
 					}
 				}
 
-				//....................................... ASSIGN ITEM ID
+				// ASSIGN ITEM ID
 
 				item = acv::items[acv::item_index];
 				GET2_ITEM_ITEM->id = acv::item_index;
 				acv::item_index++;
 
-				//....................................... READ ITEM PROPERTIES
+				// READ ITEM PROPERTIES
 
 				oper = fgetc(file); //  Advance past line break
 				fgets(&elem[0], 5, file); // Get element name
@@ -408,7 +506,7 @@ namespace serializer
 					}
 					else if (strcmp(elem, "icon") == 0) // Icon (change to string?)
 						//ITEM_ITEM->id_icon = (btID)atoi(value);
-						GET2_ITEM_ITEM->id_icon = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
+						GET2_ITEM_ITEM->id_icon = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "name") == 0) // Name
 						memcpy(GET2_ITEM_ITEM->name, value, end - start);
 					else if (strcmp(elem, "wght") == 0) // Carry weight
@@ -420,11 +518,11 @@ namespace serializer
 					else if (strcmp(elem, "mdlh") == 0) // Model height when placed
 						GET2_ITEM_ITEM->f_model_height = (btf32)atof(value);
 					else if (strcmp(elem, "srct") == 0) // Texture
-						GET2_ITEM_ITEM->id_tex = GetIDFromHandle(value, ASSET_TEXTURE_FILE);
+						GET2_ITEM_ITEM->id_tex = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "srcm") == 0) // Mesh
-						GET2_ITEM_ITEM->id_mesh = GetIDFromHandle(value, ASSET_MESH_FILE);
+						GET2_ITEM_ITEM->id_mesh = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
 					else if (strcmp(elem, "scmb") == 0) // Mesh
-						GET2_ITEM_ITEM->id_mesh = GetIDFromHandle(value, ASSET_MESHBLEND_FILE);
+						GET2_ITEM_ITEM->id_mesh = GetAssetIDFromHandle(value, ASSET_MESHBLEND_FILE);
 					// Weapon value
 					else if (strcmp(elem, "held") == 0) // Damage pierce
 					{
@@ -443,6 +541,9 @@ namespace serializer
 						GET2_ITEM_APR->block_slice = (float)atof(value);
 					else if (strcmp(elem, "def3") == 0) // Defend slam damage
 						GET2_ITEM_APR->block_slam = (float)atof(value);
+					// Con Value
+					else if (strcmp(elem, "cspl") == 0) // Spell
+						GET2_ITEM_PTN->effect = GetSpellIDFromHandle(value);
 
 					free(value); // Free content string
 
@@ -474,11 +575,7 @@ namespace serializer
 
 			//-------------------------------- Asset part
 
-			//id_t count;
-			//fread(&count, sizeof(id_t), 1, file); // Read filename count
 			fread(&acv::assetCount, sizeof(btui32), 1, file); // Read filename count
-			//acv::fn_index = count; // Temp
-
 			for (btui32 i = 0ui32; i < acv::assetCount; i++) // Write file types
 			{
 				fread(&acv::assets[i].type, sizeof(btui8), 1, file);
@@ -497,12 +594,16 @@ namespace serializer
 			// Read props
 			fread(&acv::props, sizeof(acv::EnvProp), acv::prop_index, file);
 
+			//-------------------------------- Spell part
+
+			// Read count
+			fread(&acv::spell_index, sizeof(btui32), 1, file);
+			// Read spells
+			fread(&acv::spells, sizeof(acv::Spell), acv::spell_index, file);
+
 			//-------------------------------- Item part
 
-			///*
 			fread(&acv::item_index, sizeof(btui32), 1, file); // Read item count
-			//acv::item_index = count; // Temp
-
 			for (int i = 0; i < acv::item_index; i++)
 			{
 				fread(&acv::item_types[i], sizeof(btui8), 1, file);
@@ -510,28 +611,28 @@ namespace serializer
 				switch (acv::item_types[i])
 				{
 				default: // base (ITEM_ROOT)
-					acv::items[i] = new acv::item();
-					fread(acv::items[i], sizeof(acv::item), 1, file);
+					acv::items[i] = new acv::BaseItem();
+					fread(acv::items[i], sizeof(acv::BaseItem), 1, file);
 					break;
-				case ITEM_WPN_MELEE:
-					acv::items[i] = new acv::item_w_melee();
-					fread(acv::items[i], sizeof(acv::item_w_melee), 1, file);
+				case ITEM_TYPE_WPN_MELEE:
+					acv::items[i] = new acv::BaseItemMel();
+					fread(acv::items[i], sizeof(acv::BaseItemMel), 1, file);
 					break;
-				case ITEM_WPN_MATCHGUN:
-					acv::items[i] = new acv::item_w_gun();
-					fread(acv::items[i], sizeof(acv::item_w_gun), 1, file);
+				case ITEM_TYPE_WPN_MATCHGUN:
+					acv::items[i] = new acv::BaseItemGun();
+					fread(acv::items[i], sizeof(acv::BaseItemGun), 1, file);
 					break;
-				case ITEM_WPN_MAGIC:
-					acv::items[i] = new acv::item_w_magic();
-					fread(acv::items[i], sizeof(acv::item_w_magic), 1, file);
+				case ITEM_TYPE_WPN_MAGIC:
+					acv::items[i] = new acv::BaseItemMgc();
+					fread(acv::items[i], sizeof(acv::BaseItemMgc), 1, file);
 					break;
-				case ITEM_CONS:
-					acv::items[i] = new acv::item_pton();
-					fread(acv::items[i], sizeof(acv::item_pton), 1, file);
+				case ITEM_TYPE_CONS:
+					acv::items[i] = new acv::BaseItemCon();
+					fread(acv::items[i], sizeof(acv::BaseItemCon), 1, file);
 					break;
 				}
 			}
-			//*/
+
 			fclose(file); // Close file
 
 			std::cout << "LOAD COMPLETE!" << std::endl;
@@ -567,37 +668,41 @@ namespace serializer
 
 			count = acv::prop_index;
 			fwrite(&count, sizeof(btui32), 1, file);
-
 			fwrite(&acv::props, sizeof(acv::EnvProp), count, file);
+
+			//-------------------------------- Spell part
+
+			count = acv::spell_index;
+			fwrite(&count, sizeof(btui32), 1, file);
+			fwrite(&acv::spells, sizeof(acv::Spell), count, file);
 
 			//-------------------------------- Item part
 
 			count = acv::item_index;
 			fwrite(&count, sizeof(btui32), 1, file);
-
 			for (int i = 0; i < acv::item_index; i++)
 			{
 				switch (acv::item_types[i])
 				{
 				default: // base (ITEM_ROOT)
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::item), 1, file);
+					fwrite(acv::items[i], sizeof(acv::BaseItem), 1, file);
 					break;
-				case ITEM_WPN_MELEE:
+				case ITEM_TYPE_WPN_MELEE:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::item_w_melee), 1, file);
+					fwrite(acv::items[i], sizeof(acv::BaseItemMel), 1, file);
 					break;
-				case ITEM_WPN_MATCHGUN:
+				case ITEM_TYPE_WPN_MATCHGUN:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::item_w_gun), 1, file);
+					fwrite(acv::items[i], sizeof(acv::BaseItemGun), 1, file);
 					break;
-				case ITEM_WPN_MAGIC:
+				case ITEM_TYPE_WPN_MAGIC:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::item_w_magic), 1, file);
+					fwrite(acv::items[i], sizeof(acv::BaseItemMgc), 1, file);
 					break;
-				case ITEM_CONS:
+				case ITEM_TYPE_CONS:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::item_pton), 1, file);
+					fwrite(acv::items[i], sizeof(acv::BaseItemCon), 1, file);
 					break;
 				}
 			}

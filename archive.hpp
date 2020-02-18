@@ -128,38 +128,73 @@ namespace res
 // -
 #define ITEMS_COUNT 32
 // -
-#define PROPS_COUNT 8
+#define PROPS_COUNT 16
+// -
+#define SPELL_COUNT 8
 
 namespace acv
-{
+{	
 	struct EnvProp
 	{
+		enum EnvPropFloorMat : btui8
+		{
+			FLOOR_STANDARD,
+			FLOOR_WATER,
+			FLOOR_TAR,
+			FLOOR_QUICKSAND,
+		};
+		// well.... maybe this should be directly in the tiles
+		enum EnvPropPhysShape : btui8
+		{
+			eSHAPE_NONE, // No shape, just floor
+			eSHAPE_BOX, // full square impassable tile
+			eSHAPE_DIAG_NE, // Diagonal face
+			eSHAPE_DIAG_NW, // Diagonal face
+			eSHAPE_DIAG_SE, // Diagonal face
+			eSHAPE_DIAG_SW, // Diagonal face
+			eSHAPE_CIRCLE, // Full 0.5 radius circle
+			eSHAPE_QUARTER_CIRCLE_NE, // Quarter-circle with 1 radius
+			eSHAPE_QUARTER_CIRCLE_NW, // Quarter-circle with 1 radius
+			eSHAPE_QUARTER_CIRCLE_SE, // Quarter-circle with 1 radius
+			eSHAPE_QUARTER_CIRCLE_SW, // Quarter-circle with 1 radius
+		};
+		enum EnvPropFlags : btui8
+		{
+			eBLOCK_LIGHT_SKY = 0b00000001,
+			eNONE1 = 0b00000010,
+			eNONE2 = 0b00000100,
+			eNONE3 = 0b00001000,
+			eNONE4 = 0b00010000,
+			eNONE5 = 0b00100000,
+			eNONE6 = 0b01000000,
+			eNONE7 = 0b10000000,
+		};
 		btID idMesh = ID_NULL;
 		btID idTxtr = ID_NULL;
+		EnvPropFloorMat floorType;
+		EnvPropPhysShape physShape;
+		//mem::bv<btui8, EnvPropFlags> flags;
+		EnvPropFlags flags;
+		btui8 placeholder;
 	};
 
-	namespace types
+	enum SpellCastType : btui8
 	{
-		/*enum ItemType : btui8
-		{
-			ITEM_ROOT,
-			ITEM_EQUIP,
-			ITEM_WPN_MELEE,
-			ITEM_WPN_MATCHGUN,
-			ITEM_WPN_MAGIC,
-			ITEM_CONS,
-		};
-		enum AssetType : btui8
-		{
-			ASSET_NONE,
-			ASSET_TEXTURE_FILE,
-			ASSET_MESH_FILE,
-			ASSET_MESHBLEND_FILE,
-			ASSET_MESHDEFORM_FILE,
-		};*/
-	}
+		ON_CASTER,
+		ON_TARGET,
+		ON_CASTER_AND_TARGET,
+	};
+	typedef struct Spell
+	{
+		char handle[8];
+		bti8 name[32];
+		SpellCastType cast_type = ON_TARGET;
+		btui16 target_effect_type;
+		btf32 target_effect_duration;
+		btui32 target_effect_magnitude;
+	} Spell;
 
-	struct item
+	struct BaseItem
 	{
 		// Root
 		btID id = 0u;
@@ -173,7 +208,7 @@ namespace acv
 		btID id_tex = 0u;
 	};
 
-	struct item_aprl : public item
+	struct BaseItemEqp : public BaseItem
 	{
 		// Meshes
 		btID id_mesh_head; btID id_texture_head;
@@ -183,28 +218,26 @@ namespace acv
 		float block_pierce; float block_slice; float block_slam;
 	};
 
-	struct item_w_melee : public item
+	struct BaseItemMel : public BaseItem
 	{
 		// Damage values
 		float f_dam_pierce; float f_dam_slash; float f_dam_slam;
 	};
 
-	struct item_w_gun : public item
+	struct BaseItemGun : public BaseItem
 	{
 		float f_temp;
 	};
 
-	struct item_w_magic : public item
+	struct BaseItemMgc : public BaseItem
 	{
 		float f_temp;
 	};
 
-	struct item_pton : public item
+	struct BaseItemCon : public BaseItem
 	{
 		// Spell effects
 		btID effect;
-		float effect_value;
-		float effect_time;
 	};
 
 	// art assets archive
@@ -218,12 +251,15 @@ namespace acv
 	};
 
 	//items (also make inaccessable)
-	extern item* items[ITEMS_COUNT];
+	extern BaseItem* items[ITEMS_COUNT];
 	extern ItemType item_types[ITEMS_COUNT];
 	extern btui32 item_index; // number of items, I think
 
 	extern EnvProp props[PROPS_COUNT];
 	extern btui32 prop_index;
+
+	extern Spell spells[SPELL_COUNT];
+	extern btui32 spell_index;
 
 	// make inaccessable
 	extern archive_asset assets[FN_COUNT];

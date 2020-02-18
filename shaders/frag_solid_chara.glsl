@@ -192,7 +192,7 @@ void main()
 		vec3 suncol = vec3(0.0,0.0,0.0);
 		vec3 skycol = vec3(0.0,0.0,0.0);
 		vec3 fogcol = vec3(0.1,0.1,0.1);
-		vec3 litcol = vec3(1.25f,1.25f,1.25f);
+		vec3 litcol = vec3(1.5f,1.5f,1.5f);
 		
 		float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
 		//float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened

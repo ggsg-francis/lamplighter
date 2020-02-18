@@ -29,12 +29,14 @@ void HeldItemOnEquip(btID id)
 m::Vector3 HeldItemGetLeftHandPos(btID id)
 {
 	HeldItem* self = GETITEM_MISC(id);
-	return self->t_item.GetPosition() + self->t_item.GetRight() * -0.5f;
+	//return self->t_item.GetPosition() + self->t_item.GetRight() * -0.5f;
+	return self->t_item.GetPosition() + self->t_item.GetRight() * -((acv::BaseItem*)acv::items[self->item_template])->f_radius;
 }
 m::Vector3 HeldItemGetRightHandPos(btID id)
 {
 	HeldItem* self = GETITEM_MISC(id);
-	return self->t_item.GetPosition() + self->t_item.GetRight() * 0.5f;
+	//return self->t_item.GetPosition() + self->t_item.GetRight() * 0.5f;
+	return self->t_item.GetPosition() + self->t_item.GetRight() * ((acv::BaseItem*)acv::items[self->item_template])->f_radius;
 }
 bool HeldItemBlockTurn(btID id)
 {
@@ -469,7 +471,8 @@ void HeldMgcDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
 	self->t_item.SetRotation(0.f);
 	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
-	self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.3f)); // set pose
+	self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.25f + acv::items[itemid]->f_radius)); // set pose
+	self->t_item.Rotate(glm::radians(-35.f), m::Vector3(1, 0, 0));
 	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
 void HeldMgcOnEquip(btID id)
@@ -479,12 +482,14 @@ void HeldMgcOnEquip(btID id)
 m::Vector3 HeldMgcGetLeftHandPos(btID id)
 {
 	HeldMgc* self = GETITEM_MAGIC(id);
-	return self->t_item.GetPosition() + self->t_item.GetRight() * -0.1f;
+	//return self->t_item.GetPosition() + self->t_item.GetRight() * -0.2f;
+	return self->t_item.GetPosition() + m::RotateVector(m::Vector3(-0.25f, 0.f, -0.25f), self->t_item.rot_glm);
 }
 m::Vector3 HeldMgcGetRightHandPos(btID id)
 {
 	HeldMgc* self = GETITEM_MAGIC(id);
-	return self->t_item.GetPosition() + self->t_item.GetRight() * 0.1f;
+	//return self->t_item.GetPosition() + self->t_item.GetRight() * 0.2f;
+	return self->t_item.GetPosition() + m::RotateVector(m::Vector3(0.25f, 0.f, -0.25f), self->t_item.rot_glm);
 }
 bool HeldMgcBlockTurn(btID id)
 {
@@ -493,6 +498,34 @@ bool HeldMgcBlockTurn(btID id)
 bool HeldMgcBlockMove(btID id)
 {
 	return false;
+}
+
+//-------------------------------- HELD ITEM CONSUME
+
+void HeldConTick(btID id, btf32 dt, Actor * owner)
+{
+	HeldCons* self = GETITEM_CONS(id);
+	if (owner->inputBV.get(Actor::IN_USE_HIT) && self->uses > 0u)
+	{
+		owner->state.AddSpell(owner->id, ((acv::BaseItemCon*)acv::items[self->item_template])->effect);
+		if (self->uses > 1u) --self->uses;
+		else owner->inventory.DestroyID(id);
+	}
+}
+void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch)
+{
+	HeldCons* self = GETITEM_CONS(id);
+	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
+	self->t_item.SetRotation(0.f);
+	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
+	//self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.3f)); // set pose
+	self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.25f + acv::items[itemid]->f_radius)); // set pose
+	self->t_item.Rotate(glm::radians(45.f), m::Vector3(1, 0, 0));
+	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
+}
+void HeldConOnEquip(btID id)
+{
+	//
 }
 
 //-------------------------------- HELD ITEM MATCHLOCK

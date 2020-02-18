@@ -22,6 +22,17 @@ void Inventory::DestroyIndex(btui32 index)
 	items.Remove(index);
 	index::DestroyItem(items[index]);
 }
+void Inventory::DestroyID(btID id)
+{
+	for (int i = 0; i < items.Size(); ++i)
+	{
+		if (items[i] == id) // if we already have a stack of this item
+		{
+			DestroyIndex(i);
+			return;
+		}
+	}
+}
 void Inventory::Destroy(btID item_template)
 {
 	for (int i = 0; i < items.Size(); ++i)
@@ -59,19 +70,27 @@ void Inventory::Draw(btui16 active_slot)
 
 	const bti32 invspace = 38;
 
+	graphics::GUIText text;
+
 	bti32 offset = p1_x_start + 96 - 16;
 	for (btui16 i = 0; i < items.Size(); i++)
 	{
 		if (items.Used(i))
 		{
-			if (i == active_slot)
-				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
-			else
-				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 16, 64, 64);
+			graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
+			// get item type
+			if (index::GetItemType(items[i]) == ITEM_TYPE_CONS)
+			{
+				char textbuffer[8];
+				_itoa(GETITEM_CONS(items[i])->uses, textbuffer, 10);
+				text.ReGen(textbuffer, offset + i * invspace, offset + i * invspace + 32, p1_y_start + 24);
+				text.Draw(&res::GetT(res::t_gui_font));
+			}
 		}
 	}
 	guibox_selection.ReGen((offset + active_slot * invspace) - 12, (offset + active_slot * invspace) + 12, p1_y_start + 12, p1_y_start + 36, 8, 8);
 	guibox_selection.Draw(&res::GetT(res::t_gui_select_box));
+	//itoa
 }
 
 char* DisplayNameActor(void* ent)
@@ -152,6 +171,9 @@ void DrawChara(void* ent)
 	{
 		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
 
+		// draw item
+		HELDINSTANCE->fpDraw(inventory.items[inv_active_slot], GETITEM_MISC(inventory.items[inv_active_slot])->item_template, t.position, t.height, viewYaw, viewPitch);
+
 		m::Vector3 handPosR = HELDINSTANCE->fpGetRightHandPos(inventory.items[inv_active_slot]);
 		m::Vector3 handPosL = HELDINSTANCE->fpGetLeftHandPos(inventory.items[inv_active_slot]);
 
@@ -183,9 +205,6 @@ void DrawChara(void* ent)
 		graphics::MatrixTransform(matLegLoL, jointPosL + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup);
 		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
-
-		// draw item
-		HELDINSTANCE->fpDraw(inventory.items[inv_active_slot], GETITEM_MISC(inventory.items[inv_active_slot])->item_template, t.position, t.height, viewYaw, viewPitch);
 
 		#undef HELDINSTANCE
 	}
@@ -365,9 +384,13 @@ void ActiveState::Damage(btf32 amount, btf32 angle)
 	hp -= amount;
 	if (hp <= 0.f)
 	{
-		properties.unset(ActiveState::eALIVE);
+		//stateFlags.unset((ActiveFlags)(eALIVE | eDIED_THIS_TICK));
+		stateFlags.unset((ActiveFlags)(eALIVE));
+		stateFlags.set((ActiveFlags)(eDIED_REPORT));
 		hp = 0.f;
 	}
+
+	// TODO: include AI 'notify attack' function call here
 }
 void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, btui32 magnitude)
 {
@@ -377,24 +400,66 @@ void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, 
 	effect.effect_duration = duration;
 	effect.effect_magnitude = magnitude;
 	effects.Add(effect);
+
+	// TODO: include AI 'notify attack' function call here
+
+	/*char string[64] = "Received ";
+
+	switch (effect.effect_type)
+	{
+	case EFFECT_DAMAGE_HP:
+		strcat_s(string, "Damage HP");
+		break;
+	case EFFECT_RESTORE_HP:
+		strcat(string, "Restore HP");
+		break;
+	}
+
+	index::GUISetMessag(0, string);*/
+}
+void ActiveState::AddSpell(btID caster, btID spell)
+{
+	AddEffect(0, (StatusEffectType)acv::spells[spell].target_effect_type,
+		acv::spells[spell].target_effect_duration,
+		acv::spells[spell].target_effect_magnitude);
+	// TODO: this only works in the case of cast on self, should deal with this properly but dont know how best to yet
+	if (index::players[0] == caster)
+	{
+		char string[64] = "Got ";
+		strcat(string, (char*)acv::spells[spell].name);
+		index::GUISetMessag(0, string);
+	}
+	else if (index::players[1] == caster)
+	{
+		char string[64] = "Got ";
+		strcat(string, (char*)acv::spells[spell].name);
+		index::GUISetMessag(1, string);
+	}
 }
 void ActiveState::TickEffects(btf32 dt)
 {
+	int jshdf = effects.Size();
 	for (btui32 i = 0; i < effects.Size(); ++i)
 	{
-		switch (effects[i].effect_type)
+		if (effects.Used(i))
 		{
-		case SE_DAMAGE_HP:
-			// magnitude multiplied by delta time so that it functions as a value per second
-			Damage((btf32)effects[i].effect_magnitude * dt, 0.f);
-			// TODO: include AI 'notify attack' function call here
-			break;
-		case SE_RESTORE_HP:
-			break;
+			switch (effects[i].effect_type)
+			{
+			case EFFECT_DAMAGE_HP:
+				// magnitude multiplied by delta time so that it functions as a value per second
+				Damage((btf32)effects[i].effect_magnitude * dt, 0.f);
+				break;
+			case EFFECT_RESTORE_HP:
+				hp += (btf32)effects[i].effect_magnitude * dt;
+				if (hp >= 1.f) hp = 1.f;
+				break;
+			}
+			effects[i].effect_duration -= dt; // tick down the effect timer
+			if (effects[i].effect_duration < 0.f) // if the timer has run out
+			{
+				effects.Remove(i); // remove the effect
+			}
 		}
-		effects[i].effect_duration -= dt; // tick down the effect timer
-		if (effects[i].effect_duration < 0.f) // if the timer has run out
-			effects.Remove(i); // remove the effect
 	}
 }
 
@@ -416,7 +481,7 @@ void TickRestingItem(void* ent, btf32 dt)
 	}*/
 
 	chr->matrix = graphics::Matrix4x4();
-	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height, chr->t.position.y), chr->t.yaw.Rad());
+	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)index::GetItemPtr(chr->item_instance))->item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
 
 	//env::GetHeight(t.height, csi);
 	//chr->t_item.SetPosition(m::Vector3(chr->t.position.x, chr->t.height + acv::items[index::GetItem(chr->item_instance)->item_template]->f_model_height, chr->t.position.y));
@@ -426,8 +491,21 @@ void TickRestingItem(void* ent, btf32 dt)
 void Actor::PickUpItem(btID id)
 {
 	RestingItem* item = (RestingItem*)index::GetEntityPtr(id);
+	HeldItem* item_held = GETITEM_MISC(item->item_instance);
 	inventory.TransferItemRecv(item->item_instance);
 	index::DestroyEntity(id);
+	if (index::players[0] == this->id)
+	{
+		char string[64] = "Picked up ";
+		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->item_template]->name);
+		index::GUISetMessag(0, string);
+	}
+	else if (index::players[1] == this->id)
+	{
+		char string[64] = "Picked up ";
+		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->item_template]->name);
+		index::GUISetMessag(1, string);
+	}
 }
 
 void Actor::DropItem(btID slot)
@@ -437,6 +515,22 @@ void Actor::DropItem(btID slot)
 		index::SpawnEntityItem(inventory.items[slot], t.position, t.yaw.Deg());
 		inventory.TransferItemSendIndex(slot);
 		DecrEquipSlot();
+	}
+}
+
+void Actor::DropAllItems()
+{
+	for (btui32 slot = 0u; slot < INV_SIZE; ++slot)
+	{
+		if (slot < inventory.items.Size() && inventory.items.Used(slot))
+		{
+			index::SpawnEntityItem(inventory.items[slot], m::Vector2(
+				m::Random(t.position.x - 0.5f, t.position.x + 0.5f),
+				m::Random(t.position.y - 0.5f, t.position.y + 0.5f)),
+				m::Random(0.f, 360.f));
+			inventory.TransferItemSendIndex(slot);
+			DecrEquipSlot();
+		}
 	}
 }
 
@@ -514,7 +608,12 @@ void TickChara(void* ent, btf32 dt)
 		#undef HELDINSTANCE
 	}
 
-	if (state.properties.get(ActiveState::eALIVE))
+	if (state.stateFlags.get(ActiveState::eDIED_REPORT))
+	{
+		chr->DropAllItems();
+		state.stateFlags.unset(ActiveState::eDIED_REPORT);
+	}
+	if (state.stateFlags.get(ActiveState::eALIVE))
 	{
 		if (cfg::bEditMode)
 		{
@@ -569,37 +668,60 @@ void TickChara(void* ent, btf32 dt)
 			else atk_target = index::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
 			//atk_target = index::GetViewTargetEntity(index, 100.f, fac::enemy);
 		}
-	} // End if alive
 
-	if (inventory.items.Used(inv_active_slot))
-	{
-		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
-		if (HELDINSTANCE != nullptr) HELDINSTANCE->fpTick(inventory.items[inv_active_slot], dt, chr);
-		#undef HELDINSTANCE
-	}
+		//-------------------------------- RUN ITEM TICK
+
+		if (inventory.items.Used(inv_active_slot))
+		{
+			#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
+			if (HELDINSTANCE != nullptr) HELDINSTANCE->fpTick(inventory.items[inv_active_slot], dt, chr);
+			#undef HELDINSTANCE
+		}
+	} // End if alive
 
 	//________________________________________________________________
 	//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
 
-	// Reset transforms
-	t_body = Transform3D();
-	t_head = Transform3D();
+	if (state.stateFlags.get(ActiveState::eALIVE))
+	{
+		// Reset transforms
+		t_body = Transform3D();
+		t_head = Transform3D();
 
-	t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.6f, t.position.y));
-	t_body.Rotate(t.yaw.Rad(), m::Vector3(0, 1, 0));
+		t_body.SetPosition(m::Vector3(t.position.x, 0.1f + t.height + 0.6f, t.position.y));
+		t_body.Rotate(t.yaw.Rad(), m::Vector3(0, 1, 0));
 
-	ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
+		ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
 
-	t_body.Rotate(glm::radians(ani_body_lean.y), m::Vector3(1, 0, 0));
-	t_body.Rotate(glm::radians(ani_body_lean.x), m::Vector3(0, 0, 1));
+		t_body.Rotate(glm::radians(ani_body_lean.y), m::Vector3(1, 0, 0));
+		t_body.Rotate(glm::radians(ani_body_lean.x), m::Vector3(0, 0, 1));
 
-	// Set head transform
-	t_head.SetPosition(t_body.GetPosition());
-	t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
-	t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
-	t_head.Translate(t_body.GetUp() * 0.7f);
-	t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
+		// Set head transform
+		t_head.SetPosition(t_body.GetPosition());
+		t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
+		t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
+		t_head.Translate(t_body.GetUp() * 0.7f);
+		t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
+	}
+	else
+	{
+		// Reset transforms
+		t_body = Transform3D();
+		t_head = Transform3D();
 
+		t_body.SetPosition(m::Vector3(t.position.x, t.height, t.position.y));
+		t_body.Rotate(t.yaw.Rad(), m::Vector3(0, 1, 0));
+		t_body.Rotate(glm::radians(90.f), m::Vector3(1, 0, 0));
+
+		ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
+
+		// Set head transform
+		t_head.SetPosition(t_body.GetPosition());
+		t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
+		//t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
+		t_head.Translate(t_body.GetUp() * 0.7f);
+		t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
+	}
 	#undef t_body
 	#undef viewYaw
 	#undef t
@@ -661,7 +783,7 @@ void TickEditorPawn(void* ent, btf32 dt)
 		#undef HELDINSTANCE
 	}
 
-	if (state.properties.get(ActiveState::eALIVE))
+	if (state.stateFlags.get(ActiveState::eALIVE))
 	{
 		if (cfg::bEditMode)
 		{

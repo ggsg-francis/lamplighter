@@ -51,13 +51,19 @@ bool HeldGunBlockMove(btID id);
 
 //-------------------------------- HELD ITEM MAGIC
 
-void HeldMgcTick(btID id, btf32 dt, Actor * owner);
+void HeldMgcTick(btID id, btf32 dt, Actor* owner);
 void HeldMgcDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
 void HeldMgcOnEquip(btID id);
 m::Vector3 HeldMgcGetLeftHandPos(btID id);
 m::Vector3 HeldMgcGetRightHandPos(btID id);
 bool HeldMgcBlockTurn(btID id);
 bool HeldMgcBlockMove(btID id);
+
+//-------------------------------- HELD ITEM CONSUME
+
+void HeldConTick(btID id, btf32 dt, Actor* owner);
+void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
+void HeldConOnEquip(btID id);
 
 //-------------------------------- HELD ITEM MATCHLOCK
 
@@ -158,6 +164,12 @@ struct HeldGun : public HeldItem
 struct HeldMgc : public HeldItem
 {
 	btf32 charge = 1.f;
+};
+
+// Magic caster instance
+struct HeldCons : public HeldItem
+{
+	btui32 uses = 8u;
 };
 
 // Matchlock gun instance

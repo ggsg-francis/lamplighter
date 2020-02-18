@@ -305,14 +305,25 @@ srca resources/gui/icon_pick_up.tga
 **** ASSETS BEYOND THIS POINT ARE NOT DIRECTLY REFERENCED WITHIN THE GAME CODE ----------
 **** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ****
+**** MISC ITEMS
+item mesh
+hndl MSCSandw
+srca resources/object/scsandwich.fbx
+<<<<
+item txtr
+hndl TSCSandw
+srca resources/object/scsandwich.tga
+tfil linear
+tedg clamp
+<<<<
 **** EQUIPPABLE ITEMS
 item mesh
 hndl MUraFist
-srca resources/item_uranium_fist.obj
+srca resources/wpn/item_uranium_fist.obj
 <<<<
 item txtr
 hndl TUraFist
-srca resources/item_uranium_fist.tga
+srca resources/wpn/item_uranium_fist.tga
 tfil linear
 tedg clamp
 <<<<
@@ -320,9 +331,26 @@ item mesh
 hndl MRifleWp
 srca resources/wpn/wpn_rifle.fbx
 <<<<
+item mesh
+hndl MRiflMag
+srca resources/wpn/wpn_rifle_mag.fbx
+<<<<
 item txtr
 hndl TRifleWp
 srca resources/wpn/wpn_rifle.tga
+tedg clamp
+<<<<
+item mesh
+hndl MSB_Base
+srca resources/spellbook/sb_base.fbx
+<<<<
+item mesh
+hndl MSBBaseO
+srca resources/spellbook/sb_base_open.fbx
+<<<<
+item txtr
+hndl TSBHealS
+srca resources/spellbook/sb_healself.tga
 tedg clamp
 <<<<
 **** HARVESTING PROPS
@@ -393,6 +421,12 @@ tedg repeat
 item txtr
 hndl TKitDCTi
 srca resources/environment/intkit/redstar_greyTile.tga
+tfil linear
+tedg repeat
+<<<<
+item txtr
+hndl TTerQSnd
+srca resources/environment/terrain/t_marshmud_01.tga
 tfil linear
 tedg repeat
 <<<<

@@ -1,40 +1,102 @@
-prop envp
+PROP prop
 srcm M_______
 srct T_______
+flor 0
+phys 0
+flag 0
 <<<<
-prop envp
+PROP prop
+srcm M_______
+srct TKitDCTi
+flor 0
+phys 0
+flag 0
+<<<<
+PROP prop
 srcm MNFern01
 srct TNFern01
+flor 0
+phys 0
+flag 0
 <<<<
-prop envp
+PROP prop
 srcm MTRcks01
 srct TTRcks01
+flor 0
+phys 0
+flag 0
 <<<<
-prop envp
+PROP prop
 srcm MKitWall
 srct TKitCon2
+flor 0
+phys 0
+flag 0
 <<<<
-prop envp
+PROP prop
 srcm MKitMid1
 srct TKitCTil
+flor 0
+phys 0
+flag 0
 <<<<
-prop envp
+PROP prop
 srcm MKitMid1
 srct TKitDCTi
+flor 0
+phys 0
+flag 0
 <<<<
-prop envp
+PROP prop
 srcm MKitWall
 srct TKitWTmb
+flor 0
+phys 0
+flag 0
 <<<<
-prop envp
+PROP prop
 srcm MKitMid1
 srct TKitCon3
+flor 0
+phys 0
+flag 0
 <<<<
-prop envp
+PROP prop
+srcm MKitMid1
+srct TTerQSnd
+flor 3
+phys 0
+flag 0
+<<<<
+PROP prop
 srcm MKitMid1
 srct TKitCarp
+flor 0
+phys 0
+flag 0
 <<<<
-item wgun
+SPEL spel
+hndl SpelMush
+name PoisonDeath Mushroom
+eidt 0
+edrt 0.5
+emgt 1
+<<<<
+SPEL spel
+hndl SpelSCSw
+name Nice Taste
+eidt 1
+edrt 0.5
+emgt 1
+<<<<
+SPEL spel
+hndl SpelLead
+name Lead Poisoning
+eidt 0
+edrt 1000.0
+emgt 1
+<<<<
+ITEM wgun
 name Coolweapon Longname
 radi 1.0
 mdlh 0.2
@@ -45,7 +107,7 @@ srcm Mmatchlc
 srct Tmatchlc
 icon TIcoMtch
 <<<<
-item misc
+ITEM misc
 name Beachball
 radi 0.5
 mdlh 0.5
@@ -55,8 +117,8 @@ srcm MdebugBB
 srct TdebugBB
 icon TIcoBBal
 <<<<
-item cons
-name My Strongest Potion
+ITEM cons
+name Mushroom (Drugs)
 radi 0.05
 mdlh 0.0
 wght 0.1
@@ -64,18 +126,19 @@ muns 10
 srcm MMushroo
 srct TMushroo
 icon T_______
+cspl SpelMush
 <<<<
-item wmgc
-name Stick
-radi 0.5
-mdlh 0.35
+ITEM wmgc
+name Spellbook Heal Self
+radi 0.25
+mdlh 0.07
 wght 0.1
-muns 10
-srcm Mprjctl2
-srct Tprjctl2
+muns 60
+srcm MSBBaseO
+srct TSBHealS
 icon TdebugBB
 <<<<
-item wmel
+ITEM wmel
 name Uranium Fist
 radi 1.0
 mdlh 0.1
@@ -89,7 +152,7 @@ srcm MUraFist
 srct TUraFist
 icon TIcoMtch
 <<<<
-item wmel
+ITEM wmel
 name Single Use Boomerang
 radi 1.0
 mdlh 0.5
@@ -103,7 +166,7 @@ srcm MUraFist
 srct TUraFist
 icon TIcoMtch
 <<<<
-item wgun
+ITEM wgun
 name Long Smig
 radi 1.0
 mdlh 0.2
@@ -113,5 +176,38 @@ held twohandpierce
 srcm MRifleWp
 srct TRifleWp
 icon TIcoMtch
+<<<<
+ITEM cons
+name Shit & Cum Sandwich
+radi 0.2
+mdlh 0.05
+wght 0.1
+muns 10
+srcm MSCSandw
+srct TSCSandw
+icon TSCSandw
+cspl SpelSCSw
+<<<<
+ITEM cons
+name Magazine
+radi 0.05
+mdlh 0.12
+wght 0.1
+muns 10
+srcm MRiflMag
+srct TRifleWp
+icon TRifleWp
+cspl SpelLead
+<<<<
+ITEM cons
+name The Crime Minister
+radi 0.2
+mdlh 0.05
+wght 0.1
+muns 10
+srcm MSCSandw
+srct TSCSandw
+icon TSCSandw
+cspl SpelSCSw
 <<<<
 eof_

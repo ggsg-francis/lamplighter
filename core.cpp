@@ -227,16 +227,19 @@ namespace index
 					m::Vector2 pos1 = ENTITY(players[0])->t.position;
 					m::Vector2 pos2 = ENTITY(players[1])->t.position;
 					m::Vector2 pos3 = m::Vector2(x, y);
-					if (m::Length(pos1 - pos3) > 4.f && m::Length(pos2 - pos3) > 4.f)
+					if (m::Length(pos1 - pos3) > 8.f && m::Length(pos2 - pos3) > 8.f) // Don't spawn too close to either player
 					{
-						btf32 random = m::Random(0.f, 10.f);
-						btui32 rand_rnd = (btui32)floor(random);
-						if (rand_rnd < 2u)
-							SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
-						else if (rand_rnd < 4u)
-							SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
-						else
-							SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);
+						if (m::Length(pos1 - pos3) < 16.f && m::Length(pos2 - pos3) < 16.f) // ..or too far away
+						{
+							btf32 random = m::Random(0.f, 10.f);
+							btui32 rand_rnd = (btui32)floor(random);
+							if (rand_rnd < 2u)
+								SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
+							else if (rand_rnd < 4u)
+								SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
+							else
+								SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);
+						}
 					}
 				}
 			}
@@ -301,34 +304,38 @@ namespace index
 		t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
 		// Spawnz
-		if (SaveExists())
+		if (cfg::bEditMode)
 		{
-			LoadState();
-			//SpawnNewEntityItem(6ui16, m::Vector2(m::Random(1023.f, 1026.f), m::Random(1023.f, 1026.f)), m::Random(0.f, 365.f));
+			players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
 		}
 		else
 		{
-			if (cfg::bEditMode)
-				players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
+			if (SaveExists())
+			{
+				LoadState();
+				//SpawnNewEntityItem(6ui16, m::Vector2(m::Random(1023.f, 1026.f), m::Random(1023.f, 1026.f)), m::Random(0.f, 365.f));
+			}
 			else
+			{
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
-			players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
+				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
 
-			SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
-			SpawnNewEntityItem(4ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
-			SpawnNewEntityItem(1ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
-			SpawnNewEntityItem(2ui16, m::Vector2(1025.8f, 1024.f), 15.f);
-			SpawnNewEntityItem(3ui16, m::Vector2(1026.8f, 1026.f), 15.f);
-			SpawnNewEntityItem(1ui16, m::Vector2(1023.5f, 1023.3f), 15.f);
+				SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
+				SpawnNewEntityItem(1ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
+				SpawnNewEntityItem(2ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
+				SpawnNewEntityItem(3ui16, m::Vector2(1025.8f, 1024.f), 15.f);
+				SpawnNewEntityItem(4ui16, m::Vector2(1026.8f, 1026.f), 15.f);
+				SpawnNewEntityItem(5ui16, m::Vector2(1023.5f, 1023.3f), 15.f);
+				SpawnNewEntityItem(6ui16, m::Vector2(1023.8f, 1023.4f), 15.f);
+				SpawnNewEntityItem(7ui16, m::Vector2(1023.6f, 1023.2f), 15.f);
+
+				DoSpawn();
+			}
 		}
-
-		ENTITY(players[0])->state.AddEffect(players[0], SE_DAMAGE_HP, 1.f, 1u);
-		
 		// This is going to blow up extremely fast if I don't automate it somehow
 
 		fac::SetAllegiance(fac::player, fac::player, fac::allied);
 		fac::SetAllegiance(fac::player, fac::playerhunter, fac::enemy);
-		//fac::SetAllegiance(fac::player, fac::playerhunter, fac::neutral);
 		fac::SetAllegiance(fac::player, fac::undead, fac::enemy);
 
 		fac::SetAllegiance(fac::undead, fac::player, fac::enemy);
@@ -337,7 +344,6 @@ namespace index
 
 		fac::SetAllegiance(fac::playerhunter, fac::undead, fac::enemy);
 		fac::SetAllegiance(fac::playerhunter, fac::player, fac::enemy);
-		//fac::SetAllegiance(fac::playerhunter, fac::player, fac::neutral);
 		fac::SetAllegiance(fac::playerhunter, fac::playerhunter, fac::allied);
 
 		graphics::SetMatProj(); // does not need to be continually called
@@ -378,11 +384,21 @@ namespace index
 
 	void Tick(btf32 dt)
 	{
-		if (spawnz_time_temp < Time::time)
+		/*if (!cfg::bEditMode && spawnz_time_temp < Time::time)
 		{
 			spawnz_time_temp = Time::time + 30.f;
 			DoSpawn();
-		}
+		}*/
+
+		//temporary destroy dead entities
+		///*
+		for (int i = 0; i <= block_entity.index_end; i++)
+			if (block_entity.used[i])
+				if (!ACTOR(i)->state.stateFlags.get(ActiveState::eALIVE)
+					&& !ACTOR(i)->state.stateFlags.get(ActiveState::eDIED_REPORT)
+					&& ACTOR(i)->aiControlled)
+					index::DestroyEntity(i);
+		//*/
 
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
@@ -391,6 +407,7 @@ namespace index
 		{
 			if (block_entity.used[i])
 			{
+				ENTITY(i)->state.TickEffects(dt);
 				fpTick[block_entity_data[i].type](ENTITY(i), dt); // Call tick on entity
 			}
 		}
@@ -414,15 +431,6 @@ namespace index
 		SetViewTargetID(GetClosestActivator(players[1u]), 1u);
 
 		ProjectileTick(dt);
-
-		//temporary destroy dead entities
-		///*
-		for (int i = 0; i <= block_entity.index_end; i++)
-			if (block_entity.used[i])
-				if (ACTOR(i)->state.hp == 0.f && ACTOR(i)->aiControlled)
-					//temp
-					index::DestroyEntity(i);
-		//*/
 
 		if (cfg::bEditMode)
 		{
@@ -637,7 +645,7 @@ namespace index
 		else
 		{
 			#define DRAWRANGE 16u
-			Entity* entity = ENTITY(activePlayer);
+			Entity* entity = ENTITY(players[activePlayer]);
 			// Set min/max draw coordinates
 			bti32 minx = entity->csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
 			bti32 maxx = entity->csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
@@ -777,6 +785,15 @@ namespace index
 		}
 	}
 
+	void GUISetMessag(int player, char* string)
+	{
+		// Player 1, X Start
+		int p1_x_start = -(int)graphics::FrameSizeX() / 2;
+		int p1_y_start = -(int)graphics::FrameSizeY() / 2;
+		text_message[player].ReGen(string, -52, 52, -32);
+		message_time[player] = Time::time + 3.0;
+	}
+
 	void DrawGUI()
 	{
 		// Set GL properties for transparant rendering
@@ -793,6 +810,10 @@ namespace index
 
 		//TODO: use 'actor'?
 		Chara* chara = CHARA(players[activePlayer]);
+
+		//text_message[activePlayer].ReGen("teststr", 0, -p1_x_start, 0);
+		if (message_time[activePlayer] > Time::time)
+			text_message[activePlayer].Draw(&res::GetT(res::t_gui_font));
 
 		// croshair
 		//graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), &graphics::GetShader(graphics::S_GUI), 0, 0, 32, 32);
@@ -887,7 +908,7 @@ namespace index
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
-		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = SpawnItem(item_template);
 		return id;
 	}
@@ -898,7 +919,7 @@ namespace index
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
-		ENTITY(id)->state.properties.set(ActiveState::eALIVE);
+		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = itemid;
 		return id;
 	}

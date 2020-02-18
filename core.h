@@ -49,6 +49,7 @@ namespace index
 	void Tick(btf32 DELTA);
 	void TickGUI();
 
+	void GUISetMessag(int player, char* string);
 	void Draw(bool oob = true);
 	void DrawGUI();
 	// For drawing debug GUI on top of the game framebuffer
@@ -109,8 +110,10 @@ namespace index
 
 	// Block of IDs in memory, tracks the numbers and types of items
 	extern ObjBuf block_item;
-	// Get the pointer of the item at ID
+	// Get the pointer address of the item at ID
 	void* GetItemPtr(btID ID);
+	// Get the type of the item at ID
+	ItemType GetItemType(btID ID);
 
 	// TODO: working on reducing the use of these functions
 	//  ok
@@ -129,6 +132,7 @@ namespace index
 	#define GETITEM_MELEE(a) ((HeldMel*)index::GetItemPtr(a))
 	#define GETITEM_GUN(a) ((HeldGun*)index::GetItemPtr(a))
 	#define GETITEM_MAGIC(a) ((HeldMgc*)index::GetItemPtr(a))
+	#define GETITEM_CONS(a) ((HeldCons*)index::GetItemPtr(a))
 
 	void SetInput(btID INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH, bool WantAttack, bool use_hit, bool WantAttack2,
 		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C);

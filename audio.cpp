@@ -49,7 +49,7 @@ namespace aud
 	void Init()
 	{
 		SoundEngine = createIrrKlangDevice();
-		SoundEngine->setSoundVolume(0.25f);
+		SoundEngine->setSoundVolume(0.08f);
 	}
 
 	void PlaySnd()

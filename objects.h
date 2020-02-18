@@ -26,6 +26,7 @@ public:
 public:
 	void AddNew(btID ITEM_TEMPLATE);
 	void DestroyIndex(btui32 INDEX);
+	void DestroyID(btID ITEM_ID);
 	void Destroy(btID ITEM_TEMPLATE);
 	void TransferItemRecv(btID ITEM_ID);
 	void TransferItemSendIndex(btui32 INDEX);
@@ -56,54 +57,30 @@ class TransformEntity
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 enum StatusEffectType : btui16 {
-	SE_DAMAGE_HP,
-	SE_RESTORE_HP,
-	// modify time effect?
-	// burning effect?
-	// modify item / weapon weight
-
-	// lunaris' spells
-	// Neutral
-	STASIS, DASH,
-
-	// Beneficial
-	INVULNERABLE,
-	UNTARGETABLE,
-	UNSTOPPABLE,
-	PROTECTED,
-	SPEED,
-	HASTE,
-	HEALOVERTIME,
-
-	// Harmful
-	STUN,
-	AIRBORNE,
-	SLEEP,
-
-	POLYMORPH,
-
-	MINDCONTROL,
-	CHARM,
-	FEAR,
-
-	ROOT,
-	SLOW,
-
-	SILENCE,
-	BLIND,
-
-	DAMAGEOVERTIME,
-
-	// custom
-	CUSTOM,
-
-	SHIELD,
-
-	SPELLPOWERBOOST,
-	SPELLPOWERREDUCTION,
-
-	ATTACKDAMAGEBOOST,
-	ATTACKDAMAGEREDUCTION
+	EFFECT_DAMAGE_HP,
+	EFFECT_RESTORE_HP,
+	EFFECT_SLOW_TIME,
+	EFFECT_BURDEN_ITEM,
+	EFFECT_BURN,
+	EFFECT_FREEZE,
+	EFFECT_TRANSFER_HP,
+	EFFECT_LEVITATE,
+	EFFECT_WATER_WALK,
+	EFFECT_WATER_BREATHE,
+	EFFECT_PARALYZE, // lunaris' spells
+	EFFECT_SPEED_INCREASE,
+	EFFECT_SPEED_DECREASE,
+	EFFECT_STUN,
+	EFFECT_SLEEP,
+	EFFECT_MINDCONTROL,
+	EFFECT_CHARM,
+	EFFECT_FEAR,
+	EFFECT_FRENZY,
+	EFFECT_SILENCE,
+	EFFECT_BLIND,
+	EFFECT_SHIELD,
+	// non-spell efect
+	EFFECT_LEAD_POISON, // effect gained from eating bullets
 };
 
 typedef struct StatusEffect {
@@ -117,19 +94,25 @@ typedef struct StatusEffect {
 struct ActiveState
 {
 	// Global properties, ultimately to be used by every object in the game, incl. environment tiles
-	enum globalProperty : btui64 // WIP
+	enum ActiveFlags : btui64 // WIP
 	{
 		eALIVE = 1ui64,
+		eDIED_REPORT = 1ui64 << 1ui64,
+	};
+	mem::bv<btui64, ActiveFlags> stateFlags;
+	enum StaticFlags : btui64 // WIP
+	{
+		eNOTHING = 1ui64,
 		eFLAMMABLE = 1ui64 << 1ui64,
 	};
-
-	mem::bv<btui64, globalProperty> properties;
+	mem::bv<btui64, StaticFlags> properties2;
 	btf32 hp = 1.f;
 
 	mem::Buffer32<StatusEffect> effects;
 
 	void Damage(btf32 AMOUNT, btf32 ANGLE);
 	void AddEffect(btID CASTER, StatusEffectType TYPE, btf32 DURATION, btui32 MAGNITUDE);
+	void AddSpell(btID CASTER, btID SPELL);
 	void TickEffects(btf32 DELTA_TIME);
 };
 
@@ -233,6 +216,7 @@ struct Actor : public Entity
 
 	void PickUpItem(btID ID);
 	void DropItem(btID SLOT);
+	void DropAllItems();
 	void SetEquipSlot(btui32 slot);
 	void IncrEquipSlot();
 	void DecrEquipSlot();
