@@ -57,12 +57,12 @@ float dither(float color) {
 
 void main()
 { 
-    //FragColor = texture(screenTexture, TexCoords);
+	//FragColor = texture(screenTexture, TexCoords);
 	
 	// blur part
-	///*
 	//sample diffuse colour
-    vec3 sampleTex[9];
+	//vec3 sampleTex[9];
+	vec3 sampleTex[18];
 
 	// 0.9 is like PS 0.5px blur
 	float ofsx = 1.f / wx;
@@ -78,10 +78,45 @@ void main()
 	sampleTex[7] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f, -ofsy)));
 	sampleTex[8] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx, -ofsy)));
 	
-    vec3 col = vec3(0.0);
-    for(int i = 0; i < 9; i++)
-        col += sampleTex[i] * kernel[i];
-	//*/
+	// extra samples
+	// Since I am going to come back to this some day and wonder wtf is going on here
+	// Basically: I don't know why modx and mody make the blur work so well
+	// They were meant to be used the other way around to create a dither effect!
+	int modx = int(mod(gl_FragCoord.x, 2));
+	int mody = int(mod(gl_FragCoord.y, 2));
+	// Right hand side
+	sampleTex[9] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-2 - modx), ofsy)));
+	sampleTex[10] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-2 - modx), 0.0f)));
+	sampleTex[11] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-2 - modx), -ofsy)));
+	sampleTex[12] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-4 - modx), ofsy)));
+	sampleTex[13] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-4 - modx), 0.f)));
+	sampleTex[14] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-4 - modx), -ofsy)));
+	// Top side
+	sampleTex[15] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, ofsy * (-2 - mody))));
+	sampleTex[16] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f,  ofsy * (-2 - mody))));
+	sampleTex[17] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx,  ofsy * (-2 - mody))));
+	
+	vec3 col = vec3(0.0);
+	for(int i = 0; i < 18; i++)
+		col += sampleTex[i] / 18.f;
+	
+	col.rgb = normalize(col.rgb);
+	
+	float difR = (col.r - ((col.g + col.b) * 0.5f)) + 0.5f;
+	float difG = (col.g - ((col.r + col.b) * 0.5f)) + 0.5f;
+	float difB = (col.b - ((col.r + col.g) * 0.5f)) + 0.5f;
+	col = vec3(0.0);
+	for(int i = 0; i < 9; i++)
+		//col += sampleTex[i] / 9.f;
+		col += sampleTex[i] * kernel[i];
+	float brightness = (col.r + col.g + col.b) / 1.5f;
+	col.r = brightness * difR;
+	col.g = brightness * difG;
+	col.b = brightness * difB;
+	//col.r = min(brightness, difR);
+	//col.g = min(brightness, difG);
+	//col.b = min(brightness, difB);
+	
 	
 	// temp activate to disable blur	
 	//vec3 col = vec3(texture(screenTexture, TexCoords));		
@@ -93,10 +128,10 @@ void main()
 	//*
 	const float exposure = 2.2;
 	const float gamma = 0.6;
-    // Exposure tone mapping
-    vec3 mapped = vec3(1.0) - exp(-col * exposure);
-    // Gamma correction 
-    mapped = pow(mapped, vec3(1.0 / gamma));
+	// Exposure tone mapping
+	vec3 mapped = vec3(1.0) - exp(-col * exposure);
+	// Gamma correction 
+	mapped = pow(mapped, vec3(1.0 / gamma));
 	col = mapped;
 	
 	//bleach overflow
@@ -107,6 +142,8 @@ void main()
 	//*/
 	
 	FragColor.rgb = col;
+	FragColor.a = 1.f - (brightness * 0.08f);
+	//FragColor.a = 0.89f;
 	
 	//FragColor.rgb = col - 0.5f;
 	
@@ -114,7 +151,7 @@ void main()
 	
 	//normal
 	//FragColor = vec4(col, 1.0);
-    //FragColor = vec4(red, grn, blu, 1.0);
+	//FragColor = vec4(red, grn, blu, 1.0);
 	
 	//FragColor = texture(screenTexture, TexCoords);
 	//FragColor -= texture(noise, TexCoords);

@@ -203,7 +203,7 @@ namespace graphics
 			vecPCam,
 			vecVSun,
 			matTransform, // GUI shader
-			fLit_TEMP,
+			bLit_TEMP,
 			texShadowMap,
 			texLightMap,
 			texSkyMap,

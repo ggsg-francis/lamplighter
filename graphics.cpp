@@ -838,7 +838,11 @@ namespace graphics
 			glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 
+			#ifdef DEF_OLDSKOOL
+			SetFilterMode[TextureFilterMode::eNEAREST]();
+			#else
 			SetFilterMode[fm]();
+			#endif
 			SetEdgeMode[em]();
 
 			delete[] buffer;

@@ -470,6 +470,12 @@ tfil nearest
 tedg clamp
 <<<<
 item txtr
+hndl TIcoMMag
+srca resources/gui_invicon_magazine.tga
+tfil nearest
+tedg clamp
+<<<<
+item txtr
 hndl TIcoBBal
 srca resources/gui_invicon_beachball.tga
 tfil nearest

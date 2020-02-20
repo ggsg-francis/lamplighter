@@ -95,7 +95,9 @@ namespace index
 
 	// TODO: MOVE THIS SECTION TO INDEX
 
+	extern unsigned int activePlayer;
 	extern btID players[2];
+	extern btID viewtarget[2];
 
 	typedef struct EntAddr
 	{

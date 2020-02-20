@@ -30,8 +30,11 @@ namespace index
 
 	float networkTimerTemp;
 
+	unsigned int activePlayer = 0u;
 	btID players[2];
 	m::Vector2 viewpos;
+	btID viewtarget[2]{ ID_NULL,ID_NULL };
+	btID viewtarget_last_tick[2]{ ID_NULL,ID_NULL };
 
 	env::EnvNode editor_node_copy;
 

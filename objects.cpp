@@ -56,12 +56,29 @@ void Inventory::TransferItemSend(btID item_ID)
 {
 	for (int i = 0; i < items.Size(); ++i)
 	{
-		if (items[i] == item_ID) // if we have this item instance
+		if (items.Used(i))
 		{
-			items.Remove(i); // Remove the item from inventory without deleting the instance
-			return;
+			if (items[i] == item_ID) // if we have this item instance
+			{
+				items.Remove(i); // Remove the item from inventory without deleting the instance
+				return;
+			}
 		}
 	}
+}
+btID Inventory::GetItemOfTemplate(btID item_template)
+{
+	for (int i = 0; i < items.Size(); ++i)
+	{
+		if (items.Used(i))
+		{
+			if (((HeldItem*)index::GetItemPtr(items[i]))->item_template == item_template) // if we have this item instance
+			{
+				return items[i];
+			}
+		}
+	}
+	return ID_NULL;
 }
 void Inventory::Draw(btui16 active_slot)
 {
@@ -77,13 +94,23 @@ void Inventory::Draw(btui16 active_slot)
 	{
 		if (items.Used(i))
 		{
-			graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
+			if (i == active_slot)
+				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 30, 64, 64);
+			else
+				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
+		}
+	}
+	// Draw Count GUI on top
+	for (btui16 i = 0; i < items.Size(); i++)
+	{
+		if (items.Used(i))
+		{
 			// get item type
 			if (index::GetItemType(items[i]) == ITEM_TYPE_CONS)
 			{
 				char textbuffer[8];
 				_itoa(GETITEM_CONS(items[i])->uses, textbuffer, 10);
-				text.ReGen(textbuffer, offset + i * invspace, offset + i * invspace + 32, p1_y_start + 24);
+				text.ReGen(textbuffer, offset + i * invspace - 16, offset + i * invspace + 32, p1_y_start + 20);
 				text.Draw(&res::GetT(res::t_gui_font));
 			}
 		}
@@ -107,6 +134,7 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 	}
 
 	// Modify position
+	btf32 eheight;
 
 	btf32 distBelowSand;
 	// look at how long this is
@@ -114,18 +142,30 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 	{
 	case acv::EnvProp::FLOOR_QUICKSAND:
 		ent->t.height -= 0.0025f;
-		btf32 eheight;
 		env::GetHeight(eheight, ent->t.csi);
 		// Multiplier reduces the depth at which you can't move
 		distBelowSand = (eheight - ent->t.height) * 2.5f;
 		if (distBelowSand > ent->height)
+		{
+			if (ent->type == ENTITY_TYPE_RESTING_ITEM)
+				int bp = 0;
 			ent->state.Damage(1000, 0); 
+		}
 		if (distBelowSand > 1.f) distBelowSand = 1.f;
 		ent->t.position += (ent->t.velocity * (1.f - distBelowSand)); // Apply velocity
 		break;
 	default:
-		env::GetHeight(ent->t.height, ent->t.csi);
+		ent->t.height_velocity -= 0.006f; // Add gravity
+		env::GetHeight(eheight, ent->t.csi);
+		if (eheight > ent->t.height + ent->t.height_velocity)
+		{
+			ent->t.height = eheight;
+			ent->t.height_velocity = 0.f;
+			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.f;
+		}
+		if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
 		ent->t.position += ent->t.velocity; // Apply velocity
+		ent->t.height += ent->t.height_velocity; // Apply velocity
 		break;
 	}
 
@@ -146,7 +186,17 @@ void DrawRestingItem(void* ent)
 	RestingItem* item = (RestingItem*)ent;
 	// Draw the mesh of our item id
 	//DrawMesh(ent, res::GetM(acv::items[index::GetItem(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[index::GetItem(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->t_item.getMatrix());
-	DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
+	if (item->id == index::viewtarget[index::activePlayer])
+	{
+		graphics::GetShader(graphics::S_SOLID).Use();
+		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, false);
+		DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
+		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, true);
+	}
+	else
+	{
+		DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
+	}
 }
 m::Vector3 SetFootPos(m::Vector2 position)
 {
@@ -507,6 +557,12 @@ void TickRestingItem(void* ent, btf32 dt)
 {
 	RestingItem* chr = (RestingItem*)ent;
 
+	if (chr->state.stateFlags.get(ActiveState::eDIED_REPORT))
+	{
+		//chr->state.stateFlags.unset(ActiveState::eDIED_REPORT);
+		index::DestroyEntity(chr->id);
+	}
+
 	chr->matrix = graphics::Matrix4x4();
 	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)index::GetItemPtr(chr->item_instance))->item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
 
@@ -537,7 +593,10 @@ void Actor::DropItem(btID slot)
 {
 	if (slot < inventory.items.Size() && inventory.items.Used(slot))
 	{
-		index::SpawnEntityItem(inventory.items[slot], t.position, t.yaw.Deg());
+		m::Vector2 throwDir = m::AngToVec2(t.yaw.Rad());
+		btID item_entity = index::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * radius), t.yaw.Deg());
+		//btID item_entity = index::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * (radius + 0.5f)), t.yaw.Deg());
+		ENTITY(item_entity)->t.velocity = throwDir * 0.05f;
 		inventory.TransferItemSendIndex(slot);
 		DecrEquipSlot();
 	}
@@ -565,7 +624,7 @@ void Actor::SetEquipSlot(btui32 index)
 	{
 		inv_active_slot = index;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot]);
+			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 
@@ -575,7 +634,7 @@ void Actor::IncrEquipSlot()
 	{
 		++inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot]);
+			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 
@@ -585,7 +644,7 @@ void Actor::DecrEquipSlot()
 	{
 		--inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot]);
+			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 

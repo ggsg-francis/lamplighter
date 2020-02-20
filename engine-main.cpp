@@ -53,7 +53,6 @@
 //-------------------------------- WINDOWING GLOBAL VARIABLES
 
 GLFWwindow* window;
-bool quit = false;
 bool focus = true;
 
 //-------------------------------- GAME GLOBAL VARIABLES (SHOULD GO ELSEWHERE, PROBABLY)
@@ -114,63 +113,45 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 double step_accumulator = 0.f;
 bool step_pause = false;
 
-bool StepTick(double dt) // Fixed timestep tick function
+inline void UpdateInput() // Fixed timestep tick function
 {
-	if (!step_pause && focus)
-	{
-		step_accumulator += dt;
-		if (step_accumulator < FRAME_TIME)
-			return false;
-		step_accumulator = 0.f;
+	//-------------------------------- CONVERT DEVICE INPUT TO CHARA INPUT
 
-		Time::Step();
+	// Generate analogue input from directional keys
+	m::Vector2 input_p1(0.f, 0.f);
+	if (input::GetHeld(input::key::DIR_F)) // Forward
+		input_p1.y = 1.f;
+	if (input::GetHeld(input::key::DIR_B)) // Back
+		input_p1.y = -1.f;
+	if (input::GetHeld(input::key::DIR_R)) // Right
+		input_p1.x += 1.f;
+	if (input::GetHeld(input::key::DIR_L)) // Left
+		input_p1.x -= 1.f;
+	// Set input
+	index::SetInput(0ui16, input_p1, input::mouse_x * 0.25f, input::mouse_y * 0.25f,
+		input::GetHeld(input::key::USE),
+		input::GetHit(input::key::USE),
+		input::GetHit(input::key::USE_ALT),
+		input::GetHeld(input::key::RUN),
+		false,
+		input::GetHit(input::key::ACTION_A),
+		input::GetHit(input::key::ACTION_B),
+		input::GetHit(input::key::ACTION_C)); // 3rd 'aim' variable was here
 
-		//-------------------------------- CONVERT DEVICE INPUT TO CHARA INPUT
-
-		// Generate analogue input from directional keys
-		m::Vector2 input_p1(0.f, 0.f);
-		if (input::GetHeld(input::key::DIR_F)) // Forward
-			input_p1.y = 1.f;
-		if (input::GetHeld(input::key::DIR_B)) // Back
-			input_p1.y = -1.f;
-		if (input::GetHeld(input::key::DIR_R)) // Right
-			input_p1.x += 1.f;
-		if (input::GetHeld(input::key::DIR_L)) // Left
-			input_p1.x -= 1.f;
-		// Set input
-		index::SetInput(0ui16, input_p1, input::mouse_x * 0.25f, input::mouse_y * 0.25f,
-			input::GetHeld(input::key::USE),
-			input::GetHit(input::key::USE),
-			input::GetHit(input::key::USE_ALT),
-			input::GetHeld(input::key::RUN),
-			false,
-			input::GetHit(input::key::ACTION_A),
-			input::GetHit(input::key::ACTION_B),
-			input::GetHit(input::key::ACTION_C)); // 3rd 'aim' variable was here
-
-		// Generate analogue input from joystick input
-		m::Vector2 input_p2(0.f, 0.f);
-		input_p2.x = input::joy_x_a;
-		input_p2.y = -input::joy_y_a;
-		// Set input
-		index::SetInput(1ui16, input_p2, input::joy_x_b * 8.f, input::joy_y_b * 8.f,
-			input::GetHeld(input::key::C_USE),
-			input::GetHit(input::key::C_USE),
-			input::GetHit(input::key::C_USE_ALT),
-			input::GetHeld(input::key::C_RUN),
-			false,
-			input::GetHit(input::key::C_ACTION_A),
-			input::GetHit(input::key::C_ACTION_B),
-			input::GetHit(input::key::C_ACTION_C)); // 3rd 'aim' variable was here
-
-		//do stuff
-		index::Tick((btf32)(FRAME_TIME));
-		weather::Tick((btf32)(FRAME_TIME));
-
-		return true;
-	}
-	else
-		return false;
+	// Generate analogue input from joystick input
+	m::Vector2 input_p2(0.f, 0.f);
+	input_p2.x = input::joy_x_a;
+	input_p2.y = -input::joy_y_a;
+	// Set input
+	index::SetInput(1ui16, input_p2, input::joy_x_b * 8.f, input::joy_y_b * 8.f,
+		input::GetHeld(input::key::C_USE),
+		input::GetHit(input::key::C_USE),
+		input::GetHit(input::key::C_USE_ALT),
+		input::GetHeld(input::key::C_RUN),
+		false,
+		input::GetHit(input::key::C_ACTION_A),
+		input::GetHit(input::key::C_ACTION_B),
+		input::GetHit(input::key::C_ACTION_C)); // 3rd 'aim' variable was here
 }
 
 //fixed timestep tick function
@@ -224,6 +205,50 @@ bool StepTickEditor(double dt)
 //int main(int argc, char * argv[])
 int main()
 {
+	// BT VERSION INCREMENTER
+
+	//#define _CRT_SECURE_NO_WARNINGS
+	//#include <stdio.h>
+
+	#ifdef _DEBUG
+
+	unsigned int version = 0u;
+
+	FILE* file = fopen(".version_count.bin", "rb"); // Open file
+	if (file != NULL)
+	{
+		fseek(file, 0, SEEK_SET); // Seek file beginning
+		fread(&version, 4, 1, file);
+		fclose(file); // Close file
+	}
+
+	file = fopen("version.h", "wb"); // Open file
+	if (file != NULL)
+	{
+		fseek(file, 0, SEEK_SET); // Seek file beginning
+
+		char buf_str[64] = "#define VERSION_BUILD ";
+		char buf_num[32];
+		_itoa(version, buf_num, 10);
+		strcat(buf_str, buf_num);
+
+		fprintf(file, buf_str);
+
+		fclose(file); // Close file
+	}
+
+	++version;
+
+	file = fopen(".version_count.bin", "wb"); // Open file
+	if (file != NULL)
+	{
+		fseek(file, 0, SEEK_SET); // Seek file beginning
+		fwrite(&version, 4, 1, file);
+		fclose(file); // Close file
+	}
+
+	#endif 
+
 	//-------------------------------- TEST ZONE
 
 	InitTest();
@@ -388,202 +413,228 @@ int main()
 	index::Init();
 	input::Init();
 
+	//--------------------------------------------------------------------------------------------------------------------------------
+
 	//-------------------------------- ENTER GAME LOOP (ITS A MESS)
 
-	if (!cfg::bEditMode)
+	// Skip to the editor loop if the game is running in edit mode
+	if (cfg::bEditMode) goto loop_editor;
+
+	printf("Entered Game Loop\n");
+updtime:
+	Sleep(8);
+	Time::Update((btf64)(glfwGetTime()));
+
+	step_accumulator += Time::deltaTime;
+	// If not enough time has passed to count as a tick
+	if (step_accumulator < FRAME_TIME)
 	{
-		printf("Entered Game Loop\n");
-		while (!quit)
-		{
-			Time::Update((btf64)(glfwGetTime()));
-
-			if (input::GetHit(input::key::QUIT)) quit = true;
-
-			if (StepTick(Time::deltaTime)) // Run simulation at a fixed step, if step proceed to render
-			{
-				//-------------------------------- RENDER ENTITIES
-
-				// BUFFER 1 (LEFT SCREEN)
-				glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
-
-				glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-				glClearColor(0.f, 0.f, 0.f, 1.0f);
-
-				//-------------------------------- BUFFER 1 (LEFT SCREEN)
-
-				// Set GL properties for solid rendering
-				glEnable(GL_DEPTH_TEST);
-				glDisable(GL_BLEND);
-				glBlendFunc(GL_ONE, GL_ZERO);
-
-				// Test
-				glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-				glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
-				glClear(GL_DEPTH_BUFFER_BIT);
-				index::SetViewFocus(0u);
-				index::Draw(false);
-				index::SetShadowTexture(rendertexture_shadow);
-
-				glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-
-				glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				index::SetViewFocus(0u);
-				index::Draw();
-				index::DrawGUI();
-				index::TickGUI(); // causes a crash if before drawgui (does it still?)
-
-				//-------------------------------- BUFFER 2 (RIGHT SCREEN)
-
-				// Set GL properties for solid rendering
-				glEnable(GL_DEPTH_TEST);
-				glDisable(GL_BLEND);
-				glBlendFunc(GL_ONE, GL_ZERO);
-
-				glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				index::SetViewFocus(1u);
-				index::Draw();
-				index::DrawGUI();
-				index::TickGUI(); // causes a crash if before drawgui (does it still?)
-
-				//-------------------------------- DRAW FRAMEBUFFER
-
-				glEnable(GL_DEPTH_TEST);
-				glDisable(GL_BLEND);
-				glBlendFunc(GL_ONE, GL_ZERO);
-				//glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
-
-				#ifdef DEF_BLIT_FRAME
-
-				// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_1);
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_intermediate);
-				glBlitFramebuffer(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				glViewport(0, 0, cfg::iWinX, cfg::iWinY);
-
-				glClearColor(1.f, 0.5f, 0.5f, 1.0f);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-				graphics::GetShader(graphics::S_POST).Use();
-
-				glDisable(GL_DEPTH_TEST);
-				glFrontFace(GL_CW);
-
-				glm::mat4 mat_fb = glm::mat4(1.0f);
-				mat_fb = glm::translate(mat_fb, glm::vec3(-0.5f, 0.f, 0.f));
-				mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
-				// get matrix's uniform location and set matrix
-				graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
-
-				glBindVertexArray(quadVAO);
-				glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
-				glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
-				glBindTexture(GL_TEXTURE_2D, screenTexture);
-				glDrawArrays(GL_TRIANGLES, 0, 6);
-
-				// BUFFER 2
-
-				// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_2);
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_intermediate);
-				glBlitFramebuffer(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-				mat_fb = glm::mat4(1.0f);
-				mat_fb = glm::translate(mat_fb, glm::vec3(0.5f, 0.f, 0.f));
-				mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
-				// get matrix's uniform location and set matrix
-				graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
-
-				glBindVertexArray(quadVAO);
-				glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
-				glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
-				glBindTexture(GL_TEXTURE_2D, screenTexture);
-				glDrawArrays(GL_TRIANGLES, 0, 6);
-
-				// to do check up on this later!!
-				glActiveTexture(GL_TEXTURE0); // For some reason or other, the texture must be reset (probably forgotten elsewhere)
-
-				#endif
-
-				glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-
-				if (cfg::bShowConsole) index::DrawPostDraw();
-
-				glFrontFace(GL_CCW);
-
-				//-------------------------------- SWAP BUFFERS
-
-				glfwSwapBuffers(window);
-				input::ClearHitsAndDelta();
-				glfwPollEvents();
-				input::UpdateControllerInput();
-			} // End if StepTick
-		}
+		goto updtime;
 	}
-	
+	// otherwise, proceed with the tick
+	step_accumulator = 0.f;
+	if (input::GetHit(input::key::QUIT)) goto exit;
+
+	// If we reach this point, its time to run the tick
+	if (!step_pause && focus)
+	{
+		Time::Step();
+		UpdateInput();
+		index::Tick((btf32)(FRAME_TIME));
+		weather::Tick((btf32)(FRAME_TIME));
+	}
+	else goto updtime;
+
+	//--------------------------------------------------------------------------------------------------------------------------------
+
+	//-------------------------------- RENDER ENTITIES
+
+render:
+
+	// BUFFER 1 (LEFT SCREEN)
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
+
+	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
+	glClearColor(0.f, 0.f, 0.f, 1.0f);
+
+	//-------------------------------- BUFFER 1 (LEFT SCREEN)
+
+	// Set GL properties for solid rendering
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
+
+	// Test
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	index::SetViewFocus(0u);
+	index::Draw(false);
+	index::SetShadowTexture(rendertexture_shadow);
+
+	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
+
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	index::SetViewFocus(0u);
+	index::Draw();
+	index::DrawGUI();
+	index::TickGUI(); // causes a crash if before drawgui (does it still?)
+
+	//-------------------------------- BUFFER 2 (RIGHT SCREEN)
+
+	// Set GL properties for solid rendering
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	index::SetViewFocus(1u);
+	index::Draw();
+	index::DrawGUI();
+	index::TickGUI(); // causes a crash if before drawgui (does it still?)
+
+	//-------------------------------- DRAW FRAMEBUFFER
+
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
+	//glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
+
+	#ifdef DEF_BLIT_FRAME
+
+	// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_1);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_intermediate);
+	glBlitFramebuffer(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, cfg::iWinX, cfg::iWinY);
+
+	//glClearColor(1.f, 0.5f, 0.5f, 1.0f);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	graphics::GetShader(graphics::S_POST).Use();
+
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glFrontFace(GL_CW);
+
+	glm::mat4 mat_fb = glm::mat4(1.0f);
+	mat_fb = glm::translate(mat_fb, glm::vec3(-0.5f, 0.f, 0.f));
+	mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
+	// get matrix's uniform location and set matrix
+	graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
+
+	glBindVertexArray(quadVAO);
+	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+	glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
+	glBindTexture(GL_TEXTURE_2D, screenTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	// BUFFER 2
+
+	// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_2);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_intermediate);
+	glBlitFramebuffer(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	mat_fb = glm::mat4(1.0f);
+	mat_fb = glm::translate(mat_fb, glm::vec3(0.5f, 0.f, 0.f));
+	mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
+	// get matrix's uniform location and set matrix
+	graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
+
+	glBindVertexArray(quadVAO);
+	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+	glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
+	glBindTexture(GL_TEXTURE_2D, screenTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	// to do check up on this later!!
+	glActiveTexture(GL_TEXTURE0); // For some reason or other, the texture must be reset (probably forgotten elsewhere)
+
+	#endif
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+
+	//if (cfg::bShowConsole) index::DrawPostDraw();
+	index::DrawPostDraw();
+
+	glFrontFace(GL_CCW);
+
+	//-------------------------------- SWAP BUFFERS
+
+	glfwSwapBuffers(window);
+	input::ClearHitsAndDelta();
+	glfwPollEvents();
+	input::UpdateControllerInput();
+
+	goto updtime; // Return to the beginning of the loop
+
+	//--------------------------------------------------------------------------------------------------------------------------------
+
 	//-------------------------------- ENTER EDITOR LOOP
 
-	else
+loop_editor:
+	printf("Entered Editor Loop\n");
+	while (true)
 	{
-		printf("Entered Editor Loop\n");
-		while (!quit)
+		Time::Update((btf64)(glfwGetTime()));
+
+		if (input::GetHit(input::key::QUIT)) break;
+
+		if (StepTickEditor(Time::deltaTime)) // Run simulation at a fixed step, if step proceed to render
 		{
-			Time::Update((btf64)(glfwGetTime()));
+			// Set GL properties for solid rendering
+			glEnable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ZERO);
 
-			if (input::GetHit(input::key::QUIT)) quit = true;
+			// Test
+			glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
+			glClear(GL_DEPTH_BUFFER_BIT);
+			index::SetViewFocus(0u);
+			index::Draw(false);
+			index::SetShadowTexture(rendertexture_shadow);
 
-			if (StepTickEditor(Time::deltaTime)) // Run simulation at a fixed step, if step proceed to render
-			{
-				// Set GL properties for solid rendering
-				glEnable(GL_DEPTH_TEST);
-				glDisable(GL_BLEND);
-				glBlendFunc(GL_ONE, GL_ZERO);
+			glViewport(0, 0, cfg::iWinX, cfg::iWinY);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glClearColor(128.f, 255.f, 255.f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			index::SetViewFocus(0u);
+			index::Draw();
+			//// Read pixel
+			//unsigned char pixel[4];
+			//glReadPixels(320, 240, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
 
-				// Test
-				glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-				glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
-				glClear(GL_DEPTH_BUFFER_BIT);
-				index::SetViewFocus(0u);
-				index::Draw(false);
-				index::SetShadowTexture(rendertexture_shadow);
+			//if (pixel[2] == 0ui8)
+			//	//index::SetViewTargetID((btID)pixel[0]);
+			//	index::SetViewTargetID((btID)pixel[0] + ((btID)pixel[1] << 8u));
+			//else
+			//	index::SetViewTargetID(ID_NULL);
 
-				glViewport(0, 0, cfg::iWinX, cfg::iWinY);
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				glClearColor(128.f, 255.f, 255.f, 1.0f);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				index::SetViewFocus(0u);
-				index::Draw();
-				//// Read pixel
-				//unsigned char pixel[4];
-				//glReadPixels(320, 240, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
+			//index::DrawGUI();
+			//index::TickGUI(); // causes a crash if before drawgui
 
-				//if (pixel[2] == 0ui8)
-				//	//index::SetViewTargetID((btID)pixel[0]);
-				//	index::SetViewTargetID((btID)pixel[0] + ((btID)pixel[1] << 8u));
-				//else
-				//	index::SetViewTargetID(ID_NULL);
+			glFrontFace(GL_CCW);
 
-				//index::DrawGUI();
-				//index::TickGUI(); // causes a crash if before drawgui
+			//-------------------------------- SWAP BUFFERS
 
-				glFrontFace(GL_CCW);
-
-				//-------------------------------- SWAP BUFFERS
-
-				glfwSwapBuffers(window);
-				input::ClearHitsAndDelta();
-				glfwPollEvents();
-			} // End if StepTick
-		}
+			glfwSwapBuffers(window);
+			input::ClearHitsAndDelta();
+			glfwPollEvents();
+		} // End if StepTick
 	}
-	
+
 	//-------------------------------- END PROGRAM
 
+exit:
 	index::End();
 	aud::End();
 	res::End();

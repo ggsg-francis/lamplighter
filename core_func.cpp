@@ -17,8 +17,8 @@ namespace index
 		// If is null OR deleted OR dead OR no LOS
 		if (actor->ai_target_ent == BUF_NULL 
 			|| !block_entity.used[actor->ai_target_ent]
-			|| !ENTITY(actor->ai_target_ent)->state.stateFlags.get(ActiveState::eALIVE)/*
-			|| !LOSCheck(id, actor->ai_target_ent)*/)
+			|| !ENTITY(actor->ai_target_ent)->state.stateFlags.get(ActiveState::eALIVE)
+			|| !LOSCheck(id, actor->ai_target_ent))
 		{
 			actor->ai_target_ent = GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
 			actor->atk_target = actor->ai_target_ent;
@@ -353,9 +353,57 @@ namespace index
 		btf32 offsetx, offsety;
 		bool overlapN, overlapS, overlapE, overlapW;
 
-		//if (actor::moving[i]) // Add if moving check?
+		//-------------------------------- ACTOR COLLISION CHECK
 
-		//-------------------------------- ENVIRONMENTAL COLLISION CHECK
+		if (ent->properties.get(Entity::eCOLLIDE_ENT))
+		{
+			for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x)
+			{
+				for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y)
+				{
+					//de-intersect entities
+					for (int e = 0; e <= cells[x][y].ents.end(); e++)
+					{
+						if (cells[x][y].ents[e] != ID_NULL)
+						{
+							if (block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->properties.get(Entity::eCOLLIDE_ENT))
+							{
+								m::Vector2 vec = ent->t.position - ENTITY(cells[x][y].ents[e])->t.position;
+								float dist = m::Length(vec);
+								btf32 combined_radius = ent->radius + ENTITY(cells[x][y].ents[e])->radius;
+								if (dist < combined_radius && dist > 0.f)
+								{
+									// TEMP! if same type
+									if (ent->type == ENTITY(cells[x][y].ents[e])->type)
+									{
+										ent->t.position += m::Normalize(vec) * (combined_radius - dist) * 0.5f;
+										ENTITY(cells[x][y].ents[e])->t.position -= m::Normalize(vec) * (combined_radius - dist) * 0.5f;
+									}
+
+									// consider using some kind of collision callback
+
+									/*
+									// knockback effect
+									m::Vector2 surface = m::Normalize(vec * -1.f);
+									if (ent->type == ENTITY_TYPE_CHARA && m::Length(ent->t.velocity) > 0.02f)
+									{
+										// if other is also a character
+										if (ENTITY(cells[x][y].ents[e])->type == ENTITY_TYPE_CHARA)
+										{
+											ent->t.velocity = surface * -0.1f; // set my velocity
+											ENTITY(cells[x][y].ents[e])->t.velocity = surface * 0.3f; // set their velocity
+										}
+									}
+									*/
+								}
+							}
+						} // End for each entity in cell
+					} // End if entity count of this cell is bigger than zero
+				} // End for each cell group Y
+			} // End for each cell group X
+		} // end does collide entities check
+
+		//-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
 
 		offsetx = ent->t.position.x - ent->t.csi.c[eCELL_I].x;
 		offsety = ent->t.position.y - ent->t.csi.c[eCELL_I].y;
@@ -410,73 +458,32 @@ namespace index
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
-
-		//-------------------------------- ACTOR COLLISION CHECK
-
-		for (int x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; x++)
-		{
-			for (int y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; y++)
-			{
-				//de-intersect entities
-				for (int e = 0; e <= cells[x][y].ents.end(); e++)
-				{
-					if (cells[x][y].ents[e] != ID_NULL)
-					{
-						if (block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->properties.get(Entity::eCOLLIDE_ENT))
-						{
-							m::Vector2 vec = ent->t.position - ENTITY(cells[x][y].ents[e])->t.position;
-							float dist = m::Length(vec);
-							btf32 combined_radius = ent->radius + ENTITY(cells[x][y].ents[e])->radius;
-							if (dist < combined_radius && dist > 0.f)
-							{
-								ent->t.position += m::Normalize(vec) * (combined_radius - dist);
-								//massively slow collide callback (we'll speed it up later k?)
-								collision::hit_info hit;
-								hit.depenetrate = m::Normalize(vec) * (combined_radius - dist);
-								hit.hit = true;
-								hit.surface = m::Normalize(vec);
-								hit.inheritedVelocity = ENTITY(cells[x][y].ents[e])->t.velocity;
-								//entity->Collide(hit);
-								collision::hit_info hit2;
-								hit2.depenetrate = m::Normalize(vec * -1.f) * (combined_radius - dist);
-								hit2.hit = true;
-								hit2.surface = m::Normalize(vec * -1.f);
-								hit2.inheritedVelocity = ent->t.velocity;
-
-								if (ent->type == ENTITY_TYPE_CHARA)
-								{
-									ent->t.velocity = hit2.surface * -0.1f; // set my velocity
-									if (ENTITY(cells[x][y].ents[e])->type == ENTITY_TYPE_CHARA)
-										ENTITY(cells[x][y].ents[e])->t.velocity = hit2.surface * 0.3f; // set their velocity
-								}
-							}
-						}
-					} // End for each entity in cell
-				} // End if entity count of this cell is bigger than zero
-			} // End for each cell group Y
-		} // End for each cell group X
 	}
 
 	void RemoveAllReferences(btID index)
 	{
-		//for (int i = 0; i < eCELL_COUNT; ++i)
-		//	cells[ENTITY(i)->t.csi.c[i].x][ENTITY(i)->t.csi.c[i].y].ents.remove(index);
+		// Remove us from the cell we're on
+		cells[ENTITY(index)->t.csi.c[eCELL_I].x][ENTITY(index)->t.csi.c[eCELL_I].y].ents.remove(index);
+		// Remove all references to us by other entities
 		for (int i = 0; i <= block_entity.index_end; i++)
+		{
 			if (block_entity.used[i] && i != index) // If entity exists and is not me
+			{
 				if (ENTITY(i)->type == ENTITY_TYPE_CHARA) // and is actor
 				{
-					if (ACTOR(i)->ai_target_ent == index) // and is targeting me
-						ACTOR(i)->ai_target_ent = BUF_NULL; // Reset it's target
-					if (ACTOR(i)->ai_ally_ent == index) // and is ally with me
-						ACTOR(i)->ai_ally_ent = BUF_NULL; // Reset it's ally
+					if (ACTOR(i)->atk_target == index)
+						ACTOR(i)->atk_target = BUF_NULL;
+					if (ACTOR(i)->ai_target_ent == index)
+						ACTOR(i)->ai_target_ent = BUF_NULL;
+					if (ACTOR(i)->ai_ally_ent == index)
+						ACTOR(i)->ai_ally_ent = BUF_NULL;
 				}
+			}
+		}
 	}
 
 	bool LOSCheck(btID enta, btID entb)
 	{
-		/*return env::LineTrace(
-			ENTITY(enta)->t.position.x, ENTITY(enta)->t.position.y,
-			ENTITY(entb)->t.position.x, ENTITY(entb)->t.position.y);*/
 		Entity* entity_a = ENTITY(enta);
 		Entity* entity_b = ENTITY(entb);
 		return env::LineTrace_Bresenham(
@@ -862,11 +869,12 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		CHARA(id)->t_skin = 0u;
 		CHARA(id)->aiControlled = false;
-		CHARA(id)->speed = 2.8f;
+		CHARA(id)->speed = 2.9f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u); // long smig
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(7u); // heal
 		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
 	}
 
@@ -877,11 +885,14 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = 1u;
+		CHARA(id)->t_skin = 0u;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 2.8f;
+		CHARA(id)->speed = 2.9f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u);
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(7u); // heal
 		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
 	}
 
@@ -894,9 +905,11 @@ namespace index
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 2u;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 2.8f;
+		CHARA(id)->speed = 2.9f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(0u);
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
 	}
 
@@ -909,7 +922,7 @@ namespace index
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 3u;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 1.f;
+		CHARA(id)->speed = 3.5f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(4u);
 		CHARA(id)->foot_state = FootState::eBOTH_DOWN;

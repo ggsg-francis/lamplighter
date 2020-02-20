@@ -27,6 +27,50 @@ bool SaveExists()
 
 void SaveState()
 {
+	// clean all unused item instances
+	for (btID index_item = 0; index_item <= index::block_item.index_end; index_item++) // For every item
+	{
+		if (index::block_item.used[index_item])
+		{
+			btui32 item_reference_count = 0u;
+			for (btID index_ent = 0; index_ent <= index::block_entity.index_end; index_ent++) // For every entity
+			{
+				if (index::block_entity.used[index_ent])
+				{
+					// if this entity has an inventory
+					if (ENTITY(index_ent)->type == ENTITY_TYPE_CHARA)
+					{
+						// for every invntory slot
+						for (btui32 inv_slot = 0; inv_slot < ACTOR(index_ent)->inventory.items.Size(); ++inv_slot)
+						{
+							// if this slot contains this item
+							if (ACTOR(index_ent)->inventory.items[inv_slot] == index_item)
+							{
+								item_reference_count++;
+								goto item_done; // we found our reference so can skip the rest
+							}
+						}
+					}
+					else if (ENTITY(index_ent)->type == ENTITY_TYPE_RESTING_ITEM)
+					{
+						// if this entity hold this item
+						if (ITEM(index_ent)->item_instance == index_item)
+						{
+							item_reference_count++;
+							goto item_done; // we found our reference so can skip the rest
+						}
+					}
+				}
+			}
+		item_done:
+			if (item_reference_count == 0u)
+			{
+				index::DestroyItem(index_item);
+				std::cout << "Destroyed Item with no references!" << std::endl;
+			}
+		}
+	}
+
 	btui32 FILE_VER = 001u;
 
 	FILE* file = fopen("save/save.bin", "wb"); // Open file
@@ -84,23 +128,19 @@ void SaveState()
 		fwrite(&index::block_item.index_end, SIZE_16, 1, file);
 		fwrite(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1ui16), file);
 
-		for (btID i = 0; i <= index::block_item.index_end; i++) // For every entity
+		for (btID i = 0; i <= index::block_item.index_end; i++) // For every item
 		{
 			if (index::block_item.used[i])
 			{
-				//fwrite(&index::items[i]->item_template, SIZE_16, 1, file);
 				fwrite(&GETITEM_MISC(i)->item_template, SIZE_16, 1, file);
+
+				switch (index::GetItemType(i))
+				{
+				case ITEM_TYPE_CONS:
+					fwrite(&GETITEM_CONS(i)->uses, SIZE_32, 1, file);
+				}
 			}
 		}
-
-		//-------------------------------- CELL CACHE
-
-		// TODO: there's a glitch in the regemeration of the environment cells, we should
-		// formalize this to make sure there are no glitches in the future
-		// until then, this is a quick fix
-		// POTENTIAL FIX: in the loop where we iterate all tick functions, incl. a function call
-		// that regenerates the cells of X entity, so that i never have to worry about it again
-		fwrite(&index::cells, sizeof(index::cells), 1, file);
 
 		fclose(file); // Close file
 	}
@@ -180,16 +220,17 @@ void LoadStateFileV001()
 
 				index::IndexInitItem(i, acv::item_types[template_temp]);
 
-				//index::items[i]->item_template = template_temp;
 				GETITEM_MISC(i)->item_template = template_temp;
+
+				switch (index::GetItemType(i))
+				{
+				case ITEM_TYPE_CONS:
+					fread(&GETITEM_CONS(i)->uses, SIZE_32, 1, file);
+				}
 
 				std::cout << "Loaded item ID " << i << std::endl;
 			}
 		}
-
-		//-------------------------------- CELL CACHE
-
-		fread(&index::cells, sizeof(index::cells), 1, file);
 
 		fclose(file); // Close file
 	}

@@ -31,6 +31,8 @@ public:
 	void TransferItemRecv(btID ITEM_ID);
 	void TransferItemSendIndex(btui32 INDEX);
 	void TransferItemSend(btID ITEM_ID);
+	//btID GetItemOfType(ItemType TYPE);
+	btID GetItemOfTemplate(btID ITEM_TEMPLATE);
 	void Draw(btui16 ACTIVE_SLOT);
 };
 
@@ -141,12 +143,12 @@ struct Entity
 		eCOLLIDE_MAG = 1ui8 << 3ui8, // Handle collision between this entity and magic effects
 		eREPORT_TOUCH = 1ui8 << 4ui8, // Use callback function when another entity touches this one
 		eNO_TICK = 1ui8 << 5ui8, // Do not tick every frame
+		ePHYS_DRAG = 1ui8 << 6ui8, // Do not tick every frame
 		//eALIGN_MESH_TO_GROUND = 1ui8 << 6ui8, // Align this object's mesh to the ground normal (useless because each class has its own draw fn anyway)
 		// Can go up to 1 << 7
 
 		ePREFAB_FULLSOLID = eCOLLIDE_ENV | eCOLLIDE_ENT | eCOLLIDE_PRJ | eCOLLIDE_MAG,
-		//ePREFAB_ITEM = eCOLLIDE_ENV | eNO_TICK | eALIGN_MESH_TO_GROUND,
-		ePREFAB_ITEM = eCOLLIDE_ENV | eNO_TICK,
+		ePREFAB_ITEM = eCOLLIDE_ENV | eCOLLIDE_ENT | eNO_TICK | ePHYS_DRAG,
 	};
 	// Entity base properties
 	mem::bv<btui8, EntityFlags> properties;

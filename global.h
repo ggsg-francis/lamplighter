@@ -9,7 +9,7 @@
 //#define DEF_MULTISAMPLE
 #define DEF_MULTISAMPLE_DEPTH 4
 #define DEF_HDR
-#define DEF_LINEAR_FB
+//#define DEF_LINEAR_FB
 //#define DEF_DRAW_WIREFRAME
 
 // Any debug only defines
@@ -41,8 +41,8 @@
 #define LIGHT_WIDTH 12.f
 
 // Program Version
-#define VERSION_MAJOR 0u
-#include "version.h"
+#define VERSION_MAJOR 15u
+
 #define VERSION_SERVER_MAJOR 0u
 #define VERSION_SERVER_MINOR 14u
 #define VERSION_COMMENT "Raycast"

@@ -140,7 +140,7 @@ icon TdebugBB
 <<<<
 ITEM wmel
 name Uranium Fist
-radi 1.0
+radi 0.5
 mdlh 0.1
 wght 1.1
 muns 14
@@ -154,7 +154,7 @@ icon TIcoMtch
 <<<<
 ITEM wmel
 name Single Use Boomerang
-radi 1.0
+radi 0.5
 mdlh 0.5
 wght 1.1
 muns 14
@@ -168,7 +168,7 @@ icon TIcoMtch
 <<<<
 ITEM wgun
 name Long Smig
-radi 1.0
+radi 0.5
 mdlh 0.2
 wght 1.1
 muns 123456
@@ -196,7 +196,7 @@ wght 0.1
 muns 10
 srcm MRiflMag
 srct TRifleWp
-icon TRifleWp
+icon TIcoMMag
 cspl SpelLead
 <<<<
 ITEM cons

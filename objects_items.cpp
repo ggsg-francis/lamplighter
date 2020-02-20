@@ -22,7 +22,7 @@ void HeldItemDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle a
 	self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.1f + acv::items[itemid]->f_radius)); // set pose
 	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldItemOnEquip(btID id)
+void HeldItemOnEquip(btID id, Actor* owner)
 {
 	//
 }
@@ -116,7 +116,7 @@ void HeldMelDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 
 	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldMelOnEquip(btID id)
+void HeldMelOnEquip(btID id, Actor* owner)
 {
 }
 m::Vector3 HeldMelGetLeftHandPos(btID id)
@@ -184,34 +184,45 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 
 	if (owner->inputBV.get(Actor::IN_USE) && self->ePose == HOLDSTATE_AIM && self->fire_time < Time::time)
 	{
-		self->fire_time = Time::time + 0.1f;
-
-		aud::PlayGunshotTemp(true); // Play gunshot sound
-									//loc_velocity.z -= 0.12f;
-		self->loc_velocity.z -= m::Random(0.03f, 0.06f);
-		//pitch_velocity -= 19.f;
-		self->pitch = owner->viewPitch.Deg();
-		self->pitch_velocity -= m::Random(5.f, 7.5f);
-
-		if (owner->atk_target != BUF_NULL)
+		// if we try to fire, see if we can load the weapon
+		if (self->ammoInstance = ID_NULL)
+			self->ammoInstance = owner->inventory.GetItemOfTemplate(8);
+		if (self->ammoInstance != ID_NULL)
 		{
-			//aud::PlayGunshotTemp(true); // Play gunshot sound
+			if (!HeldConUse(self->ammoInstance, owner))
+				self->ammoInstance = owner->inventory.GetItemOfTemplate(8);
 
-			Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
-			//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
-			m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
-			m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - self->t_item.GetPosition().y);
-			btf32 angle_yaw = m::Vec2ToAng(targetoffset);
-			btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
-			//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->viewYaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
-			m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
-			index::SpawnProjectile(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 1.f);
-		}
-		else
-		{
-			//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->viewYaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
-			m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
-			index::SpawnProjectile(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+			self->fire_time = Time::time + 0.1f;
+
+			aud::PlayGunshotTemp(true); // Play gunshot sound
+			//loc_velocity.z -= 0.12f;
+			self->loc_velocity.z -= m::Random(0.03f, 0.06f);
+			//pitch_velocity -= 19.f;
+			self->pitch = owner->viewPitch.Deg();
+			self->pitch_velocity -= m::Random(5.f, 7.5f);
+
+			if (owner->atk_target != BUF_NULL)
+			{
+				//aud::PlayGunshotTemp(true); // Play gunshot sound
+
+				Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
+				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
+				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - self->t_item.GetPosition().y);
+				btf32 angle_yaw = m::Vec2ToAng(targetoffset);
+				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
+				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->viewYaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
+				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
+				index::SpawnProjectile(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 1.f);
+			}
+			else
+			{
+				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->viewYaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
+				index::SpawnProjectile(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+			}
+
+			owner->t.velocity = m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
 		}
 	}
 
@@ -420,13 +431,14 @@ void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 #undef GET_CAN_FIRE
 #undef UNSET_FIRE
 
-void HeldGunOnEquip(btID id)
+void HeldGunOnEquip(btID id, Actor* owner)
 {
 	HeldGun* self = GETITEM_GUN(id);
 	self->loc = m::Vector3(0.3f, 1.1f, 0.f);
 	self->pitch = 90.f;
 	self->yaw = 0.f;
-	self->ePose = HeldGun::HOLDSTATE_IDLE;
+	self->ePose = HeldGun::HOLDSTATE_AIM;
+	//self->ammoInstance = owner->inventory.GetItemOfTemplate(8);
 }
 m::Vector3 HeldGunGetLeftHandPos(btID id)
 {
@@ -475,7 +487,7 @@ void HeldMgcDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 	self->t_item.Rotate(glm::radians(-35.f), m::Vector3(1, 0, 0));
 	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldMgcOnEquip(btID id)
+void HeldMgcOnEquip(btID id, Actor* owner)
 {
 	//
 }
@@ -502,14 +514,30 @@ bool HeldMgcBlockMove(btID id)
 
 //-------------------------------- HELD ITEM CONSUME
 
-void HeldConTick(btID id, btf32 dt, Actor * owner)
+bool HeldConUse(btID id, Actor* owner)
+{
+	HeldCons* self = GETITEM_CONS(id);
+	//owner->state.AddSpell(owner->id, ((acv::BaseItemCon*)acv::items[self->item_template])->effect);
+	if (self->uses > 1u)
+	{
+		--self->uses;
+		return true;
+	}
+	else
+	{
+		owner->inventory.DestroyID(id);
+		return false;
+	}
+}
+void HeldConTick(btID id, btf32 dt, Actor* owner)
 {
 	HeldCons* self = GETITEM_CONS(id);
 	if (owner->inputBV.get(Actor::IN_USE_HIT) && self->uses > 0u)
 	{
 		owner->state.AddSpell(owner->id, ((acv::BaseItemCon*)acv::items[self->item_template])->effect);
-		if (self->uses > 1u) --self->uses;
-		else owner->inventory.DestroyID(id);
+		//if (self->uses > 1u) --self->uses;
+		//else owner->inventory.DestroyID(id);
+		HeldConUse(id, owner);
 	}
 }
 void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch)
@@ -523,7 +551,7 @@ void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 	self->t_item.Rotate(glm::radians(45.f), m::Vector3(1, 0, 0));
 	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldConOnEquip(btID id)
+void HeldConOnEquip(btID id, Actor* owner)
 {
 	//
 }
@@ -720,7 +748,7 @@ void HeldGunMatchLockDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m:
 	}
 	*/
 }
-void HeldGunMatchLockOnEquip(btID id)
+void HeldGunMatchLockOnEquip(btID id, Actor* owner)
 {
 	HeldGunMatchLock* self = (HeldGunMatchLock*)GETITEM_GUN(id);
 	self->loc = m::Vector3(0.3f, 1.1f, 0.f);

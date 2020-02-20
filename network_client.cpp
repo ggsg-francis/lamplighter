@@ -20,6 +20,8 @@
 #include "core.h"
 #include "maths.hpp"
 
+#include "version.h"
+
 //void SetTitle(btui8 id);
 
 namespace network

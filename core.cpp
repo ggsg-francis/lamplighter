@@ -6,13 +6,10 @@
 
 #include "core_save_load.h"
 
-unsigned int activePlayer = 0u;
+#include "version.h"
 
 namespace index
 {
-	btID viewtarget[2]{ ID_NULL,ID_NULL };
-	btID viewtarget_last_tick[2]{ ID_NULL,ID_NULL };
-
 	btf32 GetHP(btID id)
 	{
 		return ENTITY(id)->state.hp;
@@ -265,7 +262,8 @@ namespace index
 		strcat(buffinal, " ");
 		strcat(buffinal, VERSION_COMMENT);
 
-		text_version.ReGen(buffinal, cfg::iWinX * -0.125f, cfg::iWinX * 0.125f, cfg::iWinY * 0.25f);
+		text_version.ReGen(buffinal, cfg::iWinX * -0.25f, cfg::iWinX * 0.25f, cfg::iWinY * 0.5f);
+		//text_version.ReGen(buffinal, 0.f, 100000.f, 0.f);
 
 		env::LoadBin();
 
@@ -329,7 +327,7 @@ namespace index
 				SpawnNewEntityItem(6ui16, m::Vector2(1023.8f, 1023.4f), 15.f);
 				SpawnNewEntityItem(7ui16, m::Vector2(1023.6f, 1023.2f), 15.f);
 
-				DoSpawn();
+				//DoSpawn();
 			}
 		}
 		// This is going to blow up extremely fast if I don't automate it somehow
@@ -384,18 +382,18 @@ namespace index
 
 	void Tick(btf32 dt)
 	{
-		/*if (!cfg::bEditMode && spawnz_time_temp < Time::time)
+		if (!cfg::bEditMode && spawnz_time_temp < Time::time)
 		{
-			spawnz_time_temp = Time::time + 30.f;
+			spawnz_time_temp = Time::time + 120.f;
 			DoSpawn();
-		}*/
+		}
 
 		//temporary destroy dead entities
 		///*
 		for (int i = 0; i <= block_entity.index_end; i++)
 			if (block_entity.used[i])
-				if (!ACTOR(i)->state.stateFlags.get(ActiveState::eALIVE)
-					&& !ACTOR(i)->state.stateFlags.get(ActiveState::eDIED_REPORT)
+				if (!ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE)
+					&& !ENTITY(i)->state.stateFlags.get(ActiveState::eDIED_REPORT)
 					&& ACTOR(i)->aiControlled)
 					index::DestroyEntity(i);
 		//*/
@@ -750,11 +748,15 @@ namespace index
 					ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
 				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
 				{
-					// SOUL TRANSFER
-					if (players[0] != players[1]) // If both player's arent using the same entity
-						ACTOR(players[activePlayer])->aiControlled = true; // Let the AI take over
-					players[activePlayer] = viewtarget[activePlayer]; // Set player to control player's view target
-					ACTOR(players[activePlayer])->aiControlled = false;
+					// if we are allied
+					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget[activePlayer])->faction) == fac::allied)
+					{
+						// SOUL TRANSFER
+						if (players[0] != players[1]) // If both player's arent using the same entity
+							ACTOR(players[activePlayer])->aiControlled = true; // Let the AI take over
+						players[activePlayer] = viewtarget[activePlayer]; // Set player to control player's view target
+						ACTOR(players[activePlayer])->aiControlled = false;
+					}
 				}
 			if (input::GetHit(input::key::DROP_HELD))
 				ACTOR(players[activePlayer])->DropItem(ACTOR(players[activePlayer])->inv_active_slot);
@@ -772,13 +774,18 @@ namespace index
 				{
 					// SOUL TRANSFER
 					// Possession, actually
-					// If both players aren't controlling the same entity, let the AI take over
-					if (players[0] != players[1])
-						ACTOR(players[activePlayer])->aiControlled = true;
-					// Set the player to possess their view target entity
-					players[activePlayer] = viewtarget[activePlayer];
-					// Disable the AI on the possessed entity
-					ACTOR(players[activePlayer])->aiControlled = false;
+					// if we are allied
+					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget[activePlayer])->faction) == fac::allied)
+					{
+						// begin soul transfer
+						// If both players aren't controlling the same entity, let the AI take over
+						if (players[0] != players[1])
+							ACTOR(players[activePlayer])->aiControlled = true;
+						// Set the player to possess their view target entity
+						players[activePlayer] = viewtarget[activePlayer];
+						// Disable the AI on the possessed entity
+						ACTOR(players[activePlayer])->aiControlled = false;
+					}
 				}
 			if (input::GetHit(input::key::C_DROP_HELD))
 				ACTOR(players[activePlayer])->DropItem(ACTOR(players[activePlayer])->inv_active_slot);
@@ -816,7 +823,7 @@ namespace index
 			text_message[activePlayer].Draw(&res::GetT(res::t_gui_font));
 
 		// croshair
-		//graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), &graphics::GetShader(graphics::S_GUI), 0, 0, 32, 32);
+		graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), 0, 0, 32, 32);
 		// hp
 		graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_red), p1_x_start + 32, p1_y_start + 8, (int)(index::GetHP(index::players[activePlayer]) * 64.f), 16);
 		// enemy hp
@@ -847,7 +854,7 @@ namespace index
 		text_version.Draw(&res::GetT(res::t_gui_font));
 		char buffer[16];
 		int i = snprintf(buffer, 16, "%f", 1.f / Time::deltaTick);
-		text_fps.ReGen(buffer, cfg::iWinX * -0.125f, cfg::iWinX * 0.125f, cfg::iWinY * 0.25f - 16.f);
+		text_fps.ReGen(buffer, cfg::iWinX * -0.25f, cfg::iWinX * 0.25f, cfg::iWinY * 0.5f - 16.f);
 		text_fps.Draw(&res::GetT(res::t_gui_font));
 	}
 
@@ -910,18 +917,35 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = SpawnItem(item_template);
+		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemPtr(ITEM(id)->item_instance))->item_template]->f_radius;
+		ENTITY(id)->height = 0.5f;
 		return id;
 	}
 	btID SpawnEntityItem(btID itemid, m::Vector2 pos, btf32 dir)
 	{
 		btID id = block_entity.add();
 		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
-		spawn_setup_t(id, pos, dir);
+		
+		//spawn_setup_t(id, pos, dir);
+		
+		ENTITY(id)->t.position = pos;
+		ENTITY(id)->t.velocity = 0.f;
+		ENTITY(id)->t.height_velocity = 0.f;
+		ENTITY(id)->t.yaw.Set(dir);
+		GetCellSpaceInfo(ENTITY(id)->t.position, ENTITY(id)->t.csi);
+		env::GetHeight(ENTITY(id)->t.height, ENTITY(id)->t.csi);
+		ENTITY(id)->t.height += 1.f; // temp
+		AddEntityCell(ENTITY(id)->t.csi.c[eCELL_I].x, ENTITY(id)->t.csi.c[eCELL_I].y, id);
+		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
+		ENTITY(id)->state.hp = 1.f;
+
+
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = itemid;
 		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemPtr(itemid))->item_template]->f_radius;
+		ENTITY(id)->height = 0.5f;
 		return id;
 	}
 

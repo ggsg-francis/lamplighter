@@ -17,8 +17,8 @@ uniform mat4 lightProj;
 
 uniform vec3 pcam;
 
-//uniform int vert_precision = 256;
-uniform int vert_precision = 192;
+uniform int vert_precision = 256;
+//uniform int vert_precision = 192;
 uniform float fov = 1.25f;
 uniform float clipMult = 0.05f;
 
@@ -42,12 +42,15 @@ void main()
 	Col = aCol;
 	//Col.r = 1;
 	
-	//affine projection
-	//gl_Position.xyz /= clamp(gl_Position.w * fov, 0, 1024); // 1024 is max number
-	//gl_Position.w = 1;
-	//imprecise projection
-    //gl_Position.x = floor(gl_Position.x * vert_precision) / vert_precision;
-    //gl_Position.y = floor(gl_Position.y * vert_precision) / vert_precision;
+	/*
+	// non-screen-affine projection
+	gl_Position.xyz /= clamp(gl_Position.w * fov, 0, 1024); // 1024 is max number
+	// imprecise projection
+    gl_Position.x = floor(gl_Position.x * vert_precision) / vert_precision;
+    gl_Position.y = floor(gl_Position.y * vert_precision) / vert_precision;
+	// de-project
+	gl_Position.xyz *= clamp(gl_Position.w * fov, 0, 1024); // 1024 is max number
+	//*/
 	
 	LightSpacePos = lightProj * vec4(Pos, 1.0);
 }
