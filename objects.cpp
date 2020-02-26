@@ -143,16 +143,30 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 	case acv::EnvProp::FLOOR_QUICKSAND:
 		ent->t.height -= 0.0025f;
 		env::GetHeight(eheight, ent->t.csi);
-		// Multiplier reduces the depth at which you can't move
-		distBelowSand = (eheight - ent->t.height) * 2.5f;
-		if (distBelowSand > ent->height)
+		// if above the ground
+		if (ent->t.height + ent->t.height_velocity > eheight)
 		{
-			if (ent->type == ENTITY_TYPE_RESTING_ITEM)
-				int bp = 0;
-			ent->state.Damage(1000, 0); 
+			ent->t.height_velocity -= 0.006f; // Add gravity
+			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
+			ent->t.position += ent->t.velocity; // Apply velocity
+			ent->t.height += ent->t.height_velocity; // Apply velocity
 		}
-		if (distBelowSand > 1.f) distBelowSand = 1.f;
-		ent->t.position += (ent->t.velocity * (1.f - distBelowSand)); // Apply velocity
+		else
+		{
+			// remove all velocity
+			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.7f;
+
+			// Multiplier reduces the depth at which you can't move
+			distBelowSand = (eheight - ent->t.height) * 2.5f;
+			if (distBelowSand > ent->height)
+			{
+				if (ent->type == ENTITY_TYPE_RESTING_ITEM)
+					int bp = 0;
+				ent->state.Damage(1000, 0);
+			}
+			if (distBelowSand > 1.f) distBelowSand = 1.f;
+			ent->t.position += (ent->t.velocity * (1.f - distBelowSand)); // Apply velocity
+		}
 		break;
 	default:
 		ent->t.height_velocity -= 0.006f; // Add gravity

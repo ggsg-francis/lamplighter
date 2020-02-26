@@ -31,6 +31,11 @@ namespace index
 			|| !LOSCheck(id, actor->ai_ally_ent))
 			actor->ai_ally_ent = GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
 
+		// bad and temporary :P
+		// makes npc not point the gun at allies
+		actor->inputBV.setto(Actor::ActorInput::IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
+		actor->inputBV.setto(Actor::ActorInput::IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
+
 		if (actor->ai_target_ent == BUF_NULL)
 		{
 			if (actor->ai_ally_ent == BUF_NULL)
@@ -151,172 +156,6 @@ namespace index
 					else
 					{
 						if (distance_to_ally > ally_follow_dist) actor->input.y = 1.f;
-						else actor->input.y = 0.f;
-						actor->input.x = 0.f;
-
-						btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(AllyVector)));
-
-						//actor->viewYaw.Set(angle2);
-						//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-						actor->ai_vy_target = angle2;
-
-					}
-				}
-				else
-				{
-					btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-					//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
-
-					//actor->viewYaw.Set(angle2);
-					//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-					actor->ai_vy_target = angle2;
-
-					actor->input.y = 1.f;// actor->input.x = 0.f;
-
-					actor->input.x = 0.f;
-				}
-			}
-		}
-
-		actor->viewYaw.RotateTowards(actor->ai_vy_target, HEAD_TURN_SPEED);
-		actor->viewPitch.RotateTowards(actor->ai_vp_target, HEAD_TURN_SPEED);
-	}
-
-	void ActorRunAIBak(btID id)
-	{
-		Actor* actor = ACTOR(id);
-
-		actor->input.y = 1.f;
-		actor->input.x = -1.f;
-
-		actor->ai_target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
-
-		// If ally is null or deleted or dead
-		if (actor->ai_ally_ent == BUF_NULL || !block_entity.used[actor->ai_ally_ent]
-			|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE))
-			actor->ai_ally_ent = GetClosestEntityAlleg(id, 100.f, fac::allied); // Find the closest ally
-
-		if (actor->ai_target_ent == BUF_NULL)
-		{
-			if (actor->ai_ally_ent == BUF_NULL)
-			{
-				actor->input.y = 0.f;
-				actor->input.x = 0.f;
-				actor->inputBV.unset(Actor::IN_USE);
-			}
-			else // if we have an ally, follow it
-			{
-				m::Vector2 TargetVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
-				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-				float distance_to_target = m::Length(TargetVector);
-
-				//actor->viewYaw.Set(angle2);
-				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-				actor->ai_vy_target = angle2;
-
-				if (distance_to_target > 5.f) // if ally is far away
-					actor->input.y = 1.f;
-				else
-					actor->input.y = 0.f;
-				actor->input.x = 0.f;
-				actor->inputBV.unset(Actor::IN_USE);
-			}
-		}
-		else
-		{
-			//find new target if ours is dead (obsolete right now)
-			//if (!ENTITY(actor->target_ent)->state.properties.get(ActiveState::eALIVE))
-			//{
-			//	//actor->target_ent = GetClosestEntity(id, 10.f); // Find the closest entity
-			//	//actor->target_ent = GetClosestPlayer(id); // Find the closest player
-			//	actor->target_ent = GetClosestEntityAlleg(id, 100.f, fac::enemy); // Find the closest enemy
-			//}
-
-			m::Vector2 TargetVector = ENTITY(actor->ai_target_ent)->t.position - actor->t.position;
-			m::Vector2 TargetVectorVertical = m::Vector2(m::Length(TargetVector), ENTITY(actor->ai_target_ent)->t.height - actor->t.height);
-			float distance_to_target = m::Length(TargetVector);
-
-			actor->inputBV.unset(Actor::IN_USE);
-
-			if (distance_to_target < 20.f) // if enemy is close enough to shoot at
-			{
-				//compute rotation
-				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
-				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
-
-				actor->input.y = 0.f;
-
-				if (actor->ai_ally_ent != BUF_NULL)
-				{
-					m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
-					float distance_to_ally = m::Length(AllyVector);
-					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
-
-					if (distance_to_ally < 10.f) // if ally is close, spread
-						if (offsetLR_ally > 0.5f) actor->input.x = -1.f;
-						else if (offsetLR_ally < -0.5f) actor->input.x = 1.f;
-						else actor->input.x = 0.f;
-					else if (actor->state.hp > 0.6f) // if ally is far and hitpoints high, move in
-						if (offsetLR_ally > 0.5f) { actor->input.x = -0.5f; actor->input.y = 1.f; }
-						else if (offsetLR_ally < -0.5f) { actor->input.x = 0.5f; actor->input.y = 1.f; }
-						else actor->input.x = 1.f;
-					else // if low on hp, retreat
-						if (offsetLR_ally > 0.5f) { actor->input.x = 1.f; actor->input.y = -1.f; }
-						else if (offsetLR_ally < -0.5f) { actor->input.x = -1.f; actor->input.y = -1.f; }
-						else actor->input.x = -1.f;
-				}
-				else
-				{
-					actor->input.x = 0.f;
-				}
-
-				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-				btf32 angle22 = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(TargetVectorVertical)));
-
-				//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
-
-				//actor->viewYaw.Set(angle2);
-				//actor->viewPitch.Set(angle22);
-				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-				//actor->viewPitch.RotateTowards(angle22, HEAD_TURN_SPEED);
-				actor->ai_vy_target = angle2;
-				actor->ai_vp_target = angle22;
-
-				//actor->input.y = 0.f; actor->input.x = 1.f;
-
-				actor->inputBV.set(Actor::IN_USE);
-			}
-			else
-			{
-				//compute rotation
-				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
-				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
-
-				if (actor->ai_ally_ent != BUF_NULL)
-				{
-					m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
-					float distance_to_ally = m::Length(AllyVector);
-					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
-
-					// if ally is closer than enemy
-					if (distance_to_ally > distance_to_target || distance_to_ally < 4.f)
-					{
-						if (distance_to_ally > 2.f)
-							if (offsetLR_ally > 0.5f) actor->input.x = 1.f;
-							else if (offsetLR_ally < -0.5f) actor->input.x = -1.f;
-							else actor->input.x = 0.f;
-						else actor->input.x = 0.f;
-
-						btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-						//actor->viewYaw.Set(angle2);
-						//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-						actor->ai_vy_target = angle2;
-
-						actor->input.y = 1.f;
-					}
-					else
-					{
-						if (distance_to_ally > 2.f) actor->input.y = 1.f;
 						else actor->input.y = 0.f;
 						actor->input.x = 0.f;
 
@@ -937,7 +776,7 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = false;
-		CHARA(id)->speed = 6.f;
+		CHARA(id)->speed = 0.1f;
 	}
 
 	void(*PrefabEntity[])(btID, m::Vector2, btf32) = { prefab_pc, prefab_aipc, prefab_npc, prefab_zombie, prefab_editorpawn };

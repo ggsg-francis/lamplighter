@@ -226,7 +226,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 		}
 	}
 
-	if (owner->inputBV.get(Actor::IN_ACTN_A))
+	/*if (owner->inputBV.get(Actor::IN_ACTN_A))
 		if (self->ePose == HOLDSTATE_IDLE)
 			self->ePose = HOLDSTATE_AIM;
 		else if (self->ePose == HOLDSTATE_AIM)
@@ -235,7 +235,14 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 	else if (owner->inputBV.get(Actor::IN_ACTN_B))
 		self->ePose = HOLDSTATE_INSPECT;
 	else if (owner->inputBV.get(Actor::IN_ACTN_C))
-		self->ePose = HOLDSTATE_BARREL;
+		self->ePose = HOLDSTATE_BARREL;*/
+
+	if (owner->inputBV.get(Actor::IN_ACTN_A))
+			self->ePose = HOLDSTATE_AIM;
+	else if (owner->inputBV.get(Actor::IN_ACTN_B))
+		self->ePose = HOLDSTATE_IDLE;
+	else if (owner->inputBV.get(Actor::IN_ACTN_C))
+		self->ePose = HOLDSTATE_INSPECT;
 
 	if (self->ePose == HOLDSTATE_IDLE) // IF AIMING
 	{

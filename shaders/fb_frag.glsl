@@ -125,7 +125,7 @@ void main()
 	FragColor = vec4(col - (0.045 * (1 - col)), 1.0);
 	
 	// Gamma correction
-	//*
+	/*
 	const float exposure = 2.2;
 	const float gamma = 0.6;
 	// Exposure tone mapping

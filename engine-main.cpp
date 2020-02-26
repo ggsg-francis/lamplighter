@@ -110,7 +110,6 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 //________________________________________________________________________________________________________________________________
 //--------------------------- STEP TICK ------------------------------------------------------------------------------------------
 
-double step_accumulator = 0.f;
 bool step_pause = false;
 
 inline void UpdateInput() // Fixed timestep tick function
@@ -159,10 +158,10 @@ bool StepTickEditor(double dt)
 {
 	if (!step_pause && focus)
 	{
-		step_accumulator += dt;
+		/*step_accumulator += dt;
 		if (step_accumulator < FRAME_TIME)
 			return false;
-		step_accumulator = 0.f;
+		step_accumulator = 0.f;*/
 
 		//-------------------------------- CONVERT DEVICE INPUT TO CHARA INPUT
 
@@ -415,39 +414,57 @@ int main()
 
 	//--------------------------------------------------------------------------------------------------------------------------------
 
-	//-------------------------------- ENTER GAME LOOP (ITS A MESS)
+	//-------------------------------- ENTER GAME LOOP
+
+	btf64 current_frame_time = 0.f;
+	btf64 next_frame_time = 0.f;
 
 	// Skip to the editor loop if the game is running in edit mode
 	if (cfg::bEditMode) goto loop_editor;
 
 	printf("Entered Game Loop\n");
 updtime:
-	Sleep(8);
-	Time::Update((btf64)(glfwGetTime()));
-
-	step_accumulator += Time::deltaTime;
-	// If not enough time has passed to count as a tick
-	if (step_accumulator < FRAME_TIME)
-	{
-		goto updtime;
-	}
-	// otherwise, proceed with the tick
-	step_accumulator = 0.f;
-	if (input::GetHit(input::key::QUIT)) goto exit;
-
-	// If we reach this point, its time to run the tick
+	// Check to make sure the game isnt paused, and the window is in focus
 	if (!step_pause && focus)
 	{
+		#ifdef DEF_SMOOTH_FRAMERATE
+		// Wait until the exact right time to run a new frame
+		while (current_frame_time <= next_frame_time)
+		{
+			current_frame_time = (btf64)glfwGetTime();
+		}
+		next_frame_time = current_frame_time + FRAME_TIME;
+		Time::Update(current_frame_time);
+		#else
+		// Just run the new frame now
+		current_frame_time = (btf64)glfwGetTime();
+		next_frame_time = current_frame_time + FRAME_TIME;
+		Time::Update(current_frame_time);
+		#endif
+
+		if (input::GetHit(input::key::QUIT)) goto exit;
+
+		input::ClearHitsAndDelta();
+		glfwPollEvents();
+		input::UpdateControllerInput();
+
+		// If we reach this point, its time to run the tick
 		Time::Step();
 		UpdateInput();
 		index::Tick((btf32)(FRAME_TIME));
 		weather::Tick((btf32)(FRAME_TIME));
 	}
-	else goto updtime;
+	// If the program is out of focus, or paused
+	else
+	{
+		// Wait for a second then restart the function
+		Sleep(1000u);
+		goto updtime;
+	}
 
 	//--------------------------------------------------------------------------------------------------------------------------------
 
-	//-------------------------------- RENDER ENTITIES
+	//-------------------------------- RENDER ENTITIES (TODO: try and clean this up a bit!)
 
 render:
 
@@ -501,8 +518,6 @@ render:
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
 	//glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
-
-	#ifdef DEF_BLIT_FRAME
 
 	// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_1);
@@ -558,8 +573,6 @@ render:
 	// to do check up on this later!!
 	glActiveTexture(GL_TEXTURE0); // For some reason or other, the texture must be reset (probably forgotten elsewhere)
 
-	#endif
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
 	//if (cfg::bShowConsole) index::DrawPostDraw();
@@ -570,15 +583,23 @@ render:
 	//-------------------------------- SWAP BUFFERS
 
 	glfwSwapBuffers(window);
-	input::ClearHitsAndDelta();
-	glfwPollEvents();
-	input::UpdateControllerInput();
 
+	//-------------------------------- SLEEP FOR THE REMAINDER OF THE FRAME
+
+	// Get the time now that we've rendered the frame
+	current_frame_time = glfwGetTime();
+	// Get the frame time remainder that we need to sleep for (rounded down)
+	btf64 test2 = (next_frame_time - current_frame_time) * 1000.;
+	if (test2 > 0.)
+	{
+		DWORD test = (DWORD)test2;
+		Sleep(test);
+	}
 	goto updtime; // Return to the beginning of the loop
 
 	//--------------------------------------------------------------------------------------------------------------------------------
 
-	//-------------------------------- ENTER EDITOR LOOP
+	//-------------------------------- ENTER EDITOR LOOP (messy, make it like the game loop)
 
 loop_editor:
 	printf("Entered Editor Loop\n");

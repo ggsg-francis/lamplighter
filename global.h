@@ -5,12 +5,12 @@
 // Compiler configuration definitions
 //#define DEF_OLDSKOOL // Use old rendering settings (nearest neighbor filtering, etc.
 //#define DEF_DEBUG_DISPLAY // Draw debug information
-#define DEF_BLIT_FRAME
 //#define DEF_MULTISAMPLE
 #define DEF_MULTISAMPLE_DEPTH 4
 #define DEF_HDR
 //#define DEF_LINEAR_FB
 //#define DEF_DRAW_WIREFRAME
+#define DEF_SMOOTH_FRAMERATE
 
 // Any debug only defines
 #ifdef _DEBUG

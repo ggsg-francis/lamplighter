@@ -225,6 +225,7 @@ namespace index
 					m::Vector2 pos2 = ENTITY(players[1])->t.position;
 					m::Vector2 pos3 = m::Vector2(x, y);
 					if (m::Length(pos1 - pos3) > 8.f && m::Length(pos2 - pos3) > 8.f) // Don't spawn too close to either player
+					//if (LOSCheck(ENTITY(players[0])->id, )) // Don't spawn too close to either player
 					{
 						if (m::Length(pos1 - pos3) < 16.f && m::Length(pos2 - pos3) < 16.f) // ..or too far away
 						{
@@ -384,7 +385,7 @@ namespace index
 	{
 		if (!cfg::bEditMode && spawnz_time_temp < Time::time)
 		{
-			spawnz_time_temp = Time::time + 120.f;
+			spawnz_time_temp = Time::time + 50.f;
 			DoSpawn();
 		}
 

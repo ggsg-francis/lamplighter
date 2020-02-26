@@ -131,6 +131,7 @@ namespace mem
 		}
 	}
 
+	// TODO: useless function call wastes time, just access id_end directly!
 	btui32 idbuf::end()
 	{
 		return id_end;

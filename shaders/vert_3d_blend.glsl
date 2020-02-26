@@ -10,6 +10,7 @@ out vec3 Normal;
 out vec3 Pos;
 out vec4 Col;
 out vec4 LightSpacePos;
+out vec3 LC; // Light Colour
 
 uniform float blendState = 0.5f;
 
@@ -25,10 +26,23 @@ uniform int vert_precision = 256;
 uniform float fov = 1.25f;
 uniform float clipMult = 0.05f;
 
-uniform sampler2D thm; // texture heightmap
+// Shading variables
 
-// normalized size of vertical planes based on the 4x3 topdown view
-const float z_offset_mult = 0.661437809;
+uniform float ft; // Time
+
+uniform sampler2D texture_diffuse1;
+uniform sampler2D tlm; // texture lightmap
+uniform sampler2D thm; // texture heightmap
+uniform sampler2D ts; // texture sky
+uniform sampler2D tshadow; // texture shadow
+
+uniform vec3 vsun = normalize(vec3(-1,1,-1));
+uniform vec3 csun = vec3(0.15,0.1,0.1);
+uniform vec3 camb = vec3(0.2,0.2,0.3);
+uniform vec3 fogcol = vec3(0.1,0.1,0.1);
+uniform vec3 litcol = vec3(1.f,1.f,1.f);
+
+uniform bool lit = true;
 
 void main()
 {
@@ -73,4 +87,21 @@ void main()
 	//*/
 	
 	LightSpacePos = lightProj * vec4(Pos, 1.0);
+
+	// Shading
+	
+	//float ndotl = clamp(dot(normalize(Normal), vsun), 0, 1);
+	float ndotl = clamp(dot(Normal, vsun) * Col.r, 0, 1);
+	float ndotl_amb = clamp(dot(Normal, vec3(0,-1,0)) + 0.5f, 0, 1);
+	
+	if (lit)
+	{
+		vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
+		LC = mix(camb + (litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g) + (csun * ndotl), vec3(1.f), Col.g);
+	}
+	else
+	{
+		//LC *= ndotl * 2.f; Moon shading
+		LC = vec3(1.5f);
+	}
 }
