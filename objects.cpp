@@ -223,9 +223,11 @@ m::Vector3 SetFootPos(m::Vector2 position)
 void DrawChara(void* ent)
 {
 	#define leglen 0.75f
-	#define legDClen 1.f
+	// leg disconnect length? not sure
+	#define legDClen 0.85f
 	//#define legDClen 0.75f
-	#define velocityStepMult 0.5f
+	//#define velocityStepMult 0.5f
+	#define velocityStepMult 10.f
 
 	Chara* chr = (Chara*)ent;
 
@@ -249,8 +251,6 @@ void DrawChara(void* ent)
 	#define footPosTargR chr->footPosTargR
 	#define footPosTargL chr->footPosTargL
 	#define ani_body_lean chr->ani_body_lean
-	#define footPosR chr->footPosR
-	#define footPosL chr->footPosL
 	#define t_head chr->t_head
 
 	Transform3D t_test = t_body;
@@ -328,80 +328,70 @@ void DrawChara(void* ent)
 
 	if (foot_state == eL_DOWN)
 	{
-		if (m::Length(t.velocity) < 0.025f) // if below a certain speed, switch to standing pose
+		// if moving ignore leg length
+		if (m::Length(t.velocity) > 0.025f)
 		{
-			footPosTargR = SetFootPos(m::Vector2(footPosTargR.x, footPosTargR.z));
-			if (m::Length(jointPosL - footPosTargL) > leglen)
-				footPosTargL = SetFootPos(t.position + right * -hip_width);
-			//foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width;
-			foot_state = eBOTH_DOWN;
-		}
-		else // else hang foot
-		{
-			footPosTargR = m::Vector3(t.position.x, t.height + 0.15f, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.3f;
+			if (chr->aniStepAmountR > 0.9f) // if other step nearly done
+			{
+				chr->footPosL = footPosTargL;
+				chr->aniStepAmountL = 0.f;
+				footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
+				foot_state = eR_DOWN;
+			}
 		}
 		// if too far off balance
-		if (m::Length(jointPosL - footPosTargL) > legDClen)
+		else if (m::Length(jointPosL - footPosTargL) > legDClen && chr->aniStepAmountL == 1.f)
 		{
-			footPosTargL = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
-			//foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.7f;
+			chr->footPosL = footPosTargL;
+			chr->aniStepAmountL = 0.f;
+			footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
 			foot_state = eR_DOWN;
 		}
 	}
 	else if (foot_state == eR_DOWN)
 	{
-		if (m::Length(t.velocity) < 0.025f) // if below a certain speed, switch to standing pose
+		// if moving ignore leg length
+		if (m::Length(t.velocity) > 0.025f)
 		{
-			footPosTargL = SetFootPos(m::Vector2(footPosTargL.x, footPosTargL.z));
-			if (m::Length(jointPosR - footPosTargR) > leglen)
-				footPosTargR = SetFootPos(t.position + right * hip_width);
-			//foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width;
-			foot_state = eBOTH_DOWN;
-		}
-		else // else hang foot
-		{
-			footPosTargL = m::Vector3(t.position.x, t.height + 0.15f, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.3f;
+			if (chr->aniStepAmountL > 0.9f) // if other step nearly done
+			{
+				chr->footPosR = footPosTargR;
+				chr->aniStepAmountR = 0.f;
+				footPosTargR = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
+				foot_state = eL_DOWN;
+			}
 		}
 		// if too far off balance
-		if (m::Length(jointPosR - footPosTargR) > legDClen)
+		else if (m::Length(jointPosR - footPosTargR) > legDClen && chr->aniStepAmountR == 1.f)
 		{
-			footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
-			//foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.7f;
-			foot_state = eL_DOWN;
-		}
-	}
-	else
-	{
-		if (m::Length(t.velocity) > 0.025f) // if above a certain speed, switch to walking pose
-		{
-			if (ani_body_lean.x < 0.f)
-				foot_state = eL_DOWN;
-			else
-				foot_state = eR_DOWN;
-		}
-		// should probably switch to: if the average position drifts off-balance
-		// move the furthest leg to a new position
-		else if (m::Length(jointPosL - footPosTargL) > leglen)
-		{
-			footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
-			//foot_pos_r = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * -hip_width + velocity * 0.7f;
-			foot_state = eR_DOWN;
-		}
-		else if (m::Length(jointPosR - footPosTargR) > leglen)
-		{
+			chr->footPosR = footPosTargR;
+			chr->aniStepAmountR = 0.f;
 			footPosTargR = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
-			//foot_pos_l = m::Vector3(t.position.x, t.height, t.position.y) + t_body.GetRight() * hip_width + velocity * 0.7f;
 			foot_state = eL_DOWN;
 		}
 	}
 
-	footPosR = m::Lerp(footPosR, footPosTargR, lerpAmt);
-	footPosL = m::Lerp(footPosL, footPosTargL, lerpAmt);
+	// set step positions
 
-	btf32 len = m::Length(jointPosR - footPosR);
+	chr->aniStepAmountL += 0.04f;
+	if (chr->aniStepAmountL > 1.f)
+		chr->aniStepAmountL = 1.f;
+	chr->aniStepAmountR += 0.04f;
+	if (chr->aniStepAmountR > 1.f)
+		chr->aniStepAmountR = 1.f;
+
+	btf32 fpHeightL = m::QuadraticFootstep(0.5f, chr->aniStepAmountL * 2.f - 1.f);
+	btf32 fpHeightR = m::QuadraticFootstep(0.5f, chr->aniStepAmountR * 2.f - 1.f);
+
+	m::Vector3 fpCurrentL = m::Lerp(chr->footPosL, footPosTargL, chr->aniStepAmountL) + m::Vector3(0.f, fpHeightL, 0.f);
+	m::Vector3 fpCurrentR = m::Lerp(chr->footPosR, footPosTargR, chr->aniStepAmountR) + m::Vector3(0.f, fpHeightR, 0.f);
+
+	// generate matrices
+
+	btf32 len = m::Length(jointPosR - fpCurrentR);
 	if (len > leglen) len = leglen;
 	btf32 lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
-	m::Vector3 vecfw = m::Normalize(footPosR - jointPosR);
+	m::Vector3 vecfw = m::Normalize(fpCurrentR - jointPosR);
 	m::Vector3 vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
 	m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
 	m::Vector3 vecup2 = vecup * -1.f;
@@ -414,12 +404,12 @@ void DrawChara(void* ent)
 	graphics::SetFrontFace();
 	// transform legR for cloak
 	//graphics::MatrixTransformForwardUp(matrixLegR, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
-	graphics::MatrixTransformForwardUp(matLegUpR, t_body.GetPosition(), footPosR - t_body.GetPosition(), t_body.GetForward());
+	graphics::MatrixTransformForwardUp(matLegUpR, t_body.GetPosition(), fpCurrentR - t_body.GetPosition(), t_body.GetForward());
 
-	len = m::Length(jointPosL - footPosL);
+	len = m::Length(jointPosL - fpCurrentL);
 	if (len > leglen) len = leglen;
 	lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
-	vecfw = m::Normalize(footPosL - jointPosL);
+	vecfw = m::Normalize(fpCurrentL - jointPosL);
 	vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
 	vecup = m::Normalize(m::Cross(vecfw, vecside));
 	vecup2 = vecup * -1.f;
@@ -430,7 +420,7 @@ void DrawChara(void* ent)
 	DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 	// transform legL for cloak
 	//graphics::MatrixTransformForwardUp(matrixLegL, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
-	graphics::MatrixTransformForwardUp(matLegUpL, t_body.GetPosition(), footPosL - t_body.GetPosition(), t_body.GetForward());
+	graphics::MatrixTransformForwardUp(matLegUpL, t_body.GetPosition(), fpCurrentL - t_body.GetPosition(), t_body.GetForward());
 
 	// draw head
 
@@ -465,8 +455,6 @@ void DrawChara(void* ent)
 	#undef footPosTargR
 	#undef footPosTargL
 	#undef ani_body_lean
-	#undef footPosR
-	#undef footPosL
 	#undef t_head
 }
 void DrawEditorPawn(void* ent)

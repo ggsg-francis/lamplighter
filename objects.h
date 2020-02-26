@@ -223,7 +223,6 @@ enum FootState : btui8
 {
 	eL_DOWN,
 	eR_DOWN,
-	eBOTH_DOWN,
 };
 struct Chara : public Actor
 {
@@ -249,10 +248,15 @@ struct Chara : public Actor
 	Transform3D t_body, t_head;
 	m::Vector3 footPosTargR, footPosTargL, footPosR, footPosL;
 	m::Vector2 ani_body_lean;
+	bool aniSteppingL;
+	bool aniSteppingR;
+	btf32 aniStepAmountL;
+	btf32 aniStepAmountR;
 	graphics::Matrix4x4 matLegHipR, matLegUpR, matLegLoR, matLegFootR;
 	graphics::Matrix4x4 matLegHipL, matLegUpL, matLegLoL, matLegFootL;
 
-	FootState foot_state = eBOTH_DOWN;
+	//FootState foot_state = eBOTH_DOWN;
+	FootState foot_state = eL_DOWN;
 };
 struct EditorPawn : public Actor
 {

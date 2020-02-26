@@ -367,7 +367,8 @@ namespace m
 	}
 	btf32 QuadraticFootstep(const btf32 step_height = 2.f, const btf32 x = 0.f)
 	{
-		return pow(-step_height * x, 2) + step_height;
+		// TODO: optimize plz
+		return step_height - (pow(-step_height * x, 2)) - (step_height * 0.5f);
 	}
 
 	float Vec2Angle(const Vector2 & va, const Vector2 & vb)

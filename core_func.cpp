@@ -714,7 +714,7 @@ namespace index
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(7u); // heal
-		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
+		CHARA(id)->foot_state = FootState::eL_DOWN;
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
@@ -732,7 +732,7 @@ namespace index
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(7u); // heal
-		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
+		CHARA(id)->foot_state = FootState::eL_DOWN;
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
@@ -749,7 +749,7 @@ namespace index
 		CHARA(id)->inventory.AddNew(0u);
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
+		CHARA(id)->foot_state = FootState::eL_DOWN;
 	}
 
 	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)
@@ -764,7 +764,7 @@ namespace index
 		CHARA(id)->speed = 3.5f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(4u);
-		CHARA(id)->foot_state = FootState::eBOTH_DOWN;
+		CHARA(id)->foot_state = FootState::eL_DOWN;
 	}
 
 	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)
