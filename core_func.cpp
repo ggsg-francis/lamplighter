@@ -33,9 +33,12 @@ namespace index
 
 		// bad and temporary :P
 		// makes npc not point the gun at allies
-		actor->inputBV.setto(Actor::ActorInput::IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
-		actor->inputBV.setto(Actor::ActorInput::IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
-
+		if (GetItemType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
+		{
+			actor->inputBV.setto(Actor::ActorInput::IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
+			actor->inputBV.setto(Actor::ActorInput::IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
+		}
+		
 		if (actor->ai_target_ent == BUF_NULL)
 		{
 			if (actor->ai_ally_ent == BUF_NULL)
@@ -73,7 +76,14 @@ namespace index
 
 			actor->inputBV.unset(Actor::IN_USE);
 
-			if (distance_to_target < 1.5f) // if enemy is close enough to swing at
+			btf32 attack_dist = 1.5f;
+			// if its a ranged weapon, set the attack range higher
+			if (GetItemType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
+			{
+				attack_dist = 30.f;
+			}
+
+			if (distance_to_target < attack_dist) // if enemy is close enough to swing at
 			{
 				//compute rotation
 				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);

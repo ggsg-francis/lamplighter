@@ -88,6 +88,7 @@ typedef struct StatusEffect {
 	btui32 reserved;
 } StatusEffect;
 
+// TODO: merge with entity?? should be able to produce sfx
 struct ActiveState
 {
 	// Global properties, ultimately to be used by every object in the game, incl. environment tiles
@@ -160,6 +161,8 @@ struct Entity
 	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
 	btf32 height = 1.9f; // Height of the entity cylinder
 	Transform2D t;
+	// foot slide for slippery surfaces / knockback etc.
+	m::Vector2 slideVelocity;
 };
 // Entity type representing placed items
 struct RestingItem : public Entity
@@ -243,7 +246,6 @@ struct Chara : public Actor
 	//	ani_right_foot = (0x1ui8 << 0x0ui8),
 	//}; 
 	//mem::bv<btui8, CharaActiveState> charastatebv;
-
 
 	Transform3D t_body, t_head;
 	m::Vector3 footPosTargR, footPosTargL, footPosR, footPosL;

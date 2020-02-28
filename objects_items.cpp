@@ -52,54 +52,72 @@ bool HeldItemBlockMove(btID id)
 void HeldMelTick(btID id, btf32 dt, Actor* owner)
 {
 	HeldMel* self = GETITEM_MELEE(id);
-	if (owner->inputBV.get(Actor::IN_ACTN_A))
-		self->ePose = HeldMel::HOLDSTATE_SWING_OVERHEAD;
-	else if (owner->inputBV.get(Actor::IN_ACTN_B))
-		self->ePose = HeldMel::HOLDSTATE_SWING_SIDE;
-	else if (owner->inputBV.get(Actor::IN_ACTN_C))
-		self->ePose = HeldMel::HOLDSTATE_THRUST;
-
-	switch ((self->ePose))
+	
+	if (self->swinging == HeldMel::SWINGSTATE_IDLE)
 	{
-	case HeldMel::HOLDSTATE_SWING_OVERHEAD:
+		if (owner->inputBV.get(Actor::IN_ACTN_A))
+			self->ePose = HeldMel::HOLD_POSE_SWING_OVERHEAD;
+		else if (owner->inputBV.get(Actor::IN_ACTN_B))
+			self->ePose = HeldMel::HOLD_POSE_SWING_SIDE;
+		else if (owner->inputBV.get(Actor::IN_ACTN_C))
+			self->ePose = HeldMel::HOLD_POSE_THRUST;
+
+		//if (owner->inputBV.get(Actor::IN_USE_HIT))
 		if (owner->inputBV.get(Actor::IN_USE))
 		{
-			self->loc = m::Lerp(self->loc, m::Vector3(0.1f, 1.f, 0.25f), 0.3f);
-			self->yaw = m::Lerp(self->yaw, -35.f, 0.3f);
-			self->pitch = m::Lerp(self->pitch, 20.f, 0.3f);
+			self->swinging = HeldMel::SWINGSTATE_ATTACK;
+			aud::PlaySnd(aud::FILE_SWING, self->t_item.pos_glm);
+		}
+	}
+	else if (self->swinging == HeldMel::SWINGSTATE_ATTACK)
+	{
+		self->swingState += 0.075f;
+		// if in the middle of the swing, try damage
+		if (self->swingState > 0.4f && self->swingState < 0.75f)
+		{
+			// if has enemy target, damage it
 			if (owner->atk_target != BUF_NULL)
 			{
 				Entity* ent = (Entity*)index::GetEntityPtr(owner->atk_target);
-				ent->state.Damage(0.01f, self->yaw);
+				ent->state.Damage(0.3f, self->yaw);
+				aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
+				ent->slideVelocity += m::AngToVec2(owner->t.yaw.Rad()) * 0.2f;
+				// exit swing early
+				self->swinging = HeldMel::SWINGSTATE_RESET;
 			}
 		}
-		else
+		// if completed swing
+		if (self->swingState > 1.f)
 		{
-			self->loc = m::Lerp(self->loc, m::Vector3(0.1f, 1.f, 0.25f), 0.2f);
-			self->yaw = m::Lerp(self->yaw, 35.f, 0.2f);
-			self->pitch = m::Lerp(self->pitch, -60.f, 0.2f);
+			self->swinging = HeldMel::SWINGSTATE_RESET;
 		}
+	}
+	else // reset
+	{
+		self->swingState -= 0.2f;
+		if (self->swingState < 0.f)
+		{
+			self->swingState = 0.f;
+			self->swinging = HeldMel::SWINGSTATE_IDLE;
+		}
+	}
+
+	switch ((self->ePose))
+	{
+	case HeldMel::HOLD_POSE_SWING_OVERHEAD:
+		self->loc = m::Lerp(m::Vector3(0.1f, 1.f, 0.25f), m::Vector3(0.1f, 1.f, 0.25f), self->swingState);
+		self->yaw = m::Lerp(35.f, -45.f, self->swingState);
+		self->pitch = m::Lerp(-60.f, 60.f, self->swingState);
 		break;
-	case HeldMel::HOLDSTATE_SWING_SIDE:
-		if (owner->inputBV.get(Actor::IN_USE))
-		{
-			self->loc = m::Lerp(self->loc, m::Vector3(-0.2f, 1.1f, 0.1f), 0.2f);
-			self->yaw = m::Lerp(self->yaw, -85.f, 0.2f);
-			self->pitch = m::Lerp(self->pitch, -20.f, 0.2f);
-		}
-		else
-		{
-			self->loc = m::Lerp(self->loc, m::Vector3(-0.2f, 1.1f, 0.3f), 0.1f);
-			self->yaw = m::Lerp(self->yaw, 85.f, 0.1f);
-			self->pitch = m::Lerp(self->pitch, -20.f, 0.1f);
-		}
+	case HeldMel::HOLD_POSE_SWING_SIDE:
+		self->loc = m::Lerp(m::Vector3(-0.2f, 1.1f, 0.3f), m::Vector3(-0.2f, 1.1f, 0.1f), self->swingState);
+		self->yaw = m::Lerp(85.f, -85.f, self->swingState);
+		self->pitch = m::Lerp(-20.f, -20.f, self->swingState);
 		break;
-	case HeldMel::HOLDSTATE_THRUST:
-		owner->inputBV.get(Actor::IN_USE) ?
-			self->loc = m::Lerp(self->loc, m::Vector3(0.13f, 1.0f, 0.6f), 0.6f) :
-			self->loc = m::Lerp(self->loc, m::Vector3(0.13f, 1.0f, 0.1f), 0.1f);
-		self->yaw = m::Lerp(self->yaw, 0.f, 0.3f);
-		self->pitch = m::Lerp(self->pitch, owner->viewPitch.Deg(), 0.1f);
+	case HeldMel::HOLD_POSE_THRUST:
+		self->loc = m::Lerp(m::Vector3(0.13f, 1.0f, 0.1f), m::Vector3(0.13f, 1.0f, 0.6f), self->swingState);
+		self->yaw = 0.f;
+		self->pitch = owner->viewPitch.Deg();
 		break;
 	}
 }
@@ -124,13 +142,13 @@ m::Vector3 HeldMelGetLeftHandPos(btID id)
 	HeldMel* self = GETITEM_MELEE(id);
 	switch ((self->ePose))
 	{
-	case HeldMel::HOLDSTATE_SWING_OVERHEAD:
+	case HeldMel::HOLD_POSE_SWING_OVERHEAD:
 		return self->t_item.GetPosition();
 		break;
-	case HeldMel::HOLDSTATE_SWING_SIDE:
+	case HeldMel::HOLD_POSE_SWING_SIDE:
 		return self->t_item.GetPosition();
 		break;
-	case HeldMel::HOLDSTATE_THRUST:
+	case HeldMel::HOLD_POSE_THRUST:
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 0.25f;
 		break;
 	}
@@ -140,13 +158,13 @@ m::Vector3 HeldMelGetRightHandPos(btID id)
 	HeldMel* self = GETITEM_MELEE(id);
 	switch ((self->ePose))
 	{
-	case HeldMel::HOLDSTATE_SWING_OVERHEAD:
+	case HeldMel::HOLD_POSE_SWING_OVERHEAD:
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 0.2f;
 		break;
-	case HeldMel::HOLDSTATE_SWING_SIDE:
+	case HeldMel::HOLD_POSE_SWING_SIDE:
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 0.3f;
 		break;
-	case HeldMel::HOLDSTATE_THRUST:
+	case HeldMel::HOLD_POSE_THRUST:
 		return self->t_item.GetPosition() + self->t_item.GetForward() * -0.15f;
 		break;
 	}
@@ -194,7 +212,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 
 			self->fire_time = Time::time + 0.1f;
 
-			aud::PlayGunshotTemp(true); // Play gunshot sound
+			aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
 			//loc_velocity.z -= 0.12f;
 			self->loc_velocity.z -= m::Random(0.03f, 0.06f);
 			//pitch_velocity -= 19.f;
@@ -222,7 +240,8 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				index::SpawnProjectile(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 			}
 
-			owner->t.velocity = m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
+			//owner->t.velocity = m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
+			owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
 		}
 	}
 
@@ -292,12 +311,12 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 		self->stateBV.unset(UNSET_FIRE); // unset
 		if (self->stateBV.get(BARREL_ROD_IN))
 		{
-			aud::PlayGunshotTemp(false); // Play gunshot sound
+			//aud::PlayGunshotTemp(false, self->t_item.pos_glm); // Play gunshot sound
 			self->stateBV.set(LOST_ROD);
 		}
 		else
 		{
-			aud::PlayGunshotTemp(true); // Play gunshot sound
+			aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
 			self->loc_velocity.z -= 0.12f;
 			self->pitch_velocity -= 19.f;
 
@@ -324,7 +343,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 		&& self->stateBV.get(FPAN_POWDER_IN))
 	{
 		self->stateBV.unset(UNSET_FIRE); // unset
-		aud::PlayGunshotTemp(false); // Play gunshot sound
+		aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
 	}
 
 	if (owner->atk_target != BUF_NULL)

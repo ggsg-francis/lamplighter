@@ -96,11 +96,23 @@ namespace res
 			graphics::colour(31ui8, 29ui8, 29ui8, 255ui8),
 		};
 
+		int presets_temp[4][3]
+		{
+			{ 0, 0, 0 },
+			{ 1, 1, 1 },
+			{ 2, 2, 2 },
+			{ 3, 3, 3 },
+		};
+
 		for (int i = 0; i < 4; i++)
 		{
 			col_base = colBase[rand() % 4];
 			col_eyes = colEyes[rand() % 6];
 			col_nose = colNose[rand() % 4];
+
+			col_base = colBase[presets_temp[i][0]];
+			col_eyes = colEyes[presets_temp[i][1]];
+			col_nose = colNose[presets_temp[i][2]];
 
 			graphics::colour col_transparent = graphics::colour(0ui8, 0ui8, 0ui8, 0ui8);
 

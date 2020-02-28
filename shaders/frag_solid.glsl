@@ -63,18 +63,24 @@ float dither(float color, float index_value) {
 	return (distance < index_value) ? closestColor : secondClosestColor;
 }
 
+// lower value = more blending
+// Standard
+//const float shadowDepthBlend = 2048.f;
+// smooth
+const float shadowDepthBlend = 512.f;
+
 float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize)
 {
 	vec2 nearestpoint = (round(projCoords.xy * tsize.x) - 0.5) / tsize.x; // also seems to work, for some reason
 	vec2 offset = (projCoords.xy - nearestpoint) / texelSize.x; // known to work
 	return mix( // X1xX2 x X3xX4 (Y lerp)
 		mix( // X1, X2 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint).r) * 2048.f, 0.0, 1.0),                          // Shadow A
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 0) * texelSize).r) * 2048.f, 0.0, 1.0), // Shadow B
+			1 - clamp((projCoords.z - texture(tshadow, nearestpoint).r) * shadowDepthBlend, 0.0, 1.0),                          // Shadow A
+			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 0) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow B
 			abs(offset.x)),
 		mix( // X3, X4 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(0, 1) * texelSize).r) * 2048.f, 0.0, 1.0), // Shadow C
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 1) * texelSize).r) * 2048.f, 0.0, 1.0), // Shadow D
+			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(0, 1) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow C
+			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 1) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow D
 			abs(offset.x)),
 		abs(offset.y));
 }

@@ -59,8 +59,6 @@ namespace res
 		t_sky, // role is indeterminate so name is vague
 		m_skymoon,
 		t_skymoon,
-		// terrain
-		m_terrain_tile_neutral,
 		// Chara textures
 		t_skin_template,
 		t_skin2,
@@ -105,6 +103,7 @@ namespace res
 		t_gui_box,
 		t_gui_select_box,
 		t_gui_icon_pick_up,
+		t_gui_hurt,
 	};
 
 	graphics::Texture& GetT(btui32 index);

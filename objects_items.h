@@ -98,21 +98,30 @@ struct HeldItem
 	bool(*fpBlockMove)(btID self);
 };
 
-// Magic caster instance
+// Melee weapon instance
 struct HeldMel : public HeldItem
 {
 	// GUN STUFF (will eventually end up elsewhere)
 	enum HoldPose : btui8
 	{
-		HOLDSTATE_SWING_OVERHEAD,
-		HOLDSTATE_SWING_SIDE,
-		HOLDSTATE_THRUST,
+		HOLD_POSE_SWING_OVERHEAD,
+		HOLD_POSE_SWING_SIDE,
+		HOLD_POSE_THRUST,
 	};
-	HoldPose ePose = HOLDSTATE_SWING_OVERHEAD;
+	HoldPose ePose = HOLD_POSE_SWING_OVERHEAD;
 
 	m::Vector3 loc = m::Vector3(0.f, 0.9f, 0.4f);
 	btf32 pitch = -90.f;
 	btf32 yaw = 0.f;
+
+	enum SwingState : btui8
+	{
+		SWINGSTATE_IDLE,
+		SWINGSTATE_ATTACK,
+		SWINGSTATE_RESET,
+	};
+	SwingState swinging = SWINGSTATE_IDLE;
+	btf32 swingState = 0.f;
 };
 
 // Regular gun instance

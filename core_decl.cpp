@@ -33,8 +33,10 @@ namespace index
 	unsigned int activePlayer = 0u;
 	btID players[2];
 	m::Vector2 viewpos;
-	btID viewtarget[2]{ ID_NULL,ID_NULL };
-	btID viewtarget_last_tick[2]{ ID_NULL,ID_NULL };
+	btID viewtarget[2]{ ID_NULL, ID_NULL };
+	btID viewtarget_last_tick[2]{ ID_NULL, ID_NULL };
+	// for measuring HP changes for gui display
+	btf32 player_hp[2]{ 1.f, 1.f };
 
 	env::EnvNode editor_node_copy;
 

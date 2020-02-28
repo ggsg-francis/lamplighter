@@ -471,12 +471,13 @@ namespace graphics
 		glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
 	}
 
-	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h)
+	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h, btf32 opacity)
 	{
 		Shader* shader = &gPtr->shaders[S_GUI];
 
 		// TEEEEMMP TEMP TEMP TEMP
 		guibmp.SetShader(shader);
+		shader->SetFloat(Shader::Opacity, opacity);
 		guibmp.SetTexture(texture->glID);
 		guibmp.Draw(x, y, w, h);
 	}

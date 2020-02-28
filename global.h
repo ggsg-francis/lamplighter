@@ -11,6 +11,9 @@
 //#define DEF_LINEAR_FB
 //#define DEF_DRAW_WIREFRAME
 #define DEF_SMOOTH_FRAMERATE
+// use cute sound
+#define DEF_USE_CS
+#define DEF_PERIODIC_SPAWN
 
 // Any debug only defines
 #ifdef _DEBUG
@@ -45,7 +48,7 @@
 
 #define VERSION_SERVER_MAJOR 0u
 #define VERSION_SERVER_MINOR 14u
-#define VERSION_COMMENT "Raycast"
+#define VERSION_COMMENT "PSI"
 
 #define MD_MATRIX_COUNT 4u
 

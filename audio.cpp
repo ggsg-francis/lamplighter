@@ -2,8 +2,13 @@
 
 //#include <SDL2\SDL.h>
 
+#include "maths.hpp"
+// for transform2d only
+#include "objects.h"
+#include "index.h"
 
 #ifdef DEF_USE_CS
+//#define CUTE_SOUND_FORCE_SDL
 #define CUTE_SOUND_IMPLEMENTATION
 #include "3rdparty\cute_sound.h"
 #else
@@ -11,35 +16,92 @@
 using namespace irrklang;
 #endif // DEF_USE_CS
 
-
 namespace aud
 {
 	#ifdef DEF_USE_CS
 
+	char* fileNames[]
+	{
+		"snd/fire_smg.wav",
+		"snd/swing.wav",
+		//"snd/swing_connect.wav",
+		"snd/hitMW.wav",
+		"snd/hey.wav",
+	};
+
 	cs_context_t* ctx;
-	cs_loaded_sound_t loaded;
-	cs_play_sound_def_t def;
-	cs_playing_sound_t* sound;
+	cs_loaded_sound_t loaded[FILE_COUNT];
+	cs_play_sound_def_t def[FILE_COUNT];
+	cs_playing_sound_t* sound[FILE_COUNT];
+
+	cs_loaded_sound_t loaded_shot;
+	cs_play_sound_def_t def_shot;
+	cs_playing_sound_t* sound_shot;
 
 	void Init(void* handle)
 	{
-		ctx = cs_make_context(handle, 100, 1, 1000, 32);
+		//ctx = cs_make_context(handle, 44100, 8192, 0, 32);
+		//ctx = cs_make_context(handle, 100, 1, 1000, 32); 
+		//ctx = cs_make_context(handle, 44100, 8192, 1, 32);
+		ctx = cs_make_context(handle, 44100, 10, 1, 32);
+		if (ctx)
+		{
+			int breakpoint = 1;
+			//do things
+			for (int i = 0; i < FILE_COUNT; ++i)
+			{
+				loaded[i] = cs_load_wav(fileNames[i]);
+				def[i] = cs_make_def(&loaded[i]);
+			}
 
-		loaded = cs_load_wav("resources/hey.wav");
-		def = cs_make_def(&loaded);
-		sound = cs_play_sound(ctx, def);
+			sound[FILE_TAUNT] = cs_play_sound(ctx, def[FILE_TAUNT]);
 
-		//SoundEngine = createIrrKlangDevice();
+			loaded_shot = cs_load_wav("snd/fire_smg.wav");
+			def_shot = cs_make_def(&loaded_shot);
+		}
+		else
+		{
+			int breakpoint = 1;
+		}
 	}
 
-	void PlaySnd()
+	void Update(btf64 dt)
 	{
-		//SoundEngine->play2D("resources/mus_beep.mp3", false);
+		if (ctx)
+		{
+			cs_mix(ctx);
+		}
+	}
+
+	void PlaySnd(AudioFile file, m::Vector3 src)
+	{
+		// todo: caluclate panning based on proximity to L and R player
+		// calculate the distance between this sound and each listener (just one atm)
+		btf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[0])->t.position);
+		btf32 distance_1 = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[1])->t.position);
+		// get closest distance (temp until using panning)
+		btf32 distance = distance_1;
+		if (distance_0 <= distance_1) { distance = distance_0; }
+		// stop this function if the distance is too large
+		if (distance > 15.f) return;
+		// calculate volume from distance
+		btf32 vol = (15.f - distance) / 15.f;
+		// play the sound		
+		sound[file] = cs_play_sound(ctx, def[file]);
+		if (sound[file])
+		{
+			sound[file]->volume0 = vol;
+			sound[file]->volume1 = vol;
+		}
 	}
 
 	void End()
 	{
-		cs_shutdown_context(ctx);
+		for (int i = 0; i < FILE_COUNT; ++i)
+		{
+			cs_free_sound(&loaded[i]);
+		}
+		free(ctx);
 	}
 
 	#else
@@ -57,11 +119,34 @@ namespace aud
 		SoundEngine->play2D("snd/hey.wav", false);
 	}
 
-	void PlayGunshotTemp(bool shot)
+	void PlayGunshotTemp(bool shot, m::Vector3 src)
 	{
-		if (shot) SoundEngine->play2D("snd/fire_smg.wav", false);
-		else SoundEngine->play2D("snd/fire_no_shot.wav", false);
-		//SoundEngine->play3D();
+		btf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[0])->t.position);
+		btf32 vol = 5.f - (distance / 5.f);
+		if (vol > 1.f) vol = 1.f;
+
+		if (shot)
+		{
+			//ISound* snd = SoundEngine->play2D("snd/fire_smg.wav", false);
+			ISound* snd =SoundEngine->play3D("snd/fire_smg.wav", vec3df(-1, 0, 0));
+			if (snd)
+			{
+				snd->setVolume(0.f);
+			}
+		}
+		else
+		{
+			ISound* snd = SoundEngine->play2D("snd/fire_no_shot.wav", false);
+			if (snd)
+			{
+				snd->setVolume(vol);
+			}
+		}
+		
+		//m::Vector3 globalOffset = src - m::Vector3(listener.position.x, listener.height, listener.position.y);
+		//m::Vector2 ang = m::AngToVec2(listener.yaw.Rad());
+		//btf32 LRDot = m::Dot(m::Vector2(globalOffset.x, globalOffset.z), ang);
+		//SoundEngine->play3D("snd/fire_smg.wav", vec3df(-1, 0, 0));
 	}
 
 	void End()

@@ -36,6 +36,12 @@
 //for transform rotation
 #include <glm\gtc\quaternion.hpp>
 
+#ifdef DEF_USE_CS
+// For getting the window handle
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW\glfw3native.h>
+#endif
+
 //engine
 //try not to include so many things!
 #include "graphics.hpp"
@@ -401,10 +407,12 @@ int main()
 
 	res::Init();
 	#ifdef DEF_USE_CS
-	SDL_SysWMinfo wmInfo;
+	/*SDL_SysWMinfo wmInfo;
 	SDL_VERSION(&wmInfo.version);
 	SDL_GetWindowWMInfo(sdl_window, &wmInfo);
 	HWND hwnd = wmInfo.info.win.window;
+	aud::Init(hwnd);*/
+	HWND hwnd = glfwGetWin32Window(window);
 	aud::Init(hwnd);
 	#else
 	aud::Init();
@@ -435,6 +443,9 @@ updtime:
 		}
 		next_frame_time = current_frame_time + FRAME_TIME;
 		Time::Update(current_frame_time);
+
+		aud::Update(Time::deltaTime);
+
 		#else
 		// Just run the new frame now
 		current_frame_time = (btf64)glfwGetTime();

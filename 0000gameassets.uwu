@@ -86,11 +86,6 @@ srca resources/sky_moon.tga
 tfil linearmip
 tedg clamp
 <<<<
-**** TERRAIN
-item mesh
-hndl MTTileNe
-srca resources/environment/terrain/tile_neutral.fbx
-<<<<
 **** ------------------------------------------------------------------------------------ CHARACTER TEXTURES
 item txtr
 **** character skin 1
@@ -300,6 +295,13 @@ item txtr
 hndl TGUI_IPU
 tfil nearest
 srca resources/gui/icon_pick_up.tga
+<<<<
+**** Hurt effect
+item txtr
+hndl TGUIHurt
+srca resources/gui_hurt.tga
+tfil linear
+tedg clamp
 <<<<
 **** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 **** ASSETS BEYOND THIS POINT ARE NOT DIRECTLY REFERENCED WITHIN THE GAME CODE ----------

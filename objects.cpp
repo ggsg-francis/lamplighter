@@ -9,6 +9,8 @@
 #include "core.h"
 #include "cfg.h"
 
+#include "audio.hpp"
+
 graphics::GUIText text_inventory_temp;
 graphics::GUIBox guibox_selection;
 
@@ -133,6 +135,8 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 		index::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
 	}
 
+	ent->t.position += ent->slideVelocity;
+
 	// Modify position
 	btf32 eheight;
 
@@ -148,6 +152,8 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 		{
 			ent->t.height_velocity -= 0.006f; // Add gravity
 			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
+			ent->slideVelocity *= 0.8f;
+
 			ent->t.position += ent->t.velocity; // Apply velocity
 			ent->t.height += ent->t.height_velocity; // Apply velocity
 		}
@@ -178,6 +184,7 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.f;
 		}
 		if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
+		ent->slideVelocity *= 0.8f;
 		ent->t.position += ent->t.velocity; // Apply velocity
 		ent->t.height += ent->t.height_velocity; // Apply velocity
 		break;
@@ -326,10 +333,14 @@ void DrawChara(void* ent)
 
 	m::Vector2 right = m::Vector2(t_body.GetRight().x, t_body.GetRight().z);
 
+	// TODO: instead measure difference between base velocity and footslide velocity
+	//btf32 velocityAmt = m::Length(t.velocity);
+	btf32 velocityAmt = m::Length(t.velocity - chr->slideVelocity);
+
 	if (foot_state == eL_DOWN)
 	{
 		// if moving ignore leg length
-		if (m::Length(t.velocity) > 0.025f)
+		if (velocityAmt > 0.025f)
 		{
 			if (chr->aniStepAmountR > 0.9f) // if other step nearly done
 			{
@@ -351,7 +362,7 @@ void DrawChara(void* ent)
 	else if (foot_state == eR_DOWN)
 	{
 		// if moving ignore leg length
-		if (m::Length(t.velocity) > 0.025f)
+		if (velocityAmt > 0.025f)
 		{
 			if (chr->aniStepAmountL > 0.9f) // if other step nearly done
 			{
@@ -373,15 +384,15 @@ void DrawChara(void* ent)
 
 	// set step positions
 
-	chr->aniStepAmountL += 0.04f;
+	chr->aniStepAmountL += 0.05f;
 	if (chr->aniStepAmountL > 1.f)
 		chr->aniStepAmountL = 1.f;
-	chr->aniStepAmountR += 0.04f;
+	chr->aniStepAmountR += 0.05f;
 	if (chr->aniStepAmountR > 1.f)
 		chr->aniStepAmountR = 1.f;
 
-	btf32 fpHeightL = m::QuadraticFootstep(0.5f, chr->aniStepAmountL * 2.f - 1.f);
-	btf32 fpHeightR = m::QuadraticFootstep(0.5f, chr->aniStepAmountR * 2.f - 1.f);
+	btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountL * 2.f - 1.f);
+	btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountR * 2.f - 1.f);
 
 	m::Vector3 fpCurrentL = m::Lerp(chr->footPosL, footPosTargL, chr->aniStepAmountL) + m::Vector3(0.f, fpHeightL, 0.f);
 	m::Vector3 fpCurrentR = m::Lerp(chr->footPosR, footPosTargR, chr->aniStepAmountR) + m::Vector3(0.f, fpHeightR, 0.f);
@@ -472,6 +483,8 @@ void DrawEditorPawn(void* ent)
 
 void ActiveState::Damage(btf32 amount, btf32 angle)
 {
+	//aud::PlaySnd(aud::FILE_SWING_CONNECT, );
+
 	hp -= amount;
 	if (hp <= 0.f)
 	{
@@ -673,8 +686,6 @@ void TickChara(void* ent, btf32 dt)
 	#define footPosTargR chr->footPosTargR
 	#define footPosTargL chr->footPosTargL
 	#define ani_body_lean chr->ani_body_lean
-	#define footPosR chr->footPosR
-	#define footPosL chr->footPosL
 	#define t_head chr->t_head
 	#define state chr->state
 	#define input chr->input
@@ -752,7 +763,7 @@ void TickChara(void* ent, btf32 dt)
 		t_body = Transform3D();
 		t_head = Transform3D();
 
-		t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.6f, chr->t.position.y));
+		t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.6f - (m::Length(chr->slideVelocity) * 0.5f), chr->t.position.y));
 		t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 
 		ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
@@ -766,6 +777,13 @@ void TickChara(void* ent, btf32 dt)
 		t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
 		t_head.Translate(t_body.GetUp() * 0.7f);
 		t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
+
+		//-------------------------------- HANDLE ANIMATION
+
+		chr->footPosL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+		chr->footPosR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+		footPosTargL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+		footPosTargR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
 	}
 	else
 	{
@@ -806,8 +824,6 @@ void TickChara(void* ent, btf32 dt)
 	#undef footPosTargR
 	#undef footPosTargL
 	#undef ani_body_lean
-	#undef footPosR
-	#undef footPosL
 	#undef t_head
 	#undef state
 	#undef input

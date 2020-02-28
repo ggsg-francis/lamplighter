@@ -229,11 +229,11 @@ namespace index
 					{
 						if (m::Length(pos1 - pos3) < 16.f && m::Length(pos2 - pos3) < 16.f) // ..or too far away
 						{
-							btf32 random = m::Random(0.f, 10.f);
+							btf32 random = m::Random(0.f, 15.f);
 							btui32 rand_rnd = (btui32)floor(random);
-							if (rand_rnd < 2u)
+							if (rand_rnd < 1u)
 								SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
-							else if (rand_rnd < 4u)
+							else if (rand_rnd < 5u)
 								SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
 							else
 								SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);
@@ -319,6 +319,7 @@ namespace index
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
 
+				/*
 				SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
 				SpawnNewEntityItem(1ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
 				SpawnNewEntityItem(2ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
@@ -327,6 +328,7 @@ namespace index
 				SpawnNewEntityItem(5ui16, m::Vector2(1023.5f, 1023.3f), 15.f);
 				SpawnNewEntityItem(6ui16, m::Vector2(1023.8f, 1023.4f), 15.f);
 				SpawnNewEntityItem(7ui16, m::Vector2(1023.6f, 1023.2f), 15.f);
+				*/
 
 				//DoSpawn();
 			}
@@ -379,15 +381,26 @@ namespace index
 		}
 	}
 
+	#ifdef DEF_PERIODIC_SPAWN
 	btf64 spawnz_time_temp = 0.;
+	#endif
 
 	void Tick(btf32 dt)
 	{
+		// check if either player is dead
+		if (!ENTITY(players[0])->state.stateFlags.get(ActiveState::eALIVE) || !ENTITY(players[1])->state.stateFlags.get(ActiveState::eALIVE))
+		{
+			//reload the game
+			LoadState();
+		}
+
+		#ifdef DEF_PERIODIC_SPAWN
 		if (!cfg::bEditMode && spawnz_time_temp < Time::time)
 		{
 			spawnz_time_temp = Time::time + 50.f;
 			DoSpawn();
 		}
+		#endif
 
 		//temporary destroy dead entities
 		///*
@@ -823,6 +836,18 @@ namespace index
 		if (message_time[activePlayer] > Time::time)
 			text_message[activePlayer].Draw(&res::GetT(res::t_gui_font));
 
+		// hurt effect
+		//graphics::DrawGUITexture(&res::GetT(res::t_gui_hurt), 0, 0, cfg::iWinX, cfg::iWinY);
+		if (ENTITY(players[activePlayer])->state.hp < player_hp[activePlayer])
+		{
+			graphics::DrawGUITexture(&res::GetT(res::t_gui_hurt), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(),
+				(player_hp[activePlayer] - ENTITY(players[activePlayer])->state.hp) * 10.f);
+			player_hp[activePlayer] -= 0.008f;
+		}
+		else
+		{
+			player_hp[activePlayer] = ENTITY(players[activePlayer])->state.hp;
+		}
 		// croshair
 		graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), 0, 0, 32, 32);
 		// hp

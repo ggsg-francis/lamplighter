@@ -40,9 +40,9 @@ uniform sampler2D tshadow; // texture shadow
 
 uniform vec3 vsun = normalize(vec3(-1,1,-1));
 uniform vec3 csun = vec3(0.15,0.1,0.1);
-uniform vec3 camb = vec3(0.2,0.2,0.3);
+uniform vec3 camb = vec3(-0.2,-0.2,-0.3);
 uniform vec3 fogcol = vec3(0.1,0.1,0.1);
-uniform vec3 litcol = vec3(1.f,1.f,1.f);
+uniform vec3 litcol = vec3(1.5f,1.5f,1.5f);
 
 uniform bool lit = true;
 
@@ -103,7 +103,7 @@ void main()
 	if (lit)
 	{
 		vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
-		LC = mix(camb + (litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g) + (csun * ndotl), vec3(1.f), Col.g);
+		LC = clamp(mix(camb + (litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g) + (csun * ndotl), vec3(1.f), Col.g), 0.0, 10.0);
 	}
 	else
 	{

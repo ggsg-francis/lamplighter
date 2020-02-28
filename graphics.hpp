@@ -211,6 +211,7 @@ namespace graphics
 			texTerrain2, // Terrain shader
 			texTerrain3, // Terrain shader
 			texTerrain4, // Terrain shader
+			Opacity,
 			LOCATION_COUNT,
 		};
 	private:
@@ -242,6 +243,7 @@ namespace graphics
 			"tt2",
 			"tt3",
 			"tt4",
+			"opa",
 		};
 	public:
 		// To ensure that there is no conflic with texture locations
@@ -512,7 +514,7 @@ namespace graphics
 
 
 
-	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h);
+	void DrawGUITexture(Texture* TEXTURE, bti32 X, bti32 Y, bti32 W, bti32 H, btf32 OPACITY = 1.f);
 
 
 

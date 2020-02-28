@@ -166,6 +166,14 @@ namespace serializer
 						type = ASSET_MESHDEFORM_FILE;
 					}
 
+					/*
+					char* test;
+					test = "mesh";
+					btui32 test2;
+					memcpy(&test2, test, 4);
+					int bp = 1;
+					*/
+
 					//....................................... READ ITEM PROPERTIES
 
 					oper = fgetc(file); //  Advance past line break

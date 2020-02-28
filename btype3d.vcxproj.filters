@@ -105,6 +105,9 @@
     <ClInclude Include="core_save_load.h">
       <Filter>gamework\index</Filter>
     </ClInclude>
+    <ClInclude Include="3rdparty\miniaudio.h">
+      <Filter>framework\3rdparty</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tga_reader.cpp">
