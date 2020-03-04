@@ -4,7 +4,8 @@
 
 #include "maths.hpp"
 // for transform2d only
-#include "objects.h"
+// TODO: put transform in its own file
+#include "objects_entities.h"
 #include "index.h"
 
 #ifdef DEF_USE_CS

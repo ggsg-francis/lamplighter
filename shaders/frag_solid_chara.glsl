@@ -20,7 +20,6 @@ uniform sampler2D ts; // texture sky
 uniform sampler2D tshadow; // texture shadow
 
 uniform vec3 vsun = normalize(vec3(-1,1,-1));
-uniform vec3 camb = vec3(0.f,0.f,0.f);
 
 uniform bool lit = true;
 

@@ -8,6 +8,7 @@ namespace cfg
 	extern bool bFullscreen;
 	extern bool bShowConsole;
 	extern bool bEditMode;
+	extern bool bSplitScreen;
 
 	extern unsigned int iIPA;
 	extern unsigned int iIPB;
@@ -19,9 +20,6 @@ namespace cfg
 	//window size
 	extern unsigned int iWinX;
 	extern unsigned int iWinY;
-	//render size
-	extern unsigned int iRenX;
-	extern unsigned int iRenY;
 
 	//camera stuff
 	extern float fCameraFOV;

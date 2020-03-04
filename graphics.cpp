@@ -155,19 +155,20 @@ namespace graphics
 		if (!cfg::bEditMode)
 		{
 			btui32 scale = x / SCREEN_UPSCALE_THRESHOLD + 1u;
-			btui32 scale_half = scale * 2u;
-			gPtr->frameSizeX = cfg::iWinX / scale_half;
 			gPtr->frameSizeY = cfg::iWinY / scale;
+			#ifndef DEF_MP
+			if (cfg::bSplitScreen) { scale *= 2u; x *= 0.5f; }
+			#endif
+			gPtr->frameSizeX = cfg::iWinX / scale;
+			gPtr->shaders[S_POST].Use();
+			gPtr->shaders[S_POST].SetFloat(gPtr->shaders[S_POST].fWindowX, (GLfloat)x);
+			gPtr->shaders[S_POST].SetFloat(gPtr->shaders[S_POST].fWindowY, (GLfloat)y);
 		}
 		else
 		{
 			gPtr->frameSizeX = cfg::iWinX;
 			gPtr->frameSizeY = cfg::iWinY;
 		}
-
-		gPtr->shaders[S_POST].Use();
-		gPtr->shaders[S_POST].SetFloat(gPtr->shaders[S_POST].fWindowX, (GLfloat)x * 0.5f);
-		gPtr->shaders[S_POST].SetFloat(gPtr->shaders[S_POST].fWindowY, (GLfloat)y);
 	}
 
 	glm::mat4 mat_proj;

@@ -1,7 +1,7 @@
 #include "objects_items.h"
 #include "audio.hpp"
 // not desirable but necessary for draw functions
-#include "objects.h"
+#include "objects_entities.h"
 #include "core.h"
 
 //________________________________________________________________________________________________________________________________
@@ -241,7 +241,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 			}
 
 			//owner->t.velocity = m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
-			owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
+			owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.03f; // set my velocity
 		}
 	}
 
@@ -380,20 +380,19 @@ void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 	switch ((self->ePose))
 	{
 	case HOLDSTATE_IDLE:
-		//loc = m::Lerp(loc, m::Vector3(0.13f, 1.0f, 0.1f), 0.1f);
-		/*m::SpringDamper(loc.x, loc_velocity.x, 0.13f, k_mov);
-		m::SpringDamper(loc.y, loc_velocity.y, 1.0f, k_mov);
-		m::SpringDamper(loc.z,  loc_velocity.z, 0.1f, k_mov);*/
-		m::SpringDamper(self->loc.x, self->loc_velocity.x, 0.13f, mass, spring_mov, damping);
+		/*m::SpringDamper(self->loc.x, self->loc_velocity.x, 0.13f, mass, spring_mov, damping);
 		m::SpringDamper(self->loc.y, self->loc_velocity.y, 0.9f, mass, spring_mov, damping);
 		m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.2f, mass, spring_mov, damping);
 
-		/*yaw = m::Lerp(yaw, -45.f, 0.1f);
-		pitch = m::Lerp(pitch, 20.f, 0.1f);*/
-		/*m::SpringDamper(yaw, yaw_velocity, -45.f, k_rot);
-		m::SpringDamper(pitch, pitch_velocity, 20.f, k_rot);*/
 		m::SpringDamper(self->yaw, self->yaw_velocity, -80.f, mass, spring_rot, damping);
-		m::SpringDamper(self->pitch, self->pitch_velocity, -33.f, mass, spring_rot, damping);
+		m::SpringDamper(self->pitch, self->pitch_velocity, -33.f, mass, spring_rot, damping);*/
+
+		m::SpringDamper(self->loc.x, self->loc_velocity.x, 0.2f, mass, spring_mov, damping);
+		m::SpringDamper(self->loc.y, self->loc_velocity.y, 1.1f, mass, spring_mov, damping);
+		m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.2f, mass, spring_mov, damping);
+
+		m::SpringDamper(self->yaw, self->yaw_velocity, -20.f, mass, spring_rot, damping);
+		m::SpringDamper(self->pitch, self->pitch_velocity, -80.f, mass, spring_rot, damping);
 		break;
 	case HOLDSTATE_AIM:
 		//loc = m::Lerp(loc, m::Vector3(0.08f, 1.3f, 0.4f), 0.1f);
@@ -470,7 +469,8 @@ m::Vector3 HeldGunGetLeftHandPos(btID id)
 {
 	HeldGun* self = GETITEM_GUN(id);
 	if (self->ePose != HeldGun::HOLDSTATE_BARREL) // If holding normally
-		return self->t_item.GetPosition() + self->t_item.GetForward() * 0.4f;
+		//return self->t_item.GetPosition() + self->t_item.GetForward() * 0.4f; // rifle
+		return self->t_item.GetPosition() + self->t_item.GetUp() * -0.1f;
 	else
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 1.f;
 }

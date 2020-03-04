@@ -139,7 +139,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\libraries\bin</AdditionalLibraryDirectories>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <AdditionalDependencies>opengl32.lib;glfw3.lib;irrKlang.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -158,10 +158,10 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="maths.cpp" />
     <ClCompile Include="memory.cpp" />
-    <ClCompile Include="objects.cpp" />
+    <ClCompile Include="objects_entities.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="graphics.cpp" />
-    <ClCompile Include="engine-main.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="archive.cpp" />
     <ClCompile Include="objects_items.cpp" />
     <ClCompile Include="serializer.cpp" />
@@ -174,7 +174,6 @@
   <ItemGroup>
     <ClInclude Include="3rdparty\cute_c2.h" />
     <ClInclude Include="3rdparty\cute_sound.h" />
-    <ClInclude Include="3rdparty\miniaudio.h" />
     <ClInclude Include="core_save_load.h" />
     <ClInclude Include="graphics_structures.h" />
     <ClInclude Include="index.h" />
@@ -192,7 +191,7 @@
     <ClInclude Include="input.h" />
     <ClInclude Include="memory.hpp" />
     <ClInclude Include="maths.hpp" />
-    <ClInclude Include="objects.h" />
+    <ClInclude Include="objects_entities.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="graphics.hpp" />
     <ClInclude Include="objects_items.h" />

@@ -511,17 +511,19 @@ render:
 
 	//-------------------------------- BUFFER 2 (RIGHT SCREEN)
 
+	#ifndef DEF_MP
 	// Set GL properties for solid rendering
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
-
+	// Draw
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	index::SetViewFocus(1u);
 	index::Draw();
 	index::DrawGUI();
 	index::TickGUI(); // causes a crash if before drawgui (does it still?)
+	#endif // MP
 
 	//-------------------------------- DRAW FRAMEBUFFER
 
@@ -549,8 +551,14 @@ render:
 	glFrontFace(GL_CW);
 
 	glm::mat4 mat_fb = glm::mat4(1.0f);
-	mat_fb = glm::translate(mat_fb, glm::vec3(-0.5f, 0.f, 0.f));
-	mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
+	#ifndef DEF_MP
+	// Set frame matrix to half-screen
+	if (cfg::bSplitScreen)
+	{
+		mat_fb = glm::translate(mat_fb, glm::vec3(-0.5f, 0.f, 0.f));
+		mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
+	}
+	#endif // MP
 	// get matrix's uniform location and set matrix
 	graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
 
@@ -562,24 +570,29 @@ render:
 
 	// BUFFER 2
 
-	// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_2);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_intermediate);
-	glBlitFramebuffer(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	#ifndef DEF_MP
+	if (cfg::bSplitScreen)
+	{
+		// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_2);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_intermediate);
+		glBlitFramebuffer(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	mat_fb = glm::mat4(1.0f);
-	mat_fb = glm::translate(mat_fb, glm::vec3(0.5f, 0.f, 0.f));
-	mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
-	// get matrix's uniform location and set matrix
-	graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
+		mat_fb = glm::mat4(1.0f);
+		mat_fb = glm::translate(mat_fb, glm::vec3(0.5f, 0.f, 0.f));
+		mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
+		// get matrix's uniform location and set matrix
+		graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
 
-	glBindVertexArray(quadVAO);
-	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
-	glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
-	glBindTexture(GL_TEXTURE_2D, screenTexture);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(quadVAO);
+		glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
+		glBindTexture(GL_TEXTURE_2D, screenTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	}
+	#endif // MP
 
 	// to do check up on this later!!
 	glActiveTexture(GL_TEXTURE0); // For some reason or other, the texture must be reset (probably forgotten elsewhere)

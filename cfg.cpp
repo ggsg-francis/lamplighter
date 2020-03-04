@@ -14,6 +14,7 @@ namespace cfg
 	bool bShowConsole = false;
 	// Run as editor
 	bool bEditMode = false;
+	bool bSplitScreen = false;
 
 	// IP address variables
 	unsigned int iIPA = 0;
@@ -26,9 +27,6 @@ namespace cfg
 	// Window size
 	unsigned int iWinX = 640;
 	unsigned int iWinY = 480;
-	// Render size
-	unsigned int iRenX = 640;
-	unsigned int iRenY = 480;
 
 	// Camera stuff
 	float fCameraFOV = 80.f;
@@ -42,8 +40,8 @@ namespace cfg
 	{
 		//temporary pointers used for this function only
 		//(although, they could be made global in the case that they become useful?)
-		bool* bptr[] = { &bFullscreen, &bShowConsole, &bEditMode };
-		unsigned int* iptr[] = { &iIPA, &iIPB, &iIPC, &iIPD, &iWinX, &iWinY, &iRenX, &iRenY };
+		bool* bptr[] = { &bFullscreen, &bShowConsole, &bEditMode, &bSplitScreen };
+		unsigned int* iptr[] = { &iIPA, &iIPB, &iIPC, &iIPD, &iWinX, &iWinY};
 		unsigned short* sptr[] = { &iIPPORT };
 		//std::string* sptr[] = { &sIP };
 		float* fptr[] = { &fCameraFOV, &fCameraSensitivity, &fCameraNearClip, &fCameraFarClip, &fSyncTimer };

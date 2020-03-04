@@ -72,9 +72,6 @@
     <ClInclude Include="objects_items.h">
       <Filter>gamework</Filter>
     </ClInclude>
-    <ClInclude Include="objects.h">
-      <Filter>gamework</Filter>
-    </ClInclude>
     <ClInclude Include="audio.hpp">
       <Filter>framework</Filter>
     </ClInclude>
@@ -105,8 +102,8 @@
     <ClInclude Include="core_save_load.h">
       <Filter>gamework\index</Filter>
     </ClInclude>
-    <ClInclude Include="3rdparty\miniaudio.h">
-      <Filter>framework\3rdparty</Filter>
+    <ClInclude Include="objects_entities.h">
+      <Filter>gamework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -126,7 +123,6 @@
     <ClCompile Include="memory.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="engine-main.cpp" />
     <ClCompile Include="env.cpp" />
     <ClCompile Include="entity.cpp">
       <Filter>gamework</Filter>
@@ -152,9 +148,6 @@
     <ClCompile Include="network_client.cpp">
       <Filter>framework\network</Filter>
     </ClCompile>
-    <ClCompile Include="objects.cpp">
-      <Filter>gamework</Filter>
-    </ClCompile>
     <ClCompile Include="objects_items.cpp">
       <Filter>gamework</Filter>
     </ClCompile>
@@ -173,6 +166,10 @@
     <ClCompile Include="core_save_load.cpp">
       <Filter>gamework\index</Filter>
     </ClCompile>
+    <ClCompile Include="objects_entities.cpp">
+      <Filter>gamework</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="btype3d.rc">

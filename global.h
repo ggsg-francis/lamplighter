@@ -3,6 +3,10 @@
 //#include <stdint.h>
 
 // Compiler configuration definitions
+
+// Alter the generic RPG engine into a multiplayer focused one optimised for the mech game
+//#define DEF_MP
+
 //#define DEF_OLDSKOOL // Use old rendering settings (nearest neighbor filtering, etc.
 //#define DEF_DEBUG_DISPLAY // Draw debug information
 //#define DEF_MULTISAMPLE
@@ -10,10 +14,10 @@
 #define DEF_HDR
 //#define DEF_LINEAR_FB
 //#define DEF_DRAW_WIREFRAME
-#define DEF_SMOOTH_FRAMERATE
+#define DEF_SMOOTH_FRAMERATE // Run the CPU a little hotter to make sure the framerate is as smooth as possible
 // use cute sound
 #define DEF_USE_CS
-#define DEF_PERIODIC_SPAWN
+//#define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
 
 // Any debug only defines
 #ifdef _DEBUG

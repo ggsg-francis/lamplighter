@@ -1,7 +1,7 @@
 #include "core_save_load.h"
 
 #include "core.h"
-#include "objects.h"
+#include "objects_entities.h"
 
 #include <stdio.h>
 

@@ -3,7 +3,7 @@
 #define CUTE_C2_IMPLEMENTATION
 #include "3rdparty/cute_c2.h"
 
-#include "objects.h"
+#include "objects_entities.h"
 #include "objects_items.h"
 #include "memoryC.h"
 
