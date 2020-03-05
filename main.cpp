@@ -216,10 +216,11 @@ int main()
 	//#include <stdio.h>
 
 	#ifdef _DEBUG
+	/*
 
 	unsigned int version = 0u;
 
-	FILE* file = fopen(".version_count.bin", "rb"); // Open file
+	FILE* file = fopen("../.version_count.bin", "rb"); // Open file
 	if (file != NULL)
 	{
 		fseek(file, 0, SEEK_SET); // Seek file beginning
@@ -227,7 +228,7 @@ int main()
 		fclose(file); // Close file
 	}
 
-	file = fopen("version.h", "wb"); // Open file
+	file = fopen("../version.h", "wb"); // Open file
 	if (file != NULL)
 	{
 		fseek(file, 0, SEEK_SET); // Seek file beginning
@@ -244,7 +245,7 @@ int main()
 
 	++version;
 
-	file = fopen(".version_count.bin", "wb"); // Open file
+	file = fopen("../.version_count.bin", "wb"); // Open file
 	if (file != NULL)
 	{
 		fseek(file, 0, SEEK_SET); // Seek file beginning
@@ -252,6 +253,7 @@ int main()
 		fclose(file); // Close file
 	}
 
+	*/
 	#endif 
 
 	//-------------------------------- TEST ZONE
@@ -420,6 +422,8 @@ int main()
 	index::Init();
 	input::Init();
 
+	index::SetShadowTexture(rendertexture_shadow);
+
 	//--------------------------------------------------------------------------------------------------------------------------------
 
 	//-------------------------------- ENTER GAME LOOP
@@ -475,7 +479,7 @@ updtime:
 
 	//--------------------------------------------------------------------------------------------------------------------------------
 
-	//-------------------------------- RENDER ENTITIES (TODO: try and clean this up a bit!)
+	//-------------------------------- RENDER
 
 render:
 
@@ -491,46 +495,49 @@ render:
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
-
-	// Test
+	//-------------------------------- RENDER SHADOWMAP
 	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(0u);
+	index::SetViewFocus(0u); // Set render POV
 	index::Draw(false);
-	index::SetShadowTexture(rendertexture_shadow);
-
+	//-------------------------------- RENDER VIEW
 	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(0u);
-	index::Draw();
-	index::DrawGUI();
+	index::SetViewFocus(0u); // Set render POV
+	index::Draw(); index::DrawGUI();
 	index::TickGUI(); // causes a crash if before drawgui (does it still?)
 
 	//-------------------------------- BUFFER 2 (RIGHT SCREEN)
 
-	#ifndef DEF_MP
-	// Set GL properties for solid rendering
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ZERO);
-	// Draw
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(1u);
-	index::Draw();
-	index::DrawGUI();
-	index::TickGUI(); // causes a crash if before drawgui (does it still?)
+	#ifndef DEF_NMP
+	if (cfg::bSplitScreen) {
+		// Set GL properties for solid rendering (again....)
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ZERO);
+		//-------------------------------- RENDER SHADOWMAP
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		index::SetViewFocus(1u); // Set render POV to second player
+		index::Draw(false);
+		//-------------------------------- RENDER VIEW
+		glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		index::SetViewFocus(1u); // Set render POV to second player
+		index::Draw(); index::DrawGUI();
+		index::TickGUI(); // causes a crash if before drawgui (does it still?)
+	}
 	#endif // MP
 
-	//-------------------------------- DRAW FRAMEBUFFER
+	//-------------------------------- DRAW FRAMEBUFFER (TODO: try and clean this up a bit!)
 
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
-	//glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
 
 	// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_1);
@@ -540,9 +547,6 @@ render:
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, cfg::iWinX, cfg::iWinY);
 
-	//glClearColor(1.f, 0.5f, 0.5f, 1.0f);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	graphics::GetShader(graphics::S_POST).Use();
 
 	glDisable(GL_DEPTH_TEST);
@@ -551,7 +555,7 @@ render:
 	glFrontFace(GL_CW);
 
 	glm::mat4 mat_fb = glm::mat4(1.0f);
-	#ifndef DEF_MP
+	#ifndef DEF_NMP
 	// Set frame matrix to half-screen
 	if (cfg::bSplitScreen)
 	{
@@ -570,7 +574,7 @@ render:
 
 	// BUFFER 2
 
-	#ifndef DEF_MP
+	#ifndef DEF_NMP
 	if (cfg::bSplitScreen)
 	{
 		// Now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
@@ -650,7 +654,7 @@ loop_editor:
 
 			glViewport(0, 0, cfg::iWinX, cfg::iWinY);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glClearColor(128.f, 255.f, 255.f, 1.0f);
+			glClearColor(0.5f, 1.f, 1.f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			index::SetViewFocus(0u);
 			index::Draw();

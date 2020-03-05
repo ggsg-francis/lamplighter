@@ -101,7 +101,7 @@ namespace index
 						if (offsetLR_ally > 0.5f) actor->input.x = -1.f;
 						else if (offsetLR_ally < -0.5f) actor->input.x = 1.f;
 						else actor->input.x = 0.f;
-					else if (actor->state.hp > 0.6f) // if ally is far and hitpoints high, move in
+					else if (actor->state.damagestate > 600u) // if ally is far and hitpoints high, move in
 						if (offsetLR_ally > 0.5f) { actor->input.x = -0.5f; actor->input.y = 1.f; }
 						else if (offsetLR_ally < -0.5f) { actor->input.x = 0.5f; actor->input.y = 1.f; }
 						else actor->input.x = 1.f;
@@ -686,7 +686,7 @@ namespace index
 		env::GetHeight(ENTITY(index)->t.height, ENTITY(index)->t.csi);
 		AddEntityCell(ENTITY(index)->t.csi.c[eCELL_I].x, ENTITY(index)->t.csi.c[eCELL_I].y, index);
 		ENTITY(index)->state.stateFlags.set(ActiveState::eALIVE);
-		ENTITY(index)->state.hp = 1.f;
+		ENTITY(index)->state.damagestate = STATE_DAMAGE_MAX;
 		ENTITY(index)->radius = 0.5f;
 		ENTITY(index)->height = 1.9f;
 		if (ENTITY(index)->type == ENTITY_TYPE_CHARA)

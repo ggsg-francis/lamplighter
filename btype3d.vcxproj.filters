@@ -194,9 +194,4 @@
     <None Include="0000gameassets.uwu" />
     <None Include="0000gamecontents.uwu" />
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="000config.txt">
-      <Filter>0global</Filter>
-    </Text>
-  </ItemGroup>
 </Project>

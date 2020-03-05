@@ -88,7 +88,7 @@ namespace index
 	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& csi);
 
 	// Get HP (Health Points) of entity at X ID
-	btf32 GetHP(btID id);
+	btui16 GetHP(btID id);
 
 	// Set shadow texture ID (to do: hacky, get rid of this)
 	void SetShadowTexture(btui32 ID);

@@ -6,13 +6,11 @@
 
 #include "core_save_load.h"
 
-#include "version.h"
-
 namespace index
 {
-	btf32 GetHP(btID id)
+	btui16 GetHP(btID id)
 	{
-		return ENTITY(id)->state.hp;
+		return ENTITY(id)->state.damagestate;
 	}
 
 	void SetViewTargetID(btID id, btui32 player)
@@ -331,6 +329,8 @@ namespace index
 				*/
 
 				//DoSpawn();
+
+				SaveState();
 			}
 		}
 		// This is going to blow up extremely fast if I don't automate it somehow
@@ -568,7 +568,10 @@ namespace index
 		}
 		else
 		{
-			m::Vector3 lightPos(ENTITY(activePlayer)->t.position.x, ENTITY(activePlayer)->t.height, -ENTITY(activePlayer)->t.position.y);
+			m::Vector3 lightPos(
+				ENTITY(players[activePlayer])->t.position.x,
+				ENTITY(players[activePlayer])->t.height,
+				-ENTITY(players[activePlayer])->t.position.y);
 			m::Vector3 lightVecForw(-sunVec.x, -sunVec.y, -sunVec.z);
 			//m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 1.f, 0.f)));
 			m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 0.f, 1.f)));
@@ -838,20 +841,25 @@ namespace index
 
 		// hurt effect
 		//graphics::DrawGUITexture(&res::GetT(res::t_gui_hurt), 0, 0, cfg::iWinX, cfg::iWinY);
-		if (ENTITY(players[activePlayer])->state.hp < player_hp[activePlayer])
+		if (ENTITY(players[activePlayer])->state.damagestate < player_hp[activePlayer])
 		{
 			graphics::DrawGUITexture(&res::GetT(res::t_gui_hurt), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(),
-				(player_hp[activePlayer] - ENTITY(players[activePlayer])->state.hp) * 10.f);
-			player_hp[activePlayer] -= 0.008f;
+				(btf32)(player_hp[activePlayer] - ENTITY(players[activePlayer])->state.damagestate) * (10.f / 1000.f));
+			player_hp[activePlayer] -= 5ui16;
 		}
 		else
 		{
-			player_hp[activePlayer] = ENTITY(players[activePlayer])->state.hp;
+			player_hp[activePlayer] = ENTITY(players[activePlayer])->state.damagestate;
 		}
 		// croshair
 		graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), 0, 0, 32, 32);
 		// hp
-		graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_red), p1_x_start + 32, p1_y_start + 8, (int)(index::GetHP(index::players[activePlayer]) * 64.f), 16);
+		graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_red), p1_x_start + 32, p1_y_start + 8, (int)(((btf32)index::GetHP(players[activePlayer]) / 1000.f) * (64.f)), 16);
+		char stuff[32];
+		_itoa(ENTITY(players[activePlayer])->state.damagestate, stuff, 10);
+		text_hp.ReGen(stuff, p1_x_start + 8, p1_x_start + 128, p1_y_start + 16);
+		text_hp.Draw(&res::GetT(res::t_gui_font));
+
 		// enemy hp
 		if (viewtarget[activePlayer] != ID_NULL && viewtarget[activePlayer] != index::players[activePlayer]) // If not null or player
 		{
@@ -865,7 +873,7 @@ namespace index
 				guibox.ReGen(textboxX, textboxX + text_temp.sizex, textboxY - text_temp.sizey, textboxY, 4, 10);
 			}
 			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
-				graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(index::GetHP(viewtarget[activePlayer]) * 64.f), 16);
+				graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(((btf32)index::GetHP(viewtarget[activePlayer]) / 1000.f) * (64.f)), 16);
 			guibox.Draw(&res::GetT(res::t_gui_box));
 			text_temp.Draw(&res::GetT(res::t_gui_font));
 			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
@@ -963,7 +971,7 @@ namespace index
 		ENTITY(id)->t.height += 1.f; // temp
 		AddEntityCell(ENTITY(id)->t.csi.c[eCELL_I].x, ENTITY(id)->t.csi.c[eCELL_I].y, id);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		ENTITY(id)->state.hp = 1.f;
+		ENTITY(id)->state.damagestate = STATE_DAMAGE_MAX;
 
 
 		ENTITY(id)->faction = fac::faction::none;
@@ -1164,7 +1172,7 @@ namespace index
 									if (dist < 0.5f)
 									{
 										// to do: pass angle to damage fn
-										ENTITY(i)->state.Damage(0.15f, glm::degrees(m::Vec2ToAng(vec)));
+										ENTITY(i)->state.Damage(400u, glm::degrees(m::Vec2ToAng(vec)));
 										DestroyProjectile(index); // Destroy the projectile
 									}
 								}

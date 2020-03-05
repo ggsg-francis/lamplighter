@@ -240,19 +240,21 @@ void DrawEditorPawn(void* ent)
 }
 
 
-void ActiveState::Damage(btf32 amount, btf32 angle)
+void ActiveState::Damage(btui32 amount, btf32 angle)
 {
 	//aud::PlaySnd(aud::FILE_SWING_CONNECT, );
-
-	hp -= amount;
-	if (hp <= 0.f)
+	// if it's enough to reduce us to or below zero
+	if (amount >= damagestate)
 	{
 		//stateFlags.unset((ActiveFlags)(eALIVE | eDIED_THIS_TICK));
-		stateFlags.unset((ActiveFlags)(eALIVE));
-		stateFlags.set((ActiveFlags)(eDIED_REPORT));
-		hp = 0.f;
+		stateFlags.unset(eALIVE);
+		stateFlags.set(eDIED_REPORT);
+		damagestate = 0u;
 	}
-
+	else
+	{
+		damagestate -= amount;
+	}
 	// TODO: include AI 'notify attack' function call here
 }
 void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, btui32 magnitude)
@@ -310,11 +312,11 @@ void ActiveState::TickEffects(btf32 dt)
 			{
 			case EFFECT_DAMAGE_HP:
 				// magnitude multiplied by delta time so that it functions as a value per second
-				Damage((btf32)effects[i].effect_magnitude * dt, 0.f);
+				Damage(effects[i].effect_magnitude, 0.f);
 				break;
 			case EFFECT_RESTORE_HP:
-				hp += (btf32)effects[i].effect_magnitude * dt;
-				if (hp >= 1.f) hp = 1.f;
+				damagestate += (btf32)effects[i].effect_magnitude;
+				if (damagestate >= STATE_DAMAGE_MAX) damagestate = STATE_DAMAGE_MAX;
 				break;
 			}
 			effects[i].effect_duration -= dt; // tick down the effect timer
@@ -808,8 +810,8 @@ void DrawChara(void* ent)
 	// need a good way of knowing own index
 	DrawMeshDeform(chr->id, res::GetMD(res::md_chr_body), res::skin_t[t_skin], SS_CHARA, 2u,
 		t_body.getMatrix(), t_test.getMatrix(), graphics::Matrix4x4(), graphics::Matrix4x4());
-	//DrawMeshDeform(chr->id, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
-	//	t_body.getMatrix(), t_test.getMatrix(), matLegUpL, matLegUpR);
+	DrawMeshDeform(chr->id, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
+		t_body.getMatrix(), t_test.getMatrix(), matLegUpL, matLegUpR);
 
 	#undef t_body
 	#undef viewYaw

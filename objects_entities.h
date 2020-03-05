@@ -88,6 +88,7 @@ typedef struct StatusEffect {
 	btui32 reserved;
 } StatusEffect;
 
+#define STATE_DAMAGE_MAX 1000ui16
 // TODO: merge with entity?? should be able to produce sfx
 struct ActiveState
 {
@@ -104,11 +105,11 @@ struct ActiveState
 		eFLAMMABLE = 1ui64 << 1ui64,
 	};
 	mem::bv<btui64, StaticFlags> properties2;
-	btf32 hp = 1.f;
+	btui16 damagestate = STATE_DAMAGE_MAX;
 
 	mem::Buffer32<StatusEffect> effects;
 
-	void Damage(btf32 AMOUNT, btf32 ANGLE);
+	void Damage(btui32 AMOUNT, btf32 ANGLE);
 	void AddEffect(btID CASTER, StatusEffectType TYPE, btf32 DURATION, btui32 MAGNITUDE);
 	void AddSpell(btID CASTER, btID SPELL);
 	void TickEffects(btf32 DELTA_TIME);

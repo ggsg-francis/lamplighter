@@ -36,7 +36,7 @@ namespace index
 	btID viewtarget[2]{ ID_NULL, ID_NULL };
 	btID viewtarget_last_tick[2]{ ID_NULL, ID_NULL };
 	// for measuring HP changes for gui display
-	btf32 player_hp[2]{ 1.f, 1.f };
+	btui16 player_hp[2]{ 1.f, 1.f };
 
 	env::EnvNode editor_node_copy;
 
@@ -49,6 +49,7 @@ namespace index
 	// inventory stuff
 	graphics::GUIBox guibox;
 	graphics::GUIText text_temp;
+	graphics::GUIText text_hp;
 	graphics::GUIText text_version;
 	graphics::GUIText text_fps;
 

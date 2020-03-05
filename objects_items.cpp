@@ -79,7 +79,7 @@ void HeldMelTick(btID id, btf32 dt, Actor* owner)
 			if (owner->atk_target != BUF_NULL)
 			{
 				Entity* ent = (Entity*)index::GetEntityPtr(owner->atk_target);
-				ent->state.Damage(0.3f, self->yaw);
+				ent->state.Damage(300u, self->yaw);
 				aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
 				ent->slideVelocity += m::AngToVec2(owner->t.yaw.Rad()) * 0.2f;
 				// exit swing early

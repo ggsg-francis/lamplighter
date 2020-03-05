@@ -5,7 +5,8 @@
 // Compiler configuration definitions
 
 // Alter the generic RPG engine into a multiplayer focused one optimised for the mech game
-//#define DEF_MP
+// this is done in the project configuration setting now
+//#define DEF_NMP
 
 //#define DEF_OLDSKOOL // Use old rendering settings (nearest neighbor filtering, etc.
 //#define DEF_DEBUG_DISPLAY // Draw debug information
@@ -17,7 +18,7 @@
 #define DEF_SMOOTH_FRAMERATE // Run the CPU a little hotter to make sure the framerate is as smooth as possible
 // use cute sound
 #define DEF_USE_CS
-//#define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
+#define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
 
 // Any debug only defines
 #ifdef _DEBUG
@@ -41,14 +42,22 @@
 #define WORLD_BIT_DEPTH WORLD_BYTE_DEPTH * 8
 
 //#define SCREEN_UPSCALE_THRESHOLD 1280u
-#define SCREEN_UPSCALE_THRESHOLD 2048u
+//#define SCREEN_UPSCALE_THRESHOLD 2048u
+#define SCREEN_UPSCALE_THRESHOLD 1920u
 
 #define LIGHT_FAR 256.f
 #define LIGHT_HALF 128.f
 #define LIGHT_WIDTH 12.f
 
-// Program Version
+#ifdef DEF_NMP
+// Multiplayer release version
+#define VERSION_MAJOR 16u
+#define VERSION_BUILD 1u
+#else
+// Singleplayer release version
 #define VERSION_MAJOR 15u
+#define VERSION_BUILD 390u
+#endif
 
 #define VERSION_SERVER_MAJOR 0u
 #define VERSION_SERVER_MINOR 14u
