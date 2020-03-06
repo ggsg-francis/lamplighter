@@ -28,6 +28,8 @@ namespace aud
 		//"snd/swing_connect.wav",
 		"snd/hitMW.wav",
 		"snd/hey.wav",
+		"snd/footstep_snow_a.wav",
+		"snd/footstep_snow_b.wav",
 	};
 
 	cs_context_t* ctx;

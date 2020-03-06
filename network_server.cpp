@@ -19,7 +19,6 @@ SOCKET socket_connection_listen;
 SOCKET sockets[NUM_CONNECTIONS];
 bool socketsUsed[NUM_CONNECTIONS];
 
-
 //TO DO: DUPLICATE OF SEND IN NETWORK.H ON CLIENT CODE
 // Send a struct formatted message across the network
 void SendMsgServer(unsigned int socknum, paktype type, void* msg)
@@ -33,14 +32,13 @@ void SendMsgServer(unsigned int socknum, paktype type, void* msg)
 	free(buffer); //clear the buffer from memory
 }
 
-
 bool listenConnections(void)
 {
 	SOCKADDR_IN addr; //address that we will bind out listening socket to
 
 	int addrlength = sizeof(addr); //length of the address (required for accept call)
-								   //addr.sin_addr.s_addr = inet_addr("127.0.0.1"); //broadcast locally
-								   //new non-deprecated address set
+	//addr.sin_addr.s_addr = inet_addr("127.0.0.1"); //broadcast locally
+	//new non-deprecated address set
 	std::uint32_t ip_address;
 	inet_pton(AF_INET, IP_ADDR, &ip_address);
 	addr.sin_addr.s_addr = ip_address;
@@ -48,10 +46,10 @@ bool listenConnections(void)
 	addr.sin_port = htons(1111); //port
 	addr.sin_family = AF_INET; //ipv4 socket, use AF_INET6 for ipv6, if needed
 
-							   //create socket
+	// Create socket
 	socket_connection_listen = socket(AF_INET, SOCK_STREAM, NULL); //create socket to listen for new connections
 	bind(socket_connection_listen, (SOCKADDR*)&addr, sizeof(addr)); //bind the new address to the socket
-												   //this is necessary for people to connect to this server
+	//this is necessary for people to connect to this server
 	listen(socket_connection_listen, SOMAXCONN); //places slisten socket in a state in which it is listening for an incoming connection
 
 	for (int i = 0; i < NUM_CONNECTIONS; i++)
@@ -92,7 +90,7 @@ void ReceiveSocket(int socknum)
 		case eCLIENT_CONNECT:
 			msg::ClientConnect mcc;
 			memcpy(&mcc, pw.msg, sizeof(msg::ClientConnect));
-			if (mcc.version_major == VERSION_MAJOR && mcc.version_minor == VERSION_MINOR)
+			if (mcc.version_major == VERSION_MAJOR && mcc.version_minor == VERSION_BUILD)
 			{
 				std::cout << "VERSION NUMBER ACCEPTED" << std::endl;
 				msg::ServerConnectClient m;

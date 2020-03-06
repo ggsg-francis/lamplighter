@@ -770,7 +770,11 @@ namespace index
 					{
 						// SOUL TRANSFER
 						if (players[0] != players[1]) // If both player's arent using the same entity
+						{
 							ACTOR(players[activePlayer])->aiControlled = true; // Let the AI take over
+							ACTOR(players[activePlayer])->ai_target_ent = ID_NULL; // Let the AI take over
+							ACTOR(players[activePlayer])->ai_ally_ent = ID_NULL; // Let the AI take over
+						}
 						players[activePlayer] = viewtarget[activePlayer]; // Set player to control player's view target
 						ACTOR(players[activePlayer])->aiControlled = false;
 					}

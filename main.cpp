@@ -1,13 +1,12 @@
 // ctrl-r, ctrl-w for showing line indentation
 
-// CRT memory leak detection
-
+// memory leak detection
 #ifdef _DEBUG
 //#include "vld.h"
 //#define _CRTDBG_MAP_ALLOC
 //#include <stdlib.h>
 //#include <crtdbg.h>
-#endif // _DEBUG
+#endif
 
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //|||||||||||||||||||||||||||||||| STYLE GUIDE |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -210,64 +209,17 @@ bool StepTickEditor(double dt)
 //int main(int argc, char * argv[])
 int main()
 {
-	// BT VERSION INCREMENTER
-
-	//#define _CRT_SECURE_NO_WARNINGS
-	//#include <stdio.h>
-
-	#ifdef _DEBUG
-	/*
-
-	unsigned int version = 0u;
-
-	FILE* file = fopen("../.version_count.bin", "rb"); // Open file
-	if (file != NULL)
-	{
-		fseek(file, 0, SEEK_SET); // Seek file beginning
-		fread(&version, 4, 1, file);
-		fclose(file); // Close file
-	}
-
-	file = fopen("../version.h", "wb"); // Open file
-	if (file != NULL)
-	{
-		fseek(file, 0, SEEK_SET); // Seek file beginning
-
-		char buf_str[64] = "#define VERSION_BUILD ";
-		char buf_num[32];
-		_itoa(version, buf_num, 10);
-		strcat(buf_str, buf_num);
-
-		fprintf(file, buf_str);
-
-		fclose(file); // Close file
-	}
-
-	++version;
-
-	file = fopen("../.version_count.bin", "wb"); // Open file
-	if (file != NULL)
-	{
-		fseek(file, 0, SEEK_SET); // Seek file beginning
-		fwrite(&version, 4, 1, file);
-		fclose(file); // Close file
-	}
-
-	*/
-	#endif 
-
-	//-------------------------------- TEST ZONE
-
+	// Test stuff
 	InitTest();
 
-	//-------------------------------- LOAD CONFIG
-	
+	// Load config
 	cfg::LoadCfg();
 
-	//-------------------------------- CONNECT TO SERVER
-
+	#ifdef DEF_NMP
+	// Connect to server
 	network::Init();
 	network::Connect();
+	#endif
 
 	//-------------------------------- INITIALIZE GLFW
 
@@ -424,8 +376,7 @@ int main()
 
 	index::SetShadowTexture(rendertexture_shadow);
 
-	//--------------------------------------------------------------------------------------------------------------------------------
-
+	//________________________________________________________________________________________________________________________________
 	//-------------------------------- ENTER GAME LOOP
 
 	btf64 current_frame_time = 0.f;
@@ -477,8 +428,7 @@ updtime:
 		goto updtime;
 	}
 
-	//--------------------------------------------------------------------------------------------------------------------------------
-
+	//________________________________________________________________________________________________________________________________
 	//-------------------------------- RENDER
 
 render:

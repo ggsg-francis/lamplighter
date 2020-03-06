@@ -771,7 +771,7 @@ namespace index
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = 3u;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 3.5f;
+		CHARA(id)->speed = 7.f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(4u);
 		CHARA(id)->foot_state = FootState::eL_DOWN;

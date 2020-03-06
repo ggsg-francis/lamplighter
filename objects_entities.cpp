@@ -712,6 +712,7 @@ void DrawChara(void* ent)
 			{
 				chr->footPosL = footPosTargL;
 				chr->aniStepAmountL = 0.f;
+				aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, m::Vector3(t.position.x, t.height, t.position.y));
 				footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
 				foot_state = eR_DOWN;
 			}
@@ -734,6 +735,7 @@ void DrawChara(void* ent)
 			{
 				chr->footPosR = footPosTargR;
 				chr->aniStepAmountR = 0.f;
+				aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_B, m::Vector3(t.position.x, t.height, t.position.y));
 				footPosTargR = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
 				foot_state = eL_DOWN;
 			}
@@ -749,14 +751,16 @@ void DrawChara(void* ent)
 	}
 
 	// set step positions
-
-	chr->aniStepAmountL += 0.05f;
+	chr->aniStepAmountL += 0.04f;
 	if (chr->aniStepAmountL > 1.f)
+	{
 		chr->aniStepAmountL = 1.f;
-	chr->aniStepAmountR += 0.05f;
+	}
+	chr->aniStepAmountR += 0.04f;
 	if (chr->aniStepAmountR > 1.f)
+	{
 		chr->aniStepAmountR = 1.f;
-
+	}
 	btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountL * 2.f - 1.f);
 	btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountR * 2.f - 1.f);
 

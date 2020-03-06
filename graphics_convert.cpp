@@ -336,31 +336,22 @@ namespace graphics
 
 			//std::cout << "Loaded texture: " << sfn << std::endl;
 
-
-			//FILE* out = fopen(dfn, "wb");
 			gzFile out = gzopen(dfn, "wb");
 			if (out != NULL)
 			{
 				// Seek the beginning of the file
-				//fseek(out, 0, SEEK_SET);
 				gzseek(out, 0, SEEK_SET);
 				// Write version
 				version_t v = FILE_VERSION_TEX;
-				//fwrite(&v, sizeof(version_t), 1, out);
-				//fwrite(&filter, 1, 1, out);
-				//fwrite(&edge, 1, 1, out);
 				gzfwrite(&v, sizeof(version_t), 1, out);
 				gzfwrite(&filter, 1, 1, out);
 				gzfwrite(&edge, 1, 1, out);
 				// Write dimensions
-				//fwrite(&width, sizeof(btui16), 1, out); // Max value: 65535
-				//fwrite(&height, sizeof(btui16), 1, out);
 				gzfwrite(&width, sizeof(btui16), 1, out); // Max value: 65535
 				gzfwrite(&height, sizeof(btui16), 1, out);
 				// Write pixel buffer
-				//fwrite(carr, sizeof(color), width * height, out);
 				gzfwrite(carr, sizeof(color), width * height, out);
-				//fclose(out);
+				// Close file
 				gzclose(out);
 			}
 			else

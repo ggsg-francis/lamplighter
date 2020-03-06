@@ -880,7 +880,7 @@ namespace graphics
 			// Read pixel buffer
 			graphics::colour* buffer = new colour[width * height];
 			gzfread(buffer, sizeof(graphics::colour), width * height, file);
-
+			// Close file
 			gzclose(file);
 
 			glEnable(GL_TEXTURE_2D);

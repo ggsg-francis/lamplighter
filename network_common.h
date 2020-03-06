@@ -5,10 +5,15 @@
 // Maximum IPv4 size: 576 bytes
 #define PACKET_SIZE 256
 
+// From Quake
+#define	MAXHOSTNAMELEN 256
+
 enum paktype : btui8
 {
 	ePING, // Does nothing
 
+	eBROADCAST_SERVER_FIND,
+	eBROADCAST_SERVER_CONFIRM,
 	eCLIENT_CONNECT, // Sent by client on connection
 	eSERVER_CONNECT_CLIENT, // When a client connects, send it a message telling it its ID
 	eSERVER_DISCONNECT_CLIENT, // If there's a version incompatibility, send this

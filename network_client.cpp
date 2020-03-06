@@ -1,15 +1,21 @@
+#ifdef DEF_NMP
 //c++ stuff
 #include <iostream>
 #include <array>
 #include <string>
 
+#include "SDL2\SDL_net.h"
+
 //NETCODE
 #include <winsock2.h>
 #include <Ws2tcpip.h>
+//#include <iphlpapi.h>
 #include <stdio.h>
 
 // Link with ws2_32.lib
 #pragma comment(lib, "Ws2_32.lib")
+// link with so so...
+//#pragma comment(lib, "IPHLPAPI.lib")
 
 #include "network_common.h"
 
@@ -24,15 +30,104 @@
 
 namespace network
 {
+	//quake
+	static SOCKET net_acceptsocket = INVALID_SOCKET;	// socket for fielding new connections
+	static SOCKET net_controlsocket;
+	static SOCKET net_broadcastsocket = 0;
+	static sockaddr_in broadcastaddr;
+	static in_addr myAddr;
+
+
 	//network id
 	btui8 nid = 0ui8;
 
-	//....................................... ENCODING AND DECODING
+	//-------------------------------- ENCODING AND DECODING
 
 	//networking stuff
 	SOCKET connHandle;
 	//message from server
 	char servMessage[PACKET_SIZE] = "NO CONNECTION";
+
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- UTILITY
+
+	// net_wins.c line 73
+	bool GetMyAddr()
+	{
+		// Get this PC's name on the network
+		char hostname[MAXHOSTNAMELEN];
+		if (gethostname(hostname, MAXHOSTNAMELEN) == SOCKET_ERROR) {
+			std::cerr << "Error " << WSAGetLastError() <<
+				" when getting local host name." << std::endl;
+			return false;
+		}
+		hostname[MAXHOSTNAMELEN - 1] = 0; // Force null terminate. Quake does this, so I will
+		std::cout << "Host name is " << hostname << "." << std::endl;
+		// Get Address from Name
+		hostent* host_details = gethostbyname(hostname);
+		if (host_details == NULL) {
+			std::cerr << "Error: Bad host lookup." << std::endl;
+			return false;
+		}
+		// Copy first address
+		memcpy(&myAddr, host_details->h_addr_list[0], sizeof(in_addr));
+		std::cout << "Address " << 0 << ": " << inet_ntoa(myAddr) << std::endl;
+		/*for (int i = 0; host_details->h_addr_list[i] != 0; ++i) {
+		in_addr addr;
+		memcpy(&addr, host_details->h_addr_list[i], sizeof(in_addr));
+		std::cout << "Address " << i << ": " << inet_ntoa(addr) << std::endl;
+		}*/
+		return true;
+	}
+
+	// net_wins.c line 369
+	static int MakeSocketBroadcastCapable(SOCKET socketid)
+	{
+		int	i = 1;
+		// Make this socket broadcast capable
+		if (setsockopt(socketid, SOL_SOCKET, SO_BROADCAST, (char*)&i, sizeof(i)) == SOCKET_ERROR)
+		{
+			//int err = SOCKETERRNO;
+			//Con_SafePrintf("UDP, setsockopt: %s\n", socketerror(err));
+			return -1;
+		}
+		net_broadcastsocket = socketid;
+		return 0;
+	}
+
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- WRITE
+
+	int Write(SOCKET socketid, byte* buf, int len, sockaddr* addr)
+	{
+		int	ret;
+		ret = sendto(socketid, (char*)buf, len, 0, (sockaddr*)addr,
+			sizeof(sockaddr));
+		if (ret == SOCKET_ERROR)
+			int bp = 0;
+		return ret;
+	}
+
+	int Broadcast(SOCKET socketid, byte *buf, int len)
+	{
+		int	ret;
+		if (socketid != net_broadcastsocket)
+		{
+			if (net_broadcastsocket != 0) {
+				//Sys_Error("Attempted to use multiple broadcasts sockets");
+			} //GetMyAddr();
+			ret = MakeSocketBroadcastCapable(socketid);
+			if (ret == -1)
+			{
+				//Con_Printf("Unable to make socket broadcast capable\n");
+				return ret;
+			}
+		}
+		return Write(socketid, buf, len, (sockaddr*)&broadcastaddr);
+	}
+
+	//________________________________________________________________________________________________________________________________
+	//-------------------------------- MY FUNCTIONS
 
 	void Recv2(int type)
 	{
@@ -101,18 +196,24 @@ namespace network
 			MessageBoxA(NULL, "Winsock startup failed", "Error", MB_OK | MB_ICONERROR);
 			exit(1);
 		}
+		// Get this PC's network address
+		GetMyAddr();
 	}
 
 	void Connect()
 	{
 		unsigned short port = (short)cfg::iIPPORT;
 
-		std::uint32_t ip_address_2 = (cfg::iIPA << 24) | (cfg::iIPB << 16) | (cfg::iIPC << 8) | cfg::iIPD;
+		std::uint32_t ip_address_connect = (cfg::iIPA << 24) | (cfg::iIPB << 16) | (cfg::iIPC << 8) | cfg::iIPD;
+
+
+
 
 		SOCKADDR_IN addr;
 		int addrlength = sizeof(addr);
 		addr.sin_family = AF_INET;
-		addr.sin_addr.s_addr = htonl(ip_address_2);
+		addr.sin_addr.s_addr = htonl(ip_address_connect);
+		//addr.sin_addr.s_addr = INADDR_BROADCAST;
 		addr.sin_port = htons(port);
 
 		/*
@@ -164,3 +265,4 @@ namespace network
 		}
 	}
 }
+#endif // DEF_NMP

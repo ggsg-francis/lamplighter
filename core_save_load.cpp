@@ -202,6 +202,8 @@ void LoadStateFileV001()
 					fread(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
 					fread(&ACTOR(i)->inv_active_slot, SIZE_32, 1, file);
 					fread(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
+					ACTOR(i)->ai_target_ent = ID_NULL; // temp
+					ACTOR(i)->ai_ally_ent = ID_NULL; // temp
 				}
 
 				std::cout << "Loaded entity ID " << i << std::endl;

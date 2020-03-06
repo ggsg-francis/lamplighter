@@ -1,12 +1,14 @@
 #pragma once
 
+#ifdef DEF_NMP
+
 enum paktype : btui8;
 
 namespace network
 {
 	extern btui8 nid;
 
-	//....................................... ENCODING AND DECODING
+	//-------------------------------- ENCODING AND DECODING
 
 	////networking stuff
 	//SOCKET connHandle;
@@ -21,3 +23,4 @@ namespace network
 	void Init();
 	void Connect();
 }
+#endif // DEF_NMP
