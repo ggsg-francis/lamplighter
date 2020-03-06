@@ -18,7 +18,9 @@
 #define DEF_SMOOTH_FRAMERATE // Run the CPU a little hotter to make sure the framerate is as smooth as possible
 // use cute sound
 #define DEF_USE_CS
+#ifndef DEF_NMP
 #define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
+#endif
 
 // Any debug only defines
 #ifdef _DEBUG

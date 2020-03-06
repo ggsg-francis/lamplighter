@@ -1,7 +1,6 @@
 #pragma once
 
 //union SDL_Event;
-struct  GLFWwindow;
 
 namespace input
 {
@@ -111,16 +110,7 @@ namespace input
 
 	void Init();
 
-	void UpdateControllerInput();
-
-	// Whenever the window size changed (by OS or user resize) this callback function executes
-	void KeyCallback(GLFWwindow*, int, int, int, int);
-	void CharCallback(GLFWwindow*, unsigned int);
-	// Whenever the mouse moves, this callback is called
-	void CursorCallback(GLFWwindow*, double, double);
-	void MouseButtonCallback(GLFWwindow*, int, int, int);
-	// Whenever the mouse scroll wheel scrolls, this callback is called
-	void ScrollCallback(GLFWwindow*, double, double);
+	void UpdateInput(void* input);
 
 	// Clear hit inputs and mouse delta
 	void ClearHitsAndDelta();

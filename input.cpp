@@ -1,6 +1,6 @@
 #include "input.h"
 #include "memory.hpp"
-#include <GLFW\glfw3.h>
+#include <SDL2\SDL.h>
 
 namespace input
 {
@@ -105,31 +105,31 @@ namespace input
 
 	void Init()
 	{
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_ESCAPE)] = key::QUIT;
-		ScancodeTransfer[scancode::W] = key::DIR_F;
-		ScancodeTransfer[scancode::S] = key::DIR_B;
-		ScancodeTransfer[scancode::D] = key::DIR_R;
-		ScancodeTransfer[scancode::A] = key::DIR_L;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_LEFT_SHIFT)] = key::RUN;
-		ScancodeTransfer[scancode::E] = key::ACTIVATE;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_1)] = key::ACTION_A;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_2)] = key::ACTION_B;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_3)] = key::ACTION_C;
-		ScancodeTransfer[scancode::R] = key::DROP_HELD;
-		ScancodeTransfer[scancode::Z] = key::INV_CYCLE_L;
-		ScancodeTransfer[scancode::X] = key::INV_CYCLE_R;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F1)] = key::FUNCTION_1;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F2)] = key::FUNCTION_2;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F3)] = key::FUNCTION_3;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F4)] = key::FUNCTION_4;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F5)] = key::FUNCTION_5;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F6)] = key::FUNCTION_6;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F7)] = key::FUNCTION_7;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F8)] = key::FUNCTION_8;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F9)] = key::FUNCTION_9;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F10)] = key::FUNCTION_10;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F11)] = key::FUNCTION_11;
-		ScancodeTransfer[glfwGetKeyScancode(GLFW_KEY_F12)] = key::FUNCTION_12;
+		ScancodeTransfer[SDL_SCANCODE_ESCAPE] = key::QUIT;
+		ScancodeTransfer[SDL_SCANCODE_W] = key::DIR_F;
+		ScancodeTransfer[SDL_SCANCODE_S] = key::DIR_B;
+		ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
+		ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
+		ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
+		ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
+		ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
+		ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;
+		ScancodeTransfer[SDL_SCANCODE_3] = key::ACTION_C;
+		ScancodeTransfer[SDL_SCANCODE_R] = key::DROP_HELD;
+		ScancodeTransfer[SDL_SCANCODE_Z] = key::INV_CYCLE_L;
+		ScancodeTransfer[SDL_SCANCODE_X] = key::INV_CYCLE_R;
+		ScancodeTransfer[SDL_SCANCODE_F1] = key::FUNCTION_1;
+		ScancodeTransfer[SDL_SCANCODE_F2] = key::FUNCTION_2;
+		ScancodeTransfer[SDL_SCANCODE_F3] = key::FUNCTION_3;
+		ScancodeTransfer[SDL_SCANCODE_F4] = key::FUNCTION_4;
+		ScancodeTransfer[SDL_SCANCODE_F5] = key::FUNCTION_5;
+		ScancodeTransfer[SDL_SCANCODE_F6] = key::FUNCTION_6;
+		ScancodeTransfer[SDL_SCANCODE_F7] = key::FUNCTION_7;
+		ScancodeTransfer[SDL_SCANCODE_F8] = key::FUNCTION_8;
+		ScancodeTransfer[SDL_SCANCODE_F9] = key::FUNCTION_9;
+		ScancodeTransfer[SDL_SCANCODE_F10] = key::FUNCTION_10;
+		ScancodeTransfer[SDL_SCANCODE_F11] = key::FUNCTION_11;
+		ScancodeTransfer[SDL_SCANCODE_F12] = key::FUNCTION_12;
 	}
 
 	namespace rawinput
@@ -156,228 +156,103 @@ namespace input
 	btf32 joy_x_b = 0.f;
 	btf32 joy_y_b = 0.f;
 
-	GLFWgamepadstate state;
+	void UpdateInput(void * input)
+	{
+		// rename later so we can make it a pointer
+		SDL_Event& e = *(SDL_Event*)input;
 
-	/*
-	else if (e.type == SDL_JOYHATMOTION)
-	{
-	//neutral
-	if (e.jhat.value == SDL_HAT_CENTERED)
-	{
-	Unset(key::hat_all);
-	}
-	//normal
-	else if (e.jhat.value == SDL_HAT_UP)
-	{
-	Unset(key::hat_all);
-	Set(key::hat_u);
-	}
-	else if (e.jhat.value == SDL_HAT_DOWN)
-	{
-	Unset(key::hat_all);
-	Set(key::hat_d);
-	}
-	else if (e.jhat.value == SDL_HAT_RIGHT)
-	{
-	Unset(key::hat_all);
-	Set(key::hat_r);
-	}
-	else if (e.jhat.value == SDL_HAT_LEFT)
-	{
-	Unset(key::hat_all);
-	Set(key::hat_l);
-	}
-	//diagonal
-	else if (e.jhat.value == SDL_HAT_RIGHTUP)
-	{
-	Unset(key::hat_all);
-	Set(key::hat_ru);
-	}
-	else if (e.jhat.value == SDL_HAT_LEFTDOWN)
-	{
-	Unset(key::hat_all);
-	Set(key::hat_ld);
-	}
-	else if (e.jhat.value == SDL_HAT_RIGHTDOWN)
-	{
-	Unset(key::hat_all);
-	Set(key::hat_rd);
-	}
-	else if (e.jhat.value == SDL_HAT_LEFTUP)
-	{
-	Unset(key::hat_all);
-	Set(key::hat_lu);
-	}
-	}
-	*/
-
-	void UpdateControllerInput()
-	{
-		if (glfwJoystickIsGamepad(GLFW_JOYSTICK_1) && glfwGetGamepadState(GLFW_JOYSTICK_1, &state))
+		switch (e.type)
 		{
-			SetTo(key::C_RUN, state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER] == GLFW_PRESS);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER] == GLFW_PRESS && !GetHeld(key::C_USE))
-				Set(key::C_USE);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER] == GLFW_RELEASE)
-				Unset(key::C_USE);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] == GLFW_PRESS && !GetHeld(key::C_USE_ALT))
-				Set(key::C_USE_ALT);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] == GLFW_RELEASE)
-				Unset(key::C_USE_ALT);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT] == GLFW_PRESS && !GetHeld(key::C_INV_CYCLE_L))
-				Set(key::C_INV_CYCLE_L);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT] == GLFW_RELEASE)
-				Unset(key::C_INV_CYCLE_L);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT] == GLFW_PRESS && !GetHeld(key::C_INV_CYCLE_R))
-				Set(key::C_INV_CYCLE_R);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT] == GLFW_RELEASE)
-				Unset(key::C_INV_CYCLE_R);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_A] == GLFW_PRESS && !GetHeld(key::C_ACTIVATE))
-				Set(key::C_ACTIVATE);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_A] == GLFW_RELEASE)
-				Unset(key::C_ACTIVATE);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN] == GLFW_PRESS && !GetHeld(key::C_DROP_HELD))
-				Set(key::C_DROP_HELD);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN] == GLFW_RELEASE)
-				Unset(key::C_DROP_HELD);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_X] == GLFW_PRESS && !GetHeld(key::C_ACTION_A))
-				Set(key::C_ACTION_A);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_X] == GLFW_RELEASE)
-				Unset(key::C_ACTION_A);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_Y] == GLFW_PRESS && !GetHeld(key::C_ACTION_B))
-				Set(key::C_ACTION_B);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_Y] == GLFW_RELEASE)
-				Unset(key::C_ACTION_B);
-
-			if (state.buttons[GLFW_GAMEPAD_BUTTON_B] == GLFW_PRESS && !GetHeld(key::C_ACTION_C))
-				Set(key::C_ACTION_C);
-			else if (state.buttons[GLFW_GAMEPAD_BUTTON_B] == GLFW_RELEASE)
-				Unset(key::C_ACTION_C);
-
-			#define JOY_DEADZONE 0.06F
-			#define JOY_MULT (1.0F / (1.0F - JOY_DEADZONE))
-
-			int count;
-			const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_5, &count);
-			/*
-			btf32 length_left = sqrt(
-				state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] *
-				state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] +
-				state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] *
-				state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]);
-			if (length_left > JOY_DEADZONE)
-			{
-				// Left X
-				if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] > 0.f)
-					joy_x_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] - JOY_DEADZONE) * JOY_MULT;
-				else if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] < -0.f)
-					joy_x_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] + JOY_DEADZONE) * JOY_MULT;
-				// Left Y
-				if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] > 0.f)
-					joy_y_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] - JOY_DEADZONE) * JOY_MULT;
-				else if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] < -0.f)
-					joy_y_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] + JOY_DEADZONE) * JOY_MULT;
-			}
-			btf32 length_right = sqrt(
-				state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] *
-				state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] +
-				state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] *
-				state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]);
-			if (length_right > JOY_DEADZONE)
-			{
-				// Right X
-				if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] > 0.f)
-					joy_x_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] - JOY_DEADZONE) * JOY_MULT;
-				else if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] < -0.f)
-					joy_x_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] + JOY_DEADZONE) * JOY_MULT;
-				// Right Y
-				if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] > 0.f)
-					joy_y_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] - JOY_DEADZONE) * JOY_MULT;
-				else if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] < -0.f)
-					joy_y_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] + JOY_DEADZONE) * JOY_MULT;
-			}
-			*/
-			// Left X
-			if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] > JOY_DEADZONE)
-				joy_x_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] * JOY_MULT) - JOY_DEADZONE;
-			else if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] < -JOY_DEADZONE)
-				joy_x_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] * JOY_MULT) + JOY_DEADZONE;
-			// Left Y
-			if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] > JOY_DEADZONE)
-				joy_y_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] * JOY_MULT) - JOY_DEADZONE;
-			else if (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] < -JOY_DEADZONE)
-				joy_y_a = (state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] * JOY_MULT) + JOY_DEADZONE;
-			// Right X
-			if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] > JOY_DEADZONE)
-				joy_x_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] * JOY_MULT) - JOY_DEADZONE;
-			else if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] < -JOY_DEADZONE)
-				joy_x_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] * JOY_MULT) + JOY_DEADZONE;
-			// Right Y
-			if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] > JOY_DEADZONE)
-				joy_y_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] * JOY_MULT) - JOY_DEADZONE;
-			else if (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] < -JOY_DEADZONE)
-				joy_y_b = (state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] * JOY_MULT) + JOY_DEADZONE;
-
-			#undef JOY_DEADZONE
-			#undef JOY_MULT
-		}
-	}
-
-	void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-	{
-		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-			glfwSetWindowShouldClose(window, true);
-		if (action != GLFW_REPEAT) // Check scancode size because numpad is too large for input array
-		{
-			if (ScancodeTransfer[scancode] != key::NONE)
-				if (action == GLFW_PRESS)
-					Set(ScancodeTransfer[scancode]);
-				else if (action == GLFW_RELEASE)
-					Unset(ScancodeTransfer[scancode]);
-		}
-	}
-
-	void CharCallback(GLFWwindow* window, unsigned int codepoint)
-	{
-
-	}
-
-	void CursorCallback(GLFWwindow* window, double xpos, double ypos)
-	{
-		// Calculate mouse delta
-		mouse_x += (float)xpos - mouse_last_x;
-		mouse_y += (float)ypos - mouse_last_y;
-		// Set last positions for calculating next frame's delta
-		mouse_last_x = (float)xpos;
-		mouse_last_y = (float)ypos;
-	}
-
-	void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-	{
-		if (action == GLFW_PRESS)
-			if (button == GLFW_MOUSE_BUTTON_LEFT)
+		case SDL_KEYDOWN:
+			if (e.key.repeat == 0 && ScancodeTransfer[e.key.keysym.scancode] != key::NONE)
+				Set(ScancodeTransfer[e.key.keysym.scancode]);
+			break;
+		case SDL_KEYUP:
+			if (e.key.repeat == 0 && ScancodeTransfer[e.key.keysym.scancode] != key::NONE)
+				Unset(ScancodeTransfer[e.key.keysym.scancode]);
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			if (e.button.which == 0)
 				Set(key::USE);
-			else if (button == GLFW_MOUSE_BUTTON_RIGHT)
-				Set(key::USE_ALT);
-		if (action == GLFW_RELEASE)
-			if (button == GLFW_MOUSE_BUTTON_LEFT)
+			break;
+		case SDL_MOUSEBUTTONUP:
+			if (e.button.which == 0)
 				Unset(key::USE);
-			else if (button == GLFW_MOUSE_BUTTON_RIGHT)
-				Unset(key::USE_ALT);
-	}
-
-	void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-	{
-		if (yoffset < -0.5f) SetHit(key::INV_CYCLE_L);
-		else if (yoffset > 0.5f) SetHit(key::INV_CYCLE_R);
+			break;
+		case SDL_MOUSEMOTION:
+			mouse_x += e.motion.xrel;
+			mouse_y += e.motion.yrel;
+			break;
+		case SDL_MOUSEWHEEL:
+			if (e.wheel.y > 0.5f) // Scroll up
+				SetHit(key::INV_CYCLE_R);
+			else if (e.wheel.y < -0.5f) // Scroll down
+				SetHit(key::INV_CYCLE_L);
+			break;
+		case SDL_JOYAXISMOTION: // Joystick Motion
+			if ((e.jaxis.value < -3200) || (e.jaxis.value > 3200)) {
+				if (e.jaxis.axis == 0) // Left-right left stick
+					joy_x_a = (btf32)e.jaxis.value / (btf32)32768.f;
+				else if (e.jaxis.axis == 1) // Up-Down left stick
+					joy_y_a = (btf32)e.jaxis.value / (btf32)32768.f;
+				else if (e.jaxis.axis == 3) // Left-right right stick
+					joy_x_b = (btf32)e.jaxis.value / (btf32)32768.f;
+				else if (e.jaxis.axis == 4) // Up-Down right stick
+					joy_y_b = (btf32)e.jaxis.value / (btf32)32768.f;
+			}
+			else {
+				if (e.jaxis.axis == 0) // Left-right left stick
+					joy_x_a = 0.f;
+				else if (e.jaxis.axis == 1) // Up-Down left stick
+					joy_y_a = 0.f;
+				else if (e.jaxis.axis == 3) // Left-right right stick
+					joy_x_b = 0.f;
+				else if (e.jaxis.axis == 4) // Up-Down right stick
+					joy_y_b = 0.f;
+			}
+			break;
+		case SDL_JOYHATMOTION:
+			if (e.jhat.value == SDL_HAT_CENTERED) {
+				Unset(key::C_INV_CYCLE_L);
+				Unset(key::C_INV_CYCLE_R);
+				Unset(key::C_DROP_HELD);
+			}
+			else if (e.jhat.value == SDL_HAT_RIGHT)
+				Set(key::C_INV_CYCLE_R);
+			else if (e.jhat.value == SDL_HAT_LEFT)
+				Set(key::C_INV_CYCLE_L);
+			else if (e.jhat.value == SDL_HAT_DOWN)
+				Set(key::C_DROP_HELD);
+			break;
+		case SDL_JOYBUTTONDOWN:
+			if (e.jbutton.button == rawinput::joy_bumper_l && !GetHeld(key::C_USE))
+				Set(key::C_USE);
+			else if (e.jbutton.button == rawinput::joy_bumper_r && !GetHeld(key::C_USE_ALT))
+				Set(key::C_USE_ALT);
+			else if (e.jbutton.button == 0 && !GetHeld(key::C_ACTIVATE)) // Face button B
+				Set(key::C_ACTIVATE);
+			else if (e.jbutton.button == 1 && !GetHeld(key::C_ACTION_A)) // Face button B
+				Set(key::C_ACTION_A);
+			else if (e.jbutton.button == 2 && !GetHeld(key::C_ACTION_B)) // Face button B
+				Set(key::C_ACTION_B);
+			else if (e.jbutton.button == 3 && !GetHeld(key::C_ACTION_C)) // Face button B
+				Set(key::C_ACTION_C);
+			break;
+		case SDL_JOYBUTTONUP:
+			if (e.jbutton.button == rawinput::joy_bumper_l)
+				Unset(key::C_USE);
+			else if (e.jbutton.button == rawinput::joy_bumper_r)
+				Unset(key::C_USE_ALT);
+			else if (e.jbutton.button == 0) // Face button B
+				Unset(key::C_ACTIVATE);
+			else if (e.jbutton.button == 1) // Face button B
+				Unset(key::C_ACTION_A);
+			else if (e.jbutton.button == 2) // Face button B
+				Unset(key::C_ACTION_B);
+			else if (e.jbutton.button == 3) // Face button B
+				Unset(key::C_ACTION_C);
+			break;
+		}
 	}
 
 	void ClearHitsAndDelta()

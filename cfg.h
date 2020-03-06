@@ -6,7 +6,7 @@ namespace cfg
 {
 	//is fullscreen
 	extern bool bFullscreen;
-	extern bool bShowConsole;
+	extern bool bHost;
 	extern bool bEditMode;
 	extern bool bSplitScreen;
 
@@ -14,7 +14,7 @@ namespace cfg
 	extern unsigned int iIPB;
 	extern unsigned int iIPC;
 	extern unsigned int iIPD;
-	extern unsigned short iIPPORT;
+	extern unsigned short sIPPORT;
 
 	//config variables loaded from a file
 	//window size

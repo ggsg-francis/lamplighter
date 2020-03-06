@@ -25,9 +25,8 @@
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-//opengl stuff
+// OpenGL
 #include <glad\glad.h>
-#include <GLFW\glfw3.h>
 #include <glm\glm.hpp>
 //gtx is experimental, gtc is stable
 #include <glm\gtc\matrix_transform.hpp>
@@ -35,11 +34,15 @@
 //for transform rotation
 #include <glm\gtc\quaternion.hpp>
 
-#ifdef DEF_USE_CS
-// For getting the window handle
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW\glfw3native.h>
-#endif
+// SDL
+#include <SDL2\SDL.h>
+#include <SDL2\SDL_syswm.h>
+
+//#ifdef DEF_USE_CS
+//// For getting the window handle
+//#define GLFW_EXPOSE_NATIVE_WIN32
+//#include <GLFW\glfw3native.h>
+//#endif
 
 //engine
 //try not to include so many things!
@@ -57,7 +60,8 @@
 
 //-------------------------------- WINDOWING GLOBAL VARIABLES
 
-GLFWwindow* window;
+SDL_Window* sdl_window;
+SDL_GLContext sdl_glcontext; 
 bool focus = true;
 
 //-------------------------------- GAME GLOBAL VARIABLES (SHOULD GO ELSEWHERE, PROBABLY)
@@ -98,19 +102,19 @@ void RegenFramebuffers()
 	//depthbuffer_2.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
 }
 
-void FocusCallback(GLFWwindow* win, int focus2)
-{
-	//focus = focus2 == 1;
-}
-void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
-	cfg::iWinX = width; cfg::iWinY = height;
-	if (!cfg::bEditMode)
-	{
-		graphics::SetFrameSize(cfg::iWinX, cfg::iWinY);
-		RegenFramebuffers();
-	}
-}
+//void FocusCallback(GLFWwindow* win, int focus2)
+//{
+//	//focus = focus2 == 1;
+//}
+//void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
+//{
+//	cfg::iWinX = width; cfg::iWinY = height;
+//	if (!cfg::bEditMode)
+//	{
+//		graphics::SetFrameSize(cfg::iWinX, cfg::iWinY);
+//		RegenFramebuffers();
+//	}
+//}
 
 //________________________________________________________________________________________________________________________________
 //--------------------------- STEP TICK ------------------------------------------------------------------------------------------
@@ -206,8 +210,7 @@ bool StepTickEditor(double dt)
 //________________________________________________________________________________________________________________________________
 //--------------------------- MAIN -----------------------------------------------------------------------------------------------
 
-//int main(int argc, char * argv[])
-int main()
+int main(int argc, char * argv[]) // SDL Main
 {
 	// Test stuff
 	InitTest();
@@ -221,42 +224,11 @@ int main()
 	network::Connect();
 	#endif
 
-	//-------------------------------- INITIALIZE GLFW
+	//-------------------------------- INITIALIZE SDL2
 
-	glfwInit();
-	// Set to OpenGL version 3.3
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	//glfwWindowHint(GLFW_DECORATED, false);
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK) != 0)
+		return 0;
 
-	if (cfg::bFullscreen) window = glfwCreateWindow(cfg::iWinX, cfg::iWinY, "TSOA", glfwGetPrimaryMonitor(), NULL);
-	else window = glfwCreateWindow(cfg::iWinX, cfg::iWinY, "TSOA", NULL, NULL);
-	if (window == NULL) // If the window creation failed, error & close
-	{
-		std::cout << "Failed to create GLFW window" << std::endl;
-		glfwTerminate();
-		return -1;
-	}
-	glfwMakeContextCurrent(window); // Sets this window to be in focus, I think				
-	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback); //set glfw to call resize gl viewport function
-	glfwSetKeyCallback(window, input::KeyCallback);
-	glfwSetCharCallback(window, input::CharCallback);
-	glfwSetCursorPosCallback(window, input::CursorCallback);
-	glfwSetScrollCallback(window, input::ScrollCallback);
-	glfwSetMouseButtonCallback(window, input::MouseButtonCallback);
-	// window focus callbacks
-	glfwSetWindowFocusCallback(window, FocusCallback);
-
-	#if defined DEF_INPUT_MOUSE_HIDDEN
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-	#elif defined DEF_INPUT_MOUSE_1ST_PERSON
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-	#else
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-	#endif
-
-	/*
 	SDL_Joystick* gGameController = NULL; // Game Controller 1 handler
 
 	if (SDL_NumJoysticks() < 1) // Check for joysticks
@@ -264,11 +236,34 @@ int main()
 	else { // If there is one
 		gGameController = SDL_JoystickOpen(0); // Load joystick
 		if (gGameController == NULL) { printf("Warning: Unable to open game controller! SDL Error: %s\n", SDL_GetError()); }
-	}*/
+	}
+
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3); // Request OpenGL 3.3 'context'
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE); // I don't know what this does
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // Turn on double buffering
+
+	sdl_window = SDL_CreateWindow("TSOA", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+		cfg::iWinX, cfg::iWinY, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN); // Create window
+	if (!sdl_window) return -1; // Die if creation failed
+
+	sdl_glcontext = SDL_GL_CreateContext(sdl_window); // Create our opengl context and attach it to our window
+
+	SDL_GL_SetSwapInterval(1); // This makes our buffer swap syncronized with the monitor's vertical refresh
+
+	SDL_Event e; // Input event
+
+	#if defined DEF_INPUT_MOUSE_HIDDEN
+	SDL_ShowCursor(false); // Set mouse cursor invisible
+	#elif defined DEF_INPUT_MOUSE_1ST_PERSON
+	SDL_SetRelativeMouseMode((SDL_bool)true); // Set mouse input to use raw input
+	#else
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	#endif
 
 	//-------------------------------- INITIALIZE GLAD
 	
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) // Load all OpenGL function pointers
+	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) // Load all OpenGL function pointers
 	{
 		std::cout << "ERROR: gladLoadGLLoader failed!" << std::endl;
 		return -1;
@@ -361,12 +356,10 @@ int main()
 
 	res::Init();
 	#ifdef DEF_USE_CS
-	/*SDL_SysWMinfo wmInfo;
+	SDL_SysWMinfo wmInfo;
 	SDL_VERSION(&wmInfo.version);
 	SDL_GetWindowWMInfo(sdl_window, &wmInfo);
 	HWND hwnd = wmInfo.info.win.window;
-	aud::Init(hwnd);*/
-	HWND hwnd = glfwGetWin32Window(window);
 	aud::Init(hwnd);
 	#else
 	aud::Init();
@@ -394,7 +387,7 @@ updtime:
 		// Wait until the exact right time to run a new frame
 		while (current_frame_time <= next_frame_time)
 		{
-			current_frame_time = (btf64)glfwGetTime();
+			current_frame_time = (btf64)SDL_GetTicks() / 1000.;
 		}
 		next_frame_time = current_frame_time + FRAME_TIME;
 		Time::Update(current_frame_time);
@@ -411,8 +404,19 @@ updtime:
 		if (input::GetHit(input::key::QUIT)) goto exit;
 
 		input::ClearHitsAndDelta();
-		glfwPollEvents();
-		input::UpdateControllerInput();
+		while (SDL_PollEvent(&e))
+		{
+			//If user closes the window
+			if (e.type == SDL_QUIT) {
+				goto exit;
+			}
+			else
+			{
+				input::UpdateInput(&e);
+				//#error
+			}
+		}
+		//input::UpdateControllerInput();
 
 		// If we reach this point, its time to run the tick
 		Time::Step();
@@ -553,19 +557,18 @@ render:
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
-	//if (cfg::bShowConsole) index::DrawPostDraw();
 	index::DrawPostDraw();
 
 	glFrontFace(GL_CCW);
 
 	//-------------------------------- SWAP BUFFERS
 
-	glfwSwapBuffers(window);
+	SDL_GL_SwapWindow(sdl_window);
 
 	//-------------------------------- SLEEP FOR THE REMAINDER OF THE FRAME
 
 	// Get the time now that we've rendered the frame
-	current_frame_time = glfwGetTime();
+	current_frame_time = (btf64)SDL_GetTicks() / 1000.;
 	// Get the frame time remainder that we need to sleep for (rounded down)
 	btf64 test2 = (next_frame_time - current_frame_time) * 1000.;
 	if (test2 > 0.)
@@ -583,7 +586,7 @@ loop_editor:
 	printf("Entered Editor Loop\n");
 	while (true)
 	{
-		Time::Update((btf64)(glfwGetTime()));
+		Time::Update((btf64)SDL_GetTicks() / 1000.);
 
 		if (input::GetHit(input::key::QUIT)) break;
 
@@ -625,9 +628,10 @@ loop_editor:
 
 			//-------------------------------- SWAP BUFFERS
 
-			glfwSwapBuffers(window);
+			SDL_GL_SwapWindow(sdl_window);
 			input::ClearHitsAndDelta();
-			glfwPollEvents();
+			//glfwPollEvents();
+			//#error
 		} // End if StepTick
 	}
 
@@ -639,7 +643,9 @@ exit:
 	res::End();
 	graphics::End();
 
-	glfwTerminate();
+	SDL_GL_DeleteContext(sdl_glcontext);
+	SDL_DestroyWindow(sdl_window);
+	SDL_Quit();
 
 	#ifdef _DEBUG
 	// CRT memory leak report

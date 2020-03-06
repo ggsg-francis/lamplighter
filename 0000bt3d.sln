@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "server.vcxproj", "{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "btype3d", "btype3d.vcxproj", "{10E0CAE9-EE96-4BBE-B1FD-5E359AF4629F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bt_archiver", "bt_archiver.vcxproj", "{DF93715E-CAAB-44EE-BF92-FA0072AF7DBE}"
@@ -21,20 +19,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Debug_NMP|x64.ActiveCfg = Debug_NMP|x64
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Debug_NMP|x64.Build.0 = Debug_NMP|x64
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Debug_NMP|x86.ActiveCfg = Debug_NMP|Win32
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Debug_NMP|x86.Build.0 = Debug_NMP|Win32
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Debug|x64.ActiveCfg = Debug|x64
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Debug|x86.ActiveCfg = Debug|Win32
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Debug|x86.Build.0 = Debug|Win32
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Release_NMP|x64.ActiveCfg = Release_NMP|x64
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Release_NMP|x64.Build.0 = Release_NMP|x64
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Release_NMP|x86.ActiveCfg = Release_NMP|Win32
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Release_NMP|x86.Build.0 = Release_NMP|Win32
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Release|x64.ActiveCfg = Release|x64
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Release|x86.ActiveCfg = Release|Win32
-		{C0E43274-B6B9-45B3-B9AE-0A5B67A1B0E1}.Release|x86.Build.0 = Release|Win32
 		{10E0CAE9-EE96-4BBE-B1FD-5E359AF4629F}.Debug_NMP|x64.ActiveCfg = Debug_NMP|x64
 		{10E0CAE9-EE96-4BBE-B1FD-5E359AF4629F}.Debug_NMP|x64.Build.0 = Debug_NMP|x64
 		{10E0CAE9-EE96-4BBE-B1FD-5E359AF4629F}.Debug_NMP|x86.ActiveCfg = Debug_NMP|Win32

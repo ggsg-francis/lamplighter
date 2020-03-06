@@ -11,7 +11,7 @@ namespace cfg
 	// Is fullscreen
 	bool bFullscreen = false;
 	// Show output console
-	bool bShowConsole = false;
+	bool bHost = false;
 	// Run as editor
 	bool bEditMode = false;
 	bool bSplitScreen = false;
@@ -21,7 +21,7 @@ namespace cfg
 	unsigned int iIPB = 0;
 	unsigned int iIPC = 0;
 	unsigned int iIPD = 0;
-	unsigned short iIPPORT = 0;
+	unsigned short sIPPORT = 0;
 
 	// Config variables loaded from a file
 	// Window size
@@ -40,9 +40,9 @@ namespace cfg
 	{
 		//temporary pointers used for this function only
 		//(although, they could be made global in the case that they become useful?)
-		bool* bptr[] = { &bFullscreen, &bShowConsole, &bEditMode, &bSplitScreen };
+		bool* bptr[] = { &bFullscreen, &bHost, &bEditMode, &bSplitScreen };
 		unsigned int* iptr[] = { &iIPA, &iIPB, &iIPC, &iIPD, &iWinX, &iWinY};
-		unsigned short* sptr[] = { &iIPPORT };
+		unsigned short* sptr[] = { &sIPPORT };
 		//std::string* sptr[] = { &sIP };
 		float* fptr[] = { &fCameraFOV, &fCameraSensitivity, &fCameraNearClip, &fCameraFarClip, &fSyncTimer };
 

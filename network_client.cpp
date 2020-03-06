@@ -37,6 +37,8 @@ namespace network
 	static sockaddr_in broadcastaddr;
 	static in_addr myAddr;
 
+	UDPsocket socket_connection;
+	UDPsocket socket_;
 
 	//network id
 	btui8 nid = 0ui8;
@@ -47,84 +49,6 @@ namespace network
 	SOCKET connHandle;
 	//message from server
 	char servMessage[PACKET_SIZE] = "NO CONNECTION";
-
-	//________________________________________________________________________________________________________________________________
-	//-------------------------------- UTILITY
-
-	// net_wins.c line 73
-	bool GetMyAddr()
-	{
-		// Get this PC's name on the network
-		char hostname[MAXHOSTNAMELEN];
-		if (gethostname(hostname, MAXHOSTNAMELEN) == SOCKET_ERROR) {
-			std::cerr << "Error " << WSAGetLastError() <<
-				" when getting local host name." << std::endl;
-			return false;
-		}
-		hostname[MAXHOSTNAMELEN - 1] = 0; // Force null terminate. Quake does this, so I will
-		std::cout << "Host name is " << hostname << "." << std::endl;
-		// Get Address from Name
-		hostent* host_details = gethostbyname(hostname);
-		if (host_details == NULL) {
-			std::cerr << "Error: Bad host lookup." << std::endl;
-			return false;
-		}
-		// Copy first address
-		memcpy(&myAddr, host_details->h_addr_list[0], sizeof(in_addr));
-		std::cout << "Address " << 0 << ": " << inet_ntoa(myAddr) << std::endl;
-		/*for (int i = 0; host_details->h_addr_list[i] != 0; ++i) {
-		in_addr addr;
-		memcpy(&addr, host_details->h_addr_list[i], sizeof(in_addr));
-		std::cout << "Address " << i << ": " << inet_ntoa(addr) << std::endl;
-		}*/
-		return true;
-	}
-
-	// net_wins.c line 369
-	static int MakeSocketBroadcastCapable(SOCKET socketid)
-	{
-		int	i = 1;
-		// Make this socket broadcast capable
-		if (setsockopt(socketid, SOL_SOCKET, SO_BROADCAST, (char*)&i, sizeof(i)) == SOCKET_ERROR)
-		{
-			//int err = SOCKETERRNO;
-			//Con_SafePrintf("UDP, setsockopt: %s\n", socketerror(err));
-			return -1;
-		}
-		net_broadcastsocket = socketid;
-		return 0;
-	}
-
-	//________________________________________________________________________________________________________________________________
-	//-------------------------------- WRITE
-
-	int Write(SOCKET socketid, byte* buf, int len, sockaddr* addr)
-	{
-		int	ret;
-		ret = sendto(socketid, (char*)buf, len, 0, (sockaddr*)addr,
-			sizeof(sockaddr));
-		if (ret == SOCKET_ERROR)
-			int bp = 0;
-		return ret;
-	}
-
-	int Broadcast(SOCKET socketid, byte *buf, int len)
-	{
-		int	ret;
-		if (socketid != net_broadcastsocket)
-		{
-			if (net_broadcastsocket != 0) {
-				//Sys_Error("Attempted to use multiple broadcasts sockets");
-			} //GetMyAddr();
-			ret = MakeSocketBroadcastCapable(socketid);
-			if (ret == -1)
-			{
-				//Con_Printf("Unable to make socket broadcast capable\n");
-				return ret;
-			}
-		}
-		return Write(socketid, buf, len, (sockaddr*)&broadcastaddr);
-	}
 
 	//________________________________________________________________________________________________________________________________
 	//-------------------------------- MY FUNCTIONS
@@ -183,86 +107,108 @@ namespace network
 		memcpy(pw.msg, msg, PACKET_SIZE - sizeof(char)); //copy the message struct into this wrapper class
 		memcpy(buffer, &pw, PACKET_SIZE); //copy the wrapper class into the buffer for sending
 		send(connHandle, (char*)buffer, PACKET_SIZE, NULL); //send the buffer
+		
+		UDPpacket packet;
+		
+		SDLNet_UDP_Send(socket_, 0, &packet);
 		free(buffer); //clear the buffer from memory
 	}
 
 	void Init()
 	{
-		//initialize winsock
-		WSAData wsaData;
-		WORD DLLVersion = MAKEWORD(2, 1);
-		if (WSAStartup(DLLVersion, &wsaData) != 0)
+		// Initialize network library
+		int err = SDLNet_Init();
+		if (err == -1) goto exiterr;
+		// Open UDP socket
+		socket_connection = SDLNet_UDP_Open(cfg::sIPPORT); // pass 0 to open on any available port
+		if (!socket_connection) goto exiterr;
+
+		if (cfg::bHost) // if acting as server
 		{
-			MessageBoxA(NULL, "Winsock startup failed", "Error", MB_OK | MB_ICONERROR);
-			exit(1);
+			IPaddress addr; // broadcast
+			addr.host = INADDR_ANY;
+			addr.port = cfg::sIPPORT;
+
+			int found_other = SDLNet_ResolveHost(&addr, NULL, cfg::sIPPORT);
+			if (found_other == -1) goto exiterr;
+			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
+
+			// try to receive a waiting udp packet
+			UDPsocket udpsock = NULL;
+			UDPpacket packet;
+			int numrecv;
+			printf("waiting for packet........ \n");
+			while (true)
+			{
+				numrecv = SDLNet_UDP_Recv(udpsock, &packet);
+				if (numrecv) {
+					// do something with packet
+					printf("Received packet!\n");
+					goto exit; //bail for now
+				}
+				if (numrecv == -1)
+				{
+					printf("Fuckt\n");
+				}
+			}
 		}
-		// Get this PC's network address
-		GetMyAddr();
+		else // if acting as client
+		{
+			IPaddress addr; // listen
+			addr.host = INADDR_BROADCAST;
+			addr.port = cfg::sIPPORT;
+
+			int found_other = SDLNet_ResolveHost(&addr, "Sirennus0000", cfg::sIPPORT);
+			if (found_other == -1) goto exiterr;
+			//int found_other = SDLNet_ResolveHost(&addr, "255.255.255.255", cfg::sIPPORT);
+			//int channel = 0;
+			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
+
+			// send a packet using a UDPsocket, using the packet's channel as the channel
+			UDPpacket* packet;
+
+			packet = SDLNet_AllocPacket(256);
+
+			packet->address = addr;
+			packet->channel = channel;
+			char* c = "hewwo..?";
+			memcpy(packet->data, c, strlen(c));
+			packet->len = strlen(c);
+			packet->maxlen = 256;
+
+			int numsent;
+			numsent = SDLNet_UDP_Send(socket_connection, channel, packet);
+			if (!numsent) {
+				printf("SDLNet_UDP_Send: %s\n", SDLNet_GetError());
+				// do something because we failed to send
+				// this may just be because no addresses are bound to the channel...
+			}
+			else 
+				printf("Sent packet OK\n");
+
+			SDLNet_FreePacket(packet);
+
+			while (true)
+			{
+				//do nothing;
+			}
+		}
+
+	exit:
+		printf("Initialized Net\n");
+		return;
+	exiterr:
+		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+	}
+	void End()
+	{
+		SDLNet_UDP_Close(socket_connection);
+		SDLNet_Quit();
 	}
 
 	void Connect()
 	{
-		unsigned short port = (short)cfg::iIPPORT;
-
-		std::uint32_t ip_address_connect = (cfg::iIPA << 24) | (cfg::iIPB << 16) | (cfg::iIPC << 8) | cfg::iIPD;
-
-
-
-
-		SOCKADDR_IN addr;
-		int addrlength = sizeof(addr);
-		addr.sin_family = AF_INET;
-		addr.sin_addr.s_addr = htonl(ip_address_connect);
-		//addr.sin_addr.s_addr = INADDR_BROADCAST;
-		addr.sin_port = htons(port);
-
-		/*
-
-		SOCKADDR_IN addr; //address that we will bind out listening socket to
-		int addrlength = sizeof(addr); //length of the address (required for accept call)
-		//addr.sin_addr.s_addr = inet_addr("127.0.0.1"); //address = localhost
-		//new non-deprecated address set
-		std::uint32_t ip_address;
-		inet_pton(AF_INET, "127.0.0.1", &ip_address);
-		//const char* test = sIP.c_str();
-		//inet_pton(AF_INET, sIP.c_str(), &ip_address);
-		addr.sin_addr.s_addr = ip_address;
-
-		addr.sin_port = htons(1111); //port
-		addr.sin_family = AF_INET; //ipv4 socket, use AF_INET6 for ipv6, if needed
-
-		*/
-
-		connHandle = socket(AF_INET, SOCK_STREAM, NULL); //set connection socket
-
-		if (connect(connHandle, (SOCKADDR*)&addr, addrlength) != 0) //if we are unable to connect
-		{
-			std::cout << "Could not connect!" << std::endl;
-			//no need to exit the program if we can't connect
-			//MessageBoxA(NULL,"Failed to Connect", "Error", MB_OK | MB_ICONERROR);
-			//return 0;
-		}
-		//if we could connect to the server
-		else
-		{
-			std::cout << "Connected!" << std::endl;
-
-			recv(connHandle, servMessage, sizeof(servMessage), NULL); //receive message from server
-			std::cout << "Message received: " << servMessage << std::endl;
-
-			msg::ClientConnect msg;
-			msg.version_major = VERSION_MAJOR;
-			msg.version_minor = VERSION_BUILD;
-			SendMsg(eCLIENT_CONNECT, &msg);
-		}
-
-		//set socket to non-blocking
-		DWORD nonBlocking = 1;
-		if (ioctlsocket(connHandle, FIONBIO, &nonBlocking) != 0)
-		{
-			printf("failed to set non-blocking\n");
-			//return false;
-		}
+		
 	}
 }
 #endif // DEF_NMP

@@ -21,6 +21,7 @@ namespace network
 	void SendMsg(paktype type, void* msg);
 
 	void Init();
+	void End();
 	void Connect();
 }
 #endif // DEF_NMP
