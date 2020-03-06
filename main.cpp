@@ -14,7 +14,7 @@
 
 // FOR BROAD CATEGORIZATION
 //________________________________________________________________________________________________________________________________
-//-------------------------------- BIG COMMENT
+// BIG COMMENT -------------------------------------------------------------------------------------------------------------------
 
 // ANYTHING SMALLER / HEADER ZONING
 //-------------------------------- LITTLE COMMENT
@@ -24,6 +24,10 @@
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+#ifndef DEF_NMP
+#include <time.h> // For the random seed
+#endif
 
 // OpenGL
 #include <glad\glad.h>
@@ -83,7 +87,7 @@ GLuint framebuffer_shadow; // Shadowmap framebuffer
 GLuint rendertexture_shadow; // Shadowmap rendertexture
 
 //________________________________________________________________________________________________________________________________
-//--------------------------- UTIL FUNCTIONS -------------------------------------------------------------------------------------
+// UTIL FUNCTIONS ----------------------------------------------------------------------------------------------------------------
 
 void RegenFramebuffers()
 {
@@ -117,26 +121,52 @@ void RegenFramebuffers()
 //}
 
 //________________________________________________________________________________________________________________________________
-//--------------------------- STEP TICK ------------------------------------------------------------------------------------------
+// TRANSLATE INPUTS --------------------------------------------------------------------------------------------------------------
 
 bool step_pause = false;
 
-inline void UpdateInput() // Fixed timestep tick function
+// Convert device input to chara input
+inline void TranslateInput()
 {
-	//-------------------------------- CONVERT DEVICE INPUT TO CHARA INPUT
-
+	#ifdef DEF_NMP
+	for (btID i = 0u; i < NUM_PLAYERS; ++i)
+	{
+		// Generate analogue input from directional keys
+		m::Vector2 input_p1(0.f, 0.f);
+		if (input::GetHeld(i, input::key::DIR_F)) // Forward
+			input_p1.y += 1.f;
+		if (input::GetHeld(i, input::key::DIR_B)) // Back
+			input_p1.y -= 1.f;
+		if (input::GetHeld(i, input::key::DIR_R)) // Right
+			input_p1.x += 1.f;
+		if (input::GetHeld(i, input::key::DIR_L)) // Left
+			input_p1.x -= 1.f;
+		// Set input
+		index::SetInput((btID)i,
+			input_p1, input::buf[i][INPUT_BUF_GET].mouse_x * 0.25f, input::buf[i][INPUT_BUF_GET].mouse_y * 0.25f,
+			input::GetHeld(i, input::key::USE),
+			input::GetHit(i, input::key::USE),
+			input::GetHit(i, input::key::USE_ALT),
+			input::GetHeld(i, input::key::RUN),
+			false,
+			input::GetHit(i, input::key::ACTION_A),
+			input::GetHit(i, input::key::ACTION_B),
+			input::GetHit(i, input::key::ACTION_C));
+	}
+	#else
 	// Generate analogue input from directional keys
 	m::Vector2 input_p1(0.f, 0.f);
 	if (input::GetHeld(input::key::DIR_F)) // Forward
-		input_p1.y = 1.f;
+		input_p1.y += 1.f;
 	if (input::GetHeld(input::key::DIR_B)) // Back
-		input_p1.y = -1.f;
+		input_p1.y -= 1.f;
 	if (input::GetHeld(input::key::DIR_R)) // Right
 		input_p1.x += 1.f;
 	if (input::GetHeld(input::key::DIR_L)) // Left
 		input_p1.x -= 1.f;
 	// Set input
-	index::SetInput(0ui16, input_p1, input::mouse_x * 0.25f, input::mouse_y * 0.25f,
+	index::SetInput(0ui16,
+		input_p1, input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
 		input::GetHeld(input::key::USE),
 		input::GetHit(input::key::USE),
 		input::GetHit(input::key::USE_ALT),
@@ -144,36 +174,32 @@ inline void UpdateInput() // Fixed timestep tick function
 		false,
 		input::GetHit(input::key::ACTION_A),
 		input::GetHit(input::key::ACTION_B),
-		input::GetHit(input::key::ACTION_C)); // 3rd 'aim' variable was here
-
-	// Generate analogue input from joystick input
-	m::Vector2 input_p2(0.f, 0.f);
-	input_p2.x = input::joy_x_a;
-	input_p2.y = -input::joy_y_a;
-	// Set input
-	index::SetInput(1ui16, input_p2, input::joy_x_b * 8.f, input::joy_y_b * 8.f,
-		input::GetHeld(input::key::C_USE),
-		input::GetHit(input::key::C_USE),
-		input::GetHit(input::key::C_USE_ALT),
-		input::GetHeld(input::key::C_RUN),
-		false,
-		input::GetHit(input::key::C_ACTION_A),
-		input::GetHit(input::key::C_ACTION_B),
-		input::GetHit(input::key::C_ACTION_C)); // 3rd 'aim' variable was here
+		input::GetHit(input::key::ACTION_C));
+	if (cfg::bSplitScreen)
+	{
+		// Generate analogue input from joystick input
+		m::Vector2 input_p2(0.f, 0.f);
+		input_p2.x = input::BUF_LOCALGET.joy_x_a;
+		input_p2.y = -input::BUF_LOCALGET.joy_y_a;
+		// Set input
+		index::SetInput(1ui16, input_p2, input::BUF_LOCALGET.joy_x_b * 8.f, input::BUF_LOCALGET.joy_y_b * 8.f,
+			input::GetHeld(input::key::C_USE),
+			input::GetHit(input::key::C_USE),
+			input::GetHit(input::key::C_USE_ALT),
+			input::GetHeld(input::key::C_RUN),
+			false,
+			input::GetHit(input::key::C_ACTION_A),
+			input::GetHit(input::key::C_ACTION_B),
+			input::GetHit(input::key::C_ACTION_C));
+	}
+	#endif
 }
 
-//fixed timestep tick function
+// Fixed timestep editor tick function
 bool StepTickEditor(double dt)
 {
 	if (!step_pause && focus)
 	{
-		/*step_accumulator += dt;
-		if (step_accumulator < FRAME_TIME)
-			return false;
-		step_accumulator = 0.f;*/
-
-		//-------------------------------- CONVERT DEVICE INPUT TO CHARA INPUT
-
 		// Generate analogue input from directional keys
 		m::Vector2 input_p1(0.f, 0.f);
 		if (input::GetHeld(input::key::DIR_F)) // Forward
@@ -185,7 +211,7 @@ bool StepTickEditor(double dt)
 		if (input::GetHeld(input::key::DIR_L)) // Left
 			input_p1.x -= 1.f;
 		// Set input
-		index::SetInput(0ui16, input_p1, input::mouse_x * 0.25f, input::mouse_y * 0.25f,
+		index::SetInput(0ui16, input_p1, input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE_ALT),
@@ -208,7 +234,7 @@ bool StepTickEditor(double dt)
 }
 
 //________________________________________________________________________________________________________________________________
-//--------------------------- MAIN -----------------------------------------------------------------------------------------------
+// MAIN --------------------------------------------------------------------------------------------------------------------------
 
 int main(int argc, char * argv[]) // SDL Main
 {
@@ -220,8 +246,7 @@ int main(int argc, char * argv[]) // SDL Main
 
 	#ifdef DEF_NMP
 	// Connect to server
-	network::Init();
-	network::Connect();
+	if (!network::Init()) goto exitnoinit;
 	#endif
 
 	//-------------------------------- INITIALIZE SDL2
@@ -354,6 +379,11 @@ int main(int argc, char * argv[]) // SDL Main
 
 	//-------------------------------- INITIALIZATION
 
+	#ifndef DEF_NMP
+	srand(time(NULL)); //initialize the random seed
+	#endif
+
+
 	res::Init();
 	#ifdef DEF_USE_CS
 	SDL_SysWMinfo wmInfo;
@@ -370,7 +400,7 @@ int main(int argc, char * argv[]) // SDL Main
 	index::SetShadowTexture(rendertexture_shadow);
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- ENTER GAME LOOP
+	// ENTER GAME LOOP ---------------------------------------------------------------------------------------------------------------
 
 	btf64 current_frame_time = 0.f;
 	btf64 next_frame_time = 0.f;
@@ -401,7 +431,13 @@ updtime:
 		Time::Update(current_frame_time);
 		#endif
 
+		#ifdef DEF_NMP
+		// Probably a temporary measure - quit if any player quits
+		for (btui32 i = 0; i < NUM_PLAYERS; ++i)
+			if (input::GetHit(i, input::key::QUIT)) goto exit;
+		#else
 		if (input::GetHit(input::key::QUIT)) goto exit;
+		#endif
 
 		input::ClearHitsAndDelta();
 		while (SDL_PollEvent(&e))
@@ -416,11 +452,29 @@ updtime:
 				//#error
 			}
 		}
-		//input::UpdateControllerInput();
+
+		// TODO: think this over, there must be a better way to handle this
+		#ifdef DEF_NMP
+		if (cfg::bHost)
+		{
+			network::RecvTCP();
+			network::SendInputBuffer();
+		}
+		else
+		{
+			network::SendInputBuffer();
+			network::RecvTCP();
+		}
+		#endif
 
 		// If we reach this point, its time to run the tick
 		Time::Step();
-		UpdateInput();
+		#ifdef DEF_NMP
+		input::CycleBuffers();
+		#endif
+		TranslateInput();
+		//_controlfp(_PC_24, _MCW_PC); _controlfp(_RC_NEAR, _MCW_RC);
+		//gpAssert((_controlfp(0, 0) & _MCW_PC) == _PC_24); gpAssert((_controlfp(0, 0) & _MCW_RC) == _RC_NEAR);
 		index::Tick((btf32)(FRAME_TIME));
 		weather::Tick((btf32)(FRAME_TIME));
 	}
@@ -433,7 +487,7 @@ updtime:
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- RENDER
+	// RENDER ------------------------------------------------------------------------------------------------------------------------
 
 render:
 
@@ -443,8 +497,8 @@ render:
 	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
 	glClearColor(0.f, 0.f, 0.f, 1.0f);
 
+	#ifndef DEF_NMP
 	//-------------------------------- BUFFER 1 (LEFT SCREEN)
-
 	// Set GL properties for solid rendering
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
@@ -464,8 +518,6 @@ render:
 	index::TickGUI(); // causes a crash if before drawgui (does it still?)
 
 	//-------------------------------- BUFFER 2 (RIGHT SCREEN)
-
-	#ifndef DEF_NMP
 	if (cfg::bSplitScreen) {
 		// Set GL properties for solid rendering (again....)
 		glEnable(GL_DEPTH_TEST);
@@ -485,6 +537,24 @@ render:
 		index::Draw(); index::DrawGUI();
 		index::TickGUI(); // causes a crash if before drawgui (does it still?)
 	}
+	#else
+	// Set GL properties for solid rendering
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
+	//-------------------------------- RENDER SHADOWMAP
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	index::SetViewFocus(network::nid); // Set render POV
+	index::Draw(false);
+	//-------------------------------- RENDER VIEW
+	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	index::SetViewFocus(network::nid); // Set render POV
+	index::Draw(); index::DrawGUI();
+	index::TickGUI(); // causes a crash if before drawgui (does it still?)
 	#endif // MP
 
 	//-------------------------------- DRAW FRAMEBUFFER (TODO: try and clean this up a bit!)
@@ -557,7 +627,7 @@ render:
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
-	index::DrawPostDraw();
+	index::DrawPostDraw(Time::deltaTick);
 
 	glFrontFace(GL_CCW);
 
@@ -642,6 +712,9 @@ exit:
 	aud::End();
 	res::End();
 	graphics::End();
+	#ifdef DEF_NMP
+	network::End();
+	#endif
 
 	SDL_GL_DeleteContext(sdl_glcontext);
 	SDL_DestroyWindow(sdl_window);
@@ -652,5 +725,6 @@ exit:
 	//_CrtDumpMemoryLeaks();
 	#endif // _DEBUG
 
+exitnoinit:
 	return 0; // Goodbye
 }

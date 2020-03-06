@@ -519,7 +519,8 @@ namespace mem
 	// Bitvector (the safest iteration yet)
 	template <class tcast, class trecv> class bv
 	{
-	private:
+	//private:
+	public:
 		tcast bits = (tcast)0u; // Always start at zeroed
 	public:
 		

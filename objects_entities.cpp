@@ -232,11 +232,11 @@ void DrawEditorPawn(void* ent)
 	Chara* chr = (Chara*)ent;
 
 	// need a good way of knowing own index
-	DrawMesh(chr->id, res::GetM(res::m_debug_bb), res::skin_t[chr->t_skin], SS_NORMAL, chr->t_body.getMatrix());
+	DrawMesh(chr->id, res::GetM(res::m_debug_bb), res::GetT(chr->t_skin), SS_NORMAL, chr->t_body.getMatrix());
 
 	// draw head
 
-	//DrawBlendMesh(index, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], SS_CHARA, t_head.getMatrix());
+	//DrawBlendMesh(index, res::GetMB(res::mb_char_head), 0, res::GetT(chr->t_skin), SS_CHARA, t_head.getMatrix());
 }
 
 
@@ -345,7 +345,7 @@ void TickRestingItem(void* ent, btf32 dt)
 	EntityTransformTick(chr, chr->id, 0.f, 0.f, 0.f);
 }
 
-void Actor::PickUpItem(btID id)
+void Actor::TakeItem(btID id)
 {
 	RestingItem* item = (RestingItem*)index::GetEntityPtr(id);
 	HeldItem* item_held = GETITEM_MISC(item->item_instance);
@@ -626,8 +626,8 @@ void DrawChara(void* ent)
 	#define ani_body_lean chr->ani_body_lean
 	#define t_head chr->t_head
 
-	Transform3D t_test = t_body;
-	t_test.Rotate(glm::radians(m::AngDif(viewYaw.Deg(), t.yaw.Deg())), m::Vector3(0, 1, 0));
+	Transform3D t_upperbody = t_body;
+	t_upperbody.Rotate(glm::radians(m::AngDif(viewYaw.Deg(), t.yaw.Deg())), m::Vector3(0, 1, 0));
 
 	btf32 lerpAmt = 0.05f * speed;
 
@@ -635,13 +635,18 @@ void DrawChara(void* ent)
 
 	graphics::Matrix4x4 matrix;
 
-	m::Vector3 newpos2 = t_body.GetPosition() + t_test.GetUp() * 0.55f;
+	m::Vector3 newpos2 = t_body.GetPosition() + t_upperbody.GetUp() * 0.55f;
 
-	m::Vector3 jointPosR = newpos2 + t_test.GetRight() * 0.11f;
-	m::Vector3 jointPosL = newpos2 + t_test.GetRight() * -0.11f;
+	m::Vector3 jointPosR = newpos2 + t_upperbody.GetRight() * 0.11f;
+	m::Vector3 jointPosL = newpos2 + t_upperbody.GetRight() * -0.11f;
 
 	btf32 distR;
 	btf32 distL;
+
+	graphics::GetShader(graphics::S_SOLID_DEFORM_CHARA).Use();
+	graphics::GetShader(graphics::S_SOLID_DEFORM_CHARA).setVec3(graphics::Shader::Colour_A, chr->skin_col_a.x, chr->skin_col_a.y, chr->skin_col_a.z);
+	graphics::GetShader(graphics::S_SOLID_DEFORM_CHARA).setVec3(graphics::Shader::Colour_B, chr->skin_col_b.x, chr->skin_col_b.y, chr->skin_col_b.z);
+	graphics::GetShader(graphics::S_SOLID_DEFORM_CHARA).setVec3(graphics::Shader::Colour_C, chr->skin_col_c.x, chr->skin_col_c.y, chr->skin_col_c.z);
 
 	if (inventory.items.Used(inv_active_slot))
 	{
@@ -653,8 +658,8 @@ void DrawChara(void* ent)
 		m::Vector3 handPosR = HELDINSTANCE->fpGetRightHandPos(inventory.items[inv_active_slot]);
 		m::Vector3 handPosL = HELDINSTANCE->fpGetLeftHandPos(inventory.items[inv_active_slot]);
 
-		m::Vector3 bodyForwardR = m::Normalize((t_test.GetRight() * -1.f) + t_test.GetUp() + t_test.GetForward());
-		m::Vector3 bodyForwardL = m::Normalize(t_test.GetRight() + t_test.GetUp() + t_test.GetForward());
+		m::Vector3 bodyForwardR = m::Normalize((t_upperbody.GetRight() * -1.f) + t_upperbody.GetUp() + t_upperbody.GetForward());
+		m::Vector3 bodyForwardL = m::Normalize(t_upperbody.GetRight() + t_upperbody.GetUp() + t_upperbody.GetForward());
 
 		btf32 len = m::Length(jointPosR - handPosR);
 		if (len > leglen) len = leglen;
@@ -667,7 +672,7 @@ void DrawChara(void* ent)
 		graphics::MatrixTransformXFlip(matLegLoR, jointPosR + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup);
 		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::GetT(t_skin), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 
 		len = m::Length(jointPosL - handPosL);
@@ -680,142 +685,168 @@ void DrawChara(void* ent)
 		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len + vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegLoL, jointPosL + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup);
-		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::skin_t[t_skin], SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::GetT(t_skin), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 
 		#undef HELDINSTANCE
 	}
 
 	// draw legs
 
-	btf32 hip_width = 0.125f;
-
-	//m::Vector3 newpos = m::Vector3(t.position.x, 0.68f + t.height, t.position.y);
-	m::Vector3 newpos = t_body.GetPosition();
-
-	jointPosR = newpos + t_body.GetRight() * hip_width;
-	jointPosL = newpos + t_body.GetRight() * -hip_width;
-
-	m::Vector3 velocity = m::Normalize(m::Vector3(t.velocity.x, 0.f, t.velocity.y));
-
-	m::Vector2 right = m::Vector2(t_body.GetRight().x, t_body.GetRight().z);
-
-	// TODO: instead measure difference between base velocity and footslide velocity
-	//btf32 velocityAmt = m::Length(t.velocity);
-	btf32 velocityAmt = m::Length(t.velocity - chr->slideVelocity);
-
-	if (foot_state == eL_DOWN)
+	if (chr->state.stateFlags.get(ActiveState::eALIVE))
 	{
-		// if moving ignore leg length
-		if (velocityAmt > 0.025f)
+		btf32 hip_width = 0.125f;
+
+		//m::Vector3 newpos = m::Vector3(t.position.x, 0.68f + t.height, t.position.y);
+		m::Vector3 newpos = t_body.GetPosition();
+
+		jointPosR = newpos + t_body.GetRight() * hip_width;
+		jointPosL = newpos + t_body.GetRight() * -hip_width;
+
+		m::Vector3 velocity = m::Normalize(m::Vector3(t.velocity.x, 0.f, t.velocity.y));
+
+		m::Vector2 right = m::Vector2(t_body.GetRight().x, t_body.GetRight().z);
+
+		// TODO: instead measure difference between base velocity and footslide velocity
+		//btf32 velocityAmt = m::Length(t.velocity);
+		btf32 velocityAmt = m::Length(t.velocity - chr->slideVelocity);
+
+		if (foot_state == eL_DOWN)
 		{
-			if (chr->aniStepAmountR > 0.9f) // if other step nearly done
+			// if moving ignore leg length
+			if (velocityAmt > 0.025f)
+			{
+				if (chr->aniStepAmountR > 0.9f) // if other step nearly done
+				{
+					chr->footPosL = footPosTargL;
+					chr->aniStepAmountL = 0.f;
+					aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, m::Vector3(t.position.x, t.height, t.position.y));
+					footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
+					foot_state = eR_DOWN;
+				}
+			}
+			// if too far off balance
+			else if (m::Length(jointPosL - footPosTargL) > legDClen && chr->aniStepAmountL == 1.f)
 			{
 				chr->footPosL = footPosTargL;
 				chr->aniStepAmountL = 0.f;
-				aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, m::Vector3(t.position.x, t.height, t.position.y));
 				footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
 				foot_state = eR_DOWN;
 			}
 		}
-		// if too far off balance
-		else if (m::Length(jointPosL - footPosTargL) > legDClen && chr->aniStepAmountL == 1.f)
+		else if (foot_state == eR_DOWN)
 		{
-			chr->footPosL = footPosTargL;
-			chr->aniStepAmountL = 0.f;
-			footPosTargL = SetFootPos(t.position + right * -hip_width + t.velocity * velocityStepMult);
-			foot_state = eR_DOWN;
-		}
-	}
-	else if (foot_state == eR_DOWN)
-	{
-		// if moving ignore leg length
-		if (velocityAmt > 0.025f)
-		{
-			if (chr->aniStepAmountL > 0.9f) // if other step nearly done
+			// if moving ignore leg length
+			if (velocityAmt > 0.025f)
+			{
+				if (chr->aniStepAmountL > 0.9f) // if other step nearly done
+				{
+					chr->footPosR = footPosTargR;
+					chr->aniStepAmountR = 0.f;
+					aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_B, m::Vector3(t.position.x, t.height, t.position.y));
+					footPosTargR = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
+					foot_state = eL_DOWN;
+				}
+			}
+			// if too far off balance
+			else if (m::Length(jointPosR - footPosTargR) > legDClen && chr->aniStepAmountR == 1.f)
 			{
 				chr->footPosR = footPosTargR;
 				chr->aniStepAmountR = 0.f;
-				aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_B, m::Vector3(t.position.x, t.height, t.position.y));
 				footPosTargR = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
 				foot_state = eL_DOWN;
 			}
 		}
-		// if too far off balance
-		else if (m::Length(jointPosR - footPosTargR) > legDClen && chr->aniStepAmountR == 1.f)
+
+		// set step positions
+		chr->aniStepAmountL += 0.04f;
+		if (chr->aniStepAmountL > 1.f)
 		{
-			chr->footPosR = footPosTargR;
-			chr->aniStepAmountR = 0.f;
-			footPosTargR = SetFootPos(t.position + right * hip_width + t.velocity * velocityStepMult);
-			foot_state = eL_DOWN;
+			chr->aniStepAmountL = 1.f;
 		}
+		chr->aniStepAmountR += 0.04f;
+		if (chr->aniStepAmountR > 1.f)
+		{
+			chr->aniStepAmountR = 1.f;
+		}
+		btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountL * 2.f - 1.f);
+		btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountR * 2.f - 1.f);
+
+		m::Vector3 fpCurrentL = m::Lerp(chr->footPosL, footPosTargL, chr->aniStepAmountL) + m::Vector3(0.f, fpHeightL, 0.f);
+		m::Vector3 fpCurrentR = m::Lerp(chr->footPosR, footPosTargR, chr->aniStepAmountR) + m::Vector3(0.f, fpHeightR, 0.f);
+
+		// generate matrices
+
+		btf32 len = m::Length(jointPosR - fpCurrentR);
+		if (len > leglen) len = leglen;
+		btf32 lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
+		m::Vector3 vecfw = m::Normalize(fpCurrentR - jointPosR);
+		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
+		m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
+		m::Vector3 vecup2 = vecup * -1.f;
+		graphics::MatrixTransformXFlip(matLegHipR, jointPosR, t_body.GetUp() * -1.f, vecup2);
+		graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
+		graphics::MatrixTransformXFlip(matLegLoR, jointPosR - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
+		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup2);
+		graphics::SetFrontFaceInverse();
+		#ifdef DEF_NMP
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(t_skin), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+		#else
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+		#endif
+		graphics::SetFrontFace();
+		// transform legR for cloak
+		//graphics::MatrixTransformForwardUp(matrixLegR, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
+		graphics::MatrixTransformForwardUp(matLegUpR, t_body.GetPosition(), fpCurrentR - t_body.GetPosition(), t_body.GetForward());
+
+		len = m::Length(jointPosL - fpCurrentL);
+		if (len > leglen) len = leglen;
+		lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
+		vecfw = m::Normalize(fpCurrentL - jointPosL);
+		vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
+		vecup = m::Normalize(m::Cross(vecfw, vecside));
+		vecup2 = vecup * -1.f;
+		graphics::MatrixTransform(matLegHipL, jointPosL, t_body.GetUp() * -1.f, vecup2);
+		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
+		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
+		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup2);
+		//graphics::MatrixTransform(matLegFootL, fpCurrentL - m::Vector3(0.f, leglen, 0.f), m::Vector3(0.f, 1.f, 0.f), m::Vector3(1.f, 0.f, 0.f));
+		#ifdef DEF_NMP
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(t_skin), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+		#else
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+		#endif
+		// transform legL for cloak
+		//graphics::MatrixTransformForwardUp(matrixLegL, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
+		graphics::MatrixTransformForwardUp(matLegUpL, t_body.GetPosition(), fpCurrentL - t_body.GetPosition(), t_body.GetForward());
+
 	}
-
-	// set step positions
-	chr->aniStepAmountL += 0.04f;
-	if (chr->aniStepAmountL > 1.f)
-	{
-		chr->aniStepAmountL = 1.f;
-	}
-	chr->aniStepAmountR += 0.04f;
-	if (chr->aniStepAmountR > 1.f)
-	{
-		chr->aniStepAmountR = 1.f;
-	}
-	btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountL * 2.f - 1.f);
-	btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountR * 2.f - 1.f);
-
-	m::Vector3 fpCurrentL = m::Lerp(chr->footPosL, footPosTargL, chr->aniStepAmountL) + m::Vector3(0.f, fpHeightL, 0.f);
-	m::Vector3 fpCurrentR = m::Lerp(chr->footPosR, footPosTargR, chr->aniStepAmountR) + m::Vector3(0.f, fpHeightR, 0.f);
-
-	// generate matrices
-
-	btf32 len = m::Length(jointPosR - fpCurrentR);
-	if (len > leglen) len = leglen;
-	btf32 lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
-	m::Vector3 vecfw = m::Normalize(fpCurrentR - jointPosR);
-	m::Vector3 vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
-	m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
-	m::Vector3 vecup2 = vecup * -1.f;
-	graphics::MatrixTransformXFlip(matLegHipR, jointPosR, t_body.GetUp() * -1.f, vecup2);
-	graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
-	graphics::MatrixTransformXFlip(matLegLoR, jointPosR - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
-	graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup2);
-	graphics::SetFrontFaceInverse();
-	DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
-	graphics::SetFrontFace();
-	// transform legR for cloak
-	//graphics::MatrixTransformForwardUp(matrixLegR, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
-	graphics::MatrixTransformForwardUp(matLegUpR, t_body.GetPosition(), fpCurrentR - t_body.GetPosition(), t_body.GetForward());
-
-	len = m::Length(jointPosL - fpCurrentL);
-	if (len > leglen) len = leglen;
-	lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
-	vecfw = m::Normalize(fpCurrentL - jointPosL);
-	vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
-	vecup = m::Normalize(m::Cross(vecfw, vecside));
-	vecup2 = vecup * -1.f;
-	graphics::MatrixTransform(matLegHipL, jointPosL, t_body.GetUp() * -1.f, vecup2);
-	graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
-	graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
-	graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup2);
-	//graphics::MatrixTransform(matLegFootL, fpCurrentL - m::Vector3(0.f, leglen, 0.f), m::Vector3(0.f, 1.f, 0.f), m::Vector3(1.f, 0.f, 0.f));
-	DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
-	// transform legL for cloak
-	//graphics::MatrixTransformForwardUp(matrixLegL, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
-	graphics::MatrixTransformForwardUp(matLegUpL, t_body.GetPosition(), fpCurrentL - t_body.GetPosition(), t_body.GetForward());
 
 	// draw head
 
 	//DrawBlendMeshAtTransform(index, res::mb_char_head, 0, t_skin, graphics::shader_blend, t_head);
-	DrawBlendMesh(chr->id, res::GetMB(res::mb_char_head), 0, res::skin_t[t_skin], SS_CHARA, t_head.getMatrix());
+	//DrawBlendMesh(chr->id, res::GetMB(res::mb_char_head), 0, res::GetT(t_skin), SS_CHARA, t_head.getMatrix());
+	//DrawMesh(chr->id, res::GetM(res::m_char_head), res::GetT(t_skin), SS_CHARA, t_head.getMatrix());
+
+	Transform3D t2;
+	t2.SetPosition(t_body.GetPosition());
+	t2.SetRotation(t_upperbody.GetRotation());
+	t2.TranslateLocal(m::Vector3(0.f, 0.7f, 0.f));
+	DrawMeshDeform(chr->id, res::GetMD(res::md_char_head), res::GetT(t_skin), SS_CHARA, 4u,
+		t2.getMatrix(), t_head.getMatrix(), t_head.getMatrix(), t_head.getMatrix());
+
 	//DrawMeshAtTransform(index, res::m_proj_2, res::t_proj_2, graphics::shader_solid, t_head);
 	//DrawMesh(index, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_default), SS_NORMAL, t_head.getMatrix());
 
 	// need a good way of knowing own index
-	DrawMeshDeform(chr->id, res::GetMD(res::md_chr_body), res::skin_t[t_skin], SS_CHARA, 2u,
-		t_body.getMatrix(), t_test.getMatrix(), graphics::Matrix4x4(), graphics::Matrix4x4());
-	DrawMeshDeform(chr->id, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
-		t_body.getMatrix(), t_test.getMatrix(), matLegUpL, matLegUpR);
+	DrawMeshDeform(chr->id, res::GetMD(res::md_chr_body), res::GetT(t_skin), SS_CHARA, 2u,
+		t_body.getMatrix(), t_upperbody.getMatrix(), graphics::Matrix4x4(), graphics::Matrix4x4());
+	#ifndef DEF_NMP
+	if (chr->state.stateFlags.get(ActiveState::eALIVE))
+	{
+		DrawMeshDeform(chr->id, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
+			t_body.getMatrix(), t_upperbody.getMatrix(), matLegUpL, matLegUpR);
+	}
+	#endif
 
 	#undef t_body
 	#undef viewYaw

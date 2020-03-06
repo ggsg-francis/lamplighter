@@ -5,6 +5,7 @@
 
 #include "objects_entities.h"
 #include "objects_items.h"
+#include "network_client.h"
 #include "memoryC.h"
 
 struct Index
@@ -28,7 +29,7 @@ namespace index
 	//--------------------------- GLOBAL VARIABLES -----------------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-	float networkTimerTemp;
+	btf64 networkTimerTemp;
 
 	unsigned int activePlayer = 0u;
 	btID players[2];
@@ -54,7 +55,7 @@ namespace index
 	graphics::GUIText text_fps;
 
 	graphics::GUIText text_message[2];
-	btf64 message_time[2];
+	btui64 message_time[2];
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- ENTITY BUFFERS -------------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ extern "C" {
 	typedef struct
 	{
 		TransformC t;
-		btf64 ttd;
+		btui64 ttd;
 		btui32 faction;
 	} Projectile;
 

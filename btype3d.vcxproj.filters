@@ -63,9 +63,6 @@
     <ClInclude Include="serializer.h">
       <Filter>framework</Filter>
     </ClInclude>
-    <ClInclude Include="network_common.h">
-      <Filter>framework\network</Filter>
-    </ClInclude>
     <ClInclude Include="network_client.h">
       <Filter>framework\network</Filter>
     </ClInclude>

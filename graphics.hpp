@@ -211,7 +211,10 @@ namespace graphics
 			texTerrain2, // Terrain shader
 			texTerrain3, // Terrain shader
 			texTerrain4, // Terrain shader
-			Opacity,
+			Opacity, // GUI shader
+			Colour_A, // Chara shader
+			Colour_B, // Chara shader
+			Colour_C, // Chara shader
 			LOCATION_COUNT,
 		};
 	private:
@@ -244,6 +247,9 @@ namespace graphics
 			"tt3",
 			"tt4",
 			"opa",
+			"c_a",
+			"c_b",
+			"c_c",
 		};
 	public:
 		// To ensure that there is no conflic with texture locations
@@ -330,6 +336,7 @@ namespace graphics
 		S_SOLID_BLEND, // Used for drawing blended meshes
 		S_SOLID_BLEND_CHARA, // Used for drawing blended meshes
 		S_SOLID_DEFORM, // Used for drawing deformed meshes
+		S_SOLID_DEFORM_CHARA, // Used for drawing deformed meshes
 		S_MEAT,
 		S_GUI, // GUI shader
 		S_POST, // Framebuffer postprocessing shader

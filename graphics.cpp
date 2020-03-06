@@ -180,7 +180,7 @@ namespace graphics
 	GUIBitmap guibmp;
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- INITIALIZATION
+	// INITIALIZATION ----------------------------------------------------------------------------------------------------------------
 
 	void Init()
 	{
@@ -193,12 +193,12 @@ namespace graphics
 		gPtr->shaders[S_SOLID_CHARA].Init("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
 
 		gPtr->shaders[S_SOLID_BLEND].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
-		//gPtr->shaders[S_SOLID_BLEND_CHARA].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
-		gPtr->shaders[S_SOLID_BLEND_CHARA].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
+		gPtr->shaders[S_SOLID_BLEND_CHARA].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
+		//gPtr->shaders[S_SOLID_BLEND_CHARA].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
 
-		//gPtr->shaders[S_SOLID_DEFORM].Init("shaders/vert_3d_deform.glsl", "shaders/frag_solid_chara.glsl");
 		gPtr->shaders[S_SOLID_DEFORM].Init("shaders/vert_3d_deform.glsl", "shaders/frag_solid.glsl");
-		
+		gPtr->shaders[S_SOLID_DEFORM_CHARA].Init("shaders/vert_3d_deform.glsl", "shaders/frag_solid_chara.glsl");
+
 		gPtr->shaders[S_MEAT].Init("shaders/vert_3d.glsl", "shaders/frag_meat.glsl");
 
 		gPtr->shaders[S_GUI].Init("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
@@ -213,7 +213,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- MATRIX
+	// MATRIX ------------------------------------------------------------------------------------------------------------------------
 
 	FRow4 operator*(const FRow4& row, const btf32 mult)
 	{
@@ -367,7 +367,6 @@ namespace graphics
 		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = -vSide.z;
 		matrix[1][0] = vForw.x; matrix[1][1] = vForw.y; matrix[1][2] = -vForw.z;
 		matrix[2][0] = -vLoUp.x; matrix[2][1] = -vLoUp.y; matrix[2][2] = vLoUp.z;
-
 	}
 	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
 	{
@@ -444,7 +443,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- UTILITY FUNCTIONS
+	// UTILITY FUNCTIONS -------------------------------------------------------------------------------------------------------------
 
 	void SetFrontFace()
 	{
@@ -486,7 +485,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- SHADER
+	// SHADER ------------------------------------------------------------------------------------------------------------------------
 
 	Shader::Shader()
 	{
@@ -694,7 +693,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- TEXTURE
+	// TEXTURE -----------------------------------------------------------------------------------------------------------------------
 
 	ModifiableTexture::~ModifiableTexture()
 	{
@@ -1016,7 +1015,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- MESH
+	// MESH --------------------------------------------------------------------------------------------------------------------------
 
 	void Mesh::Draw(unsigned int tex, unsigned int shd)
 	{
@@ -1098,7 +1097,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- MESH BLEND
+	// MESH BLEND --------------------------------------------------------------------------------------------------------------------
 
 	void MeshBlend::Draw(unsigned int tex, unsigned int shd)
 	{
@@ -1184,7 +1183,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- MESH DEFORM
+	// MESH DEFORM -------------------------------------------------------------------------------------------------------------------
 
 	void MeshDeform::Draw(unsigned int tex, unsigned int shd)
 	{
@@ -1270,7 +1269,7 @@ namespace graphics
 	}
 	
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- COMPOSITE MESH
+	// COMPOSITE MESH ----------------------------------------------------------------------------------------------------------------
 
 	CompositeMesh::CompositeMesh()
 	{
@@ -1589,7 +1588,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- TERRAIN MESH
+	// TERRAIN MESH ------------------------------------------------------------------------------------------------------------------
 
 	void MeshTerrain::Draw()
 	{
@@ -1778,7 +1777,7 @@ namespace graphics
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- GUI BITMAP
+	// GUI BITMAP --------------------------------------------------------------------------------------------------------------------
 
 	GUIBitmap::GUIBitmap()
 	{
@@ -2271,7 +2270,16 @@ void DrawMeshDeform(
 	graphics::Matrix4x4 transform_d = graphics::Matrix4x4())
 {
 	// Get the shader reference
-	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID_DEFORM);
+	graphics::Shader* shd = nullptr;// = &graphics::GetShader(graphics::S_SOLID_DEFORM);
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID_DEFORM);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_DEFORM_CHARA);
+		break;
+	};
 
 	// Enable the shader
 	shd->Use();

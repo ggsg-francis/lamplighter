@@ -18,8 +18,16 @@
 #define DEF_SMOOTH_FRAMERATE // Run the CPU a little hotter to make sure the framerate is as smooth as possible
 // use cute sound
 #define DEF_USE_CS
-#ifndef DEF_NMP
+//#ifndef DEF_NMP
+//#define DEF_SPAWN_ON_START
 #define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
+#define DEF_AUTOSAVE_ON_START // temporary definition that enables autosave
+//#endif
+
+#ifdef DEF_NMP
+#define NUM_PLAYERS 2
+#else
+#define NUM_PLAYERS 2 // always 2 (co-op splitscreen)
 #endif
 
 // Any debug only defines
@@ -54,16 +62,16 @@
 #ifdef DEF_NMP
 // Multiplayer release version
 #define VERSION_MAJOR 16u
-#define VERSION_BUILD 1u
+#define VERSION_MINOR 3u
 #else
 // Singleplayer release version
 #define VERSION_MAJOR 15u
-#define VERSION_BUILD 390u
+#define VERSION_MINOR 390u
 #endif
 
 #define VERSION_SERVER_MAJOR 0u
 #define VERSION_SERVER_MINOR 14u
-#define VERSION_COMMENT "PSI"
+#define VERSION_COMMENT "WORK IN PROGRESS"
 
 #define MD_MATRIX_COUNT 4u
 
@@ -77,11 +85,11 @@
 #define ID_NULL 0b1111111111111111
 
 #define INV_SIZE 64
-#define INV_NULL 256 // ????
+#define INV_NULL 256 // inventory null value (is this even used?)
 
 // Time to pass in seconds before one single tick
-#define FRAME_TIME 1. / 30.
-//#define FRAME_TIME 1. / 60.
+#define FRAME_TIME (1. / 30.)
+//#define FRAME_TIME (1. / 60.)
 
 // Terrain vertical precision per 1 unit
 #define TERRAIN_HEIGHT_DIVISION 4.f
@@ -94,15 +102,15 @@ extern "C" {
 
 	#if _MSC_VER == 1900
 	// Signed integers
-	typedef signed char bti8;
-	typedef short bti16;
-	typedef int bti32;
-	typedef long long bti64;
+	typedef signed __int8 bti8;
+	typedef __int16 bti16;
+	typedef __int32 bti32;
+	typedef __int64 bti64;
 	// Unsigned integers
-	typedef unsigned char btui8;
-	typedef unsigned short btui16;
-	typedef unsigned int btui32;
-	typedef unsigned long long btui64;
+	typedef unsigned __int8 btui8;
+	typedef unsigned __int16 btui16;
+	typedef unsigned __int32 btui32;
+	typedef unsigned __int64 btui64;
 	// Floating points
 	typedef float btf32;
 	typedef double btf64;

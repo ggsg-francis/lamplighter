@@ -87,6 +87,8 @@ void SaveState()
 
 		fwrite(&index::block_entity.index_end, SIZE_16, 1, file);
 		fwrite(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1ui16), file);
+		//unneeded...
+		//fwrite(&index::block_entity_data, 4ui64, (size_t)(index::block_entity.index_end + 1ui16), file);
 
 		for (btID i = 0; i <= index::block_entity.index_end; i++) // For every entity
 		{
@@ -94,6 +96,7 @@ void SaveState()
 			{
 				fwrite(&ENTITY(i)->type, SIZE_8, 1, file);
 
+				//fwrite(&ENTITY(i)->id, SIZE_16, 1, file);
 				fwrite(&ENTITY(i)->radius, SIZE_32, 1, file);
 				fwrite(&ENTITY(i)->height, SIZE_32, 1, file);
 				fwrite(&ENTITY(i)->properties, SIZE_8, 1, file);
@@ -120,6 +123,9 @@ void SaveState()
 					fwrite(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
 					fwrite(&ACTOR(i)->inv_active_slot, SIZE_32, 1, file);
 					fwrite(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
+					fwrite(&CHARA(i)->skin_col_a, sizeof(m::Vector3), 1, file);
+					fwrite(&CHARA(i)->skin_col_b, sizeof(m::Vector3), 1, file);
+					fwrite(&CHARA(i)->skin_col_c, sizeof(m::Vector3), 1, file);
 				}
 			}
 		}
@@ -164,6 +170,7 @@ void LoadStateFileV001()
 
 		fread(&index::block_entity.index_end, SIZE_16, 1, file);
 		fread(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1ui16), file);
+		//fread(&index::block_entity_data, 4ui64, (size_t)(index::block_entity.index_end + 1ui16), file);
 
 		for (btID i = 0; i <= index::block_entity.index_end; i++) // For every entity
 		{
@@ -176,6 +183,7 @@ void LoadStateFileV001()
 				index::IndexInitEntity(i, type_temp);
 
 				ENTITY(i)->type = type_temp;
+				//fread(&ENTITY(i)->id, SIZE_16, 1, file);
 				fread(&ENTITY(i)->radius, SIZE_32, 1, file);
 				fread(&ENTITY(i)->height, SIZE_32, 1, file);
 				fread(&ENTITY(i)->properties, SIZE_8, 1, file);
@@ -204,6 +212,9 @@ void LoadStateFileV001()
 					fread(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
 					ACTOR(i)->ai_target_ent = ID_NULL; // temp
 					ACTOR(i)->ai_ally_ent = ID_NULL; // temp
+					fread(&CHARA(i)->skin_col_a, sizeof(m::Vector3), 1, file);
+					fread(&CHARA(i)->skin_col_b, sizeof(m::Vector3), 1, file);
+					fread(&CHARA(i)->skin_col_c, sizeof(m::Vector3), 1, file);
 				}
 
 				std::cout << "Loaded entity ID " << i << std::endl;

@@ -140,7 +140,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NMP|x64'">
     <OutDir>$(SolutionDir)\1BUILD_RELEASE_NMP\</OutDir>
     <IntDir>IntermediateGame\</IntDir>
-    <TargetName>tsoa</TargetName>
+    <TargetName>tsoa_mp</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -309,7 +309,6 @@
     <ClInclude Include="index.h" />
     <ClInclude Include="memoryC.h" />
     <ClInclude Include="network_client.h" />
-    <ClInclude Include="network_common.h" />
     <ClInclude Include="audio.hpp" />
     <ClInclude Include="cfg.h" />
     <ClInclude Include="entity.h" />

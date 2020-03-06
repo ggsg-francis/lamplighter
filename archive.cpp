@@ -4,7 +4,6 @@
 
 // temp? for generating skin texture
 #include "maths.hpp"
-#include <time.h>
 
 #ifndef DEF_ARCHIVER
 namespace res
@@ -64,7 +63,7 @@ namespace res
 			acv::LoadAsset(i);
 		}
 
-		srand(time(NULL)); //initialize the random seed
+		///*
 
 		graphics::colour col_base(0ui8, 0ui8, 0ui8, 255ui8);
 		graphics::colour col_eyes(0ui8, 0ui8, 0ui8, 255ui8);
@@ -106,9 +105,9 @@ namespace res
 
 		for (int i = 0; i < 4; i++)
 		{
-			col_base = colBase[rand() % 4];
-			col_eyes = colEyes[rand() % 6];
-			col_nose = colNose[rand() % 4];
+			//col_base = colBase[rand() % 4];
+			//col_eyes = colEyes[rand() % 6];
+			//col_nose = colNose[rand() % 4];
 
 			col_base = colBase[presets_temp[i][0]];
 			col_eyes = colEyes[presets_temp[i][1]];
@@ -116,14 +115,15 @@ namespace res
 
 			graphics::colour col_transparent = graphics::colour(0ui8, 0ui8, 0ui8, 0ui8);
 
-			/*col_base.r += (btui8)m::Random(0.f, 16.f);
-			col_base.g += (btui8)m::Random(0.f, 16.f);
-			col_base.b += (btui8)m::Random(0.f, 16.f);*/
+			//col_base.r += (btui8)m::Random(0.f, 16.f);
+			//col_base.g += (btui8)m::Random(0.f, 16.f);
+			//col_base.b += (btui8)m::Random(0.f, 16.f);
 
 			#define SKIN_W 32u
 			#define SKIN_H 32u
 
-			btui32 roll_eyes = (btui32)(rand() % 3) * SKIN_W;
+			//btui32 roll_eyes = (btui32)(rand() % 3) * SKIN_W;
+			btui32 roll_eyes = 0u;
 
 			skin_t[i].Init(SKIN_W, SKIN_H, col_base);
 			for (int x = 0; x < SKIN_W; x++)
@@ -153,6 +153,7 @@ namespace res
 			}
 			skin_t[i].ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 		}
+		//*/
 	}
 	void End()
 	{

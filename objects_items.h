@@ -5,7 +5,6 @@
 #include "cfg.h"
 #include "factions.h"
 #include "env.h"
-#include "time.hpp"
 #include "input.h"
 #include "memory.h"
 #include "Transform.h"
@@ -167,7 +166,7 @@ struct HeldGun : public HeldItem
 	btf32 ang_aim_offset_temp = 0.f;
 	btf32 ang_aim_pitch = 0.f;
 
-	btf32 fire_time = 0.f;
+	btui64 fire_time = 0.f;
 
 	btID ammoInstance = ID_NULL;
 };

@@ -1,6 +1,9 @@
 #include "input.h"
 #include "memory.hpp"
 #include <SDL2\SDL.h>
+#ifdef DEF_NMP
+#include "network_client.h"
+#endif // DEF_NMP
 
 namespace input
 {
@@ -141,20 +144,11 @@ namespace input
 		};
 	}
 
-	btui64 flags2 = 0ui64;
-
-	// new test keys
-	btui64 keyBitsHeld = 0ui64;
-	btui64 keyBitsHit = 0ui64;
-
-	btf32 mouse_x = 0.f;
-	btf32 mouse_y = 0.f;
-	btf32 mouse_last_x = 0.f;
-	btf32 mouse_last_y = 0.f;
-	btf32 joy_x_a = 0.f;
-	btf32 joy_y_a = 0.f;
-	btf32 joy_x_b = 0.f;
-	btf32 joy_y_b = 0.f;
+	#ifdef DEF_NMP
+	InputBuffer buf[NUM_PLAYERS][INPUT_BUF_SIZE];
+	#else
+	InputBuffer buf;
+	#endif
 
 	void UpdateInput(void * input)
 	{
@@ -180,8 +174,8 @@ namespace input
 				Unset(key::USE);
 			break;
 		case SDL_MOUSEMOTION:
-			mouse_x += e.motion.xrel;
-			mouse_y += e.motion.yrel;
+			BUF_LOCALSET.mouse_x += e.motion.xrel;
+			BUF_LOCALSET.mouse_y += e.motion.yrel;
 			break;
 		case SDL_MOUSEWHEEL:
 			if (e.wheel.y > 0.5f) // Scroll up
@@ -192,23 +186,23 @@ namespace input
 		case SDL_JOYAXISMOTION: // Joystick Motion
 			if ((e.jaxis.value < -3200) || (e.jaxis.value > 3200)) {
 				if (e.jaxis.axis == 0) // Left-right left stick
-					joy_x_a = (btf32)e.jaxis.value / (btf32)32768.f;
+					BUF_LOCALSET.joy_x_a = (btf32)e.jaxis.value / (btf32)32768.f;
 				else if (e.jaxis.axis == 1) // Up-Down left stick
-					joy_y_a = (btf32)e.jaxis.value / (btf32)32768.f;
+					BUF_LOCALSET.joy_y_a = (btf32)e.jaxis.value / (btf32)32768.f;
 				else if (e.jaxis.axis == 3) // Left-right right stick
-					joy_x_b = (btf32)e.jaxis.value / (btf32)32768.f;
+					BUF_LOCALSET.joy_x_b = (btf32)e.jaxis.value / (btf32)32768.f;
 				else if (e.jaxis.axis == 4) // Up-Down right stick
-					joy_y_b = (btf32)e.jaxis.value / (btf32)32768.f;
+					BUF_LOCALSET.joy_y_b = (btf32)e.jaxis.value / (btf32)32768.f;
 			}
 			else {
 				if (e.jaxis.axis == 0) // Left-right left stick
-					joy_x_a = 0.f;
+					BUF_LOCALSET.joy_x_a = 0.f;
 				else if (e.jaxis.axis == 1) // Up-Down left stick
-					joy_y_a = 0.f;
+					BUF_LOCALSET.joy_y_a = 0.f;
 				else if (e.jaxis.axis == 3) // Left-right right stick
-					joy_x_b = 0.f;
+					BUF_LOCALSET.joy_x_b = 0.f;
 				else if (e.jaxis.axis == 4) // Up-Down right stick
-					joy_y_b = 0.f;
+					BUF_LOCALSET.joy_y_b = 0.f;
 			}
 			break;
 		case SDL_JOYHATMOTION:
@@ -257,47 +251,62 @@ namespace input
 
 	void ClearHitsAndDelta()
 	{
-		mouse_x = 0.f;
-		mouse_y = 0.f;
-		joy_x_a = 0.f;
-		joy_y_a = 0.f;
-		joy_x_b = 0.f;
-		joy_y_b = 0.f;
-		keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
+		BUF_LOCALSET.mouse_x = 0.f;
+		BUF_LOCALSET.mouse_y = 0.f;
+		BUF_LOCALSET.joy_x_a = 0.f;
+		BUF_LOCALSET.joy_y_a = 0.f;
+		BUF_LOCALSET.joy_x_b = 0.f;
+		BUF_LOCALSET.joy_y_b = 0.f;
+		BUF_LOCALSET.keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
 	}
 
 	void ClearAll()
 	{
-		//mouse_x = 0.f;
-		//mouse_y = 0.f;
-		keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
-		keyBitsHeld = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
+		BUF_LOCALSET.keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
+		BUF_LOCALSET.keyBitsHeld = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
 	}
 
+	#ifdef DEF_NMP
+	void CycleBuffers()
+	{
+		buf[network::nid][0] = buf[network::nid][1];
+	}
+	#endif
+
+	#ifdef DEF_NMP
+	bool GetHeld(btui32 index, key::Key2 i)
+	{
+		return mem::bvget(buf[index][INPUT_BUF_GET].keyBitsHeld, 1ui64 << (btui64)i);
+	}
+	bool GetHit(btui32 index, key::Key2 i)
+	{
+		return mem::bvget(buf[index][INPUT_BUF_GET].keyBitsHit, 1ui64 << (btui64)i);
+	}
+	#endif
 	bool GetHeld(key::Key2 i)
 	{
-		return mem::bvget(keyBitsHeld, 1ui64 << (btui64)i);
+		return mem::bvget(BUF_LOCALGET.keyBitsHeld, 1ui64 << (btui64)i);
 	}
 	bool GetHit(key::Key2 i)
 	{
-		return mem::bvget(keyBitsHit, 1ui64 << (btui64)i);
+		return mem::bvget(BUF_LOCALGET.keyBitsHit, 1ui64 << (btui64)i);
 	}
 	void Set(key::Key2 i)
 	{
-		mem::bvset(keyBitsHeld, 1ui64 << (btui64)i);
-		mem::bvset(keyBitsHit, 1ui64 << (btui64)i);
+		mem::bvset(BUF_LOCALSET.keyBitsHeld, 1ui64 << (btui64)i);
+		mem::bvset(BUF_LOCALSET.keyBitsHit, 1ui64 << (btui64)i);
 	}
 	void Unset(key::Key2 i)
 	{
-		mem::bvunset(keyBitsHeld, 1ui64 << (btui64)i);
+		mem::bvunset(BUF_LOCALSET.keyBitsHeld, 1ui64 << (btui64)i);
 	}
 	void SetTo(key::Key2 i, bool b)
 	{
-		mem::bvsetto(keyBitsHeld, 1ui64 << (btui64)i, b);
-		mem::bvsetto(keyBitsHit, 1ui64 << (btui64)i, b);
+		mem::bvsetto(BUF_LOCALSET.keyBitsHeld, 1ui64 << (btui64)i, b);
+		mem::bvsetto(BUF_LOCALSET.keyBitsHit, 1ui64 << (btui64)i, b);
 	}
 	void SetHit(key::Key2 i)
 	{
-		mem::bvset(keyBitsHit, 1ui64 << (btui64)i);
+		mem::bvset(BUF_LOCALSET.keyBitsHit, 1ui64 << (btui64)i);
 	}
 }

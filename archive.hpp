@@ -29,7 +29,7 @@ typedef btui16 assetID;
 
 namespace res
 {
-	extern graphics::ModifiableTexture skin_t[4];
+	//extern graphics::ModifiableTexture skin_t[4];
 
 	// This is designed as a head start towards using an indexed asset system
 	// I'd like to say it won't make it into the final game, but I'm probably much too lazy to replace it.
@@ -67,7 +67,7 @@ namespace res
 		// Chara models
 		md_chr_body,
 		md_char_arm,
-		mb_char_head,
+		md_char_head,
 		mb_char_leg,
 		md_char_leg,
 		// Err....

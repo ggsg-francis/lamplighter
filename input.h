@@ -2,6 +2,22 @@
 
 //union SDL_Event;
 
+struct InputBuffer
+{
+	// new test keys
+	btui64 keyBitsHeld = 0ui64;
+	btui64 keyBitsHit = 0ui64;
+
+	btf32 mouse_x = 0.f;
+	btf32 mouse_y = 0.f;
+	btf32 mouse_last_x = 0.f;
+	btf32 mouse_last_y = 0.f;
+	btf32 joy_x_a = 0.f;
+	btf32 joy_y_a = 0.f;
+	btf32 joy_x_b = 0.f;
+	btf32 joy_y_b = 0.f;
+};
+
 namespace input
 {
 	namespace scancode
@@ -101,12 +117,18 @@ namespace input
 		};
 	}
 
-	extern btf32 mouse_x;
-	extern btf32 mouse_y;
-	extern btf32 joy_x_a;
-	extern btf32 joy_y_a;
-	extern btf32 joy_x_b;
-	extern btf32 joy_y_b;
+	#ifdef DEF_NMP
+	#define INPUT_BUF_SIZE 2
+	#define INPUT_BUF_GET 0 // First element
+	#define INPUT_BUF_SET 1 // Last element
+	extern InputBuffer buf[NUM_PLAYERS][INPUT_BUF_SIZE];
+	#define BUF_LOCALSET buf[network::nid][INPUT_BUF_SET]
+	#define BUF_LOCALGET buf[network::nid][INPUT_BUF_GET]
+	#else
+	extern InputBuffer buf;
+	#define BUF_LOCALSET buf
+	#define BUF_LOCALGET buf
+	#endif
 
 	void Init();
 
@@ -117,8 +139,18 @@ namespace input
 	// Clear all inputs and mouse delta
 	void ClearAll();
 
+	#ifdef DEF_NMP
+	// Swap uhhhhhhhhhhhh
+	void CycleBuffers();
+	#endif
+
+	#ifdef DEF_NMP
+	bool GetHeld(btui32 INDEX, key::Key2 KEY);
+	bool GetHit(btui32 INDEX, key::Key2 KEY);
+	#endif
 	bool GetHeld(key::Key2 KEY);
 	bool GetHit(key::Key2 KEY);
+
 	void Set(key::Key2 KEY);
 	void Unset(key::Key2 KEY);
 	void SetTo(key::Key2 KEY, bool VALUE);

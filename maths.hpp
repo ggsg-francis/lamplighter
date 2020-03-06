@@ -133,7 +133,9 @@ namespace m
 		//-------------------------------- VARIABLES
 		float x, y, z;
 		//-------------------------------- CONSTRUCTORS
-		Vector3(float X = 0.f, float Y = 0.f, float Z = 0.f) : x{ X }, y{ Y }, z{ Z } {};
+		Vector3() : x{ 0.f }, y{ 0.f }, z{ 0.f } {};
+		Vector3(float F) : x{ F }, y{ F }, z{ F } {};
+		Vector3(float X, float Y, float Z) : x{ X }, y{ Y }, z{ Z } {};
 		Vector3(glm::vec3 V) : x{ V.x }, y{ V.y }, z{ V.z } {};
 		//-------------------------------- OPERATORS
 		Vector3 operator+(const Vector3& VECTOR);

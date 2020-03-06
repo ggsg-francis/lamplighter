@@ -45,6 +45,7 @@ namespace weather
 
 	void Tick(btf32 dt)
 	{
+		/*
 		recalc_ticker += dt / TIMER_TIME;
 		if (recalc_ticker > 1.f)
 		{
@@ -119,6 +120,7 @@ namespace weather
 		col_fog.z = m::Lerp(col_fog_from.z, col_fog_dest.z, transition_point);
 
 		fog_level = m::Lerp(fog_level_from, fog_level_dest, transition_point);
+		*/
 	}
 
 	void* SunColour()

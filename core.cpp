@@ -6,6 +6,8 @@
 
 #include "core_save_load.h"
 
+btui64 tickCount_temp;
+
 namespace index
 {
 	btui16 GetHP(btID id)
@@ -49,113 +51,6 @@ namespace index
 		b_unused,
 		a_unused,
 	};
-
-	void bhm_line(int x1, int y1, int x2, int y2)
-	{
-		int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
-		dx = x2 - x1;
-		dy = y2 - y1;
-		dx1 = fabs(dx);
-		dy1 = fabs(dy);
-		px = 2 * dy1 - dx1;
-		py = 2 * dx1 - dy1;
-		if (dy1 <= dx1)
-		{
-			if (dx >= 0)
-			{
-				x = x1;
-				y = y1;
-				xe = x2;
-			}
-			else
-			{
-				x = x2;
-				y = y2;
-				xe = x1;
-			}
-			if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
-			t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
-			for (i = 0; x < xe; i++)
-			{
-				x = x + 1;
-				if (px < 0)
-				{
-					px = px + 2 * dy1;
-				}
-				else
-				{
-					if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0))
-					{
-						y = y + 1;
-					}
-					else
-					{
-						y = y - 1;
-					}
-					px = px + 2 * (dy1 - dx1);
-				}
-				if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
-				t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
-			}
-		}
-		else
-		{
-			if (dy >= 0)
-			{
-				x = x1;
-				y = y1;
-				ye = y2;
-			}
-			else
-			{
-				x = x2;
-				y = y2;
-				ye = y1;
-			}
-			if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
-			t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
-			for (i = 0; y < ye; i++)
-			{
-				y = y + 1;
-				if (py <= 0)
-				{
-					py = py + 2 * dx1;
-				}
-				else
-				{
-					if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0))
-					{
-						x = x + 1;
-					}
-					else
-					{
-						x = x - 1;
-					}
-					py = py + 2 * (dx1 - dy1);
-				}
-				if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
-				t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
-			}
-		}
-	}
-
-	void newline(int x1, int y1, int x2, int y2)
-	{
-		btf32 fx = (btf32)x1;
-		btf32 fy = (btf32)y1;
-
-		for (btui32 i = 0u; i < 32u; ++i)
-		{
-			bti32 x = (bti32)roundf(fx);
-			bti32 y = (bti32)roundf(fy);
-			t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
-			//if (t_EnvLightmap.GetPixel(x, y).g < 255ui8 - 8ui8)
-			//	t_EnvLightmap.SetPixelChannelG(x, y, t_EnvLightmap.GetPixel(x, y).g + 8ui8);
-			if (env::Get(x, y, env::eflag::eIMPASSABLE)) return;
-			fx = m::Lerp((btf32)x1, (btf32)x2, (btf32)i * (1.f / 32.f));
-			fy = m::Lerp((btf32)y1, (btf32)y2, (btf32)i * (1.f / 32.f));
-		}
-	}
 
 	void flood_fill_temp(btui16 x, btui16 y, graphics::colour col)
 	{
@@ -208,6 +103,32 @@ namespace index
 
 	void DoSpawn()
 	{
+		// for every entity
+		for (int e = 0; e < block_entity.index_end; e++)
+		{
+			if (block_entity.used[e])
+			{
+				if (!ENTITY(e)->state.stateFlags.get(ActiveState::eALIVE)
+					&& !ENTITY(e)->state.stateFlags.get(ActiveState::eDIED_REPORT)
+					&& ACTOR(e)->aiControlled)
+				{
+					m::Vector2 pos1 = ENTITY(players[0])->t.position;
+					m::Vector2 pos2 = ENTITY(players[1])->t.position;
+					m::Vector2 pos3 = ENTITY(e)->t.position;
+					if (m::Length(pos1 - pos3) > 12.f && m::Length(pos2 - pos3) > 12.f) // only destroy if far away
+						DestroyEntity(e);
+				}
+				if (block_entity_data[e].type == ENTITY_TYPE_RESTING_ITEM)
+				{
+					m::Vector2 pos1 = ENTITY(players[0])->t.position;
+					m::Vector2 pos2 = ENTITY(players[1])->t.position;
+					m::Vector2 pos3 = ENTITY(e)->t.position;
+					if (m::Length(pos1 - pos3) > 12.f && m::Length(pos2 - pos3) > 12.f) // only destroy if far away
+						DestroyEntity(e);
+				}
+			}
+		}
+
 		// temp
 		for (int x = 0; x < WORLD_SIZE; ++x)
 		{
@@ -251,8 +172,7 @@ namespace index
 		char buffer2[4];
 		//char buffer3[4];
 		_itoa(VERSION_MAJOR, buffer, 10);
-		_itoa(VERSION_BUILD, buffer2, 10);
-		//_itoa(VERSION_BUILD, buffer3, 10);
+		_itoa(VERSION_MINOR, buffer2, 10);
 		strcat(buffinal, buffer);
 		strcat(buffinal, "-");
 		strcat(buffinal, buffer2);
@@ -316,6 +236,7 @@ namespace index
 			{
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
+				CHARA(players[1])->faction = fac::faction::playerhunter;
 
 				/*
 				SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
@@ -326,11 +247,15 @@ namespace index
 				SpawnNewEntityItem(5ui16, m::Vector2(1023.5f, 1023.3f), 15.f);
 				SpawnNewEntityItem(6ui16, m::Vector2(1023.8f, 1023.4f), 15.f);
 				SpawnNewEntityItem(7ui16, m::Vector2(1023.6f, 1023.2f), 15.f);
-				*/
+				//*/
 
-				//DoSpawn();
+				#ifdef DEF_SPAWN_ON_START
+				DoSpawn();
+				#endif
 
+				#ifdef DEF_AUTOSAVE_ON_START
 				SaveState();
+				#endif
 			}
 		}
 		// This is going to blow up extremely fast if I don't automate it somehow
@@ -382,22 +307,25 @@ namespace index
 	}
 
 	#ifdef DEF_PERIODIC_SPAWN
-	btf64 spawnz_time_temp = 0.;
+	btui64 spawnz_time_temp = 30u;
 	#endif
 
 	void Tick(btf32 dt)
 	{
+		// TODO: think this over, there must be a better way to handle this
+		#ifndef DEF_NMP // Don't reload if it's multiplayer, this might be a temporary measure anyway
 		// check if either player is dead
 		if (!ENTITY(players[0])->state.stateFlags.get(ActiveState::eALIVE) || !ENTITY(players[1])->state.stateFlags.get(ActiveState::eALIVE))
 		{
-			//reload the game
+			// Load the last save state
 			LoadState();
 		}
+		#endif
 
 		#ifdef DEF_PERIODIC_SPAWN
-		if (!cfg::bEditMode && spawnz_time_temp < Time::time)
+		if (!cfg::bEditMode && spawnz_time_temp < tickCount_temp)
 		{
-			spawnz_time_temp = Time::time + 50.f;
+			spawnz_time_temp = tickCount_temp + 30u * 30u;
 			DoSpawn();
 		}
 		#endif
@@ -407,9 +335,13 @@ namespace index
 		for (int i = 0; i <= block_entity.index_end; i++)
 			if (block_entity.used[i])
 				if (!ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE)
-					&& !ENTITY(i)->state.stateFlags.get(ActiveState::eDIED_REPORT)
-					&& ACTOR(i)->aiControlled)
-					index::DestroyEntity(i);
+					&& !ENTITY(i)->state.stateFlags.get(ActiveState::eDIED_REPORT))
+				{
+					//index::DestroyEntity(i);
+					ENTITY(i)->properties.unset(Entity::EntityFlags::eCOLLIDE_ENT);
+					ENTITY(i)->properties.unset(Entity::EntityFlags::eCOLLIDE_PRJ);
+					ENTITY(i)->properties.unset(Entity::EntityFlags::eCOLLIDE_MAG);
+				}
 		//*/
 
 		//-------------------------------- ITERATE THROUGH ENTITIES
@@ -512,6 +444,22 @@ namespace index
 		}
 		else
 		{
+			#ifdef DEF_NMP
+			for (btui32 i = 0; i < NUM_PLAYERS; ++i)
+			{
+				if (input::GetHit(i, input::key::FUNCTION_5)) // SAVE
+				{
+					SaveState();
+					break;
+				}
+				else if (input::GetHit(i, input::key::FUNCTION_9)) // LOAD
+				{
+					if (SaveExists())
+						LoadState();
+					break;
+				}
+			}
+			#else
 			if (input::GetHit(input::key::FUNCTION_5)) // SAVE
 			{
 				SaveState();
@@ -521,12 +469,15 @@ namespace index
 				if (SaveExists())
 					LoadState();
 			}
+			#endif
 		}
+
+		++tickCount_temp;
 	}
 
 	void Draw(bool oob)
 	{
-		btf32 time2 = Time::time * 0.02f + 0.2f;
+		btf32 time2 = ((btf32)tickCount_temp / 30.f) * 0.02f + 0.2f;
 		//btf32 time2 = 0.27f;
 		//btf32 time2 = 0.22f;
 
@@ -754,6 +705,42 @@ namespace index
 
 	void TickGUI()
 	{
+		// TODO: make this less shit
+		#ifdef DEF_NMP
+		for (btID i = 0u; i < NUM_PLAYERS; ++i)
+		{
+			if (input::GetHit(i, input::key::INV_CYCLE_L))
+				ACTOR(players[i])->DecrEquipSlot();
+			if (input::GetHit(i, input::key::INV_CYCLE_R))
+				ACTOR(players[i])->IncrEquipSlot();
+			if (input::GetHit(i, input::key::ACTIVATE)) // Pick up items
+				if (viewtarget[i] != ID_NULL && ENTITY(viewtarget[i])->type == ENTITY_TYPE_RESTING_ITEM)
+				{
+					ACTOR(players[i])->TakeItem(viewtarget[i]);
+				}
+				else if (viewtarget[i] != ID_NULL && ENTITY(viewtarget[i])->type == ENTITY_TYPE_CHARA)
+				{
+					// if we are allied
+					if (fac::GetAllegiance(ENTITY(players[i])->faction, ENTITY(viewtarget[i])->faction) == fac::allied)
+					{
+						// SOUL TRANSFER
+						if (players[0] != players[1]) // If both player's arent using the same entity
+						{
+							ACTOR(players[i])->aiControlled = true; // Let the AI take over
+							ACTOR(players[i])->ai_target_ent = ID_NULL; // Let the AI take over
+							ACTOR(players[i])->ai_ally_ent = ID_NULL; // Let the AI take over
+						}
+						players[i] = viewtarget[i]; // Set player to control player's view target
+						ACTOR(players[i])->aiControlled = false;
+					}
+				}
+			if (input::GetHit(i, input::key::DROP_HELD))
+			{
+				ACTOR(players[i])->DropItem(ACTOR(players[i])->inv_active_slot);
+				//network::SendCharaInv(CHARA(players[i]), players[i]); // TEMP FAILSAFE
+			}
+		}
+		#else
 		if (activePlayer == 0u)
 		{
 			if (input::GetHit(input::key::INV_CYCLE_L))
@@ -762,7 +749,7 @@ namespace index
 				ACTOR(players[activePlayer])->IncrEquipSlot();
 			if (input::GetHit(input::key::ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
-					ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
+					ACTOR(players[activePlayer])->TakeItem(viewtarget[activePlayer]);
 				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
 				{
 					// if we are allied
@@ -790,7 +777,7 @@ namespace index
 				ACTOR(players[activePlayer])->IncrEquipSlot();
 			if (input::GetHit(input::key::C_ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
-					ACTOR(players[activePlayer])->PickUpItem(viewtarget[activePlayer]);
+					ACTOR(players[activePlayer])->TakeItem(viewtarget[activePlayer]);
 				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
 				{
 					// SOUL TRANSFER
@@ -811,6 +798,7 @@ namespace index
 			if (input::GetHit(input::key::C_DROP_HELD))
 				ACTOR(players[activePlayer])->DropItem(ACTOR(players[activePlayer])->inv_active_slot);
 		}
+		#endif // DEF_NMP
 	}
 
 	void GUISetMessag(int player, char* string)
@@ -819,7 +807,7 @@ namespace index
 		int p1_x_start = -(int)graphics::FrameSizeX() / 2;
 		int p1_y_start = -(int)graphics::FrameSizeY() / 2;
 		text_message[player].ReGen(string, -52, 52, -32);
-		message_time[player] = Time::time + 3.0;
+		message_time[player] = tickCount_temp + 90u;
 	}
 
 	void DrawGUI()
@@ -840,7 +828,7 @@ namespace index
 		Chara* chara = CHARA(players[activePlayer]);
 
 		//text_message[activePlayer].ReGen("teststr", 0, -p1_x_start, 0);
-		if (message_time[activePlayer] > Time::time)
+		if (message_time[activePlayer] > tickCount_temp)
 			text_message[activePlayer].Draw(&res::GetT(res::t_gui_font));
 
 		// hurt effect
@@ -887,28 +875,28 @@ namespace index
 		chara->inventory.Draw(chara->inv_active_slot);
 	}
 
-	void DrawPostDraw()
+	void DrawPostDraw(btf64 delta)
 	{
 		text_version.Draw(&res::GetT(res::t_gui_font));
 		char buffer[16];
-		int i = snprintf(buffer, 16, "%f", 1.f / Time::deltaTick);
+		int i = snprintf(buffer, 16, "%f", 1.f / delta);
 		text_fps.ReGen(buffer, cfg::iWinX * -0.25f, cfg::iWinX * 0.25f, cfg::iWinY * 0.5f - 16.f);
 		text_fps.Draw(&res::GetT(res::t_gui_font));
 	}
 
-	void SetInput(btID index, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool atk_hit, bool atk2, bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C)
+	void SetInput(btID playerIndex, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool atk_hit, bool atk2, bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C)
 	{
-		ACTOR(players[index])->input = input;
-		ACTOR(players[index])->viewYaw.Rotate(rot_x);
-		ACTOR(players[index])->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
-		ACTOR(players[index])->inputBV.setto(Actor::IN_USE, atk);
-		ACTOR(players[index])->inputBV.setto(Actor::IN_USE_HIT, atk_hit);
-		ACTOR(players[index])->inputBV.setto(Actor::IN_USE_ALT, atk2);
-		ACTOR(players[index])->inputBV.setto(Actor::IN_RUN, run);
-		ACTOR(players[index])->inputBV.setto(Actor::IN_AIM, aim);
-		ACTOR(players[index])->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
-		ACTOR(players[index])->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
-		ACTOR(players[index])->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
+		ACTOR(players[playerIndex])->input = input;
+		ACTOR(players[playerIndex])->viewYaw.Rotate(rot_x);
+		ACTOR(players[playerIndex])->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_USE, atk);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_USE_HIT, atk_hit);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_USE_ALT, atk2);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_RUN, run);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_AIM, aim);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
@@ -921,24 +909,31 @@ namespace index
 		cells[x][y].ents.remove(e);
 	}
 
-	void SpawnProjectile(fac::faction faction, m::Vector2 pos, btf32 height, float yaw, float pitch, float spread)
+	void SpawnProjectile(fac::faction faction, m::Vector2 pos, btf32 height,
+		float yaw, float pitch)
 	{
-		yaw += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add horizontal spread
-		pitch += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add vertical spread
-
 		btID id = IndexSpawnProjectile();
 		proj[id].t.position_x = pos.x;
 		proj[id].t.position_y = pos.y;
-		//proj[id].t.height = 0.9f + height;
-		//proj[id].t.height = 1.3f + height;
 		proj[id].t.position_h = height;
 
 		proj[id].t.velocity_h = -sin(pitch);
 		proj[id].t.velocity_x = (m::AngToVec2(yaw) * cos(pitch)).x; // '* cos(pitch)' makes it move less horizontally if shot upwards
 		proj[id].t.velocity_y = (m::AngToVec2(yaw) * cos(pitch)).y; // '* cos(pitch)' makes it move less horizontally if shot upwards
-		proj[id].ttd = Time::time + 2.0;
+		proj[id].ttd = tickCount_temp + 60u;
 
 		proj[id].faction = faction;
+
+		//std::cout << "Spawned projectile at X" << pos.x << ", Y" << pos.y << ", H" << height << " On tick #" << tickCount_temp << std::endl;
+		//Sleep(100000);
+	}
+	void SpawnProjectileSpread(fac::faction faction, m::Vector2 pos, btf32 height,
+		float yaw, float pitch, float spread)
+	{
+		yaw += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add horizontal spread
+		pitch += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add vertical spread
+
+		SpawnProjectile(faction, pos, height, yaw, pitch);
 	}
 
 	void DestroyProjectile(btID id)
@@ -1003,6 +998,10 @@ namespace index
 	void DestroyEntity(btID id)
 	{
 		RemoveAllReferences(id);
+		// A special case has to be made for items, which contain their own instance
+		// which must also be destroyed
+		//if (block_entity_data[id].type == ENTITY_TYPE_RESTING_ITEM)
+			//DestroyItem(ITEM(id)->item_instance);
 		IndexFreeEntity(id);
 		std::cout << "Destroyed entity " << id << std::endl;
 	}
@@ -1030,7 +1029,7 @@ namespace index
 
 	void ActorCastProj(btID i)
 	{
-		SpawnProjectile(ENTITY(i)->faction, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->t.yaw.Rad()) * 0.55f), ENTITY(i)->t.height, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
+		SpawnProjectileSpread(ENTITY(i)->faction, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->t.yaw.Rad()) * 0.55f), ENTITY(i)->t.height, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
 	}
 
 	int cater_loop_index(int i)
@@ -1042,7 +1041,7 @@ namespace index
 	}
 
 	//________________________________________________________________________________________________________________________________
-	//-------------------------------- PROJECTILES
+	// PROJECTILES -------------------------------------------------------------------------------------------------------------------
 
 	//-------------------------------- PROJECTILE FORWARD DECLARATION
 
@@ -1065,7 +1064,7 @@ namespace index
 					proj[index].t.position_y <= 1.f || proj[index].t.position_y >= WORLD_SIZE - 1)
 					DestroyProjectile(index);
 				// If it's time to die, or collided
-				if (Time::time > proj[index].ttd || ProjectileDoesIntersectEnv(index))
+				if (tickCount_temp >= proj[index].ttd || ProjectileDoesIntersectEnv(index))
 					DestroyProjectile(index);
 				else // Otherwise
 				{
@@ -1128,7 +1127,8 @@ namespace index
 				stop = true;
 			if (block_proj.used[index])
 			{
-				if (Time::time > proj[index].ttd || ProjectileDoesIntersectEnv(index)) // If it's time to die
+				//if (tickCount_temp >= proj[index].ttd || ProjectileDoesIntersectEnv(index)) // TTD already checked in Projectile Tick
+				if (ProjectileDoesIntersectEnv(index)) // If it's time to die
 				{
 					DestroyProjectile(index);
 					btui16 x = (btui16)roundf(proj[index].t.position_x);
@@ -1176,7 +1176,7 @@ namespace index
 									if (dist < 0.5f)
 									{
 										// to do: pass angle to damage fn
-										ENTITY(i)->state.Damage(400u, glm::degrees(m::Vec2ToAng(vec)));
+										ENTITY(i)->state.Damage(150u, glm::degrees(m::Vec2ToAng(vec)));
 										DestroyProjectile(index); // Destroy the projectile
 									}
 								}

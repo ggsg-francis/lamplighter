@@ -5,7 +5,6 @@
 #include "cfg.h"
 #include "factions.h"
 #include "env.h"
-#include "time.hpp"
 #include "input.h"
 #include "memory.h"
 #include "memoryC.h"
@@ -198,6 +197,9 @@ struct Actor : public Entity
 
 	//res::AssetConstantID t_skin; // The texture we use for drawing the character
 	assetID t_skin;
+	m::Vector3 skin_col_a;
+	m::Vector3 skin_col_b;
+	m::Vector3 skin_col_c;
 
 	btf32 speed = 2.3f;
 	btf32 agility = 0.f; // 0?? use agility to determine turning speed?
@@ -216,7 +218,7 @@ struct Actor : public Entity
 	btID ai_ally_ent = BUF_NULL;
 	bool aiControlled = false;
 
-	void PickUpItem(btID ID);
+	void TakeItem(btID ID);
 	void DropItem(btID SLOT);
 	void DropAllItems();
 	void SetEquipSlot(btui32 slot);

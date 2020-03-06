@@ -4,9 +4,6 @@
 #include "objects_entities.h"
 #include "core.h"
 
-//________________________________________________________________________________________________________________________________
-//--------------------------- ON EQUIP -------------------------------------------------------------------------------------------
-
 //-------------------------------- HELD ITEM MISC
 
 void HeldItemTick(btID id, btf32 dt, Actor* owner)
@@ -200,7 +197,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 {
 	HeldGun* self = GETITEM_GUN(id);
 
-	if (owner->inputBV.get(Actor::IN_USE) && self->ePose == HOLDSTATE_AIM && self->fire_time < Time::time)
+	if (owner->inputBV.get(Actor::IN_USE) && self->ePose == HOLDSTATE_AIM && self->fire_time < tickCount_temp)
 	{
 		// if we try to fire, see if we can load the weapon
 		if (self->ammoInstance = ID_NULL)
@@ -210,7 +207,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 			if (!HeldConUse(self->ammoInstance, owner))
 				self->ammoInstance = owner->inventory.GetItemOfTemplate(8);
 
-			self->fire_time = Time::time + 0.1f;
+			self->fire_time = tickCount_temp + 3u;
 
 			aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
 			//loc_velocity.z -= 0.12f;
@@ -231,13 +228,13 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->viewYaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
-				index::SpawnProjectile(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 1.f);
+				index::SpawnProjectileSpread(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 1.f);
 			}
 			else
 			{
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->viewYaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
-				index::SpawnProjectile(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+				index::SpawnProjectileSpread(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 			}
 
 			//owner->t.velocity = m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
@@ -330,11 +327,11 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - self->t_item.GetPosition().y);
 				btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
-				index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
+				index::SpawnProjectileSpread(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
 			}
 			else
 			{
-				index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+				index::SpawnProjectileSpread(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 			}
 		}
 	}

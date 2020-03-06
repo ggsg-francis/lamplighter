@@ -2,26 +2,42 @@
 
 #ifdef DEF_NMP
 
-enum paktype : btui8;
+// Maximum IPv4 size: 576 bytes
+#define PACKET_SIZE 256
+
+// From Quake
+#define	MAXHOSTNAMELEN 256
+
+enum paktype : btui8
+{
+	ePING, // Does nothing
+
+	eCLIENT_CONNECT_REQUEST, // Sent by client on connection
+	eSERVER_CONNECT_CONFIRM, // When a client connects, send it a message telling it its ID
+	eSERVER_DISCONNECT_CLIENT, // If there's a version incompatibility, send this
+
+	eINPUT_BUFFER,
+};
+
+typedef btui8 btPacket[PACKET_SIZE];
+
+struct Entity;
+struct Chara;
 
 namespace network
 {
+	// Network ID
 	extern btui8 nid;
 
-	//-------------------------------- ENCODING AND DECODING
-
-	////networking stuff
-	//SOCKET connHandle;
-	////message from server
-	//char servMessage[PACKET_SIZE] = "NO CONNECTION";
-
-	void Recv2(int type);
-
-	// Send a struct formatted message across the network
-	void SendMsg(paktype type, void* msg);
-
-	void Init();
+	// Receive and handle any available packets
+	void RecvTCP();
+	//
+	bool SendInputBuffer();
+	// Send a reliable message across the network
+	bool SendTCP(btPacket* PACKET);
+	// Initialize and connect. Returns true if succeeded
+	bool Init();
+	//
 	void End();
-	void Connect();
 }
 #endif // DEF_NMP

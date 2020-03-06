@@ -11,13 +11,12 @@
 #include <Ws2tcpip.h>
 //#include <iphlpapi.h>
 #include <stdio.h>
+#include <time.h>
 
 // Link with ws2_32.lib
 #pragma comment(lib, "Ws2_32.lib")
 // link with so so...
 //#pragma comment(lib, "IPHLPAPI.lib")
-
-#include "network_common.h"
 
 #include "network_client.h"
 
@@ -26,95 +25,128 @@
 #include "core.h"
 #include "maths.hpp"
 
-//void SetTitle(btui8 id);
+#include "objects_entities.h"
+
+// Enough c++ nerds said never to use macros, so here are some macros
+#define PACKET_WRITE(pak, ind, val, type) (*((type*)&pak[ind])=val)
+#define PACKET_READ(pak, ind, type) (*((type*)&pak[ind]))
+
+#define NUM_SET_SOCKETS 1
 
 namespace network
 {
-	//quake
-	static SOCKET net_acceptsocket = INVALID_SOCKET;	// socket for fielding new connections
-	static SOCKET net_controlsocket;
-	static SOCKET net_broadcastsocket = 0;
-	static sockaddr_in broadcastaddr;
-	static in_addr myAddr;
-
 	UDPsocket socket_connection;
 	UDPsocket socket_;
 
-	//network id
+	TCPsocket socket_reliable_sv_incoming;
+	TCPsocket socket_reliable;
+	UDPsocket socket_udp;
+
+	// Create a socket set to handle up to 16 sockets
+	SDLNet_SocketSet socketset;
+	
+	// Network ID
 	btui8 nid = 0ui8;
 
-	//-------------------------------- ENCODING AND DECODING
+	//-------------------------------- RECEIVE
 
-	//networking stuff
-	SOCKET connHandle;
-	//message from server
-	char servMessage[PACKET_SIZE] = "NO CONNECTION";
-
-	//________________________________________________________________________________________________________________________________
-	//-------------------------------- MY FUNCTIONS
-
-	void Recv2(int type)
+	void RecvUDP()
 	{
-		void* buffer = malloc(PACKET_SIZE);
-		int recvd = recv(connHandle, (char*)buffer, PACKET_SIZE, NULL); //receive message from server
-		if (recvd > 0)
+		UDPpacket* pak = NULL;
+		// only works on client atm
+		while (SDLNet_UDP_Recv(socket_udp, pak) == PACKET_SIZE)
 		{
-			packet_wrap pw;
-			memcpy(&pw, buffer, PACKET_SIZE);
-			switch (pw.type)
+			Entity* ent;
+			paktype type = PACKET_READ(pak, 0, paktype);
+			switch (type)
 			{
-			case eSET_ENT_POSE:
-				msg::SetEntPose msup;
-				memcpy(&msup, pw.msg, sizeof(msg::SetEntPose)); //std::cout << "TYPE: " << (int)pw.type << " INPUT: " << msup.px << ", " << msup.py << ", " << msup.yaw << std::endl;
-				//index::NetSetPose(&msup);
-				break;
-			case eSET_CHARA_ANIM:
-				msg::SetCharaAnim msa;
-				memcpy(&msa, pw.msg, sizeof(msg::SetCharaAnim));
-				//index::NetSetAnim(&msa);
-				break;
-			case eSPAWN_PROJECTILE:
-				msg::SpawnProj msp;
-				memcpy(&msp, pw.msg, sizeof(msg::SpawnProj));
-				//std::cout << "Received spawn proj ID " << msp.id << std::endl;
-				//index::BufferAddProjectile(msp.id, 0, fw::Vector3(msp.px, msp.py, msp.pz), fw::Vector3(msp.dx, msp.dy, msp.dz));
-				//index::SpawnProjectile();
-				break;
-			case eSERVER_CONNECT_CLIENT:
-				msg::ServerConnectClient mscc;
-				memcpy(&mscc, pw.msg, sizeof(msg::ServerConnectClient));
-				nid = mscc.id;
-				//SetTitle(mscc.id);
-				std::cout << "Server set our ID to " << (unsigned int)mscc.id << std::endl;
-				break;
-			case eSERVER_DISCONNECT_CLIENT:
-				std::cout << "Incompatible version number with server." << std::endl;
-				break;
 			default:
-				std::cout << "ERROR network::Recv2 : packet type not handled!" << std::endl;
+				std::cout << "ERROR RecvTCP : packet type not handled!" << std::endl;
 				break;
 			}
 		}
-		free(buffer);
 	}
 
-	// Send a struct formatted message across the network
-	void SendMsg(paktype type, void* msg)
+	void RecvTCP()
 	{
-		void* buffer = malloc(PACKET_SIZE); //allocate memory to write our packet buffer into
-		packet_wrap pw; //create wrapper class to contain the message
-		pw.type = type; //set wrapper message type to correct type
-		memcpy(pw.msg, msg, PACKET_SIZE - sizeof(char)); //copy the message struct into this wrapper class
-		memcpy(buffer, &pw, PACKET_SIZE); //copy the wrapper class into the buffer for sending
-		send(connHandle, (char*)buffer, PACKET_SIZE, NULL); //send the buffer
-		
-		UDPpacket packet;
-		
-		SDLNet_UDP_Send(socket_, 0, &packet);
-		free(buffer); //clear the buffer from memory
+		btPacket pak;
+		bool any = false;
+		// Loop until we have a packet
+	checksock:
+		// If no packet is available
+		int numready = SDLNet_CheckSockets(socketset, 0u);
+		if (numready == -1)
+		{
+			std::cout << "ERROR RecvTCP : some shit!" << std::endl;
+			return;
+		}
+		if (numready == 0)
+		{
+			if (any) return;
+			else goto checksock;
+		}
+		// do for() and CheckSock when we connect to more than one client
+		// If there is a packet, read it
+		if (SDLNet_TCP_Recv(socket_reliable, pak, PACKET_SIZE) == PACKET_SIZE)
+		{
+			Entity* ent;
+			Chara* chr;
+			paktype type = PACKET_READ(pak, 0, paktype);
+			switch (type)
+			{
+			case eINPUT_BUFFER:
+				// Read input buffer into local input buffer for this player
+				input::buf[PACKET_READ(pak, 3, btui8)][INPUT_BUF_GET] = PACKET_READ(pak, 4, InputBuffer);
+				break;
+			default:
+				std::cout << "ERROR RecvTCP : packet type not handled!" << std::endl;
+				break;
+			}
+			any = true;
+		}
+		goto checksock;
 	}
 
-	void Init()
+	//-------------------------------- PACKET TEMPLATES
+
+	bool SendInputBuffer()
+	{
+		btPacket pak;
+		PACKET_WRITE(pak, 0, eINPUT_BUFFER, btui8);
+		// 1 is normally ID
+		PACKET_WRITE(pak, 3, nid, btui8);
+		PACKET_WRITE(pak, 4, input::buf[nid][INPUT_BUF_SET], InputBuffer);
+		return SendTCP(&pak);
+	}
+
+	//-------------------------------- SEND
+
+	bool SendUDP(btPacket* pak)
+	{
+		UDPpacket* udppak = SDLNet_AllocPacket(PACKET_SIZE);
+		if (!udppak)
+		{
+			udppak->data = (Uint8*)pak;
+			if (!SDLNet_UDP_Send(socket_udp, udppak->channel, udppak)) {
+				printf("Could not send UDP packet ;~;\n");
+				return false;
+			}
+			SDLNet_FreePacket(udppak);
+			return true;
+		}
+		return false;
+	}
+
+	bool SendTCP(btPacket* pak)
+	{
+		if (SDLNet_TCP_Send(socket_reliable, pak, PACKET_SIZE) < PACKET_SIZE) {
+			printf("Could not send TCP packet ;~;\n");
+			return false;
+		}
+		return true;
+	}
+
+	bool Init()
 	{
 		// Initialize network library
 		int err = SDLNet_Init();
@@ -126,29 +158,69 @@ namespace network
 		if (cfg::bHost) // if acting as server
 		{
 			IPaddress addr; // broadcast
-			addr.host = INADDR_ANY;
-			addr.port = cfg::sIPPORT;
+
+			btui32 seed = (btui32)time(NULL); // Server decides the seed
+			srand(seed); //initialize the random seed
 
 			int found_other = SDLNet_ResolveHost(&addr, NULL, cfg::sIPPORT);
 			if (found_other == -1) goto exiterr;
 			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
 
-			// try to receive a waiting udp packet
-			UDPsocket udpsock = NULL;
-			UDPpacket packet;
-			int numrecv;
-			printf("waiting for packet........ \n");
+			//open socket
+			socket_reliable_sv_incoming = SDLNet_TCP_Open(&addr);
+			if (!socket_reliable_sv_incoming) goto exiterr;
+			printf("Socket opened OK\n");
+
+			printf("waiting for connection........ \n");
 			while (true)
 			{
-				numrecv = SDLNet_UDP_Recv(udpsock, &packet);
-				if (numrecv) {
-					// do something with packet
-					printf("Received packet!\n");
-					goto exit; //bail for now
+				// accept a connection coming in on server_tcpsock
+				socket_reliable = SDLNet_TCP_Accept(socket_reliable_sv_incoming);
+				if (!socket_reliable) {
+					//printf("SDLNet_TCP_Accept: %s\n", SDLNet_GetError());
 				}
-				if (numrecv == -1)
-				{
-					printf("Fuckt\n");
+				else {
+					// communicate over new_tcpsock
+					printf("Got connection!!!!!! \n");
+					// now wait for packet
+					printf("waiting for packet........ \n");
+					btPacket pak;
+					while (true)
+					{
+						if (SDLNet_TCP_Recv(socket_reliable, pak, PACKET_SIZE) == PACKET_SIZE)
+						{
+							printf("Got packet! \n");
+							paktype type = PACKET_READ(pak, 0, paktype);
+							if (type == eCLIENT_CONNECT_REQUEST)
+							{
+								if (_MSC_VER != PACKET_READ(pak, 12, btui32)) { // check compiler version number
+									printf("WARNING -- This client was built with a different compiler, desynchronization is likely.\n"); }
+								bti32 xm = 0x3f18492a; btf32 x = *(btf32*)&xm; x = (sqrt(x) + 1) / 2.0f; // Floating point test
+								if (PACKET_READ(pak, 4, btui32) == VERSION_MAJOR // if the version number matches
+									&& PACKET_READ(pak, 8, btui32) == VERSION_MINOR // if the version number matches
+									&& x == PACKET_READ(pak, 16, btf32)) // and the floating point calculation matches
+								{
+									printf("Version accepted! \n");
+									// send connection packet
+									PACKET_WRITE(pak, 0, eSERVER_CONNECT_CONFIRM, paktype);
+									PACKET_WRITE(pak, 1, 1ui8, btui8); // send client NID (TODO:)
+									PACKET_WRITE(pak, 4, seed, btui32); // send RNG seed
+									SDLNet_TCP_Send(socket_reliable, pak, PACKET_SIZE);
+									Sleep(1000);
+									goto exit;
+								}
+								else
+								{
+									printf("Version number incompatible! Closing connection. \n");
+									// send disconnection packet
+									PACKET_WRITE(pak, 0, eSERVER_DISCONNECT_CLIENT, paktype);
+									SDLNet_TCP_Send(socket_reliable, pak, PACKET_SIZE);
+									SDLNet_TCP_Close(socket_reliable);
+								}
+							}
+							else printf("Wrong packet type..? \n");
+						}
+					}
 				}
 			}
 		}
@@ -158,57 +230,68 @@ namespace network
 			addr.host = INADDR_BROADCAST;
 			addr.port = cfg::sIPPORT;
 
-			int found_other = SDLNet_ResolveHost(&addr, "Sirennus0000", cfg::sIPPORT);
+			//int found_other = SDLNet_ResolveHost(&addr, "Sirennus0000", cfg::sIPPORT);
+			int found_other = SDLNet_ResolveHost(&addr, "F550C", cfg::sIPPORT);
 			if (found_other == -1) goto exiterr;
-			//int found_other = SDLNet_ResolveHost(&addr, "255.255.255.255", cfg::sIPPORT);
-			//int channel = 0;
 			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
 
-			// send a packet using a UDPsocket, using the packet's channel as the channel
-			UDPpacket* packet;
+			//open socket
+			socket_reliable = SDLNet_TCP_Open(&addr);
+			if (!socket_reliable) goto exiterr;
+			printf("Socket opened OK\n");
 
-			packet = SDLNet_AllocPacket(256);
-
-			packet->address = addr;
-			packet->channel = channel;
-			char* c = "hewwo..?";
-			memcpy(packet->data, c, strlen(c));
-			packet->len = strlen(c);
-			packet->maxlen = 256;
-
-			int numsent;
-			numsent = SDLNet_UDP_Send(socket_connection, channel, packet);
-			if (!numsent) {
-				printf("SDLNet_UDP_Send: %s\n", SDLNet_GetError());
-				// do something because we failed to send
-				// this may just be because no addresses are bound to the channel...
-			}
-			else 
-				printf("Sent packet OK\n");
-
-			SDLNet_FreePacket(packet);
+			// send connection packet
+			btPacket pak;
+			PACKET_WRITE(pak, 0, eCLIENT_CONNECT_REQUEST, paktype);
+			PACKET_WRITE(pak, 4, VERSION_MAJOR, btui32);
+			PACKET_WRITE(pak, 8, VERSION_MINOR, btui32);
+			PACKET_WRITE(pak, 12, _MSC_VER, btui32); // send compiler version number
+			bti32 xm = 0x3f18492a; btf32 x = *(btf32*)&xm; x = (sqrt(x) + 1) / 2.0f; // Floating point test
+			PACKET_WRITE(pak, 16, x, btf32); // send float test
+			printf("Sending\n");
+			if (SDLNet_TCP_Send(socket_reliable, pak, PACKET_SIZE) < PACKET_SIZE)
+				printf("Could not send ;~;\n");
 
 			while (true)
 			{
-				//do nothing;
+				if (SDLNet_TCP_Recv(socket_reliable, pak, PACKET_SIZE) == PACKET_SIZE)
+				{
+					switch (pak[0])
+					{
+					case eSERVER_CONNECT_CONFIRM:
+						printf("Connection accepted! NID is %u\n", pak[1]);
+						nid = PACKET_READ(pak, 1, btui8);
+						srand(PACKET_READ(pak, 4, btui32)); //initialize the random seed
+						Sleep(1000);
+						goto exit;
+						break;
+					case eSERVER_DISCONNECT_CLIENT:
+						printf("Connection not accepted - Version number incompatible.\n");
+						goto exiterr;
+						break;
+					}
+				}
 			}
 		}
 
 	exit:
+		socketset = SDLNet_AllocSocketSet(NUM_SET_SOCKETS);
+		if (!socketset) goto exiterr;
+		if (SDLNet_TCP_AddSocket(socketset, socket_reliable) == -1) goto exiterr;
 		printf("Initialized Net\n");
-		return;
+		return true;
 	exiterr:
-		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+		printf("Couldn't initialize/connect network! | %s\n", SDLNet_GetError());
+		Sleep(1000);
+		return false;
 	}
 	void End()
 	{
 		SDLNet_UDP_Close(socket_connection);
+		SDLNet_TCP_Close(socket_reliable);
+		SDLNet_TCP_Close(socket_reliable_sv_incoming);
+		SDLNet_FreeSocketSet(socketset);
 		SDLNet_Quit();
-	}
-
-	void Connect()
-	{
-		
 	}
 }
 #endif // DEF_NMP

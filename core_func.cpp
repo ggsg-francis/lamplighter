@@ -513,51 +513,27 @@ namespace index
 	{
 		block_entity.used[id] = true;
 		block_entity_data[id].type = type;
-		bool type_recognized = false;
 		switch (type)
 		{
 		case ENTITY_TYPE_EDITOR_PAWN:
-			//_entities[id] = new EditorPawn();
 			memset(ENT_VOID(id), 0, sizeof(EditorPawn));
-			//((EditorPawn)*((EditorPawn*)_entities[id])) = EditorPawn();
-			//(ENTITY(id))->fpName = DisplayNameActor;
-			//(ENTITY(id))->fpTick = TickEditorPawn;
-			//(ENTITY(id))->fpDraw = DrawEditorPawn;
-			type_recognized = true;
 			break;
 		case ENTITY_TYPE_RESTING_ITEM:
 			block_entity_data[id].type_buffer_index = buf_resting_item.add();
-			//_entities[id] = malloc(sizeof(RestingItem));
 			memset(ENT_VOID(id), 0, sizeof(RestingItem));
-			//((RestingItem)*((RestingItem*)_entities[id])) = RestingItem();
-			//(ENTITY(id))->fpName = DisplayNameRestingItem;
-			//(ENTITY(id))->fpTick = TickRestingItem;
-			//(ENTITY(id))->fpDraw = DrawRestingItem;
-			// TODO: this should be properly formalized, i'm not supposed to be using this like this
-			// atm this is only supposed to make sure that the item reference is added to the cells
-			//spawn_setup_t(id, ENTITY(id)->t.position, ENTITY(id)->t.yaw.Deg());
-			type_recognized = true;
 			break;
 		case ENTITY_TYPE_CHARA:
 			block_entity_data[id].type_buffer_index = buf_chara.add();
-			//_entities[id] = malloc(sizeof(Chara));
 			memset(ENT_VOID(id), 0, sizeof(Chara));
 			((Chara)*(CHARA(id))) = Chara();
-			//(ENTITY(id))->fpName = DisplayNameActor;
-			//(ENTITY(id))->fpTick = TickChara;
-			//(ENTITY(id))->fpDraw = DrawChara;
-			type_recognized = true;
 			break;
 		default:
 			std::cout << "Tried to initialize entity of no valid type" << std::endl;
 			break;
 		}
 
-		if (type_recognized)
-		{
-			(ENTITY(id))->id = id;
-			(ENTITY(id))->type = type;
-		}
+		ENTITY(id)->id = id;
+		ENTITY(id)->type = type;
 	}
 	void IndexFreeEntity(btID id)
 	{
@@ -694,6 +670,52 @@ namespace index
 			CHARA(index)->atk_target = BUF_NULL;
 			CHARA(index)->ai_target_ent = BUF_NULL;
 			CHARA(index)->ai_ally_ent = BUF_NULL;
+
+			const m::Vector3 colEyes[]{
+				m::Vector3(232.f / 256.f, 17.f / 256.f, 17.f / 256.f), // red
+				m::Vector3(241.f / 256.f, 236.f / 256.f, 231.f / 256.f), // white
+				m::Vector3(239.f / 256.f, 169.f / 256.f, 18.f / 256.f), // yellow
+				m::Vector3(177.f / 256.f, 205.f / 256.f, 21.f / 256.f), // acid green
+				m::Vector3(52.f / 256.f, 142.f / 256.f, 199.f / 256.f), // blue
+				m::Vector3(61.f / 256.f, 155.f / 256.f, 9.f / 256.f), // green
+				m::Vector3(178.f / 256.f, 107.f / 256.f, 22.f / 256.f), // gold
+				m::Vector3(18.f / 256.f, 144.f / 256.f, 137.f / 256.f), // aqua
+			};
+
+			const m::Vector3 colBase[]{
+				m::Vector3(233.f / 256.f, 231.f / 256.f, 226.f / 256.f), // white
+				m::Vector3(127.f / 256.f, 117.f / 256.f, 111.f / 256.f), // midgrey
+				m::Vector3(38.f / 256.f, 37.f / 256.f, 36.f / 256.f), // black-blue
+				m::Vector3(16.f / 256.f, 16.f / 256.f, 16.f / 256.f), // black
+				m::Vector3(97.f / 256.f, 84.f / 256.f, 75.f / 256.f), // grey-brown
+				m::Vector3(242.f / 256.f, 222.f / 256.f, 187.f / 256.f), // cream
+				m::Vector3(150.f / 256.f, 121.f / 256.f, 76.f / 256.f), // brown
+				m::Vector3(143.f / 256.f, 109.f / 256.f, 50.f / 256.f), // yellow
+				m::Vector3(152.f / 256.f, 144.f / 256.f, 127.f / 256.f), // template grey
+				m::Vector3(91.f / 256.f, 71.f / 256.f, 75.f / 256.f), // purple
+			};
+
+			const m::Vector3 colNose[]{
+				m::Vector3(222.f / 256.f, 193.f / 256.f, 185.f / 256.f),
+				m::Vector3(233.f / 256.f, 152.f / 256.f, 136.f / 256.f),
+				m::Vector3(103.f / 256.f, 57.f / 256.f, 57.f / 256.f),
+				m::Vector3(31.f / 256.f, 29.f / 256.f, 29.f / 256.f),
+			};
+
+			const btf32 hue_offs = 0.25f;
+			const btf32 bri_offs = 0.05f;
+			m::Vector3 col_base_a = colBase[rand() % 10]
+				+ (colBase[rand() % 10] * hue_offs) - hue_offs
+				+ m::Vector3(m::Random(-bri_offs, bri_offs));
+			m::Vector3 col_eyes = colEyes[rand() % 8]
+				+ m::Vector3(m::Random(-bri_offs, bri_offs));
+			m::Vector3 col_base_b = colBase[rand() % 10]
+				+ (colBase[rand() % 10] * hue_offs) 
+				+ m::Vector3(m::Random(-bri_offs, bri_offs));
+
+			CHARA(index)->skin_col_a = col_base_a;
+			CHARA(index)->skin_col_b = col_eyes;
+			CHARA(index)->skin_col_c = col_base_b;
 		}
 	}
 
@@ -716,14 +738,16 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
-		CHARA(id)->t_skin = 0u;
+		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = false;
 		CHARA(id)->speed = 2.9f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u); // long smig
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(4u); // fist
 		CHARA(id)->inventory.AddNew(7u); // heal
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->foot_state = FootState::eL_DOWN;
 	}
 
@@ -734,7 +758,7 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = 0u;
+		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 2.9f;
 		CHARA(id)->agility = 0.f;
@@ -752,7 +776,7 @@ namespace index
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = 2u;
+		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 2.9f;
 		CHARA(id)->agility = 0.f;
@@ -769,7 +793,7 @@ namespace index
 		ENTITY(id)->faction = fac::faction::undead;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = 3u;
+		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 7.f;
 		CHARA(id)->agility = 0.f;
