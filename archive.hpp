@@ -125,11 +125,13 @@ namespace res
 // Number of filenames (number of assets, in other words)
 #define FN_COUNT 128
 // -
-#define ITEMS_COUNT 32
+#define ITEMS_COUNT 64
 // -
-#define PROPS_COUNT 16
+#define PROPS_COUNT 32
 // -
 #define SPELL_COUNT 8
+// -
+#define ENTT_COUNT 8
 
 namespace acv
 {	
@@ -192,6 +194,24 @@ namespace acv
 		btf32 target_effect_duration;
 		btui32 target_effect_magnitude;
 	} Spell;
+
+	#define ENTITY_MAX_LIMB_NUM 4
+	typedef struct EntityTemplate
+	{
+		char handle[8];
+		btID m_head;
+		btID m_body;
+		btID m_arm;
+		btID m_leg;
+		btf32 jpos_arm_fw[ENTITY_MAX_LIMB_NUM]{};
+		btf32 jpos_arm_rt[ENTITY_MAX_LIMB_NUM]{};
+		btf32 jpos_arm_up[ENTITY_MAX_LIMB_NUM]{};
+		btf32 leng_arm[ENTITY_MAX_LIMB_NUM];
+		btf32 jpos_leg_fw[ENTITY_MAX_LIMB_NUM]{};
+		btf32 jpos_leg_rt[ENTITY_MAX_LIMB_NUM]{};
+		btf32 jpos_leg_up[ENTITY_MAX_LIMB_NUM]{};
+		btf32 leng_leg[ENTITY_MAX_LIMB_NUM];
+	} EntityTemplate;
 
 	struct BaseItem
 	{
@@ -259,6 +279,9 @@ namespace acv
 
 	extern Spell spells[SPELL_COUNT];
 	extern btui32 spell_index;
+
+	extern EntityTemplate entt[ENTT_COUNT];
+	extern btui32 entt_index;
 
 	// make inaccessable
 	extern archive_asset assets[FN_COUNT];

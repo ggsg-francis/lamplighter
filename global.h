@@ -10,7 +10,7 @@
 
 //#define DEF_OLDSKOOL // Use old rendering settings (nearest neighbor filtering, etc.
 //#define DEF_DEBUG_DISPLAY // Draw debug information
-//#define DEF_MULTISAMPLE
+//#define DEF_MULTISAMPLE // TODO: why does this make my deform meshes invisible lol
 #define DEF_MULTISAMPLE_DEPTH 4
 #define DEF_HDR
 //#define DEF_LINEAR_FB
@@ -19,9 +19,10 @@
 // use cute sound
 #define DEF_USE_CS
 //#ifndef DEF_NMP
+//#define DEF_AUTO_RELOAD_ON_DEATH
 //#define DEF_SPAWN_ON_START
 #define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
-#define DEF_AUTOSAVE_ON_START // temporary definition that enables autosave
+//#define DEF_AUTOSAVE_ON_START // temporary definition that enables autosave
 //#endif
 
 #ifdef DEF_NMP
@@ -51,9 +52,8 @@
 #define WORLD_BYTE_DEPTH 16
 #define WORLD_BIT_DEPTH WORLD_BYTE_DEPTH * 8
 
-//#define SCREEN_UPSCALE_THRESHOLD 1280u
 //#define SCREEN_UPSCALE_THRESHOLD 2048u
-#define SCREEN_UPSCALE_THRESHOLD 1920u
+#define SCREEN_UPSCALE_THRESHOLD 1664u
 
 #define LIGHT_FAR 256.f
 #define LIGHT_HALF 128.f
@@ -62,7 +62,7 @@
 #ifdef DEF_NMP
 // Multiplayer release version
 #define VERSION_MAJOR 16u
-#define VERSION_MINOR 3u
+#define VERSION_MINOR 10u
 #else
 // Singleplayer release version
 #define VERSION_MAJOR 15u

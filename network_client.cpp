@@ -231,13 +231,17 @@ namespace network
 			addr.port = cfg::sIPPORT;
 
 			//int found_other = SDLNet_ResolveHost(&addr, "Sirennus0000", cfg::sIPPORT);
-			int found_other = SDLNet_ResolveHost(&addr, "F550C", cfg::sIPPORT);
+			int found_other = SDLNet_ResolveHost(&addr, "10.1.1.144", cfg::sIPPORT);
+			//int found_other = SDLNet_ResolveHost(&addr, "F550C", cfg::sIPPORT);
 			if (found_other == -1) goto exiterr;
 			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
 
 			//open socket
 			socket_reliable = SDLNet_TCP_Open(&addr);
-			if (!socket_reliable) goto exiterr;
+			if (!socket_reliable){
+				printf("Could not open socket!\n");
+				goto exiterr;
+			}
 			printf("Socket opened OK\n");
 
 			// send connection packet

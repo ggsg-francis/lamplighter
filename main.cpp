@@ -196,22 +196,30 @@ inline void TranslateInput()
 }
 
 // Fixed timestep editor tick function
-bool StepTickEditor(double dt)
+inline void TranslateInputEditor()
 {
 	if (!step_pause && focus)
 	{
 		// Generate analogue input from directional keys
 		m::Vector2 input_p1(0.f, 0.f);
-		if (input::GetHeld(input::key::DIR_F)) // Forward
-			input_p1.y = 1.f;
-		if (input::GetHeld(input::key::DIR_B)) // Back
-			input_p1.y = -1.f;
-		if (input::GetHeld(input::key::DIR_R)) // Right
-			input_p1.x += 1.f;
-		if (input::GetHeld(input::key::DIR_L)) // Left
-			input_p1.x -= 1.f;
+		btf32 mouserot_mult = 0.25f;
+		if (!input::GetHeld(input::key::RUN))
+		{
+			input_p1.x = input::BUF_LOCALGET.mouse_x * 0.125f;
+			input_p1.y = input::BUF_LOCALGET.mouse_y * -0.125f;
+			//m::RotateVector();
+			mouserot_mult = 0.f;
+		}
+		//if (input::GetHeld(input::key::DIR_F)) // Forward
+		//	input_p1.y = 1.f;
+		//if (input::GetHeld(input::key::DIR_B)) // Back
+		//	input_p1.y = -1.f;
+		//if (input::GetHeld(input::key::DIR_R)) // Right
+		//	input_p1.x += 1.f;
+		//if (input::GetHeld(input::key::DIR_L)) // Left
+		//	input_p1.x -= 1.f;
 		// Set input
-		index::SetInput(0ui16, input_p1, input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
+		index::SetInput(0ui16, input_p1, input::BUF_LOCALGET.mouse_x * mouserot_mult, input::BUF_LOCALGET.mouse_y * mouserot_mult,
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE_ALT),
@@ -224,12 +232,6 @@ bool StepTickEditor(double dt)
 		//do stuff
 		index::Tick(FRAME_TIME);
 		weather::Tick(FRAME_TIME);
-
-		return true;
-	}
-	else
-	{
-		return false;
 	}
 }
 
@@ -413,6 +415,11 @@ updtime:
 	// Check to make sure the game isnt paused, and the window is in focus
 	if (!step_pause && focus)
 	{
+		#ifndef _DEBUG
+		_controlfp(_PC_24, _MCW_PC); _controlfp(_RC_NEAR, _MCW_RC);
+		//gpAssert((_controlfp(0, 0) & _MCW_PC) == _PC_24); gpAssert((_controlfp(0, 0) & _MCW_RC) == _RC_NEAR);
+		#endif
+
 		#ifdef DEF_SMOOTH_FRAMERATE
 		// Wait until the exact right time to run a new frame
 		while (current_frame_time <= next_frame_time)
@@ -426,32 +433,13 @@ updtime:
 
 		#else
 		// Just run the new frame now
-		current_frame_time = (btf64)glfwGetTime();
+		current_frame_time = (btf64)SDL_GetTicks() / 1000.;
 		next_frame_time = current_frame_time + FRAME_TIME;
 		Time::Update(current_frame_time);
 		#endif
 
-		#ifdef DEF_NMP
-		// Probably a temporary measure - quit if any player quits
-		for (btui32 i = 0; i < NUM_PLAYERS; ++i)
-			if (input::GetHit(i, input::key::QUIT)) goto exit;
-		#else
-		if (input::GetHit(input::key::QUIT)) goto exit;
-		#endif
-
 		input::ClearHitsAndDelta();
-		while (SDL_PollEvent(&e))
-		{
-			//If user closes the window
-			if (e.type == SDL_QUIT) {
-				goto exit;
-			}
-			else
-			{
-				input::UpdateInput(&e);
-				//#error
-			}
-		}
+		while (SDL_PollEvent(&e)) input::UpdateInput(&e);
 
 		// TODO: think this over, there must be a better way to handle this
 		#ifdef DEF_NMP
@@ -471,10 +459,13 @@ updtime:
 		Time::Step();
 		#ifdef DEF_NMP
 		input::CycleBuffers();
+		// Quit if any player quits
+		for (btui32 i = 0; i < NUM_PLAYERS; ++i)
+			if (input::GetHit(i, input::key::QUIT)) goto exit;
+		#else
+		if (input::GetHit(input::key::QUIT)) goto exit;
 		#endif
 		TranslateInput();
-		//_controlfp(_PC_24, _MCW_PC); _controlfp(_RC_NEAR, _MCW_RC);
-		//gpAssert((_controlfp(0, 0) & _MCW_PC) == _PC_24); gpAssert((_controlfp(0, 0) & _MCW_RC) == _RC_NEAR);
 		index::Tick((btf32)(FRAME_TIME));
 		weather::Tick((btf32)(FRAME_TIME));
 	}
@@ -496,6 +487,7 @@ render:
 
 	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
 	glClearColor(0.f, 0.f, 0.f, 1.0f);
+	//glClearColor(2.f, 2.f, 2.f, 1.0f);
 
 	#ifndef DEF_NMP
 	//-------------------------------- BUFFER 1 (LEFT SCREEN)
@@ -658,51 +650,53 @@ loop_editor:
 	{
 		Time::Update((btf64)SDL_GetTicks() / 1000.);
 
+		input::ClearHitsAndDelta();
+		while (SDL_PollEvent(&e)) input::UpdateInput(&e);
+
 		if (input::GetHit(input::key::QUIT)) break;
 
-		if (StepTickEditor(Time::deltaTime)) // Run simulation at a fixed step, if step proceed to render
-		{
-			// Set GL properties for solid rendering
-			glEnable(GL_DEPTH_TEST);
-			glDisable(GL_BLEND);
-			glBlendFunc(GL_ONE, GL_ZERO);
+		TranslateInputEditor();
 
-			// Test
-			glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
-			glClear(GL_DEPTH_BUFFER_BIT);
-			index::SetViewFocus(0u);
-			index::Draw(false);
-			index::SetShadowTexture(rendertexture_shadow);
+		// Set GL properties for solid rendering
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ZERO);
 
-			glViewport(0, 0, cfg::iWinX, cfg::iWinY);
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glClearColor(0.5f, 1.f, 1.f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			index::SetViewFocus(0u);
-			index::Draw();
-			//// Read pixel
-			//unsigned char pixel[4];
-			//glReadPixels(320, 240, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
+		// Test
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		index::SetViewFocus(0u);
+		index::Draw(false);
+		index::SetShadowTexture(rendertexture_shadow);
 
-			//if (pixel[2] == 0ui8)
-			//	//index::SetViewTargetID((btID)pixel[0]);
-			//	index::SetViewTargetID((btID)pixel[0] + ((btID)pixel[1] << 8u));
-			//else
-			//	index::SetViewTargetID(ID_NULL);
+		glViewport(0, 0, cfg::iWinX, cfg::iWinY);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(0.5f, 1.f, 1.f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		index::SetViewFocus(0u);
+		index::Draw();
+		//// Read pixel
+		//unsigned char pixel[4];
+		//glReadPixels(320, 240, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
 
-			//index::DrawGUI();
-			//index::TickGUI(); // causes a crash if before drawgui
+		//if (pixel[2] == 0ui8)
+		//	//index::SetViewTargetID((btID)pixel[0]);
+		//	index::SetViewTargetID((btID)pixel[0] + ((btID)pixel[1] << 8u));
+		//else
+		//	index::SetViewTargetID(ID_NULL);
 
-			glFrontFace(GL_CCW);
+		//index::DrawGUI();
+		//index::TickGUI(); // causes a crash if before drawgui
 
-			//-------------------------------- SWAP BUFFERS
+		glFrontFace(GL_CCW);
 
-			SDL_GL_SwapWindow(sdl_window);
-			input::ClearHitsAndDelta();
-			//glfwPollEvents();
-			//#error
-		} // End if StepTick
+		//-------------------------------- SWAP BUFFERS
+
+		SDL_GL_SwapWindow(sdl_window);
+		input::ClearHitsAndDelta();
+		//glfwPollEvents();
+		//#error
 	}
 
 	//-------------------------------- END PROGRAM

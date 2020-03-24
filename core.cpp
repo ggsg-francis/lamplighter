@@ -52,19 +52,23 @@ namespace index
 		a_unused,
 	};
 
-	void flood_fill_temp(btui16 x, btui16 y, graphics::colour col)
+	void flood_fill_temp(btui16 srcx, btui16 srcy, btui16 x, btui16 y, graphics::colour col)
 	{
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
 		{
-			t_EnvLightmap.SetPixelChannelG(x, y, col.g);
-			if (col.g > 31ui8)
+			if (env::eCells[x][y].height < env::eCells[srcx][srcy].height + 2ui8 //incline check
+			&& env::eCells[x][y].height > env::eCells[srcx][srcy].height - 4ui8) // decline check
 			{
-				col.g -= 32ui8;
-				flood_fill_temp(x + 1, y, col);
-				flood_fill_temp(x - 1, y, col);
-				flood_fill_temp(x, y + 1, col);
-				flood_fill_temp(x, y - 1, col);
+				t_EnvLightmap.SetPixelChannelG(x, y, col.g);
+				if (col.g > 31ui8)
+				{
+					col.g -= 32ui8;
+					flood_fill_temp(srcx, srcy, x + 1, y, col);
+					flood_fill_temp(srcx, srcy, x - 1, y, col);
+					flood_fill_temp(srcx, srcy, x, y + 1, col);
+					flood_fill_temp(srcx, srcy, x, y - 1, col);
+				}
 			}
 		}
 	}
@@ -148,14 +152,17 @@ namespace index
 					{
 						if (m::Length(pos1 - pos3) < 16.f && m::Length(pos2 - pos3) < 16.f) // ..or too far away
 						{
+							//*
 							btf32 random = m::Random(0.f, 15.f);
 							btui32 rand_rnd = (btui32)floor(random);
-							if (rand_rnd < 1u)
+							if (rand_rnd < 2u)
 								SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
-							else if (rand_rnd < 5u)
+							else if (rand_rnd < 9u)
 								SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
 							else
-								SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);
+								SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);//*/
+							//SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
+
 						}
 					}
 				}
@@ -167,22 +174,10 @@ namespace index
 	{
 		IndexInitialize();
 
-		char buffinal[32] = "TSOA R";
-		char buffer[4];
-		char buffer2[4];
-		//char buffer3[4];
-		_itoa(VERSION_MAJOR, buffer, 10);
-		_itoa(VERSION_MINOR, buffer2, 10);
-		strcat(buffinal, buffer);
-		strcat(buffinal, "-");
-		strcat(buffinal, buffer2);
-		//strcat(buffinal, " b");
-		//strcat(buffinal, buffer3);
-		strcat(buffinal, " ");
-		strcat(buffinal, VERSION_COMMENT);
-
+		// Generate debug version display
+		char buffinal[32];
+		sprintf(buffinal, "TSOA R%i-%i [%s]", VERSION_MAJOR, VERSION_MINOR, VERSION_COMMENT);
 		text_version.ReGen(buffinal, cfg::iWinX * -0.25f, cfg::iWinX * 0.25f, cfg::iWinY * 0.5f);
-		//text_version.ReGen(buffinal, 0.f, 100000.f, 0.f);
 
 		env::LoadBin();
 
@@ -203,12 +198,17 @@ namespace index
 		t_EnvLightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(255ui8, 0ui8, 0ui8, 255ui8));
 
 		for (btui32 x = 0u; x < WORLD_SIZE; ++x)
+		{
 			for (btui32 y = 0u; y < WORLD_SIZE; ++y)
+			{
+				t_EnvLightmap.SetPixelChannelA(x, y, env::eCells[x][y].height);
 				if (env::Get(x, y, env::eflag::EF_LIGHTSRC))
-					flood_fill_temp(x, y, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
-
+					flood_fill_temp(x, y, x, y, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+			}
+		}
 
 		t_EnvLightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
+		//t_EnvLightmap.ReBindGL(graphics::eNEAREST, graphics::eCLAMP);
 
 		// Heightmap
 
@@ -236,6 +236,8 @@ namespace index
 			{
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
+				//players[0] = SpawnEntity(prefab::prefab_npc, m::Vector2(1023.f, 1022.f), 0.f);
+				CHARA(players[0])->faction = fac::faction::playerhunter;
 				CHARA(players[1])->faction = fac::faction::playerhunter;
 
 				/*
@@ -306,14 +308,13 @@ namespace index
 		}
 	}
 
-	#ifdef DEF_PERIODIC_SPAWN
-	btui64 spawnz_time_temp = 30u;
-	#endif
+	//btui64 spawnz_time_temp = 240u * 30u;
+	btui64 spawnz_time_temp = 30 * 30u;
 
 	void Tick(btf32 dt)
 	{
 		// TODO: think this over, there must be a better way to handle this
-		#ifndef DEF_NMP // Don't reload if it's multiplayer, this might be a temporary measure anyway
+		#ifdef DEF_AUTO_RELOAD_ON_DEATH // Don't reload if it's multiplayer, this might be a temporary measure anyway
 		// check if either player is dead
 		if (!ENTITY(players[0])->state.stateFlags.get(ActiveState::eALIVE) || !ENTITY(players[1])->state.stateFlags.get(ActiveState::eALIVE))
 		{
@@ -323,9 +324,17 @@ namespace index
 		#endif
 
 		#ifdef DEF_PERIODIC_SPAWN
-		if (!cfg::bEditMode && spawnz_time_temp < tickCount_temp)
+		/*if (!cfg::bEditMode && spawnz_time_temp < tickCount_temp)
 		{
 			spawnz_time_temp = tickCount_temp + 30u * 30u;
+			DoSpawn();
+		}*/
+		--spawnz_time_temp;
+		if (!cfg::bEditMode && spawnz_time_temp == 1u)
+		{
+			// seconds * fps
+			//spawnz_time_temp = 120u * 30u;
+			spawnz_time_temp = 30u * 30u;
 			DoSpawn();
 		}
 		#endif
@@ -389,14 +398,22 @@ namespace index
 			}
 			else if (input::GetHit(input::key::ACTIVATE))
 			{
-				env::GeneratePhysicsSurfaces();
-				env::SaveBin();
+				//env::GeneratePhysicsSurfaces();
+				//env::SaveBin();
 			}
+			else if (input::GetHeld(input::key::DIR_F)) // Forward
+				env::eCells[GetCellX][GetCellY].prop_dir = env::EnvNode::eNORTH;
+			else if (input::GetHeld(input::key::DIR_B)) // Back
+				env::eCells[GetCellX][GetCellY].prop_dir = env::EnvNode::eSOUTH;
+			else if (input::GetHeld(input::key::DIR_R)) // Right
+				env::eCells[GetCellX][GetCellY].prop_dir = env::EnvNode::eEAST;
+			else if (input::GetHeld(input::key::DIR_L)) // Left
+				env::eCells[GetCellX][GetCellY].prop_dir = env::EnvNode::eWEST;
 			else if (input::GetHit(input::key::FUNCTION_1)) // COPY
 			{
 				editor_node_copy = env::eCells[GetCellX][GetCellY];
 			}
-			else if (input::GetHit(input::key::FUNCTION_2)) // PASTE
+			else if (input::GetHeld(input::key::FUNCTION_2)) // PASTE
 			{
 				env::eCells[GetCellX][GetCellY] = editor_node_copy;
 			}
@@ -405,10 +422,14 @@ namespace index
 				env::Get(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC)
 					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC) : env::Set(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC);
 			}
-			else if (input::GetHit(input::key::FUNCTION_4)) // TOGGLE LIGHT
+			else if (input::GetHit(input::key::FUNCTION_4)) // TOGGLE SPAWN
 			{
 				env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST)
 					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST) : env::Set(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
+			}
+			else if (input::GetHit(input::key::FUNCTION_5)) // SAVE
+			{
+				env::SaveBin();
 			}
 			else if (input::GetHit(input::key::ACTION_A))
 			{
@@ -424,14 +445,14 @@ namespace index
 				if (env::eCells[GetCellX][GetCellY].prop < acv::prop_index)
 					++env::eCells[GetCellX][GetCellY].prop;
 			}
-			else if (input::GetHit(input::key::INV_CYCLE_L))
+			else if (input::GetHit(input::key::INV_CYCLE_R))
 			{
 				if (env::eCells[GetCellX][GetCellY].height > 0u)
 					++env::eCells[GetCellX][GetCellY].height;
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells[GetCellX][GetCellY].height);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 			}
-			else if (input::GetHit(input::key::INV_CYCLE_R))
+			else if (input::GetHit(input::key::INV_CYCLE_L))
 			{
 				if (env::eCells[GetCellX][GetCellY].height < 255)
 					--env::eCells[GetCellX][GetCellY].height;
@@ -566,15 +587,26 @@ namespace index
 
 		if (cfg::bEditMode)
 		{
+			bti32 x2 = ENTITY(players[activePlayer])->t.csi.c[0].x;
+			bti32 y2 = ENTITY(players[activePlayer])->t.csi.c[0].y;
+			graphics::MatrixTransform(matrix, m::Vector3(x2, env::eCells[x2][y2].height / TERRAIN_HEIGHT_DIVISION, y2));
+			DrawMesh(ID_NULL, res::GetM(res::m_debugcell), res::GetT(res::t_gui_bar_red), SS_NORMAL, matrix);
+
 			btui32 drawrange = 8u; // Create min/max draw coordinates
-			bti32 minx = ENTITY(players[activePlayer])->t.csi.c[0].x - drawrange; if (minx < 0) minx = 0;
-			bti32 maxx = ENTITY(players[activePlayer])->t.csi.c[0].x + drawrange; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
-			bti32 miny = ENTITY(players[activePlayer])->t.csi.c[0].y - drawrange; if (miny < 0) miny = 0;
-			bti32 maxy = ENTITY(players[activePlayer])->t.csi.c[0].y + drawrange; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
+			bti32 minx = x2 - drawrange; if (minx < 0) minx = 0;
+			bti32 maxx = x2 + drawrange; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
+			bti32 miny = y2 - drawrange; if (miny < 0) miny = 0;
+			bti32 maxy = y2 + drawrange; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
 			for (bti32 x = minx; x <= maxx; x++)
 			{
 				for (bti32 y = miny; y < maxy; y++)
 				{
+					btf32 rotation_by_enum[]
+					{
+						0.f, 180.f, 90.f, 270.f,
+					};
+					matrix = graphics::Matrix4x4();
+
 					if (env::Get(x, y, env::eflag::eIMPASSABLE))
 					{
 						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
@@ -594,8 +626,13 @@ namespace index
 					//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
 					if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
 					{
-						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
-						DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
+						graphics::MatrixTransform(matrix,
+							m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y),
+							glm::radians(rotation_by_enum[env::eCells[x][y].prop_dir]));
+						DrawMesh(ID_NULL,
+							res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
+							res::GetT(acv::props[env::eCells[x][y].prop].idTxtr),
+							SS_NORMAL, matrix);
 					}
 					/*if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
 					{
@@ -844,7 +881,7 @@ namespace index
 			player_hp[activePlayer] = ENTITY(players[activePlayer])->state.damagestate;
 		}
 		// croshair
-		graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), 0, 0, 32, 32);
+		if (cfg::bCrossHairs) graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), 0, 0, 32, 32);
 		// hp
 		graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_red), p1_x_start + 32, p1_y_start + 8, (int)(((btf32)index::GetHP(players[activePlayer]) / 1000.f) * (64.f)), 16);
 		char stuff[32];

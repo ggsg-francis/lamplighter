@@ -1359,7 +1359,7 @@ namespace graphics
 		glBindVertexArray(0); // Bind default vertex array
 	}
 
-	void CompositeMesh::AddMesh(Mesh* mesh, m::Vector3 position)
+	void CompositeMesh::AddMesh(Mesh* mesh, m::Vector3 position, MeshOrientation ori)
 	{
 		glm::vec3 vector;
 		glm::mat4x4 matr;
@@ -1386,8 +1386,7 @@ namespace graphics
 			vces_2[i] = mesh->Vces()[i - old_vces_size];
 			// temp
 			m::Vector3 vector = m::Vector3(vces_2[i].pos.x, vces_2[i].pos.y, vces_2[i].pos.z);
-			vector = vector + position;
-			//vector = vector + position * m::Vector3(1.f, 0.f, 1.f);
+			m::Vector3 normal = m::Vector3(vces_2[i].nor.x, vces_2[i].nor.y, vces_2[i].nor.z);
 
 			//vector.y += m::Lerp(height_s, height_n, vces_2[i].pos.z * 2.f) + m::Lerp(height_w, height_e, vces_2[i].pos.x * 2.f);
 			//vector.y *= 0.5f;
@@ -1401,9 +1400,37 @@ namespace graphics
 			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
 			*/
 
-			vces_2[i].pos.x = vector.x;
-			vces_2[i].pos.y = vector.y;
-			vces_2[i].pos.z = vector.z;
+			switch (ori)
+			{
+			case graphics::CompositeMesh::eNORTH:
+				vces_2[i].pos.x = vector.x + position.x;
+				vces_2[i].pos.y = vector.y + position.y;
+				vces_2[i].pos.z = vector.z + position.z;
+				break;
+			case graphics::CompositeMesh::eSOUTH:
+				vces_2[i].pos.x = -vector.x + position.x;
+				vces_2[i].pos.y = vector.y + position.y;
+				vces_2[i].pos.z = -vector.z + position.z;
+				vces_2[i].nor.x = -normal.x;
+				vces_2[i].nor.z = -normal.z;
+				break;
+			case graphics::CompositeMesh::eEAST:
+				vces_2[i].pos.x = vector.z + position.x;
+				vces_2[i].pos.y = vector.y + position.y;
+				vces_2[i].pos.z = -vector.x + position.z;
+				vces_2[i].nor.x = normal.z;
+				vces_2[i].nor.z = -normal.x;
+				break;
+			case graphics::CompositeMesh::eWEST:
+				vces_2[i].pos.x = -vector.z + position.x;
+				vces_2[i].pos.y = vector.y + position.y;
+				vces_2[i].pos.z = vector.x + position.z;
+				vces_2[i].nor.x = -normal.z;
+				vces_2[i].nor.z = normal.x;
+				break;
+			default:
+				break;
+			}
 		}
 		for (int i = old_ices_size; i < ices_size; ++i)
 			ices_2[i] = mesh->Ices()[i - old_vces_size] + (btui32)old_vces_size;

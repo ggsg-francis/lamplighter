@@ -60,7 +60,10 @@ namespace serializer
 		for (int i = 0; i < acv::spell_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
-			//std::cout << "HANDLE               " << acv::spells[i].handle << std::endl;
+			std::cout << "HANDLE               ";
+			for (btui8 c = 0; c < 8; ++c)
+				std::cout << acv::spells[i].handle[c];
+			std::cout << std::endl;
 			std::cout << "NAME                 " << acv::spells[i].name << std::endl;
 			std::cout << "CAST TYPE            " << acv::spells[i].cast_type << std::endl;
 			std::cout << "EFFECT ON TARGET     " << acv::spells[i].target_effect_type << std::endl;
@@ -100,17 +103,34 @@ namespace serializer
 			#undef WPNI
 			#undef PTNI
 		}
+		std::cout << "__________________________________________" << std::endl;
+		std::cout << "ENTITY TEMPLATES" << std::endl;
+		for (int i = 0; i < acv::entt_index; i++)
+		{
+			std::cout << "---------------------" << std::endl;
+			std::cout << "HANDLE               ";
+			for (btui8 c = 0; c < 8; ++c)
+				std::cout << acv::entt[i].handle[c];
+			std::cout << std::endl;
+			std::cout << "MESH ID HEAD         " << acv::entt[i].m_head << std::endl;
+			std::cout << "MESH ID BODY         " << acv::entt[i].m_body << std::endl;
+			std::cout << "MESH ID ARM          " << acv::entt[i].m_arm << std::endl;
+			std::cout << "MESH ID LEG          " << acv::entt[i].m_leg << std::endl;
+			std::cout << "JPOS ARM FORWARD     " << acv::entt[i].jpos_arm_fw[0] << std::endl;
+			std::cout << "JPOS ARM RIGHT       " << acv::entt[i].jpos_arm_rt[0] << std::endl;
+			std::cout << "JPOS ARM UP          " << acv::entt[i].jpos_arm_up[0] << std::endl;
+			std::cout << "JPOS ARM FORWARD     " << acv::entt[i].jpos_leg_fw[0] << std::endl;
+			std::cout << "JPOS ARM RIGHT       " << acv::entt[i].jpos_leg_rt[0] << std::endl;
+			std::cout << "JPOS ARM UP          " << acv::entt[i].jpos_leg_up[0] << std::endl;
+			std::cout << "ARM LENGTH           " << acv::entt[i].leng_arm[0] << std::endl;
+			std::cout << "LEG LENGTH           " << acv::entt[i].leng_leg[0] << std::endl;
+		}
 	}
 
 	#ifdef DEF_ARCHIVER
 	void convert_files_src(char* fn)
 	{
-		std::cout <<
-			"  ||||||||                      ||||||||" << std::endl <<
-			"||||    ||||                  ||||    ||||" << std::endl <<
-			"||||    ||||  ||||      ||||  ||||    ||||" << std::endl <<
-			"||||    ||||  ||||  ||  ||||  ||||    ||||" << std::endl <<
-			"  ||||||||      ||||||||||      ||||||||" << std::endl;
+		printf("  ||||||||                      ||||||||\n||||    ||||                  ||||    ||||\n||||    ||||  ||||      ||||  ||||    ||||\n||||    ||||  ||||  ||  ||||  ||||    ||||\n  ||||||||      ||||||||||      ||||||||");
 
 		FILE* file = fopen(fn, "r"); // Open file
 		if (file != NULL)
@@ -289,7 +309,36 @@ namespace serializer
 	}
 	#endif
 
-	void interpret_archive_src(char* fn)
+	void InterpretWord(FILE* file, char* value, int* size)
+	{
+		char oper;
+		fpos_t start; fpos_t end; // Start and end points of the value (eg. name = dick; dick is the value)
+		fgetpos(file, &start);
+		while (true)
+		{
+			oper = fgetc(file); // Get character
+			if (oper == '\n')
+			{
+				fgetpos(file, &end);
+				break;
+			}
+		}
+		*size = (int)(end - start);
+		fseek(file, (long)start, SEEK_SET);
+		fgets(value, (int)(*size) - 1, file); // Get element name
+	}
+
+	void InterpretCommand(FILE* file, char* value)
+	{
+		fgets(value, 5, file); // Get element name
+	}
+
+	void AdvanceSpace(FILE* file)
+	{
+		char oper = fgetc(file); //  Advance past space
+	}
+
+	void InterpretArchiveContents(char* fn)
 	{
 		void* item;
 
@@ -315,8 +364,8 @@ namespace serializer
 			{
 				// GET TYPE
 
-				oper = fgetc(file); // Advance past equals sign
-				fgets(&elem[0], 5, file); // Get element name
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
 
 				// SET TYPE
 
@@ -325,25 +374,14 @@ namespace serializer
 
 				// READ PROPERTIES
 
-				oper = fgetc(file); //  Advance past line break
-				fgets(&elem[0], 5, file); // Get element name
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
 				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
 				{
 					oper = fgetc(file); // Advance past equals sign
-					fpos_t start; fpos_t end; // Start and end points of the value (eg. name = dick; dick is the value)
-					fgetpos(file, &start);
-					while (true)
-					{
-						oper = fgetc(file); // Get character
-						if (oper == '\n')
-						{
-							fgetpos(file, &end);
-							break;
-						}
-					}
-					fseek(file, (long)start, SEEK_SET);
-					char* value = (char*)malloc(end - start); // Allocate space for value string
-					fgets(&value[0], (int)(end - start) - 1, file); // Get element name
+
+					char value[256]; int value_size = 0;
+					InterpretWord(file, value, &value_size);
 
 					if (strcmp(elem, "srct") == 0) // Texture
 						acv::props[acv::prop_index].idTxtr = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
@@ -356,11 +394,9 @@ namespace serializer
 					else if (strcmp(elem, "flag") == 0)
 						acv::props[acv::prop_index].flags = (acv::EnvProp::EnvPropFlags)atoi(value);
 
-					free(value); // Free content string
-
 					//get name of next operator
 					oper = fgetc(file); //  Advance past line break
-					fgets(&elem[0], 5, file); // Get element name
+					InterpretCommand(file, elem);
 				}
 				++acv::prop_index;
 			nextPropElem:
@@ -378,8 +414,8 @@ namespace serializer
 			{
 				// GET TYPE
 
-				oper = fgetc(file); // Advance past equals sign
-				fgets(&elem[0], 5, file); // Get element name
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
 
 				// SET TYPE
 
@@ -388,30 +424,18 @@ namespace serializer
 
 				// READ PROPERTIES
 
-				oper = fgetc(file); //  Advance past line break
-				fgets(&elem[0], 5, file); // Get element name
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
 				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
 				{
-					oper = fgetc(file); // Advance past equals sign
-					fpos_t start; fpos_t end; // Start and end points of the value (eg. name = dick; dick is the value)
-					fgetpos(file, &start);
-					while (true)
-					{
-						oper = fgetc(file); // Get character
-						if (oper == '\n')
-						{
-							fgetpos(file, &end);
-							break;
-						}
-					}
-					fseek(file, (long)start, SEEK_SET);
-					char* value = (char*)malloc(end - start); // Allocate space for value string
-					fgets(&value[0], (int)(end - start) - 1, file); // Get element name
+					AdvanceSpace(file);
+					char value[256]; int value_size = 0;
+					InterpretWord(file, value, &value_size);
 
 					if (strcmp(elem, "hndl") == 0) // Handle
 						memcpy(acv::spells[acv::spell_index].handle, value, 8u);
 					else if (strcmp(elem, "name") == 0) // Name
-						memcpy(acv::spells[acv::spell_index].name, value, end - start);
+						memcpy(acv::spells[acv::spell_index].name, value, value_size);
 					else if (strcmp(elem, "eidt") == 0) // Effect on Target
 						acv::spells[acv::spell_index].target_effect_type = (btui16)atoi(value);
 					else if (strcmp(elem, "edrt") == 0) // Duration on Target
@@ -419,17 +443,15 @@ namespace serializer
 					else if (strcmp(elem, "emgt") == 0) // Magnitude on Target
 						acv::spells[acv::spell_index].target_effect_magnitude = (btui32)atoi(value);
 
-					free(value); // Free content string
-
 					//#define NEXT_OPERATOR oper=fgetc(file);fgets(&elem[0], 5, file); // Get element name
 
 					//get name of next operator
 					oper = fgetc(file); //  Advance past line break
-					fgets(&elem[0], 5, file); // Get element name
+					InterpretCommand(file, elem);
 				}
 				++acv::spell_index;
 			nextSpelElem:
-				oper = fgetc(file); //  Advance past line break
+				AdvanceSpace(file);
 				goto getSpelElemName;
 			}
 
@@ -488,20 +510,9 @@ namespace serializer
 				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
 				{
 					oper = fgetc(file); // Advance past equals sign
-					fpos_t start; fpos_t end; // Start and end points of the value (eg. name = dick; dick is the value)
-					fgetpos(file, &start);
-					while (true)
-					{
-						oper = fgetc(file); // Get character
-						if (oper == '\n')
-						{
-							fgetpos(file, &end);
-							break;
-						}
-					}
-					fseek(file, (long)start, SEEK_SET);
-					char* value = (char*)malloc(end - start); // Allocate space for value string
-					fgets(&value[0], (int)(end - start) - 1, file); // Get element name
+					
+					char value[256]; int value_size = 0;
+					InterpretWord(file, value, &value_size);
 
 					// Any item stats
 					if (strcmp(elem, "type") == 0) // What type of item is it?
@@ -516,7 +527,7 @@ namespace serializer
 						//ITEM_ITEM->id_icon = (btID)atoi(value);
 						GET2_ITEM_ITEM->id_icon = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
 					else if (strcmp(elem, "name") == 0) // Name
-						memcpy(GET2_ITEM_ITEM->name, value, end - start);
+						memcpy(GET2_ITEM_ITEM->name, value, value_size);
 					else if (strcmp(elem, "wght") == 0) // Carry weight
 						GET2_ITEM_ITEM->f_weight = (btf32)atof(value);
 					else if (strcmp(elem, "muns") == 0) // Money base value
@@ -553,8 +564,6 @@ namespace serializer
 					else if (strcmp(elem, "cspl") == 0) // Spell
 						GET2_ITEM_PTN->effect = GetSpellIDFromHandle(value);
 
-					free(value); // Free content string
-
 					//get name of next operator
 					oper = fgetc(file); //  Advance past line break
 					fgets(&elem[0], 5, file); // Get element name
@@ -562,6 +571,129 @@ namespace serializer
 				oper = fgetc(file); //  Advance past line break
 				fgets(&elem[0], 5, file); // Get element name
 			}
+
+			//-------------------------------- ENTITY TEMPLATES
+			
+			///*
+		getEntTElemName:
+			//fgets(&elem[0], 5, file); // Get element name
+		skipEntTElemName:
+			while (strcmp(elem, "ENTT") == 0) // is it a new item?
+			{
+				// GET TYPE
+
+				oper = fgetc(file); // Advance past equals sign
+				fgets(&elem[0], 5, file); // Get element name
+
+				// SET TYPE
+
+				// If it's an environment prop
+				if (strcmp(elem, "entt") != 0) goto nextEntTElem;
+
+				// READ PROPERTIES
+
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
+				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
+				{
+					AdvanceSpace(file);
+					if (strcmp(elem, "hndl") == 0) // Handle
+					{
+						char value[256]; int value_size = 0;
+						InterpretWord(file, value, &value_size);
+						memcpy(acv::entt[acv::entt_index].handle, value, 8u);
+
+						// Get name of next operator
+						AdvanceSpace(file);
+						InterpretCommand(file, elem);
+					}
+					else if (strcmp(elem, "srcm") == 0) // Source Mesh
+					{
+						InterpretCommand(file, elem);
+						AdvanceSpace(file);
+						char value[256]; int value_size = 0;
+						InterpretWord(file, value, &value_size);
+
+						if (strcmp(elem, "head") == 0) // Head
+							acv::entt[acv::entt_index].m_head = (btui16)GetAssetIDFromHandle(value, ASSET_MESHDEFORM_FILE);
+						if (strcmp(elem, "body") == 0) // Body
+							acv::entt[acv::entt_index].m_body = (btui16)GetAssetIDFromHandle(value, ASSET_MESHDEFORM_FILE);
+						if (strcmp(elem, "larm") == 0) // Arm
+							acv::entt[acv::entt_index].m_arm = (btui16)GetAssetIDFromHandle(value, ASSET_MESHDEFORM_FILE);
+						if (strcmp(elem, "lleg") == 0) // Leg
+							acv::entt[acv::entt_index].m_leg = (btui16)GetAssetIDFromHandle(value, ASSET_MESHDEFORM_FILE);
+
+						// Get name of next operator
+						AdvanceSpace(file);
+						InterpretCommand(file, elem);
+					}
+					else if (strcmp(elem, "lpos") == 0) // Limb Position
+					{
+						InterpretCommand(file, elem);
+						AdvanceSpace(file);
+						if (strcmp(elem, "larm") == 0) // Arm
+						{
+							InterpretCommand(file, elem);
+							AdvanceSpace(file);
+							char value[256]; int value_size = 0;
+							InterpretWord(file, value, &value_size); 
+							
+							if (strcmp(elem, "fw__") == 0) // Arm
+								acv::entt[acv::entt_index].jpos_arm_fw[0] = (btf32)atof(value);
+							if (strcmp(elem, "rt__") == 0) // Arm
+								acv::entt[acv::entt_index].jpos_arm_rt[0] = (btf32)atof(value);
+							if (strcmp(elem, "up__") == 0) // Arm
+								acv::entt[acv::entt_index].jpos_arm_up[0] = (btf32)atof(value);
+
+							// Get name of next operator
+							AdvanceSpace(file);
+							InterpretCommand(file, elem);
+						}
+						if (strcmp(elem, "lleg") == 0) // Leg
+						{
+							InterpretCommand(file, elem);
+							AdvanceSpace(file);
+							char value[256]; int value_size = 0;
+							InterpretWord(file, value, &value_size); 
+							
+							if (strcmp(elem, "fw__") == 0) // Arm
+								acv::entt[acv::entt_index].jpos_leg_fw[0] = (btf32)atof(value);
+							if (strcmp(elem, "rt__") == 0) // Arm
+								acv::entt[acv::entt_index].jpos_leg_rt[0] = (btf32)atof(value);
+							if (strcmp(elem, "up__") == 0) // Arm
+								acv::entt[acv::entt_index].jpos_leg_up[0] = (btf32)atof(value);
+
+							// Get name of next operator
+							AdvanceSpace(file);
+							InterpretCommand(file, elem);
+						}
+					}
+					else if (strcmp(elem, "llen") == 0) // Limb Length
+					{
+						InterpretCommand(file, elem);
+						AdvanceSpace(file);
+						char value[256]; int value_size = 0;
+						InterpretWord(file, value, &value_size); 
+						
+						if (strcmp(elem, "larm") == 0) // Arm
+							acv::entt[acv::entt_index].leng_arm[0] = (btf32)atof(value);
+						if (strcmp(elem, "lleg") == 0) // Leg
+							acv::entt[acv::entt_index].leng_leg[0] = (btf32)atof(value);
+
+						// Get name of next operator
+						AdvanceSpace(file);
+						InterpretCommand(file, elem);
+					}
+				}
+				++acv::entt_index;
+			nextEntTElem:
+				AdvanceSpace(file);
+				goto getEntTElemName;
+			}
+			//*/
+
+			//-------------------------------- END
+
 			debug_output();
 			fclose(file); // Close file
 		}
@@ -597,16 +729,12 @@ namespace serializer
 
 			//-------------------------------- Prop part
 
-			// Read count
 			fread(&acv::prop_index, sizeof(btui32), 1, file);
-			// Read props
 			fread(&acv::props, sizeof(acv::EnvProp), acv::prop_index, file);
 
 			//-------------------------------- Spell part
 
-			// Read count
 			fread(&acv::spell_index, sizeof(btui32), 1, file);
-			// Read spells
 			fread(&acv::spells, sizeof(acv::Spell), acv::spell_index, file);
 
 			//-------------------------------- Item part
@@ -640,6 +768,11 @@ namespace serializer
 					break;
 				}
 			}
+
+			//-------------------------------- Entity Template part
+
+			fwrite(&acv::entt_index, sizeof(btui32), 1, file);
+			fwrite(&acv::entt, sizeof(acv::EntityTemplate), acv::entt_index, file);
 
 			fclose(file); // Close file
 
@@ -714,6 +847,12 @@ namespace serializer
 					break;
 				}
 			}
+
+			//-------------------------------- Entity Template part
+
+			count = acv::entt_index;
+			fwrite(&count, sizeof(btui32), 1, file);
+			fwrite(&acv::entt, sizeof(acv::EntityTemplate), count, file);
 
 			fclose(file); // Close file
 

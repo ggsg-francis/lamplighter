@@ -200,7 +200,7 @@ namespace index
 	void EntDeintersect(Entity* ent, CellSpace& csi)
 	{
 		btf32 offsetx, offsety;
-		bool overlapN, overlapS, overlapE, overlapW;
+		bool overlapN, overlapS, overlapE, overlapW, touchNS = false, touchEW = false;
 
 		//-------------------------------- ACTOR COLLISION CHECK
 
@@ -262,47 +262,66 @@ namespace index
 		overlapE = offsetx > 0;
 		overlapW = offsetx < 0;
 
-		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eSurfN) && overlapN) // N
+		//-------------------------------- STRAIGHT EDGE COLLISION CHECK
+		// North
+		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u].height / TERRAIN_HEIGHT_DIVISION)
+		>(ent->t.height + 0.5f) && overlapN)
 		{
 			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
 			ent->t.velocity.y = 0.f;
+			touchNS = true;
 		}
-		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eSurfS) && overlapS) // S
+		// South
+		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u].height / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.height + 0.5f) && overlapS)
 		{
 			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
 			ent->t.velocity.y = 0.f;
+			touchNS = true;
 		}
-		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eSurfE) && overlapE) // E
+		// East
+		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y].height / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.height + 0.5f) && overlapE)
 		{
 			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
 			ent->t.velocity.x = 0.f;
+			touchEW = true;
 		}
-		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eSurfW) && overlapW) // W
+		// West
+		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y].height / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.height + 0.5f) && overlapW)
 		{
 			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
 			ent->t.velocity.x = 0.f;
+			touchEW = true;
 		}
 
-		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eCorOutNE) && overlapN && overlapE) // NE
-		{
+		//-------------------------------- CORNER COLLISION CHECK
+
+		// North-east
+		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u].height / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.height + 0.5f) && overlapN && overlapE) {
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, 0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
-		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eCorOutNW) && overlapN && overlapW) // NW
-		{
+		// North-west
+		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u].height / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.height + 0.5f) && overlapN && overlapW) {
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, 0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
-		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eCorOutSE) && overlapS && overlapE) // SE
-		{
+		// South-east
+		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u].height / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.height + 0.5f) && overlapS && overlapE) {
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, -0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
-		if (env::Get(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, env::eflag::eCorOutSW) && overlapS && overlapW) // SW
-		{
+		// South-west
+		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u].height / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.height + 0.5f) && overlapS && overlapW) {
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, -0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
@@ -337,7 +356,8 @@ namespace index
 		Entity* entity_b = ENTITY(entb);
 		return env::LineTrace_Bresenham(
 			entity_a->t.csi.c[eCELL_I].x, entity_a->t.csi.c[eCELL_I].y,
-			entity_b->t.csi.c[eCELL_I].x, entity_b->t.csi.c[eCELL_I].y);
+			entity_b->t.csi.c[eCELL_I].x, entity_b->t.csi.c[eCELL_I].y,
+			entity_a->t.height, entity_b->t.height);
 	}
 
 	btID GetClosestPlayer(btID index)
@@ -390,7 +410,8 @@ namespace index
 						Entity* ent_other = ENTITY(index_other);
 						// LINE TRACE
 						if (env::LineTrace_Bresenham(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y,
-							ent_other->t.csi.c[eCELL_I].x, ent_other->t.csi.c[eCELL_I].y))
+							ent_other->t.csi.c[eCELL_I].x, ent_other->t.csi.c[eCELL_I].y,
+							ent->t.height, ent_other->t.height))
 						{
 							m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
 							m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
@@ -454,7 +475,8 @@ namespace index
 							entity->t.position.x, entity->t.position.y))*/
 						if (env::LineTrace_Bresenham(
 							entity_index->t.csi.c[eCELL_I].x, entity_index->t.csi.c[eCELL_I].y,
-							entity->t.csi.c[eCELL_I].x, entity->t.csi.c[eCELL_I].y))
+							entity->t.csi.c[eCELL_I].x, entity->t.csi.c[eCELL_I].y,
+							entity_index->t.height, entity->t.height))
 						{
 							current_closest = i;
 							closest_distance = check_distance;
@@ -509,6 +531,13 @@ namespace index
 	//--------------------------- PREFABS --------------------------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
+	char Capitalize(char c)
+	{
+		if (c >= 'a' && c <= 'z')
+			return c + ('A' - 'a');
+		return c;
+	}
+
 	void IndexInitEntity(btID id, EntityType type)
 	{
 		block_entity.used[id] = true;
@@ -526,6 +555,38 @@ namespace index
 			block_entity_data[id].type_buffer_index = buf_chara.add();
 			memset(ENT_VOID(id), 0, sizeof(Chara));
 			((Chara)*(CHARA(id))) = Chara();
+			{
+				// generate name
+				FILE* file = fopen("namegen.txt", "rb"); // Open file
+				if (file != NULL)
+				{
+					fseek(file, 0L, SEEK_END);
+					long sz = ftell(file);
+					long random = (long)m::Random(0, sz);
+					fseek(file, random, SEEK_SET); // Seek file beginning
+
+					int name_index = 0;
+					char c;
+					bool has_advanced_word = false;
+				getchar:
+					fread(&c, 1, 1, file);
+					if (c == CHARCODE_ASCII::space || c == CHARCODE_ASCII::CR || c == CHARCODE_ASCII::LF)
+					{
+						// if we reach the first 'empty character' we've hit the end of the current word
+						has_advanced_word = true;
+						goto getchar;
+					}
+					else
+					{
+						if (!has_advanced_word)
+							goto getchar;
+						CHARA(id)->name[0] = Capitalize(c);
+						// else we can read from here assuming this is the start of a new word
+						fgets((char*)(&CHARA(id)->name[1]), 31, file);
+					}
+				}
+				fclose(file);
+			}
 			break;
 		default:
 			std::cout << "Tried to initialize entity of no valid type" << std::endl;

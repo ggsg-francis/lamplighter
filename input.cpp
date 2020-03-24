@@ -253,10 +253,10 @@ namespace input
 	{
 		BUF_LOCALSET.mouse_x = 0.f;
 		BUF_LOCALSET.mouse_y = 0.f;
-		BUF_LOCALSET.joy_x_a = 0.f;
-		BUF_LOCALSET.joy_y_a = 0.f;
-		BUF_LOCALSET.joy_x_b = 0.f;
-		BUF_LOCALSET.joy_y_b = 0.f;
+		//BUF_LOCALSET.joy_x_a = 0.f;
+		//BUF_LOCALSET.joy_y_a = 0.f;
+		//BUF_LOCALSET.joy_x_b = 0.f;
+		//BUF_LOCALSET.joy_y_b = 0.f;
 		BUF_LOCALSET.keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000UI64;
 	}
 

@@ -134,6 +134,7 @@ struct Entity
 {
 	btID id;
 	EntityType type;
+	bti8 name[32];
 
 	enum EntityFlags : btui8
 	{

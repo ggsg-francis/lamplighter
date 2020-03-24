@@ -464,12 +464,16 @@ namespace graphics
 	class CompositeMesh
 	{
 	public:
+		enum MeshOrientation
+		{
+			eNORTH, eSOUTH, eEAST, eWEST,
+		};
 		GLuint vao; // Vertex Array Object
 		CompositeMesh();
 		~CompositeMesh();
 		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void AddMesh(Mesh* MESH, Matrix4x4 position);
-		void AddMesh(Mesh* MESH, m::Vector3 position);
+		void AddMesh(Mesh* MESH, m::Vector3 position, MeshOrientation ori);
 		// todo: remove me
 		void AddTerrainTile(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE]);
 		void ReBindGL();

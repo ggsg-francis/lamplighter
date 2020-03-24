@@ -27,6 +27,8 @@ bool SaveExists()
 
 void SaveState()
 {
+	printf("SAVE FUNCTION CALLED ON TICK %i\n", tickCount_temp);
+
 	// clean all unused item instances
 	for (btID index_item = 0; index_item <= index::block_item.index_end; index_item++) // For every item
 	{
@@ -81,7 +83,8 @@ void SaveState()
 		fwrite(&FILE_VER, SIZE_32, 1, file);
 
 		// Actual game state
-		fwrite(&index::players, SIZE_16, 2, file);
+		fwrite(&index::players, SIZE_16, NUM_PLAYERS, file);
+		fwrite(&index::spawnz_time_temp, SIZE_64, 1, file);
 
 		//-------------------------------- ENTITIES
 
@@ -115,6 +118,7 @@ void SaveState()
 				case ENTITY_TYPE_RESTING_ITEM:
 					fwrite(&ITEM(i)->item_instance, SIZE_16, 1, file);
 				case ENTITY_TYPE_CHARA:
+					fwrite(&ACTOR(i)->name, 32, 1, file);
 					fwrite(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
 					fwrite(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
 					fwrite(&ACTOR(i)->t_skin, SIZE_16, 1, file);
@@ -151,6 +155,10 @@ void SaveState()
 
 		fclose(file); // Close file
 	}
+	else
+	{
+		printf("Couldn't open/make the save file for some fucked reason.");
+	}
 }
 void LoadStateFileV001()
 {
@@ -164,7 +172,8 @@ void LoadStateFileV001()
 		fread(&FILE_VER, SIZE_32, 1, file);
 
 		// Actual game state
-		fread(&index::players, SIZE_16, 2, file);
+		fread(&index::players, SIZE_16, NUM_PLAYERS, file);
+		fread(&index::spawnz_time_temp, SIZE_64, 1, file);
 
 		//-------------------------------- ENTITIES
 
@@ -202,6 +211,7 @@ void LoadStateFileV001()
 				case ENTITY_TYPE_RESTING_ITEM:
 					fread(&ITEM(i)->item_instance, SIZE_16, 1, file);
 				case ENTITY_TYPE_CHARA:
+					fread(&ACTOR(i)->name, 32, 1, file);
 					fread(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
 					fread(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
 					fread(&ACTOR(i)->t_skin, SIZE_16, 1, file);

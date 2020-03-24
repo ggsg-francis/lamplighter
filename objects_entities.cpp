@@ -195,7 +195,8 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 
 char* DisplayNameActor(void* ent)
 {
-	return "Actor";
+	//return "Actor";
+	return (char*)((Actor*)ent)->name;
 };
 char* DisplayNameRestingItem(void* ent)
 {
@@ -945,7 +946,9 @@ void TickEditorPawn(void* ent, btf32 dt)
 
 		//-------------------------------- SET HEIGHT AND CELL SPACE
 
-		env::GetHeight(chr->t.height, csi);
+		btf32 height2;
+		env::GetHeight(height2, csi);
+		chr->t.height = m::Lerp(chr->t.height, height2, 0.05f);
 
 		//-------------------------------- RUN COLLISION & AI
 

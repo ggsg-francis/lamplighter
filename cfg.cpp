@@ -8,13 +8,11 @@
 
 namespace cfg
 {
-	// Is fullscreen
 	bool bFullscreen = false;
-	// Show output console
 	bool bHost = false;
-	// Run as editor
 	bool bEditMode = false;
 	bool bSplitScreen = false;
+	bool bCrossHairs = true;
 
 	// IP address variables
 	unsigned int iIPA = 0;
@@ -40,7 +38,7 @@ namespace cfg
 	{
 		//temporary pointers used for this function only
 		//(although, they could be made global in the case that they become useful?)
-		bool* bptr[] = { &bFullscreen, &bHost, &bEditMode, &bSplitScreen };
+		bool* bptr[] = { &bFullscreen, &bHost, &bEditMode, &bSplitScreen, &bCrossHairs };
 		unsigned int* iptr[] = { &iIPA, &iIPB, &iIPC, &iIPD, &iWinX, &iWinY};
 		unsigned short* sptr[] = { &sIPPORT };
 		//std::string* sptr[] = { &sIP };

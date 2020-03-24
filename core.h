@@ -99,6 +99,8 @@ namespace index
 	// Set shadow texture ID (to do: hacky, get rid of this)
 	void SetShadowTexture(btui32 ID);
 
+	extern btui64 spawnz_time_temp;
+
 	// TODO: MOVE THIS SECTION TO INDEX
 
 	extern unsigned int activePlayer;

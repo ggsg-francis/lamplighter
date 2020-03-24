@@ -51,29 +51,22 @@ namespace env
 		*/
 	}
 
-	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2)
+	bool LineTraceUtil_HeightCheck(int x, int y, int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
 	{
-		btf32 fx = x1;
-		btf32 fy = y1;
-
-		btf32 ofsx = x1 - x2;
-		btf32 ofsy = y1 - y2;
-		btf32 len = sqrt(ofsx * ofsx + ofsy * ofsy);
-		const btf32 stepLength = 0.5f; // 1 by default
-		btui32 nbSteps = (btui32)floorf(len / stepLength);
-
-		for (int i = 0; i < nbSteps; ++i)
+		// TODO: figure out the relative distance between agents and get an actual height test
+		//btf32 dist_to_a = m;
+		if (((btf32)env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION) > height_a + 0.7f)
 		{
-			bti32 ix = (bti32)roundf(fx);
-			bti32 iy = (bti32)roundf(fy);
-			if (env::Get(ix, iy, env::eflag::eIMPASSABLE)) return false;
-			fx = m::Lerp((btf32)x1, (btf32)x2, (btf32)i * (stepLength / (btf32)nbSteps));
-			fy = m::Lerp((btf32)y1, (btf32)y2, (btf32)i * (stepLength / (btf32)nbSteps));
+			return true;
 		}
-		return true;
+		if (((btf32)env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION) > height_b + 0.7f)
+		{
+			return true;
+		}
+		return false;
 	}
 
-	bool LineTrace_Bresenham(int x1, int y1, int x2, int y2)
+	bool LineTrace_Bresenham(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
 	{
 		int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
 		dx = x2 - x1;
@@ -96,8 +89,8 @@ namespace env
 				y = y2;
 				xe = x1;
 			}
-			if (Get(x, y, eflag::eIMPASSABLE)) return false;
-			//t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+			if (Get(x, y, eflag::eIMPASSABLE) || LineTraceUtil_HeightCheck(x, y, x1, y1, x2, y2, height_a, height_b))
+				return false;
 			for (i = 0; x < xe; i++)
 			{
 				x = x + 1;
@@ -117,8 +110,8 @@ namespace env
 					}
 					px = px + 2 * (dy1 - dx1);
 				}
-				if (Get(x, y, eflag::eIMPASSABLE)) return false;
-				//t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+				if (Get(x, y, eflag::eIMPASSABLE) || LineTraceUtil_HeightCheck(x, y, x1, y1, x2, y2, height_a, height_b))
+					return false;
 			}
 		}
 		else
@@ -135,8 +128,8 @@ namespace env
 				y = y2;
 				ye = y1;
 			}
-			if (Get(x, y, eflag::eIMPASSABLE)) return false;
-			//t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+			if (Get(x, y, eflag::eIMPASSABLE) || LineTraceUtil_HeightCheck(x, y, x1, y1, x2, y2, height_a, height_b))
+				return false;
 			for (i = 0; y < ye; i++)
 			{
 				y = y + 1;
@@ -156,8 +149,8 @@ namespace env
 					}
 					py = py + 2 * (dx1 - dy1);
 				}
-				if (Get(x, y, eflag::eIMPASSABLE)) return false;
-				//t_EnvLightmap.SetPixelChannelG(x, y, 0xFFui8);
+				if (Get(x, y, eflag::eIMPASSABLE) || LineTraceUtil_HeightCheck(x, y, x1, y1, x2, y2, height_a, height_b))
+					return false;
 			}
 		}
 		return true;
@@ -189,18 +182,8 @@ namespace env
 			fclose(out);
 		}
 	}
-	void LoadBin()
+	void GenerateMesh()
 	{
-		std::cout << "Loading [world.ltrwld]" << std::endl;
-		FILE *in = fopen("save/world.ltrwld", "rb");
-		if (in != NULL)
-		{
-			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
-			for (int x = 0; x < WORLD_SIZE; x++)
-				const size_t read = fread(&eCells[x][0], sizeof(EnvNode), WORLD_SIZE, in);
-			fclose(in);
-		}
-
 		//temp
 		//set_node_dir(8, 8, 5, 5, nbit::N);
 		//set_node_dir(8, 8, 4, 5, nbit::E);
@@ -208,7 +191,7 @@ namespace env
 
 		//*
 		//wldMeshes.Add(new graphics::CompositeMesh());
-		int tile_radius = 24;
+		int tile_radius = 128;
 		for (int x = 1024 - tile_radius; x < 1024 + tile_radius; ++x)
 		{
 			for (int y = 1024 - tile_radius; y < 1024 + tile_radius; ++y)
@@ -222,7 +205,8 @@ namespace env
 						if (acv::props[env::eCells[x][y].prop].idTxtr == wldTxtr[i])
 						{
 							wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
-								m::Vector3((btf32)x, (btf32)eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, (btf32)y));
+								m::Vector3((btf32)x, (btf32)eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, (btf32)y),
+								(graphics::CompositeMesh::MeshOrientation)env::eCells[x][y].prop_dir);
 							foundTxtr = true;
 						}
 					}
@@ -234,7 +218,8 @@ namespace env
 							{
 								wldTxtr[i] = acv::props[env::eCells[x][y].prop].idTxtr;
 								wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
-									m::Vector3((btf32)x, (btf32)eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, (btf32)y));
+									m::Vector3((btf32)x, (btf32)eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, (btf32)y),
+									(graphics::CompositeMesh::MeshOrientation)env::eCells[x][y].prop_dir);
 								++wldNumTextures;
 								break;
 							}
@@ -247,6 +232,19 @@ namespace env
 		{
 			wldMeshes[i].ReBindGL();
 		}
+	}
+	void LoadBin()
+	{
+		std::cout << "Loading [world.ltrwld]" << std::endl;
+		FILE *in = fopen("save/world.ltrwld", "rb");
+		if (in != NULL)
+		{
+			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
+			for (int x = 0; x < WORLD_SIZE; x++)
+				const size_t read = fread(&eCells[x][0], sizeof(EnvNode), WORLD_SIZE, in);
+			fclose(in);
+		}
+		GenerateMesh();
 	}
 
 	void GeneratePhysicsSurfaces()

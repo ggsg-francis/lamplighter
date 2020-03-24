@@ -7,6 +7,9 @@
 // TODO: put transform in its own file
 #include "objects_entities.h"
 #include "index.h"
+#ifdef DEF_NMP
+#include "network_client.h"
+#endif // DEF_NMP
 
 #ifdef DEF_USE_CS
 //#define CUTE_SOUND_FORCE_SDL
@@ -28,8 +31,10 @@ namespace aud
 		//"snd/swing_connect.wav",
 		"snd/hitMW.wav",
 		"snd/hey.wav",
-		"snd/footstep_snow_a.wav",
-		"snd/footstep_snow_b.wav",
+		/*"snd/footstep_snow_a.wav",
+		"snd/footstep_snow_b.wav",*/
+		"snd/footstep_01.wav",
+		"snd/footstep_02.wav",
 	};
 
 	cs_context_t* ctx;
@@ -40,6 +45,9 @@ namespace aud
 	cs_loaded_sound_t loaded_shot;
 	cs_play_sound_def_t def_shot;
 	cs_playing_sound_t* sound_shot;
+
+	//btf32 mstrVol = 0.1f;
+	btf32 mstrVol = 1.f;
 
 	void Init(void* handle)
 	{
@@ -78,6 +86,23 @@ namespace aud
 
 	void PlaySnd(AudioFile file, m::Vector3 src)
 	{
+		#ifdef DEF_NMP
+		// todo: caluclate panning based on proximity to L and R player
+		// calculate the distance between this sound and each listener (just one atm)
+		btf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[network::nid])->t.position);
+		// get closest distance (temp until using panning)
+		// stop this function if the distance is too large
+		if (distance > 15.f) return;
+		// calculate volume from distance
+		btf32 vol = (15.f - distance) / 15.f;
+		// play the sound		
+		sound[file] = cs_play_sound(ctx, def[file]);
+		if (sound[file])
+		{
+			sound[file]->volume0 = vol * mstrVol;
+			sound[file]->volume1 = vol * mstrVol;
+		}
+		#else
 		// todo: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
 		btf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[0])->t.position);
@@ -93,9 +118,10 @@ namespace aud
 		sound[file] = cs_play_sound(ctx, def[file]);
 		if (sound[file])
 		{
-			sound[file]->volume0 = vol;
-			sound[file]->volume1 = vol;
+			sound[file]->volume0 = vol * mstrVol;
+			sound[file]->volume1 = vol * mstrVol;
 		}
+		#endif // DEF_NMP
 	}
 
 	void End()

@@ -228,17 +228,17 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->viewYaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
-				index::SpawnProjectileSpread(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 1.f);
+				index::SpawnProjectileSpread(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 2.5f);
 			}
 			else
 			{
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->viewYaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
-				index::SpawnProjectileSpread(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+				index::SpawnProjectileSpread(owner->faction, m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 6.f);
 			}
 
 			//owner->t.velocity = m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
-			owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.03f; // set my velocity
+			//owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.03f; // set my velocity
 		}
 	}
 
@@ -299,49 +299,49 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 
 	//lever = m::Lerp(lever, (btf32)stateBV.get(HGState::LATCH_PULLED), 0.2f);
 
-	if (self->lever > 0.95f
-		//&& stateBV.get(GET_CAN_FIRE))
-		&& self->stateBV.get(BARREL_ARMED)
-		&& self->stateBV.get(FPAN_HATCH_OPEN)
-		&& self->stateBV.get(FPAN_POWDER_IN))
-	{
-		self->stateBV.unset(UNSET_FIRE); // unset
-		if (self->stateBV.get(BARREL_ROD_IN))
-		{
-			//aud::PlayGunshotTemp(false, self->t_item.pos_glm); // Play gunshot sound
-			self->stateBV.set(LOST_ROD);
-		}
-		else
-		{
-			aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
-			self->loc_velocity.z -= 0.12f;
-			self->pitch_velocity -= 19.f;
+	//if (self->lever > 0.95f
+	//	//&& stateBV.get(GET_CAN_FIRE))
+	//	&& self->stateBV.get(BARREL_ARMED)
+	//	&& self->stateBV.get(FPAN_HATCH_OPEN)
+	//	&& self->stateBV.get(FPAN_POWDER_IN))
+	//{
+	//	self->stateBV.unset(UNSET_FIRE); // unset
+	//	if (self->stateBV.get(BARREL_ROD_IN))
+	//	{
+	//		//aud::PlayGunshotTemp(false, self->t_item.pos_glm); // Play gunshot sound
+	//		self->stateBV.set(LOST_ROD);
+	//	}
+	//	else
+	//	{
+	//		aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
+	//		self->loc_velocity.z -= 0.12f;
+	//		self->pitch_velocity -= 19.f;
 
-			if (owner->atk_target != BUF_NULL)
-			{
-				//aud::PlayGunshotTemp(true); // Play gunshot sound
+	//		if (owner->atk_target != BUF_NULL)
+	//		{
+	//			//aud::PlayGunshotTemp(true); // Play gunshot sound
 
-				Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
-				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
-				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
-				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - self->t_item.GetPosition().y);
-				btf32 angle_yaw = m::Vec2ToAng(targetoffset);
-				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
-				index::SpawnProjectileSpread(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
-			}
-			else
-			{
-				index::SpawnProjectileSpread(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
-			}
-		}
-	}
-	else if (self->lever > 0.95f
-		&& self->stateBV.get(FPAN_HATCH_OPEN)
-		&& self->stateBV.get(FPAN_POWDER_IN))
-	{
-		self->stateBV.unset(UNSET_FIRE); // unset
-		aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
-	}
+	//			Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
+	//			//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+	//			m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
+	//			m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - self->t_item.GetPosition().y);
+	//			btf32 angle_yaw = m::Vec2ToAng(targetoffset);
+	//			btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
+	//			index::SpawnProjectileSpread(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, angle_yaw, angle_pit, 1.f);
+	//		}
+	//		else
+	//		{
+	//			index::SpawnProjectileSpread(owner->faction, owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
+	//		}
+	//	}
+	//}
+	//else if (self->lever > 0.95f
+	//	&& self->stateBV.get(FPAN_HATCH_OPEN)
+	//	&& self->stateBV.get(FPAN_POWDER_IN))
+	//{
+	//	self->stateBV.unset(UNSET_FIRE); // unset
+	//	aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
+	//}
 
 	if (owner->atk_target != BUF_NULL)
 	{
