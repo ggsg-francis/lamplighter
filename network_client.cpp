@@ -152,7 +152,7 @@ namespace network
 		int err = SDLNet_Init();
 		if (err == -1) goto exiterr;
 		// Open UDP socket
-		socket_connection = SDLNet_UDP_Open(cfg::sIPPORT); // pass 0 to open on any available port
+		socket_connection = SDLNet_UDP_Open((Uint16)cfg::iPort); // pass 0 to open on any available port
 		if (!socket_connection) goto exiterr;
 
 		if (cfg::bHost) // if acting as server
@@ -162,7 +162,7 @@ namespace network
 			btui32 seed = (btui32)time(NULL); // Server decides the seed
 			srand(seed); //initialize the random seed
 
-			int found_other = SDLNet_ResolveHost(&addr, NULL, cfg::sIPPORT);
+			int found_other = SDLNet_ResolveHost(&addr, NULL, (Uint16)cfg::iPort);
 			if (found_other == -1) goto exiterr;
 			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
 
@@ -228,10 +228,12 @@ namespace network
 		{
 			IPaddress addr; // listen
 			addr.host = INADDR_BROADCAST;
-			addr.port = cfg::sIPPORT;
+			addr.port = (Uint16)cfg::iPort;
 
-			//int found_other = SDLNet_ResolveHost(&addr, "Sirennus0000", cfg::sIPPORT);
-			int found_other = SDLNet_ResolveHost(&addr, "10.1.1.144", cfg::sIPPORT);
+			#error If you're building the multiplayer version you'll want to change the hostname
+			int found_other = SDLNet_ResolveHost(&addr, "Sirennus0000", (Uint16)cfg::iPort);
+			//int found_other = SDLNet_ResolveHost(&addr, "10.1.1.144", cfg::sIPPORT);
+			//int found_other = SDLNet_ResolveHost(&addr, "https://servertest.b-type.net", cfg::sIPPORT);
 			//int found_other = SDLNet_ResolveHost(&addr, "F550C", cfg::sIPPORT);
 			if (found_other == -1) goto exiterr;
 			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);

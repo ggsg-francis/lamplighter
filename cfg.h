@@ -15,16 +15,12 @@ namespace cfg
 	// Draw crosshairs
 	extern bool bCrossHairs;
 
-	extern unsigned int iIPA;
-	extern unsigned int iIPB;
-	extern unsigned int iIPC;
-	extern unsigned int iIPD;
-	extern unsigned short sIPPORT;
-
 	//config variables loaded from a file
 	//window size
 	extern unsigned int iWinX;
 	extern unsigned int iWinY;
+
+	extern unsigned int iPort;
 
 	//camera stuff
 	extern float fCameraFOV;
@@ -32,9 +28,7 @@ namespace cfg
 	extern float fCameraNearClip;
 	extern float fCameraFarClip;
 
-	extern float fSyncTimer;
-	//ip character string
-	//extern std::string sIP;
+	extern char* sConnAddr;
 
 	void LoadCfg();
 }
