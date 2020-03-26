@@ -16,31 +16,32 @@
 namespace env
 {
 	//get these tf out of here
-	EnvNode eCells[WORLD_SIZE][WORLD_SIZE];
+	EnvNode eCells;
 
 	//mem::CkBuffer<graphics::CompositeMesh> wldMeshes;
 	graphics::CompositeMesh wldMeshes[NUM_COMPOSITES];
+	graphics::TerrainMesh wldMeshTerrain;
 	//graphics::CompositeMesh wldMesh;
 	btID wldTxtr[NUM_COMPOSITES];
 	btui32 wldNumTextures = 0u;
 
 	bool Get(uint x, uint y, eflag::flag bit)
 	{
-		return mem::bvget((uint32_t)eCells[x][y].flags, (uint32_t)bit);
+		return mem::bvget((uint32_t)eCells.flags[x][y], (uint32_t)bit);
 	}
 	void Set(uint x, uint y, eflag::flag bit)
 	{
-		mem::bvset((uint32_t&)eCells[x][y].flags, (uint32_t)bit);
+		mem::bvset((uint32_t&)eCells.flags[x][y], (uint32_t)bit);
 	}
 	void UnSet(uint x, uint y, eflag::flag bit)
 	{
-		mem::bvunset((uint32_t&)eCells[x][y].flags, (uint32_t)bit);
+		mem::bvunset((uint32_t&)eCells.flags[x][y], (uint32_t)bit);
 	}
 
 	void GetHeight(btf32& out_height, CellSpace& csinf)
 	{
 		// NEAREST
-		out_height = (btf32)eCells[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y].height / TERRAIN_HEIGHT_DIVISION;
+		out_height = (btf32)eCells.terrain_height[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION;
 
 		// BILINEAR
 		/*
@@ -55,11 +56,11 @@ namespace env
 	{
 		// TODO: figure out the relative distance between agents and get an actual height test
 		//btf32 dist_to_a = m;
-		if (((btf32)env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION) > height_a + 0.7f)
+		if (((btf32)env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION) > height_a + 0.7f)
 		{
 			return true;
 		}
-		if (((btf32)env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION) > height_b + 0.7f)
+		if (((btf32)env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION) > height_b + 0.7f)
 		{
 			return true;
 		}
@@ -156,33 +157,90 @@ namespace env
 		return true;
 	}
 
-
 	void Tick()
 	{
 		// eventually, this function could contain any 'propagation' like fire
 	}
 
-	void Draw()
+	void DrawProps()
 	{
 		for (btui32 i = 0u; i < wldNumTextures; ++i)
 		{
 			DrawCompositeMesh(ID_NULL, wldMeshes[i], res::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
 		}
+		//graphics::SetFrontFaceInverse();
+		//graphics::Matrix4x4 matr;
+		//graphics::MatrixTransform(matr, 0.f, 0.f, 0.f);
+		//DrawTerrainMesh(ID_NULL, wldMeshTerrain,
+		//	res::GetT(res::t_gui_box), res::GetT(res::t_gui_hurt),
+		//	res::GetT(res::t_terrain_sanddirt), res::GetT(res::t_terrain_sanddirt),
+		//	matr);
+		//graphics::SetFrontFace();
+
+	}
+	void DrawTerrain()
+	{
+		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
+			res::GetT(res::t_terrain_scorch), res::GetT(res::t_terrain_sanddirt),
+			res::GetT(res::t_terrain_sanddirt), res::GetT(res::t_terrain_sanddirt),
+			graphics::Matrix4x4());
+	}
+	void DrawTerrainDebug()
+	{
+		graphics::Matrix4x4 matr;
+		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
+			res::GetT(res::t_terrain_scorch), res::GetT(res::t_terrain_sanddirt),
+			res::GetT(res::t_terrain_sanddirt), res::GetT(res::t_terrain_sanddirt),
+			matr);
+		graphics::MatrixTransform(matr, m::Vector3(0.f, 0.01f, 0.f));
+		graphics::SetRenderWire();
+		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
+			res::GetT(res::t_col_red), res::GetT(res::t_col_red),
+			res::GetT(res::t_col_red), res::GetT(res::t_col_red),
+			matr);
+		graphics::SetRenderSolid();
 	}
 
 	void SaveBin()
 	{
-		std::cout << "Saving [world.ltrwld]" << std::endl;
+		printf("Saving [world.ltrwld]");
 		FILE *out = fopen("save/world.ltrwld", "wb");
 		if (out != NULL)
 		{
 			fseek(out, 0, SEEK_SET); // Seek the beginning of the file
-			for (int x = 0; x < WORLD_SIZE; x++)
-				const size_t wrote = fwrite(&eCells[x][0], sizeof(EnvNode), WORLD_SIZE, out);
+			const size_t wrote = fwrite(&eCells, sizeof(EnvNode), 1, out);
 			fclose(out);
 		}
 	}
-	void GenerateMesh()
+
+	void LoadBin()
+	{
+		printf("Loading [world.ltrwld]");
+		FILE *in = fopen("save/world.ltrwld", "rb");
+		if (in != NULL)
+		{
+			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
+			const size_t read = fread(&eCells, sizeof(EnvNode), 1, in);
+			fclose(in);
+		}
+		GenerateTerrainMesh();
+		GeneratePropMeshes();
+	}
+
+	void Clean()
+	{
+		/*
+		for (int x = 1; x < WORLD_SIZE - 1; x++)
+		{
+			for (int y = 1; y < WORLD_SIZE - 1; y++)
+			{
+				
+			}
+		}
+		*/
+	}
+
+	void GeneratePropMeshes()
 	{
 		//temp
 		//set_node_dir(8, 8, 5, 5, nbit::N);
@@ -196,17 +254,17 @@ namespace env
 		{
 			for (int y = 1024 - tile_radius; y < 1024 + tile_radius; ++y)
 			{
-				if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop != 0u)
+				if (env::eCells.prop[x][y] != ID_NULL && env::eCells.prop[x][y] != 0u)
 				{
 					bool foundTxtr = false;
 					// are we using a new texture on this asset
 					for (btui32 i = 0; i < wldNumTextures; ++i)
 					{
-						if (acv::props[env::eCells[x][y].prop].idTxtr == wldTxtr[i])
+						if (acv::props[env::eCells.prop[x][y]].idTxtr == wldTxtr[i])
 						{
-							wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
-								m::Vector3((btf32)x, (btf32)eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, (btf32)y),
-								(graphics::CompositeMesh::MeshOrientation)env::eCells[x][y].prop_dir);
+							wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
+								m::Vector3((btf32)x, (btf32)eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, (btf32)y),
+								(graphics::CompositeMesh::MeshOrientation)env::eCells.prop_dir[x][y]);
 							foundTxtr = true;
 						}
 					}
@@ -216,10 +274,10 @@ namespace env
 						{
 							if (wldTxtr[i] == 0u)
 							{
-								wldTxtr[i] = acv::props[env::eCells[x][y].prop].idTxtr;
-								wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
-									m::Vector3((btf32)x, (btf32)eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, (btf32)y),
-									(graphics::CompositeMesh::MeshOrientation)env::eCells[x][y].prop_dir);
+								wldTxtr[i] = acv::props[env::eCells.prop[x][y]].idTxtr;
+								wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
+									m::Vector3((btf32)x, (btf32)eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, (btf32)y),
+									(graphics::CompositeMesh::MeshOrientation)env::eCells.prop_dir[x][y]);
 								++wldNumTextures;
 								break;
 							}
@@ -233,69 +291,10 @@ namespace env
 			wldMeshes[i].ReBindGL();
 		}
 	}
-	void LoadBin()
-	{
-		std::cout << "Loading [world.ltrwld]" << std::endl;
-		FILE *in = fopen("save/world.ltrwld", "rb");
-		if (in != NULL)
-		{
-			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
-			for (int x = 0; x < WORLD_SIZE; x++)
-				const size_t read = fread(&eCells[x][0], sizeof(EnvNode), WORLD_SIZE, in);
-			fclose(in);
-		}
-		GenerateMesh();
-	}
 
-	void GeneratePhysicsSurfaces()
+	void GenerateTerrainMesh()
 	{
-		//generate tile flags from binary info
-		//probably temporary, we'll see.
-		for (int x = 1; x < WORLD_SIZE - 1; x++)
-		{
-			for (int y = 1; y < WORLD_SIZE - 1; y++)
-			{
-				UnSet(x, y, eflag::eSurfN);
-				UnSet(x, y, eflag::eSurfS);
-				UnSet(x, y, eflag::eSurfE);
-				UnSet(x, y, eflag::eSurfW);
-				UnSet(x, y, eflag::eCorOutNE);
-				UnSet(x, y, eflag::eCorOutNW);
-				UnSet(x, y, eflag::eCorOutSE);
-				UnSet(x, y, eflag::eCorOutSW);
-
-				//don't bother doing anything if this tile is not solid
-				if (!Get(x, y, eflag::eIMPASSABLE))
-					//if (!ltrmem::bitget(nodes[x][y].flags, EF_IMPASSABLE))
-				{
-					//edges
-					//n
-					if (Get(x, y + 1, eflag::eIMPASSABLE) || eCells[x][y + 1].height > eCells[x][y].height + 2ui8)
-						Set(x, y, eflag::eSurfN);
-					//s
-					if (Get(x, y - 1, eflag::eIMPASSABLE) || eCells[x][y - 1].height > eCells[x][y].height + 2ui8)
-						Set(x, y, eflag::eSurfS);
-					//e
-					if (Get(x + 1, y, eflag::eIMPASSABLE) || eCells[x + 1][y].height > eCells[x][y].height + 2ui8)
-						Set(x, y, eflag::eSurfE);
-					//w
-					if (Get(x - 1, y, eflag::eIMPASSABLE) || eCells[x - 1][y].height > eCells[x][y].height + 2ui8)
-						Set(x, y, eflag::eSurfW);
-					//corners
-					//ne
-					if (Get(x + 1, y + 1, eflag::eIMPASSABLE) || eCells[x + 1][y + 1].height > eCells[x][y].height + 2ui8)
-						Set(x, y, eflag::eCorOutNE);
-					//nw
-					if (Get(x - 1, y + 1, eflag::eIMPASSABLE) || eCells[x - 1][y + 1].height > eCells[x][y].height + 2ui8)
-						Set(x, y, eflag::eCorOutNW);
-					//se
-					if (Get(x + 1, y - 1, eflag::eIMPASSABLE) || eCells[x + 1][y - 1].height > eCells[x][y].height + 2ui8)
-						Set(x, y, eflag::eCorOutSE);
-					//sw
-					if (Get(x - 1, y - 1, eflag::eIMPASSABLE) || eCells[x + 1][y - 1].height > eCells[x][y].height + 2ui8)
-						Set(x, y, eflag::eCorOutSW);
-				}
-			}
-		}
+		wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
+		wldMeshTerrain.ReBindGL();
 	}
 }

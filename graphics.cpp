@@ -199,6 +199,8 @@ namespace graphics
 		gPtr->shaders[S_SOLID_DEFORM].Init("shaders/vert_3d_deform.glsl", "shaders/frag_solid.glsl");
 		gPtr->shaders[S_SOLID_DEFORM_CHARA].Init("shaders/vert_3d_deform.glsl", "shaders/frag_solid_chara.glsl");
 
+		gPtr->shaders[S_SOLID_TERRAIN].Init("shaders/vert_3d_terrain.glsl", "shaders/frag_terrain.glsl");
+
 		gPtr->shaders[S_MEAT].Init("shaders/vert_3d.glsl", "shaders/frag_meat.glsl");
 
 		gPtr->shaders[S_GUI].Init("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
@@ -452,6 +454,14 @@ namespace graphics
 	void SetFrontFaceInverse()
 	{
 		glFrontFace(GL_CCW);
+	}
+	void SetRenderSolid()
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+	void SetRenderWire()
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
 
 	// good, but replace the std::vectors
@@ -1617,15 +1627,22 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// TERRAIN MESH ------------------------------------------------------------------------------------------------------------------
 
-	void MeshTerrain::Draw()
+	void TerrainMesh::Draw()
 	{
 		glBindVertexArray(vao); // Bind vertex array
 		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
 		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
 	}
 
-	void MeshTerrain::GenerateFromHMap(
-		btui16(&hmap)[WORLD_SIZE][WORLD_SIZE],
+	int clamp(int val, int min, int max)
+	{
+		if (val < min) return min;
+		if (val > max) return max;
+		return val;
+	}
+
+	void TerrainMesh::GenerateFromHMap(
+		btui8(&hmap)[WORLD_SIZE][WORLD_SIZE],
 		btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE])
 	{
 		glm::vec3 vector;
@@ -1635,140 +1652,39 @@ namespace graphics
 
 		int tile_radius = 128;
 
-		vces_size = 4u * (tile_radius * tile_radius);
+		vces_size = (tile_radius * tile_radius);
 		ices_size = 6u * (tile_radius * tile_radius);
 		//
 		vces = new VertexTerrain[vces_size];
 		ices = new btui32[ices_size];
 
-		btf32 uvscale = 0.5f;
+		btf32 uvscale = 0.125f;
 		int v = 0;
 		int i = 0;
-		btf32 tile_width = 1.f;
 		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x)
 		{
-			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 4, i += 6)
+			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 1, i += 6)
 			{
-				bool cliffNS = false;
-				bool cliffEW = false;
-
-				if (hmap[x][y] > hmap[x + 1][y] + 5ui16 || hmap[x][y] < hmap[x + 1][y] - 5ui16)
-					cliffNS = true;
-				if (hmap[x][y] > hmap[x][y + 1] + 5ui16 || hmap[x][y] < hmap[x][y + 1] - 5ui16)
-					cliffEW = true;
-
 				// Copy in the things from the new mesh
 				vces[v + 0].pos.x = (btf32)x;
 				vces[v + 0].pos.z = (btf32)y;
-				//vces[v + 0].pos.y = (((btf32)HEIGHTMAP[x - 1][y - 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 0].pos.y = (((btf32)hmap[x][y])) / TERRAIN_HEIGHT_DIVISION;
-				/*if (cliffEW)
-				{
-					vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
-					vces[v + 0].uvc.y = -vces[v + 0].pos.y * uvscale;
-				}
-				else if (cliffNS)
-				{
-					vces[v + 0].uvc.x = vces[v + 0].pos.z * uvscale;
-					vces[v + 0].uvc.y = -vces[v + 0].pos.y * uvscale;
-				}
-				else*/
-				{
-					vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
-					vces[v + 0].uvc.y = vces[v + 0].pos.z * uvscale;
-				}
-				vces[v + 0].nor.y = 1.f;
-				vces[v + 0].nor.x = 0.f;
-				vces[v + 0].nor.z = 0.f;
+				vces[v + 0].pos.y = (((btf32)hmap[x][y]) + (btf32)hmap[x][y]) / 2 / TERRAIN_HEIGHT_DIVISION;
+				vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
+				vces[v + 0].uvc.y = vces[v + 0].pos.z * uvscale;
+				vces[v + 0].nor.y = 1.f; vces[v + 0].nor.x = 0.f; vces[v + 0].nor.z = 0.f;
 				vces[v + 0].col.y = 1.f;
 
-				vces[v + 1u].pos.x = (btf32)x;
-				vces[v + 1u].pos.z = (btf32)y + tile_width;
-				//vces[v + 1u].pos.y = (((btf32)HEIGHTMAP[x - 1][y + 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 1u].pos.y = (((btf32)hmap[x][y + 1])) / TERRAIN_HEIGHT_DIVISION;
-				/*if (cliffEW)
-				{
-					vces[v + 1].uvc.x = vces[v + 1].pos.x * uvscale;
-					vces[v + 1].uvc.y = -vces[v + 1].pos.y * uvscale;
-				}
-				else if (cliffNS)
-				{
-					vces[v + 1].uvc.x = vces[v + 1].pos.z * uvscale;
-					vces[v + 1].uvc.y = -vces[v + 1].pos.y * uvscale;
-				}
-				else*/
-				{
-					vces[v + 1].uvc.x = vces[v + 1].pos.x * uvscale;
-					vces[v + 1].uvc.y = vces[v + 1].pos.z * uvscale;
-				}
-				vces[v + 1].nor.y = 1.f;
-				vces[v + 1].nor.x = 0.f;
-				vces[v + 1].nor.z = 0.f;
-				vces[v + 1].col.y = 1.f;
+				// r--r+1
+				// |\ |
+				// | \|
+				// 0--1
 
-				vces[v + 2u].pos.x = (btf32)x + tile_width;
-				vces[v + 2u].pos.z = (btf32)y;
-				//vces[v + 2u].pos.y = (((btf32)HEIGHTMAP[x + 1][y - 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 2u].pos.y = (((btf32)hmap[x + 1][y])) / TERRAIN_HEIGHT_DIVISION;
-				/*if (cliffEW)
-				{
-					vces[v + 2].uvc.x = vces[v + 2].pos.x * uvscale;
-					vces[v + 2].uvc.y = -vces[v + 2].pos.y * uvscale;
-				}
-				else if (cliffNS)
-				{
-					vces[v + 2].uvc.x = vces[v + 2].pos.z * uvscale;
-					vces[v + 2].uvc.y = -vces[v + 2].pos.y * uvscale;
-				}
-				else*/
-				{
-					vces[v + 2].uvc.x = vces[v + 2].pos.x * uvscale;
-					vces[v + 2].uvc.y = vces[v + 2].pos.z * uvscale;
-				}
-				vces[v + 2].nor.y = 1.f;
-				vces[v + 2].nor.x = 0.f;
-				vces[v + 2].nor.z = 0.f;
-				vces[v + 2].col.y = 1.f;
-
-				vces[v + 3u].pos.x = (btf32)x + tile_width;
-				vces[v + 3u].pos.z = (btf32)y + tile_width;
-				//vces[v + 3u].pos.y = (((btf32)HEIGHTMAP[x + 1][y + 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 3u].pos.y = (((btf32)hmap[x + 1][y + 1])) / TERRAIN_HEIGHT_DIVISION;
-				/*if (cliffEW)
-				{
-					vces[v + 3].uvc.x = vces[v + 3].pos.x * uvscale;
-					vces[v + 3].uvc.y = -vces[v + 3].pos.y * uvscale;
-				}
-				else if (cliffNS)
-				{
-					vces[v + 3].uvc.x = vces[v + 3].pos.z * uvscale;
-					vces[v + 3].uvc.y = -vces[v + 3].pos.y * uvscale;
-				}
-				else*/
-				{
-					vces[v + 3].uvc.x = vces[v + 3].pos.x * uvscale;
-					vces[v + 3].uvc.y = vces[v + 3].pos.z * uvscale;
-				}
-				vces[v + 3].nor.y = 1.f;
-				vces[v + 3].nor.x = 0.f;
-				vces[v + 3].nor.z = 0.f;
-				vces[v + 3].col.y = 1.f;
-
-				if (MATMAP[x][y] == 1ui8)
-					vces[v + 0].col.x = 1.f;
-				if (MATMAP[x][y + 1] == 1ui8)
-					vces[v + 1].col.x = 1.f;
-				if (MATMAP[x + 1][y] == 1ui8)
-					vces[v + 2].col.x = 1.f;
-				if (MATMAP[x + 1][y + 1] == 1ui8)
-					vces[v + 3].col.x = 1.f;
-
-				ices[i + 0u] = v + 0u;
-				ices[i + 1u] = v + 3u;
-				ices[i + 2u] = v + 1u;
-				ices[i + 3u] = v + 2u;
-				ices[i + 4u] = v + 3u;
-				ices[i + 5u] = v + 0u;
+				ices[i + 0u] = clamp(v + 0u, 0, vces_size - 1);
+				ices[i + 1u] = clamp(v + tile_radius, 0, vces_size - 1);
+				ices[i + 2u] = clamp(v + 1u, 0, vces_size - 1);
+				ices[i + 3u] = clamp(v + 1u, 0, vces_size - 1);
+				ices[i + 4u] = clamp(v + tile_radius, 0, vces_size - 1);
+				ices[i + 5u] = clamp(v + tile_radius + 1u, 0, vces_size - 1);
 			}
 		}
 
@@ -1781,7 +1697,7 @@ namespace graphics
 		}
 	}
 
-	void MeshTerrain::ReBindGL()
+	void TerrainMesh::ReBindGL()
 	{
 		//-------------------------------- UPDATE OPENGL BUFFER
 
@@ -2236,31 +2152,6 @@ void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex, ShaderSty
 	mdl.Draw(tex.glID, shd->ID);
 }
 
-void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
-{
-	graphics::Shader* shd = nullptr;
-	switch (charashader)
-	{
-	case SS_NORMAL:
-		shd = &graphics::GetShader(graphics::S_SOLID);
-		break;
-	case SS_CHARA:
-		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
-		break;
-	};
-
-	// Enable the shader
-	shd->Use();
-
-	// Set matrices on shader
-	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
-	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
-	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
-
-	// Render the mesh
-	mdl.Draw(tex.glID, shd->ID);
-}
-
 void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
 {
 	graphics::Shader* shd = nullptr;
@@ -2322,4 +2213,52 @@ void DrawMeshDeform(
 
 	// Render the mesh
 	mdl.Draw(tex.glID, shd->ID);
+}
+
+void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
+{
+	graphics::Shader* shd = nullptr;
+	switch (charashader)
+	{
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
+		break;
+	};
+
+	// Enable the shader
+	shd->Use();
+
+	// Set matrices on shader
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
+
+	// Render the mesh
+	mdl.Draw(tex.glID, shd->ID);
+}
+
+void DrawTerrainMesh(btID id, graphics::TerrainMesh mdl, graphics::TextureBase tex_a, graphics::TextureBase tex_b, graphics::TextureBase tex_c, graphics::TextureBase tex_d, graphics::Matrix4x4 matrix)
+{
+	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID_TERRAIN);
+	//graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID);
+
+	// Enable the shader
+	shd->Use();
+
+	// Set matrices on shader
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
+
+	// terrain textures
+	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain1, tex_a.glID, graphics::Shader::TXTR_TERRAIN1);
+	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain2, tex_b.glID, graphics::Shader::TXTR_TERRAIN2);
+	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain3, tex_c.glID, graphics::Shader::TXTR_TERRAIN3);
+	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain4, tex_d.glID, graphics::Shader::TXTR_TERRAIN4);
+
+	// Render the mesh
+	mdl.Draw();
 }

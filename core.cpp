@@ -57,8 +57,8 @@ namespace index
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
 		{
-			if (env::eCells[x][y].height < env::eCells[srcx][srcy].height + 2ui8 //incline check
-			&& env::eCells[x][y].height > env::eCells[srcx][srcy].height - 4ui8) // decline check
+			if (env::eCells.terrain_height[x][y] < env::eCells.terrain_height[srcx][srcy] + 2ui8 //incline check
+			&& env::eCells.terrain_height[x][y] > env::eCells.terrain_height[srcx][srcy] - 4ui8) // decline check
 			{
 				t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 				if (col.g > 31ui8)
@@ -186,7 +186,7 @@ namespace index
 		{
 			for (int y = 0; y < WORLD_SIZE; y++)
 			{
-				env::eCells[x][y].height = 128ui8;
+				env::eCells.terrain_height[x][y].height = 128ui8;
 			}
 		}
 		env::GeneratePhysicsSurfaces();
@@ -201,7 +201,7 @@ namespace index
 		{
 			for (btui32 y = 0u; y < WORLD_SIZE; ++y)
 			{
-				t_EnvLightmap.SetPixelChannelA(x, y, env::eCells[x][y].height);
+				t_EnvLightmap.SetPixelChannelA(x, y, env::eCells.terrain_height[x][y]);
 				if (env::Get(x, y, env::eflag::EF_LIGHTSRC))
 					flood_fill_temp(x, y, x, y, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
 			}
@@ -216,7 +216,7 @@ namespace index
 
 		for (btui16 x = 0; x < WORLD_SIZE; x++)
 			for (btui16 y = 0; y < WORLD_SIZE; y++)
-				t_EnvHeightmap.SetPixelChannelR(x, y, env::eCells[x][y].height);
+				t_EnvHeightmap.SetPixelChannelR(x, y, env::eCells.terrain_height[x][y]);
 
 		t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
@@ -402,20 +402,22 @@ namespace index
 				//env::SaveBin();
 			}
 			else if (input::GetHeld(input::key::DIR_F)) // Forward
-				env::eCells[GetCellX][GetCellY].prop_dir = env::EnvNode::eNORTH;
+				env::eCells.prop_dir[GetCellX][GetCellY] = env::eNORTH;
 			else if (input::GetHeld(input::key::DIR_B)) // Back
-				env::eCells[GetCellX][GetCellY].prop_dir = env::EnvNode::eSOUTH;
+				env::eCells.prop_dir[GetCellX][GetCellY] = env::eSOUTH;
 			else if (input::GetHeld(input::key::DIR_R)) // Right
-				env::eCells[GetCellX][GetCellY].prop_dir = env::EnvNode::eEAST;
+				env::eCells.prop_dir[GetCellX][GetCellY] = env::eEAST;
 			else if (input::GetHeld(input::key::DIR_L)) // Left
-				env::eCells[GetCellX][GetCellY].prop_dir = env::EnvNode::eWEST;
+				env::eCells.prop_dir[GetCellX][GetCellY] = env::eWEST;
 			else if (input::GetHit(input::key::FUNCTION_1)) // COPY
 			{
-				editor_node_copy = env::eCells[GetCellX][GetCellY];
+				editor_prop_copy = env::eCells.prop[GetCellX][GetCellY];
+				editor_prop_dir_copy = env::eCells.prop_dir[GetCellX][GetCellY];
 			}
 			else if (input::GetHeld(input::key::FUNCTION_2)) // PASTE
 			{
-				env::eCells[GetCellX][GetCellY] = editor_node_copy;
+				env::eCells.prop[GetCellX][GetCellY] = editor_prop_copy;
+				env::eCells.prop_dir[GetCellX][GetCellY] = editor_prop_dir_copy;
 			}
 			else if (input::GetHit(input::key::FUNCTION_3)) // TOGGLE LIGHT
 			{
@@ -437,27 +439,67 @@ namespace index
 			}
 			else if (input::GetHit(input::key::ACTION_B))
 			{
-				if (env::eCells[GetCellX][GetCellY].prop > 0u)
-					--env::eCells[GetCellX][GetCellY].prop;
+				if (env::eCells.prop[GetCellX][GetCellY] > 0u)
+					--env::eCells.prop[GetCellX][GetCellY];
 			}
 			else if (input::GetHit(input::key::ACTION_C))
 			{
-				if (env::eCells[GetCellX][GetCellY].prop < acv::prop_index)
-					++env::eCells[GetCellX][GetCellY].prop;
+				if (env::eCells.prop[GetCellX][GetCellY] < acv::prop_index)
+					++env::eCells.prop[GetCellX][GetCellY];
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_R))
 			{
-				if (env::eCells[GetCellX][GetCellY].height > 0u)
-					++env::eCells[GetCellX][GetCellY].height;
-				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells[GetCellX][GetCellY].height);
+				if (input::GetHeld(input::key::RUN))
+				{
+					if (env::eCells.terrain_height[GetCellX][GetCellY] > 0u)
+						++env::eCells.terrain_height[GetCellX][GetCellY];
+				}
+				else
+				{
+					env::eCells.terrain_height[GetCellX][GetCellY] += 4;
+					env::eCells.terrain_height[GetCellX + 1][GetCellY] += 3;
+					env::eCells.terrain_height[GetCellX - 1][GetCellY] += 3;
+					env::eCells.terrain_height[GetCellX][GetCellY + 1] += 3;
+					env::eCells.terrain_height[GetCellX][GetCellY - 1] += 3;
+					env::eCells.terrain_height[GetCellX + 1][GetCellY + 1] += 2;
+					env::eCells.terrain_height[GetCellX + 1][GetCellY - 1] += 2;
+					env::eCells.terrain_height[GetCellX - 1][GetCellY + 1] += 2;
+					env::eCells.terrain_height[GetCellX - 1][GetCellY - 1] += 2;
+					env::eCells.terrain_height[GetCellX + 2][GetCellY] += 1;
+					env::eCells.terrain_height[GetCellX - 2][GetCellY] += 1;
+					env::eCells.terrain_height[GetCellX][GetCellY + 2] += 1;
+					env::eCells.terrain_height[GetCellX][GetCellY - 2] += 1;
+				}
+				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
+				env::GenerateTerrainMesh();
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_L))
 			{
-				if (env::eCells[GetCellX][GetCellY].height < 255)
-					--env::eCells[GetCellX][GetCellY].height;
-				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells[GetCellX][GetCellY].height);
+				if (input::GetHeld(input::key::RUN))
+				{
+					if (env::eCells.terrain_height[GetCellX][GetCellY] < 255)
+						--env::eCells.terrain_height[GetCellX][GetCellY];
+				}
+				else
+				{
+					env::eCells.terrain_height[GetCellX][GetCellY] -= 4;
+					env::eCells.terrain_height[GetCellX + 1][GetCellY] -= 3;
+					env::eCells.terrain_height[GetCellX - 1][GetCellY] -= 3;
+					env::eCells.terrain_height[GetCellX][GetCellY + 1] -= 3;
+					env::eCells.terrain_height[GetCellX][GetCellY - 1] -= 3;
+					env::eCells.terrain_height[GetCellX + 1][GetCellY + 1] -= 2;
+					env::eCells.terrain_height[GetCellX + 1][GetCellY - 1] -= 2;
+					env::eCells.terrain_height[GetCellX - 1][GetCellY + 1] -= 2;
+					env::eCells.terrain_height[GetCellX - 1][GetCellY - 1] -= 2;
+					env::eCells.terrain_height[GetCellX + 2][GetCellY] -= 1;
+					env::eCells.terrain_height[GetCellX - 2][GetCellY] -= 1;
+					env::eCells.terrain_height[GetCellX][GetCellY + 2] -= 1;
+					env::eCells.terrain_height[GetCellX][GetCellY - 2] -= 1;
+				}
+				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
+				env::GenerateTerrainMesh();
 			}
 
 			#undef GetCellX
@@ -582,14 +624,14 @@ namespace index
 		//-------------------------------- DRAW ENTITIES AND PROPS
 
 		#ifdef DEF_DRAW_WIREFRAME
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		graphics::SetRenderWire();
 		#endif // DEF_DRAW_WIREFRAME
 
 		if (cfg::bEditMode)
 		{
 			bti32 x2 = ENTITY(players[activePlayer])->t.csi.c[0].x;
 			bti32 y2 = ENTITY(players[activePlayer])->t.csi.c[0].y;
-			graphics::MatrixTransform(matrix, m::Vector3(x2, env::eCells[x2][y2].height / TERRAIN_HEIGHT_DIVISION, y2));
+			graphics::MatrixTransform(matrix, m::Vector3(x2, env::eCells.terrain_height[x2][y2] / TERRAIN_HEIGHT_DIVISION, y2));
 			DrawMesh(ID_NULL, res::GetM(res::m_debugcell), res::GetT(res::t_gui_bar_red), SS_NORMAL, matrix);
 
 			btui32 drawrange = 8u; // Create min/max draw coordinates
@@ -609,29 +651,29 @@ namespace index
 
 					if (env::Get(x, y, env::eflag::eIMPASSABLE))
 					{
-						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y));
 						DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), res::GetT(res::t_debug_bb), SS_NORMAL, matrix);
 					}
 					if (env::Get(x, y, env::eflag::EF_LIGHTSRC))
 					{
-						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y));
 						DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), res::GetT(res::t_default), SS_NORMAL, matrix);
 					}
 					if (env::Get(x, y, env::eflag::EF_SPAWN_TEST))
 					{
-						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y));
 						DrawMesh(ID_NULL, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_default), SS_NORMAL, matrix);
 					}
-					if (env::eCells[x][y].prop == ID_NULL) env::eCells[x][y].prop = 0u;
+					if (env::eCells.prop[x][y] == ID_NULL) env::eCells.prop[x][y] = 0u;
 					//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
-					if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
+					if (env::eCells.prop[x][y] != ID_NULL && env::eCells.prop[x][y] > 0u)
 					{
 						graphics::MatrixTransform(matrix,
-							m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y),
-							glm::radians(rotation_by_enum[env::eCells[x][y].prop_dir]));
+							m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y),
+							glm::radians(rotation_by_enum[env::eCells.prop_dir[x][y]]));
 						DrawMesh(ID_NULL,
-							res::GetM(acv::props[env::eCells[x][y].prop].idMesh),
-							res::GetT(acv::props[env::eCells[x][y].prop].idTxtr),
+							res::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
+							res::GetT(acv::props[env::eCells.prop[x][y]].idTxtr),
 							SS_NORMAL, matrix);
 					}
 					/*if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
@@ -644,6 +686,7 @@ namespace index
 					}*/
 				}
 			}
+			env::DrawTerrainDebug();
 		}
 		else
 		{
@@ -665,7 +708,7 @@ namespace index
 					if (oob)
 					{
 						//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
-						if (env::eCells[x][y].prop != ID_NULL && env::eCells[x][y].prop > 0u)
+						if (env::eCells.prop[x][y] != ID_NULL && env::eCells.prop[x][y] > 0u)
 						{
 							//graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
 							//DrawMesh(ID_NULL, res::GetM(acv::props[env::eCells[x][y].prop].idMesh), res::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
@@ -673,11 +716,15 @@ namespace index
 					}
 				}
 			}
-			if (oob) env::Draw();
+			if (oob)
+			{
+				env::DrawProps();
+				env::DrawTerrain();
+			}
 		}
 
 		#ifdef DEF_DRAW_WIREFRAME
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		graphics::SetRenderSolid();
 		#endif // DEF_DRAW_WIREFRAME
 
 		/*

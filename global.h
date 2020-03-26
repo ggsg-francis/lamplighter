@@ -1,7 +1,5 @@
 #pragma once
 
-//#include <stdint.h>
-
 // Compiler configuration definitions
 
 // Alter the generic RPG engine into a multiplayer focused one optimised for the mech game
@@ -65,8 +63,8 @@
 #define VERSION_MINOR 10u
 #else
 // Singleplayer release version
-#define VERSION_MAJOR 15u
-#define VERSION_MINOR 390u
+#define VERSION_MAJOR 16u
+#define VERSION_MINOR 1u
 #endif
 
 #define VERSION_SERVER_MAJOR 0u
@@ -115,7 +113,7 @@ extern "C" {
 	typedef float btf32;
 	typedef double btf64;
 	// For specific uses
-	typedef unsigned short btID;
+	typedef unsigned __int16 btID;
 	#else
 	#error Using different c++ version than written for, please review! (global.h) 
 	#endif

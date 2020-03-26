@@ -47,9 +47,9 @@ namespace res
 		m_debugcell,
 		m_debug_sphere,
 		t_meat_test,
-		// Compass
-		m_compass,
-		t_compass,
+		// Debug Colours
+		t_col_black,
+		t_col_red,
 		// Shadow
 		m_shadow,
 		t_shadow,

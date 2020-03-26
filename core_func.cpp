@@ -264,7 +264,7 @@ namespace index
 
 		//-------------------------------- STRAIGHT EDGE COLLISION CHECK
 		// North
-		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u].height / TERRAIN_HEIGHT_DIVISION)
+		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
 		>(ent->t.height + 0.5f) && overlapN)
 		{
 			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
@@ -272,7 +272,7 @@ namespace index
 			touchNS = true;
 		}
 		// South
-		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u].height / TERRAIN_HEIGHT_DIVISION)
+		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
 			> (ent->t.height + 0.5f) && overlapS)
 		{
 			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
@@ -280,7 +280,7 @@ namespace index
 			touchNS = true;
 		}
 		// East
-		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y].height / TERRAIN_HEIGHT_DIVISION)
+		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION)
 			> (ent->t.height + 0.5f) && overlapE)
 		{
 			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
@@ -288,7 +288,7 @@ namespace index
 			touchEW = true;
 		}
 		// West
-		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y].height / TERRAIN_HEIGHT_DIVISION)
+		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION)
 			> (ent->t.height + 0.5f) && overlapW)
 		{
 			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
@@ -299,28 +299,28 @@ namespace index
 		//-------------------------------- CORNER COLLISION CHECK
 
 		// North-east
-		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u].height / TERRAIN_HEIGHT_DIVISION)
+		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
 			> (ent->t.height + 0.5f) && overlapN && overlapE) {
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, 0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
 		// North-west
-		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u].height / TERRAIN_HEIGHT_DIVISION)
+		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
 			> (ent->t.height + 0.5f) && overlapN && overlapW) {
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, 0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
 		// South-east
-		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u].height / TERRAIN_HEIGHT_DIVISION)
+		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
 			> (ent->t.height + 0.5f) && overlapS && overlapE) {
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, -0.5f);
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
 		// South-west
-		if (((btf32)env::eCells[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u].height / TERRAIN_HEIGHT_DIVISION)
+		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
 			> (ent->t.height + 0.5f) && overlapS && overlapW) {
 			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, -0.5f);
 			if (m::Length(offset) < 0.5f)
@@ -557,7 +557,7 @@ namespace index
 			((Chara)*(CHARA(id))) = Chara();
 			{
 				// generate name
-				FILE* file = fopen("namegen.txt", "rb"); // Open file
+				FILE* file = fopen("n.txt", "rb"); // Open file
 				if (file != NULL)
 				{
 					fseek(file, 0L, SEEK_END);

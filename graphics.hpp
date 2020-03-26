@@ -173,6 +173,8 @@ namespace graphics
 
 	void SetFrontFace();
 	void SetFrontFaceInverse();
+	void SetRenderSolid();
+	void SetRenderWire();
 
 	enum BlendMode : btui8
 	{
@@ -337,6 +339,7 @@ namespace graphics
 		S_SOLID_BLEND_CHARA, // Used for drawing blended meshes
 		S_SOLID_DEFORM, // Used for drawing deformed meshes
 		S_SOLID_DEFORM_CHARA, // Used for drawing deformed meshes
+		S_SOLID_TERRAIN, // Used for drawing the terrain mesh
 		S_MEAT,
 		S_GUI, // GUI shader
 		S_POST, // Framebuffer postprocessing shader
@@ -488,12 +491,12 @@ namespace graphics
 	};
 
 	// Like a composite mesh but uses a different vertex type
-	class MeshTerrain
+	class TerrainMesh
 	{
 	public:
 		GLuint vao; // Vertex Array Object
 		void Draw();
-		void GenerateFromHMap(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE], btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]);
+		void GenerateFromHMap(btui8(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE], btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]);
 		void ReBindGL();
 		// add void unload?
 	private:
@@ -600,9 +603,6 @@ enum ShaderStyle
 void DrawMesh(btID ID, graphics::Mesh& MESH,
 	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
-void DrawCompositeMesh(btID ID, graphics::CompositeMesh& MESH,
-	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
-
 void DrawBlendMesh(btID ID, graphics::MeshBlend& MODEL, btf32 BLENDSTATE,
 	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
@@ -610,3 +610,11 @@ void DrawMeshDeform(btID ID, graphics::MeshDeform& MODEL,
 	graphics::TextureBase TEXTURE, ShaderStyle SHADER, btui32 MATRIX_COUNT,
 	graphics::Matrix4x4 MATRIX_A, graphics::Matrix4x4 MATRIX_B,
 	graphics::Matrix4x4 MATRIX_C, graphics::Matrix4x4 MATRIX_D);
+
+void DrawCompositeMesh(btID ID, graphics::CompositeMesh& MESH,
+	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+
+void DrawTerrainMesh(btID ID, graphics::TerrainMesh MESH,
+	graphics::TextureBase TEXTURE_A, graphics::TextureBase TEXTURE_B,
+	graphics::TextureBase TEXTURE_C, graphics::TextureBase TEXTURE_D,
+	graphics::Matrix4x4 MATRIX);

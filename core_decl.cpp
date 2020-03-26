@@ -39,7 +39,9 @@ namespace index
 	// for measuring HP changes for gui display
 	btui16 player_hp[2]{ 1.f, 1.f };
 
-	env::EnvNode editor_node_copy;
+	//env::EnvNode editor_node_copy;
+	btID editor_prop_copy;
+	env::NodePropDirection editor_prop_dir_copy;
 
 	struct cell
 	{

@@ -142,7 +142,7 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 
 	btf32 distBelowSand;
 	// look at how long this is
-	switch (acv::props[env::eCells[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y].prop].floorType)
+	switch (acv::props[env::eCells.prop[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]].floorType)
 	{
 	case acv::EnvProp::FLOOR_QUICKSAND:
 		ent->t.height -= 0.0025f;

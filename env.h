@@ -95,48 +95,43 @@ namespace env
 		}
 	};
 
-	struct EnvNode
+	enum NodePropDirection : btui8
 	{
-		
-		eflag::flag flags = eflag::eNULL;
-
-		btui16 prop = 0ui16;
-		btui8 mat = 0ui8;
-		btui8 height = 0ui8;
-
-		enum NodePropDirection : btui8
-		{
-			eNORTH, eSOUTH, eEAST, eWEST,
-		} prop_dir = eNORTH;
-		//btui8 dir = 0ui8;
-		btui8 num_02 = 0ui8;
-		btui8 num_03 = 0ui8;
-		btui8 num_04 = 0ui8;
-
-		btui8 water_height = 0ui8;
-		btui8 num_06 = 0ui8;
-		btui8 num_07 = 0ui8;
-		btui8 num_08 = 0ui8;
+		eNORTH, eSOUTH, eEAST, eWEST,
 	};
 
-	extern EnvNode eCells[WORLD_SIZE][WORLD_SIZE];
+	// New structure is much easier to add new properties to saved versions
+	struct EnvNode
+	{
+		eflag::flag flags[WORLD_SIZE][WORLD_SIZE];
+		btui16 prop[WORLD_SIZE][WORLD_SIZE];
+		NodePropDirection prop_dir[WORLD_SIZE][WORLD_SIZE];
+		btui8 terrain_height[WORLD_SIZE][WORLD_SIZE];
+		btui8 terrain_material[WORLD_SIZE][WORLD_SIZE];
+		btui8 water_height[WORLD_SIZE][WORLD_SIZE];
+	};
+
+	extern EnvNode eCells;
 
 	bool Get(uint x, uint y, eflag::flag bit);
 	void Set(uint x, uint y, eflag::flag bit);
 	void UnSet(uint x, uint y, eflag::flag bit);
 
-	//void GetHeight(btf32& OUT_HEIGHT, CellGroup& CELL_GROUP);
 	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
 
 	bool LineTrace_Bresenham(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b);
 
-	//void Tick();
-	void Draw();
+	void Tick();
+	void DrawProps();
+	void DrawTerrain();
+	void DrawTerrainDebug();
 
-	//load world setting from binary file
+	// Load world setting from binary file
 	void SaveBin();
-	//save world setting to binary file
+	// Save world setting to binary file
 	void LoadBin();
 
-	void GeneratePhysicsSurfaces();
+	void Clean();
+	void GeneratePropMeshes();
+	void GenerateTerrainMesh();
 }

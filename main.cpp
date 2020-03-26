@@ -486,7 +486,7 @@ render:
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
 
 	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-	glClearColor(0.f, 0.f, 0.f, 1.0f);
+	glClearColor(0.17f, 0.165f, 0.15f, 1.0f);
 	//glClearColor(2.f, 2.f, 2.f, 1.0f);
 
 	#ifndef DEF_NMP
