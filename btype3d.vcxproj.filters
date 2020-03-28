@@ -21,9 +21,6 @@
     <ClInclude Include="cfg.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="env.h" />
-    <ClInclude Include="entity.h">
-      <Filter>gamework</Filter>
-    </ClInclude>
     <ClInclude Include="weather.h">
       <Filter>gamework</Filter>
     </ClInclude>
@@ -111,9 +108,6 @@
       <Filter>framework</Filter>
     </ClCompile>
     <ClCompile Include="env.cpp" />
-    <ClCompile Include="entity.cpp">
-      <Filter>gamework</Filter>
-    </ClCompile>
     <ClCompile Include="weather.cpp">
       <Filter>gamework</Filter>
     </ClCompile>

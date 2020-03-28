@@ -58,15 +58,9 @@
 #define LIGHT_HALF 128.f
 #define LIGHT_WIDTH 12.f
 
-#ifdef DEF_NMP
-// Multiplayer release version
-#define VERSION_MAJOR 16u
-#define VERSION_MINOR 10u
-#else
-// Singleplayer release version
+// Release version
 #define VERSION_MAJOR 16u
 #define VERSION_MINOR 1u
-#endif
 
 #define VERSION_SERVER_MAJOR 0u
 #define VERSION_SERVER_MINOR 14u
@@ -88,7 +82,6 @@
 
 // Time to pass in seconds before one single tick
 #define FRAME_TIME (1. / 30.)
-//#define FRAME_TIME (1. / 60.)
 
 // Terrain vertical precision per 1 unit
 #define TERRAIN_HEIGHT_DIVISION 4.f
