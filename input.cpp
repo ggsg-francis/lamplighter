@@ -2,7 +2,7 @@
 #include "memory.hpp"
 #include <SDL2\SDL.h>
 #ifdef DEF_NMP
-#include "network_client.h"
+#include "network.h"
 #endif // DEF_NMP
 
 namespace input
@@ -166,12 +166,16 @@ namespace input
 				Unset(ScancodeTransfer[e.key.keysym.scancode]);
 			break;
 		case SDL_MOUSEBUTTONDOWN:
-			if (e.button.which == 0)
+			if (e.button.button == SDL_BUTTON_LEFT)
 				Set(key::USE);
+			if (e.button.button == SDL_BUTTON_RIGHT)
+				Set(key::USE_ALT);
 			break;
 		case SDL_MOUSEBUTTONUP:
-			if (e.button.which == 0)
+			if (e.button.button == SDL_BUTTON_LEFT)
 				Unset(key::USE);
+			if (e.button.button == SDL_BUTTON_RIGHT)
+				Unset(key::USE_ALT);
 			break;
 		case SDL_MOUSEMOTION:
 			BUF_LOCALSET.mouse_x += e.motion.xrel;

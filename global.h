@@ -21,6 +21,7 @@
 //#define DEF_SPAWN_ON_START
 #define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
 //#define DEF_AUTOSAVE_ON_START // temporary definition that enables autosave
+//#define DEF_TERRAIN_USE_EROSION_TRIANGULATION
 //#endif
 
 #ifdef DEF_NMP

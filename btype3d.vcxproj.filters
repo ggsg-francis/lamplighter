@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="framework">
       <UniqueIdentifier>{e8c423a2-e5b5-49bd-a92a-bdefe339c961}</UniqueIdentifier>
     </Filter>
@@ -19,9 +15,6 @@
     </Filter>
     <Filter Include="0global">
       <UniqueIdentifier>{c7908f46-388d-4d76-b263-5b44cbeb8eaf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="framework\network">
-      <UniqueIdentifier>{682ba685-4453-4889-b854-a77b88276eb3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -63,17 +56,11 @@
     <ClInclude Include="serializer.h">
       <Filter>framework</Filter>
     </ClInclude>
-    <ClInclude Include="network_client.h">
-      <Filter>framework\network</Filter>
-    </ClInclude>
     <ClInclude Include="objects_items.h">
       <Filter>gamework</Filter>
     </ClInclude>
     <ClInclude Include="audio.hpp">
       <Filter>framework</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Resource Files</Filter>
     </ClInclude>
     <ClInclude Include="graphics_structures.h">
       <Filter>framework</Filter>
@@ -101,6 +88,9 @@
     </ClInclude>
     <ClInclude Include="objects_entities.h">
       <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="network.h">
+      <Filter>framework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -142,9 +132,6 @@
     <ClCompile Include="serializer.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="network_client.cpp">
-      <Filter>framework\network</Filter>
-    </ClCompile>
     <ClCompile Include="objects_items.cpp">
       <Filter>gamework</Filter>
     </ClCompile>
@@ -167,25 +154,9 @@
       <Filter>gamework</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="btype3d.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icons\icon.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="icons\icon2.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="icons\cat16.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="icons\bball.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
+    <ClCompile Include="network.cpp">
+      <Filter>framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="0000gameassets.uwu" />

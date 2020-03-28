@@ -217,6 +217,11 @@ namespace graphics
 			Colour_A, // Chara shader
 			Colour_B, // Chara shader
 			Colour_C, // Chara shader
+			Colour_Ambient,
+			Colour_Sunlight,
+			Colour_Fog,
+			Colour_Lightmap,
+			Fog_Density,
 			LOCATION_COUNT,
 		};
 	private:
@@ -252,6 +257,11 @@ namespace graphics
 			"c_a",
 			"c_b",
 			"c_c",
+			"cSun",
+			"cAmb",
+			"cFog",
+			"cLit",
+			"fFogDens",
 		};
 	public:
 		// To ensure that there is no conflic with texture locations

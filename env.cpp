@@ -41,15 +41,19 @@ namespace env
 	void GetHeight(btf32& out_height, CellSpace& csinf)
 	{
 		// NEAREST
-		out_height = (btf32)eCells.terrain_height[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION;
+		//out_height = (btf32)eCells.terrain_height[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION;
 
 		// BILINEAR
-		/*
+		///*
 		out_height = m::Lerp(
-			m::Lerp((btf32)eCells[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y].height, (btf32)eCells[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y].height, abs(csinf.offsetx)),
-			m::Lerp((btf32)eCells[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y].height, (btf32)eCells[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y].height, abs(csinf.offsetx)),
+			m::Lerp((btf32)eCells.terrain_height[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+			(btf32)eCells.terrain_height[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y],
+				abs(csinf.offsetx)),
+			m::Lerp((btf32)eCells.terrain_height[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y],
+			(btf32)eCells.terrain_height[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y],
+				abs(csinf.offsetx)),
 			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
-		*/
+		//*/
 	}
 
 	bool LineTraceUtil_HeightCheck(int x, int y, int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
@@ -182,7 +186,7 @@ namespace env
 	{
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
 			res::GetT(res::t_terrain_scorch), res::GetT(res::t_terrain_sanddirt),
-			res::GetT(res::t_terrain_sanddirt), res::GetT(res::t_terrain_sanddirt),
+			res::GetT(res::t_terrain_marshmud), res::GetT(res::t_col_red),
 			graphics::Matrix4x4());
 	}
 	void DrawTerrainDebug()
@@ -190,7 +194,7 @@ namespace env
 		graphics::Matrix4x4 matr;
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
 			res::GetT(res::t_terrain_scorch), res::GetT(res::t_terrain_sanddirt),
-			res::GetT(res::t_terrain_sanddirt), res::GetT(res::t_terrain_sanddirt),
+			res::GetT(res::t_terrain_marshmud), res::GetT(res::t_col_red),
 			matr);
 		graphics::MatrixTransform(matr, m::Vector3(0.f, 0.01f, 0.f));
 		graphics::SetRenderWire();

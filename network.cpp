@@ -18,7 +18,7 @@
 // link with so so...
 //#pragma comment(lib, "IPHLPAPI.lib")
 
-#include "network_client.h"
+#include "network.h"
 
 //try cut down on some of these
 #include "cfg.h"
@@ -230,11 +230,7 @@ namespace network
 			addr.host = INADDR_BROADCAST;
 			addr.port = (Uint16)cfg::iPort;
 
-			#error If you're building the multiplayer version you'll want to change the hostname
-			int found_other = SDLNet_ResolveHost(&addr, "Sirennus0000", (Uint16)cfg::iPort);
-			//int found_other = SDLNet_ResolveHost(&addr, "10.1.1.144", cfg::sIPPORT);
-			//int found_other = SDLNet_ResolveHost(&addr, "https://servertest.b-type.net", cfg::sIPPORT);
-			//int found_other = SDLNet_ResolveHost(&addr, "F550C", cfg::sIPPORT);
+			int found_other = SDLNet_ResolveHost(&addr, cfg::sConnAddr, (Uint16)cfg::iPort);
 			if (found_other == -1) goto exiterr;
 			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
 

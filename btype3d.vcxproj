@@ -278,7 +278,7 @@
     <ClCompile Include="core_save_load.cpp" />
     <ClCompile Include="index.c" />
     <ClCompile Include="memoryC.c" />
-    <ClCompile Include="network_client.cpp" />
+    <ClCompile Include="network.cpp" />
     <ClCompile Include="audio.cpp" />
     <ClCompile Include="cfg.cpp" />
     <ClCompile Include="entity.cpp" />
@@ -308,7 +308,7 @@
     <ClInclude Include="graphics_structures.h" />
     <ClInclude Include="index.h" />
     <ClInclude Include="memoryC.h" />
-    <ClInclude Include="network_client.h" />
+    <ClInclude Include="network.h" />
     <ClInclude Include="audio.hpp" />
     <ClInclude Include="cfg.h" />
     <ClInclude Include="entity.h" />
@@ -324,22 +324,12 @@
     <ClInclude Include="global.h" />
     <ClInclude Include="graphics.hpp" />
     <ClInclude Include="objects_items.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="serializer.h" />
     <ClInclude Include="test_zone.h" />
     <ClInclude Include="time.hpp" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="weather.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="btype3d.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icons\bball.ico" />
-    <Image Include="icons\cat16.ico" />
-    <Image Include="icons\icon.ico" />
-    <Image Include="icons\icon2.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="0000gameassets.uwu" />

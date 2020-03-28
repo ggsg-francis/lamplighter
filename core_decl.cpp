@@ -5,7 +5,7 @@
 
 #include "objects_entities.h"
 #include "objects_items.h"
-#include "network_client.h"
+#include "network.h"
 #include "memoryC.h"
 
 struct Index
@@ -42,6 +42,8 @@ namespace index
 	//env::EnvNode editor_node_copy;
 	btID editor_prop_copy;
 	env::NodePropDirection editor_prop_dir_copy;
+	btui8 editor_height_copy;
+	btui8 editor_material_copy;
 
 	struct cell
 	{

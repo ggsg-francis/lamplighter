@@ -55,7 +55,7 @@
 #include "archive.hpp"
 #include "input.h"
 #include "cfg.h"
-#include "network_client.h"
+#include "network.h"
 #include "audio.hpp"
 #include "core.h"
 #include "weather.h"
@@ -486,7 +486,8 @@ render:
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
 
 	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-	glClearColor(0.17f, 0.165f, 0.15f, 1.0f);
+	glm::vec3* fogC = (glm::vec3*)weather::FogColour();
+	glClearColor(fogC->r, fogC->g, fogC->b, 1.0f);
 	//glClearColor(2.f, 2.f, 2.f, 1.0f);
 
 	#ifndef DEF_NMP
@@ -672,7 +673,7 @@ loop_editor:
 
 		glViewport(0, 0, cfg::iWinX, cfg::iWinY);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(0.5f, 1.f, 1.f, 1.0f);
+		glClearColor(0.5f, 0.f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		index::SetViewFocus(0u);
 		index::Draw();

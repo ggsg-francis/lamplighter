@@ -201,7 +201,7 @@ namespace graphics
 
 		gPtr->shaders[S_SOLID_TERRAIN].Init("shaders/vert_3d_terrain.glsl", "shaders/frag_terrain.glsl");
 
-		gPtr->shaders[S_MEAT].Init("shaders/vert_3d.glsl", "shaders/frag_meat.glsl");
+		gPtr->shaders[S_MEAT].Init("shaders/vert_3d.glsl", "shaders/_frag_meat.glsl");
 
 		gPtr->shaders[S_GUI].Init("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
 		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
@@ -429,6 +429,7 @@ namespace graphics
 	{
 		// this is not.... good.....
 		#define T ((Transform3D*)t)
+		view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
 		mat_view = glm::lookAt((T->pos_glm + (T->GetForward() * -2.f)) * glm::vec3(1.f, 1.f, -1.f),
 			T->pos_glm * glm::vec3(1.f, 1.f, -1.f),
 			(glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
@@ -1666,25 +1667,81 @@ namespace graphics
 			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 1, i += 6)
 			{
 				// Copy in the things from the new mesh
-				vces[v + 0].pos.x = (btf32)x;
-				vces[v + 0].pos.z = (btf32)y;
-				vces[v + 0].pos.y = (((btf32)hmap[x][y]) + (btf32)hmap[x][y]) / 2 / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
-				vces[v + 0].uvc.y = vces[v + 0].pos.z * uvscale;
-				vces[v + 0].nor.y = 1.f; vces[v + 0].nor.x = 0.f; vces[v + 0].nor.z = 0.f;
-				vces[v + 0].col.y = 1.f;
+				vces[v].pos.x = (btf32)x;
+				vces[v].pos.z = (btf32)y;
+				vces[v].pos.y = (((btf32)hmap[x][y]) + (btf32)hmap[x][y]) / 2 / TERRAIN_HEIGHT_DIVISION;
+				vces[v].uvc.x = vces[v].pos.x * uvscale;
+				vces[v].uvc.y = vces[v].pos.z * uvscale;
+				vces[v].nor.y = 1.f; vces[v].nor.x = 0.f; vces[v].nor.z = 0.f;
+
+				vces[v].col.x = 0.f;
+				vces[v].col.y = 0.f;
+				vces[v].col.z = 0.f;
+				vces[v].col.w = 0.f;
+				switch (MATMAP[x][y])
+				{
+				case 0ui8:
+					vces[v].col.x = 1.f;
+					break;
+				case 1ui8:
+					vces[v].col.y = 1.f;
+					break;
+				case 2ui8:
+					vces[v].col.z = 1.f;
+					break;
+				case 3ui8:
+					vces[v].col.w = 1.f;
+					break;
+				default:
+					break;
+				}
 
 				// r--r+1
 				// |\ |
 				// | \|
 				// 0--1
 
-				ices[i + 0u] = clamp(v + 0u, 0, vces_size - 1);
-				ices[i + 1u] = clamp(v + tile_radius, 0, vces_size - 1);
-				ices[i + 2u] = clamp(v + 1u, 0, vces_size - 1);
-				ices[i + 3u] = clamp(v + 1u, 0, vces_size - 1);
-				ices[i + 4u] = clamp(v + tile_radius, 0, vces_size - 1);
-				ices[i + 5u] = clamp(v + tile_radius + 1u, 0, vces_size - 1);
+				if (x != 1023 + (tile_radius / 2) && y != 1023 + (tile_radius / 2))
+				{
+					bool triangulate_alternate = false;
+
+					// Triangulate based on longest height difference
+					#ifdef DEF_TERRAIN_USE_EROSION_TRIANGULATION
+					if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) < abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
+						triangulate_alternate = true; 
+					#else
+					if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) > abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
+						triangulate_alternate = true; 
+					#endif
+
+					if (triangulate_alternate)
+					{
+						ices[i + 0u] = v + 0u;
+						ices[i + 1u] = v + tile_radius;
+						ices[i + 2u] = v + 1u;
+						ices[i + 3u] = v + 1u;
+						ices[i + 4u] = v + tile_radius;
+						ices[i + 5u] = v + tile_radius + 1u;
+					}
+					else
+					{
+						ices[i + 0u] = v + 0u;
+						ices[i + 1u] = v + tile_radius;
+						ices[i + 2u] = v + tile_radius + 1u;
+						ices[i + 3u] = v + tile_radius + 1u;
+						ices[i + 4u] = v + 1u;
+						ices[i + 5u] = v + 0u;
+					}
+				}
+				else
+				{
+					ices[i + 0u] = 0u;
+					ices[i + 1u] = 0u;
+					ices[i + 2u] = 0u;
+					ices[i + 3u] = 0u;
+					ices[i + 4u] = 0u;
+					ices[i + 5u] = 0u;
+				}
 			}
 		}
 
@@ -1714,7 +1771,7 @@ namespace graphics
 		glEnableVertexAttribArray(VT_I_UVC); // Set Vertex texture coords
 		glVertexAttribPointer(VT_I_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_UVC);
 		glEnableVertexAttribArray(VT_I_COL); // Set Vertex colour
-		glVertexAttribPointer(VT_I_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_COL);
+		glVertexAttribPointer(VT_I_COL, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_COL);
 
 		glBindVertexArray(0); // Bind default vertex array
 	}

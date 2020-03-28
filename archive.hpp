@@ -95,6 +95,7 @@ namespace res
 		t_smoke_trail,
 		t_terrain_sanddirt,
 		t_terrain_scorch,
+		t_terrain_marshmud,
 		// Gui stuff
 		t_gui_crosshair,
 		t_gui_font,

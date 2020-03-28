@@ -25,9 +25,9 @@ namespace weather
 	glm::vec3 col_amb_from = glm::vec3(0.f, 0.f, 0.f);
 	glm::vec3 col_fog_from = glm::vec3(0.f, 0.f, 0.f);
 
-	glm::vec3 col_sun_dest = glm::vec3(0.8f, 0.8f, 0.8f);
-	glm::vec3 col_amb_dest = glm::vec3(0.5f, 0.5f, 0.5f);
-	glm::vec3 col_fog_dest = glm::vec3(1.f, 1.f, 1.f);
+	glm::vec3 col_sun_dest = glm::vec3(0.f, 0.f, 0.f);
+	glm::vec3 col_amb_dest = glm::vec3(0.f, 0.f, 0.f);
+	glm::vec3 col_fog_dest = glm::vec3(0.f, 0.f, 0.f);
 
 	float fog_level = 0.f;
 	float fog_level_from = 0.f;
@@ -40,12 +40,12 @@ namespace weather
 	float stat_overcast_level;
 
 //#define TIMER_TIME 120.f
-#define TIMER_TIME 60.f
+#define TIMER_TIME 120.f
 //#define TIMER_TIME 2.f
 
 	void Tick(btf32 dt)
 	{
-		/*
+		//*
 		recalc_ticker += dt / TIMER_TIME;
 		if (recalc_ticker > 1.f)
 		{
@@ -68,7 +68,10 @@ namespace weather
 			float r2 = lo_hue + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (hi_hue - lo_hue)));
 			float r3 = lo_hue + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (hi_hue - lo_hue)));
 
-			stat_overcast_level = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+			//stat_overcast_level = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+			stat_overcast_level = m::Random(0.f, 1.f);
+			//if (stat_overcast_level > 1.f) stat_overcast_level = 1.f;
+			//if (stat_overcast_level < 0.f) stat_overcast_level = 0.f;
 			//stat_overcast_level = 1.f; //temp foggy override
 			std::cout << "Recalculated weather, overcast level " << stat_overcast_level << std::endl;
 
@@ -98,9 +101,9 @@ namespace weather
 			col_fog_dest.z = m::Lerp(col_clear_fog.z, (col_foggy_fog.z + (r3 * 0.5f)) * b, stat_overcast_level);
 
 			if (stat_overcast_level > 0.8f)
-				fog_level_dest = 1.f;
+				fog_level_dest = m::Random(0.01f, 0.15f);
 			else
-				fog_level_dest = 0.f;
+				fog_level_dest = 0.015f;
 		}
 
 		float transition_point = recalc_ticker;
@@ -120,7 +123,7 @@ namespace weather
 		col_fog.z = m::Lerp(col_fog_from.z, col_fog_dest.z, transition_point);
 
 		fog_level = m::Lerp(fog_level_from, fog_level_dest, transition_point);
-		*/
+		//*/
 	}
 
 	void* SunColour()

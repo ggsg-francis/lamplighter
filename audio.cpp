@@ -8,7 +8,7 @@
 #include "objects_entities.h"
 #include "index.h"
 #ifdef DEF_NMP
-#include "network_client.h"
+#include "network.h"
 #endif // DEF_NMP
 
 #ifdef DEF_USE_CS

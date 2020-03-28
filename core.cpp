@@ -57,8 +57,8 @@ namespace index
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
 		{
-			if (env::eCells.terrain_height[x][y] < env::eCells.terrain_height[srcx][srcy] + 2ui8 //incline check
-			&& env::eCells.terrain_height[x][y] > env::eCells.terrain_height[srcx][srcy] - 4ui8) // decline check
+			if (env::eCells.terrain_height[x][y] < env::eCells.terrain_height[srcx][srcy] + 8ui8 //incline check
+			&& env::eCells.terrain_height[x][y] > env::eCells.terrain_height[srcx][srcy] - 12ui8) // decline check
 			{
 				t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 				if (col.g > 31ui8)
@@ -101,6 +101,10 @@ namespace index
 			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::vecPCam, PCAM);
 			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::vecVSun, (glm::vec3)sunVec);
 			graphics::GetShader((graphics::eShader)i).SetTexture(graphics::Shader::texShadowMap, shadowtex, graphics::Shader::TXTR_SHADOWMAP);
+			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::Colour_Ambient, *(glm::vec3*)weather::AmbientColour());
+			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::Colour_Sunlight, *(glm::vec3*)weather::SunColour());
+			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::Colour_Fog, *(glm::vec3*)weather::FogColour());
+			graphics::GetShader((graphics::eShader)i).SetFloat(graphics::Shader::Fog_Density, *(float*)weather::FogDensity());
 		}
 		#undef PCAM
 	}
@@ -394,12 +398,21 @@ namespace index
 
 			if (input::GetHit(input::key::USE))
 			{
-				//env::GeneratePaths();
+				++env::eCells.terrain_material[GetCellX][GetCellY];
+				if (env::eCells.terrain_material[GetCellX][GetCellY] > 3ui8)
+					env::eCells.terrain_material[GetCellX][GetCellY] = 0ui8;
+				env::GenerateTerrainMesh();
+			}
+			else if (input::GetHeld(input::key::USE_ALT))
+			{
+				env::eCells.terrain_material[GetCellX][GetCellY] = editor_material_copy;
+				env::GenerateTerrainMesh();
 			}
 			else if (input::GetHit(input::key::ACTIVATE))
 			{
 				//env::GeneratePhysicsSurfaces();
 				//env::SaveBin();
+				
 			}
 			else if (input::GetHeld(input::key::DIR_F)) // Forward
 				env::eCells.prop_dir[GetCellX][GetCellY] = env::eNORTH;
@@ -413,11 +426,16 @@ namespace index
 			{
 				editor_prop_copy = env::eCells.prop[GetCellX][GetCellY];
 				editor_prop_dir_copy = env::eCells.prop_dir[GetCellX][GetCellY];
+				editor_height_copy = env::eCells.terrain_height[GetCellX][GetCellY];
+				editor_material_copy = env::eCells.terrain_material[GetCellX][GetCellY];
 			}
 			else if (input::GetHeld(input::key::FUNCTION_2)) // PASTE
 			{
 				env::eCells.prop[GetCellX][GetCellY] = editor_prop_copy;
 				env::eCells.prop_dir[GetCellX][GetCellY] = editor_prop_dir_copy;
+				env::eCells.terrain_height[GetCellX][GetCellY] = editor_height_copy;
+				env::eCells.terrain_material[GetCellX][GetCellY] = editor_material_copy;
+				env::GenerateTerrainMesh();
 			}
 			else if (input::GetHit(input::key::FUNCTION_3)) // TOGGLE LIGHT
 			{
