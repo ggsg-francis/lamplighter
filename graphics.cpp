@@ -12,8 +12,6 @@
 #include "maths.hpp"
 #include "Transform.h"
 
-#include "zlib/zlib.h"
-
 //-------------------------------- VERTEX ATTRIBUTES
 
 // This looks ridiculous, but the 'offsetof' macro was on the fritz in release builds for some reason.
@@ -872,26 +870,26 @@ namespace graphics
 	{
 		glGenTextures(1, &glID);
 
-		gzFile file = gzopen(fn, "rb"); // Open the file
+		FILE* file = fopen(fn, "rb"); // Open the file
 		if (file)
 		{
 			// Seek the beginning of the file
-			gzseek(file, 0, SEEK_SET);
+			fseek(file, 0, SEEK_SET);
 			// Read version
 			version_t v;
-			gzfread(&v, sizeof(version_t), 1, file);
+			fread(&v, sizeof(version_t), 1, file);
 			TextureFilterMode fm;
 			TextureEdgeMode em;
-			gzfread(&fm, 1, 1, file);
-			gzfread(&em, 1, 1, file);
+			fread(&fm, 1, 1, file);
+			fread(&em, 1, 1, file);
 			// Read dimensions
-			gzfread(&width, sizeof(btui16), 1, file);
-			gzfread(&height, sizeof(btui16), 1, file);
+			fread(&width, sizeof(btui16), 1, file);
+			fread(&height, sizeof(btui16), 1, file);
 			// Read pixel buffer
 			graphics::colour* buffer = new colour[width * height];
-			gzfread(buffer, sizeof(graphics::colour), width * height, file);
+			fread(buffer, sizeof(graphics::colour), width * height, file);
 			// Close file
-			gzclose(file);
+			fclose(file);
 
 			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, glID);

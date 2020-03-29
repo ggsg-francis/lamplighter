@@ -91,9 +91,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="tga_reader.cpp">
-      <Filter>framework\3rdparty</Filter>
-    </ClCompile>
     <ClCompile Include="glad.c">
       <Filter>framework\3rdparty</Filter>
     </ClCompile>
@@ -151,9 +148,5 @@
     <ClCompile Include="network.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="0000gameassets.uwu" />
-    <None Include="0000gamecontents.uwu" />
   </ItemGroup>
 </Project>

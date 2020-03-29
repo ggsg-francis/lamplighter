@@ -178,7 +178,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>..\libraries\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;zlibstatic.lib;vld.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
     <Bscmake />
@@ -195,7 +195,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>..\libraries\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;zlibstatic.lib;vld.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
     <Bscmake />
@@ -250,7 +250,7 @@
       <AdditionalLibraryDirectories>..\libraries\lib</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
-      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;zlibstatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_NMP|x64'">
@@ -271,7 +271,7 @@
       <AdditionalLibraryDirectories>..\libraries\lib</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
-      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;zlibstatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -295,7 +295,6 @@
     <ClCompile Include="objects_items.cpp" />
     <ClCompile Include="serializer.cpp" />
     <ClCompile Include="test_zone.cpp" />
-    <ClCompile Include="tga_reader.cpp" />
     <ClCompile Include="time.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="weather.cpp" />
@@ -328,10 +327,6 @@
     <ClInclude Include="time.hpp" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="weather.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="0000gameassets.uwu" />
-    <None Include="0000gamecontents.uwu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

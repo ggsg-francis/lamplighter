@@ -6,17 +6,8 @@
 
 #include "SDL2\SDL_net.h"
 
-//NETCODE
-#include <winsock2.h>
-#include <Ws2tcpip.h>
-//#include <iphlpapi.h>
 #include <stdio.h>
 #include <time.h>
-
-// Link with ws2_32.lib
-#pragma comment(lib, "Ws2_32.lib")
-// link with so so...
-//#pragma comment(lib, "IPHLPAPI.lib")
 
 #include "network.h"
 

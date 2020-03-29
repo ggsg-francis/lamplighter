@@ -11,8 +11,6 @@
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>		// Post processing flags
 
-#include "zlib/zlib.h"
-
 extern TGA_ORDER *TGA_READER_ARGB;
 extern TGA_ORDER *TGA_READER_ABGR;
 
@@ -336,23 +334,23 @@ namespace graphics
 
 			//std::cout << "Loaded texture: " << sfn << std::endl;
 
-			gzFile out = gzopen(dfn, "wb");
+			FILE* out = fopen(dfn, "wb");
 			if (out != NULL)
 			{
 				// Seek the beginning of the file
-				gzseek(out, 0, SEEK_SET);
+				fseek(out, 0, SEEK_SET);
 				// Write version
 				version_t v = FILE_VERSION_TEX;
-				gzfwrite(&v, sizeof(version_t), 1, out);
-				gzfwrite(&filter, 1, 1, out);
-				gzfwrite(&edge, 1, 1, out);
+				fwrite(&v, sizeof(version_t), 1, out);
+				fwrite(&filter, 1, 1, out);
+				fwrite(&edge, 1, 1, out);
 				// Write dimensions
-				gzfwrite(&width, sizeof(btui16), 1, out); // Max value: 65535
-				gzfwrite(&height, sizeof(btui16), 1, out);
+				fwrite(&width, sizeof(btui16), 1, out); // Max value: 65535
+				fwrite(&height, sizeof(btui16), 1, out);
 				// Write pixel buffer
-				gzfwrite(carr, sizeof(color), width * height, out);
+				fwrite(carr, sizeof(color), width * height, out);
 				// Close file
-				gzclose(out);
+				fclose(out);
 			}
 			else
 			{
