@@ -70,109 +70,6 @@ vec3 Vec3Div(vec3 a, vec3 b)
 }
 
 //________________________________________________________________________________________________________________________________
-// TEMP OBJECTS ------------------------------------------------------------------------------------------------------------------
-
-#define MAX_COMPONENT_COUNT 4ui8
-
-#define TYPE_NULL 0ui8
-#define TYPE_CHARA 1ui8
-#define TYPE_ITEMS 2ui8
-typedef btui8 EntityType;
-
-//-------------------------------- ENTITY COMPONENT
-
-typedef struct EntityComponent
-{
-	EntityType type;
-	void* data;
-	void(*ptrTick)(void* ent);
-	void(*ptrDraw)(void* ent);
-} EntityComponent;
-
-//-------------------------------- ENTITY
-
-typedef struct EntityC
-{
-	EntityType type;
-	
-	vec3 position;
-	vec3 velocity;
-
-	btui32 component_count;
-	EntityComponent components[MAX_COMPONENT_COUNT];
-} EntityC;
-void TickEntity(EntityC* const ent)
-{
-	for (btui32 i = 0u; i < ent->component_count; ++i)
-		ent->components[i].ptrTick(ent);
-};
-void DrawEntity(EntityC* const ent)
-{
-	for (btui32 i = 0u; i < ent->component_count; ++i)
-		ent->components[i].ptrDraw(ent);
-};
-
-//-------------------------------- ENTITY COMPONENT STRUCTURES / FUNCTIONS
-
-void ECDNothing_Draw(void* ent, void* cmp)
-{
-	//
-}
-
-typedef struct ECDController
-{
-	btui8 temp;
-} ECDController;
-void ECDController_Tick(void* ent, void* cmp)
-{
-	((EntityC*)ent)->velocity.x = 0.005f;
-	((EntityC*)ent)->velocity.y = 0.f;
-	((EntityC*)ent)->velocity.z = 0.f;
-}
-void ECDController_Draw(void* ent, void* cmp)
-{
-	//
-}
-
-typedef struct ECDDynamics
-{
-	btui8 temp;
-} ECDDynamics;
-void ECDDynamics_Tick(void* ent, void* cmp)
-{
-	((EntityC*)ent)->position = Vec3Add(((EntityC*)ent)->position, ((EntityC*)ent)->velocity);
-}
-
-//-------------------------------- INITIALIZATION
-
-void EntityInit(void* const ent, EntityType type)
-{
-	((EntityC*)ent)->type = type;
-	switch (type)
-	{
-	case TYPE_CHARA:
-		((EntityC*)ent)->components[0].data = malloc(sizeof(ECDController));
-		((EntityC*)ent)->components[0].ptrTick = ECDController_Tick;
-		((EntityC*)ent)->components[0].ptrDraw = ECDController_Draw;
-		((EntityC*)ent)->components[1].data = malloc(sizeof(ECDDynamics));
-		((EntityC*)ent)->components[1].ptrTick = ECDDynamics_Tick;
-		((EntityC*)ent)->components[1].ptrDraw = ECDNothing_Draw;
-		((EntityC*)ent)->component_count = 2u;
-		break;
-	//case TYPE_ITEMS:
-	//	((Entity*)ent)->ptrTick = TickActor;
-	//	((Entity*)ent)->ptrDraw = DrawActor;
-	//	break;
-	}
-};
-
-void EntityEnd(void* const ent)
-{
-	free(((EntityC*)ent)->components[0].data);
-	((EntityC*)ent)->component_count = 0u;
-};
-
-//________________________________________________________________________________________________________________________________
 // INDEX -------------------------------------------------------------------------------------------------------------------------
 
 ObjBufCP block_proj; // Projectile buffer
@@ -181,9 +78,6 @@ Projectile proj[BUF_SIZE];
 void IndexInitialize()
 {
 	ObjBufCP_init(&block_proj);
-
-	EntityC entity;
-	EntityInit(&entity, TYPE_CHARA);
 }
 
 btID IndexSpawnProjectile()

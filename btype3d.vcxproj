@@ -171,14 +171,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;_CRTDBG_MAP_ALLOC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\libraries\include;..\libraries\include_physx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>..\libraries\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libraries\lib;..\libraries\lib_physx</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;PhysX3DEBUG_x64.lib;PhysX3CommonDEBUG_x64.lib;PxFoundationDEBUG_x64.lib;PhysX3ExtensionsDEBUG.lib;PhysX3CookingDEBUG_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
     <Bscmake />
@@ -188,13 +188,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DEF_NMP;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;_CRTDBG_MAP_ALLOC;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\libraries\include;..\libraries\include_physx</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DEF_NMP;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>..\libraries\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libraries\lib;..\libraries\lib_physx</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -239,7 +239,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libraries\include;..\libraries\include_physx</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -247,7 +247,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\libraries\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libraries\lib;..\libraries\lib_physx</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -260,7 +260,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libraries\include;..\libraries\include_physx</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEF_NMP;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -268,13 +268,15 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\libraries\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libraries\lib;..\libraries\lib_physx</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <AdditionalDependencies>opengl32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="archive_read_write.cpp" />
+    <ClCompile Include="collision.cpp" />
     <ClCompile Include="core_save_load.cpp" />
     <ClCompile Include="index.c" />
     <ClCompile Include="memoryC.c" />
@@ -293,15 +295,15 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="archive.cpp" />
     <ClCompile Include="objects_items.cpp" />
-    <ClCompile Include="serializer.cpp" />
     <ClCompile Include="test_zone.cpp" />
-    <ClCompile Include="time.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="weather.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdparty\cute_c2.h" />
     <ClInclude Include="3rdparty\cute_sound.h" />
+    <ClInclude Include="archive_read_write.h" />
+    <ClInclude Include="collision.h" />
     <ClInclude Include="core_save_load.h" />
     <ClInclude Include="graphics_structures.h" />
     <ClInclude Include="index.h" />
@@ -322,9 +324,7 @@
     <ClInclude Include="graphics.hpp" />
     <ClInclude Include="objects_items.h" />
     <ClInclude Include="archive.hpp" />
-    <ClInclude Include="serializer.h" />
     <ClInclude Include="test_zone.h" />
-    <ClInclude Include="time.hpp" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="weather.h" />
   </ItemGroup>

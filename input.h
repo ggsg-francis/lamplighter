@@ -69,6 +69,7 @@ namespace input
 			USE, // Use equipped item
 			USE_ALT, // Use equipped item
 			RUN,
+			CROUCH,
 			ACTIVATE, // Activate other actor
 			ACTION_A, // Perform action A on item
 			ACTION_B, // Perform action B on item
@@ -86,6 +87,7 @@ namespace input
 			C_USE, // Use equipped item
 			C_USE_ALT, // Use equipped item
 			C_RUN,
+			C_CROUCH,
 			C_ACTIVATE, // Activate other actor
 			C_ACTION_A, // Perform action A on item
 			C_ACTION_B, // Perform action B on item

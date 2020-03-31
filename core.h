@@ -76,10 +76,10 @@ namespace index
 	void DestroyItem(btID ID);
 
 	//	Creates a projectile instance, allocates an ID and sends a network message
-	void SpawnProjectile(fac::faction FACTION, m::Vector2 POSITION, btf32 HEIGHT,
+	void SpawnProjectile(fac::faction FACTION, btID TEMPLATE_TYPE, m::Vector2 POSITION, btf32 HEIGHT,
 		float YAW, float PITCH);
 	//	Creates a projectile instance, allocates an ID and sends a network message
-	void SpawnProjectileSpread(fac::faction FACTION, m::Vector2 POSITION, btf32 HEIGHT,
+	void SpawnProjectileSpread(fac::faction FACTION, btID TEMPLATE_TYPE, m::Vector2 POSITION, btf32 HEIGHT,
 		float YAW, float PITCH, float SPREAD);
 	// Removes a given projectile from the index
 	void DestroyProjectile(btID ID);
@@ -147,7 +147,7 @@ namespace index
 
 	void SetInput(btID PLAYER_INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH,
 		bool WantAttack, bool use_hit, bool WantAttack2,
-		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C);
+		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C, bool crouch);
 
 	void SetViewTargetID(btID ID, btui32 player);
 	btID GetViewTargetID(btui32 player);

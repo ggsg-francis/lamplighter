@@ -1,8 +1,8 @@
 bFullScreen=0
-iWinX=800
+iWinX=1300
 iWinY=600
 bEditMode=0
-bSplitScreen=0
+bSplitScreen=1
 bCrossHairs=0
 fCameraFOV=100
 fCameraNearClip=0.01

@@ -6,6 +6,8 @@
 
 #include "core_save_load.h"
 
+#include "collision.h"
+
 btui64 tickCount_temp;
 
 namespace index
@@ -32,11 +34,13 @@ namespace index
 		viewpos = ENTITY(players[activePlayer])->t.position * -1.f;
 
 		Chara* chara = CHARA(players[activePlayer]);
-		#define h 1.6f + m::Lerp(resAniStep.height_start, resAniStep.height_end, aniLower.aniTime / resAniStep.time)
+		#ifdef DEF_3PP
+		graphics::SetMatViewEditor(&chara->t_head);
+		#else
 		cfg::bEditMode ?
 			graphics::SetMatViewEditor(&chara->t_head) :
 			graphics::SetMatView(&chara->t_head);
-		#undef h
+		#endif // DEF_3PP
 	}
 
 	m::Vector2 GetViewOffset()
@@ -154,7 +158,7 @@ namespace index
 					if (m::Length(pos1 - pos3) > 8.f && m::Length(pos2 - pos3) > 8.f) // Don't spawn too close to either player
 					//if (LOSCheck(ENTITY(players[0])->id, )) // Don't spawn too close to either player
 					{
-						if (m::Length(pos1 - pos3) < 16.f && m::Length(pos2 - pos3) < 16.f) // ..or too far away
+						if (m::Length(pos1 - pos3) < 64.f && m::Length(pos2 - pos3) < 64.f) // ..or too far away
 						{
 							//*
 							btf32 random = m::Random(0.f, 15.f);
@@ -176,6 +180,7 @@ namespace index
 
 	void Init()
 	{
+		CollisionInit();
 		IndexInitialize();
 
 		// Generate debug version display
@@ -241,8 +246,8 @@ namespace index
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
 				//players[0] = SpawnEntity(prefab::prefab_npc, m::Vector2(1023.f, 1022.f), 0.f);
-				CHARA(players[0])->faction = fac::faction::playerhunter;
-				CHARA(players[1])->faction = fac::faction::playerhunter;
+				//CHARA(players[0])->faction = fac::faction::playerhunter;
+				//CHARA(players[1])->faction = fac::faction::playerhunter;
 
 				/*
 				SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
@@ -283,6 +288,7 @@ namespace index
 	}
 	void End()
 	{
+		CollisionEnd();
 		ClearBuffers();
 	}
 
@@ -744,65 +750,6 @@ namespace index
 		#ifdef DEF_DRAW_WIREFRAME
 		graphics::SetRenderSolid();
 		#endif // DEF_DRAW_WIREFRAME
-
-		/*
-		m::Vector3 lightPos(ENTITY(activePlayer)->t.position.x, ENTITY(activePlayer)->t.height, ENTITY(activePlayer)->t.position.y);
-		m::Vector3 lightVecForw (-sunrot2.x, -sunrot2.y, -sunrot2.z);
-		m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 1.f, 0.f)));
-		m::Vector3 LightVecUp = m::Normalize(m::Cross(lightVecForw, LightVecSide));
-
-		btf32 moveF = roundf(m::Dot(lightVecForw, lightPos));
-		btf32 moveS = roundf(m::Dot(LightVecSide, lightPos));
-		btf32 moveU = roundf(m::Dot(LightVecUp, lightPos));
-		//btf32 moveF = (m::Dot(lightVecForw, lightPos));
-		//btf32 moveS = (m::Dot(LightVecSide, lightPos));
-		//btf32 moveU = (m::Dot(LightVecUp, lightPos));
-
-		lightPos = lightVecForw * moveF + LightVecSide * moveS + LightVecUp * moveU;
-
-		graphics::MatrixTransform(matrix, lightPos);
-		DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), SS_NORMAL, matrix);
-		//*/
-
-		// GRASS DRAWING TEST
-		/*
-		if (oob)
-		{
-			graphics::MatrixTransform(matrix, m::Vector3(1024, 128 / TERRAIN_HEIGHT_DIVISION, 1024.5));
-
-			//DrawMesh(0u, res::GetM(res::m_debug_sphere), res::GetT(res::t_meat_test), SS_NORMAL, matrix);
-			graphics::Shader* shd = &graphics::GetShader(graphics::S_MEAT);
-			// Enable the shader
-			shd->Use();
-			// Set matrices on shader
-			shd->setMat4("matp", graphics::GetMatProj());
-			shd->setMat4("matv", graphics::GetMatView());
-			shd->setMat4("matm", matrix);
-			// Render the mesh
-			res::GetM(res::m_debug_sphere).Draw(res::GetT(res::t_meat_test).glID, shd->ID);
-			graphics::MatrixTransform(matrix, m::Vector3(1024, 128 / TERRAIN_HEIGHT_DIVISION, 1023.5));
-			shd->setMat4("matm", matrix);
-			res::GetM(res::m_debug_sphere).Draw(res::GetT(res::t_meat_test).glID, shd->ID);
-		}
-		else
-		{
-			graphics::MatrixTransform(matrix, m::Vector3(1024, 21.75, 1024.5));
-
-			//DrawMesh(0u, res::GetM(res::m_debug_sphere), res::GetT(res::t_meat_test), SS_NORMAL, matrix);
-			graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID);
-			// Enable the shader
-			shd->Use();
-			// Set matrices on shader
-			shd->setMat4("matp", graphics::GetMatProj());
-			shd->setMat4("matv", graphics::GetMatView());
-			shd->setMat4("matm", matrix);
-			// Render the mesh
-			res::GetM(res::m_debug_sphere).Draw(res::GetT(res::t_meat_test).glID, shd->ID);
-			graphics::MatrixTransform(matrix, m::Vector3(1024, 21.6, 1023.5));
-			shd->setMat4("matm", matrix);
-			res::GetM(res::m_debug_sphere).Draw(res::GetT(res::t_meat_test).glID, shd->ID);
-		}
-		*/
 	}
 
 	void TickGUI()
@@ -986,7 +933,9 @@ namespace index
 		text_fps.Draw(&res::GetT(res::t_gui_font));
 	}
 
-	void SetInput(btID playerIndex, m::Vector2 input, btf32 rot_x, btf32 rot_y, bool atk, bool atk_hit, bool atk2, bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C)
+	void SetInput(btID playerIndex, m::Vector2 input, btf32 rot_x, btf32 rot_y,
+		bool atk, bool atk_hit, bool atk2,
+		bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C, bool crouch)
 	{
 		ACTOR(players[playerIndex])->input = input;
 		ACTOR(players[playerIndex])->viewYaw.Rotate(rot_x);
@@ -999,6 +948,7 @@ namespace index
 		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
 		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
 		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_CROUCH, crouch);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
@@ -1011,7 +961,7 @@ namespace index
 		cells[x][y].ents.remove(e);
 	}
 
-	void SpawnProjectile(fac::faction faction, m::Vector2 pos, btf32 height,
+	void SpawnProjectile(fac::faction faction, btID type, m::Vector2 pos, btf32 height,
 		float yaw, float pitch)
 	{
 		btID id = IndexSpawnProjectile();
@@ -1025,17 +975,22 @@ namespace index
 		proj[id].ttd = tickCount_temp + 60u;
 
 		proj[id].faction = faction;
+		proj[id].type = type;
 
-		//std::cout << "Spawned projectile at X" << pos.x << ", Y" << pos.y << ", H" << height << " On tick #" << tickCount_temp << std::endl;
-		//Sleep(100000);
+		// save check
+		if (acv::projectiles[type].saveOnHit)
+		{
+			SaveState();
+			printf("Projectile Save\n");
+		}
 	}
-	void SpawnProjectileSpread(fac::faction faction, m::Vector2 pos, btf32 height,
+	void SpawnProjectileSpread(fac::faction faction, btID type, m::Vector2 pos, btf32 height,
 		float yaw, float pitch, float spread)
 	{
 		yaw += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add horizontal spread
 		pitch += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add vertical spread
 
-		SpawnProjectile(faction, pos, height, yaw, pitch);
+		SpawnProjectile(faction, type, pos, height, yaw, pitch);
 	}
 
 	void DestroyProjectile(btID id)
@@ -1052,7 +1007,7 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = SpawnItem(item_template);
-		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemPtr(ITEM(id)->item_instance))->item_template]->f_radius;
+		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemPtr(ITEM(id)->item_instance))->id_item_template]->f_radius;
 		ENTITY(id)->height = 0.5f;
 		return id;
 	}
@@ -1079,7 +1034,7 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = itemid;
-		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemPtr(itemid))->item_template]->f_radius;
+		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemPtr(itemid))->id_item_template]->f_radius;
 		ENTITY(id)->height = 0.5f;
 		return id;
 	}
@@ -1114,7 +1069,7 @@ namespace index
 		if (id != BUF_NULL)
 		{
 			IndexInitItem(id, acv::item_types[item_template]);
-			GETITEM_MISC(id)->item_template = item_template;
+			GETITEM_MISC(id)->id_item_template = item_template;
 			std::cout << "Created item " << id << std::endl;
 		}
 		else
@@ -1131,7 +1086,7 @@ namespace index
 
 	void ActorCastProj(btID i)
 	{
-		SpawnProjectileSpread(ENTITY(i)->faction, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->t.yaw.Rad()) * 0.55f), ENTITY(i)->t.height, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
+		SpawnProjectileSpread(ENTITY(i)->faction, 0, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->t.yaw.Rad()) * 0.55f), ENTITY(i)->t.height, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
 	}
 
 	int cater_loop_index(int i)
@@ -1147,7 +1102,11 @@ namespace index
 
 	//-------------------------------- PROJECTILE FORWARD DECLARATION
 
-	bool ProjectileDoesIntersectEnv(btID id);
+	bool ProjectileCollideEnv(btID index)
+	{
+		return RayProjectile(proj[index].t.position_x, proj[index].t.position_h, proj[index].t.position_y,
+			proj[index].t.velocity_x, proj[index].t.velocity_h, proj[index].t.velocity_y);
+	}
 
 	//-------------------------------- PROJECTILE FUNCTIONS
 
@@ -1166,7 +1125,7 @@ namespace index
 					proj[index].t.position_y <= 1.f || proj[index].t.position_y >= WORLD_SIZE - 1)
 					DestroyProjectile(index);
 				// If it's time to die, or collided
-				if (tickCount_temp >= proj[index].ttd || ProjectileDoesIntersectEnv(index))
+				if (tickCount_temp >= proj[index].ttd || ProjectileCollideEnv(index))
 					DestroyProjectile(index);
 				else // Otherwise
 				{
@@ -1209,7 +1168,9 @@ namespace index
 				graphics::MatrixTransform(model, pos, m::Normalize(m::Vector3(proj[index].t.velocity_x, proj[index].t.velocity_h, proj[index].t.velocity_y)), m::Vector3(0, 1, 0));
 
 				// Draw projectile mesh
-				DrawMesh(ID_NULL, res::GetM(res::m_proj), res::GetT(res::t_proj), SS_NORMAL, model);
+				//DrawMesh(ID_NULL, res::GetM(res::m_proj), res::GetT(res::t_proj), SS_NORMAL, model);
+				DrawMesh(ID_NULL, res::GetM(acv::projectiles[proj[index].type].mesh),
+					res::GetT(acv::projectiles[proj[index].type].texture), SS_NORMAL, model);
 			}
 			if (stop)
 				break;
@@ -1230,7 +1191,7 @@ namespace index
 			if (block_proj.used[index])
 			{
 				//if (tickCount_temp >= proj[index].ttd || ProjectileDoesIntersectEnv(index)) // TTD already checked in Projectile Tick
-				if (ProjectileDoesIntersectEnv(index)) // If it's time to die
+				if (ProjectileCollideEnv(index)) // If it's time to die
 				{
 					DestroyProjectile(index);
 					btui16 x = (btui16)roundf(proj[index].t.position_x);
@@ -1337,22 +1298,5 @@ namespace index
 			else
 				index = cater_loop_index(index);
 		}
-	}
-
-	bool ProjectileDoesIntersectEnv(btID index)
-	{
-		int x = (int)roundf(proj[index].t.position_x);
-		int y = (int)roundf(proj[index].t.position_y);
-		if (env::Get(x, y, env::eflag::eIMPASSABLE)) // if hit an impassable tile
-			return true;
-
-		CellSpace csi;
-		GetCellSpaceInfo(m::Vector2(proj[index].t.position_x, proj[index].t.position_y), csi);
-		btf32 height;
-		env::GetHeight(height, csi);
-		if (proj[index].t.position_h < height) // if below the ground surface
-			return true;
-
-		return false;
 	}
 }

@@ -114,6 +114,7 @@ namespace input
 		ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
 		ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
 		ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
+		ScancodeTransfer[SDL_SCANCODE_LALT] = key::CROUCH;
 		ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
 		ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
 		ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;

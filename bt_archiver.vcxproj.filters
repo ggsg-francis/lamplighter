@@ -8,17 +8,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bt_archiver.cpp" />
-    <ClCompile Include="serializer.cpp" />
     <ClCompile Include="tga_reader.cpp" />
     <ClCompile Include="archive.cpp" />
     <ClCompile Include="graphics_convert.cpp" />
+    <ClCompile Include="archive_read_write.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="serializer.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="tga_reader.h" />
     <ClInclude Include="global-archiver.h" />
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="graphics_convert.h" />
+    <ClInclude Include="archive_read_write.h" />
   </ItemGroup>
 </Project>

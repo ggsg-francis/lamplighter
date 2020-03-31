@@ -1,5 +1,5 @@
 #include "archive.hpp"
-#include "serializer.h"
+#include "archive_read_write.h"
 #include "memory.hpp"
 
 // temp? for generating skin texture
@@ -72,7 +72,8 @@ namespace res
 
 namespace acv
 {
-	//items
+	// Contents
+
 	BaseItem* items[ITEMS_COUNT]{ nullptr };
 	ItemType item_types[ITEMS_COUNT];
 	btui32 item_index = 0;
@@ -83,14 +84,16 @@ namespace acv
 	Spell spells[SPELL_COUNT];
 	btui32 spell_index = 0;
 
-	EntityTemplate entt[ENTT_COUNT];
-	btui32 entt_index = 0;
+	ProjectileTemplate projectiles[PROJECTILE_TEMPLATE_COUNT];
+	btui32 projectiles_index;
 
-	// NEW STUFF !!!!!!!!!!!!!!!!!!!!!
+	ActorTemplate actor_templates[ENTT_COUNT];
+	btui32 actor_template_index = 0;
+
+	// Assets
 
 	archive_asset assets[FN_COUNT];
 	btui32 assetCount;
-
 
 	#ifndef DEF_ARCHIVER
 

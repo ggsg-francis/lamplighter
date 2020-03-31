@@ -143,7 +143,7 @@ void SaveState()
 		{
 			if (index::block_item.used[i])
 			{
-				fwrite(&GETITEM_MISC(i)->item_template, SIZE_16, 1, file);
+				fwrite(&GETITEM_MISC(i)->id_item_template, SIZE_16, 1, file);
 
 				switch (index::GetItemType(i))
 				{
@@ -245,7 +245,7 @@ void LoadStateFileV001()
 
 				index::IndexInitItem(i, acv::item_types[template_temp]);
 
-				GETITEM_MISC(i)->item_template = template_temp;
+				GETITEM_MISC(i)->id_item_template = template_temp;
 
 				switch (index::GetItemType(i))
 				{

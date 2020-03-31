@@ -118,28 +118,22 @@ tedg clamp
 **** CHARACTER MODELS
 item mshd
 **** body base step
-hndl MChrBody
+hndl MBodBase
 srca res_src/chr_body.fbx
 <<<<
 item mshd
 **** arm
-hndl MChrArm_
+hndl MArmBase
 srca res_src/chr_arm.fbx
 <<<<
 item mshd
 **** head
-hndl MChrHead
+hndl MHedBase
 srca res_src/chr_head.fbx
-<<<<
-item mshb
-**** leg
-hndl MChrLeg_
-srca res_src/char_leg_0.obj
-srcb res_src/char_leg_1.obj
 <<<<
 item mshd
 **** leg
-hndl MChrLeg2
+hndl MLegBase
 srca res_src/chr_leg.fbx
 <<<<
 **** EX1E AIR CARRIER
@@ -265,6 +259,12 @@ srca res_src/environment/terrain/t_marshmud_01.tga
 tfil linearmip
 tedg repeat
 <<<<
+item txtr
+hndl TTMarsh2
+srca res_src/environment/terrain/t_concrete_01.tga
+tfil linearmip
+tedg repeat
+<<<<
 **** GUI
 item txtr
 hndl TGUIcros
@@ -343,6 +343,10 @@ hndl TGodHamr
 srca res_src/wpn/wpn_godhammer.tga
 tfil linear
 tedg clamp
+<<<<
+item mesh
+hndl MSaveGun
+srca res_src/wpn/wpn_savegun.fbx
 <<<<
 item mesh
 hndl MRifleWp
@@ -451,7 +455,7 @@ tedg repeat
 <<<<
 item txtr
 hndl TTerQSnd
-srca res_src/environment/terrain/t_marshmud_01.tga
+srca res_src/environment/terrain/t_concrete_01.tga
 tfil linear
 tedg repeat
 <<<<
@@ -468,11 +472,11 @@ tedg clamp
 <<<<
 item mesh
 hndl MNFern01
-srca res_src/environment/nature/marsh_fern_01.obj
+srca res_src/environment/nature/marsh_tree_01.obj
 <<<<
 item txtr
 hndl TNFern01
-srca res_src/environment/nature/marsh_fern_01.tga
+srca res_src/environment/nature/marsh_foliage.tga
 tfil linear
 tedg clamp
 <<<<

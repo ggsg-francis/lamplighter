@@ -8,6 +8,8 @@
 #include "graphics.hpp"
 #include "archive.hpp"
 
+#include "collision.h"
+
 // TODO: temporary until 'draw x soso' is removed from this file
 //#include "objects.h"
 
@@ -185,16 +187,16 @@ namespace env
 	void DrawTerrain()
 	{
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
-			res::GetT(res::t_terrain_scorch), res::GetT(res::t_terrain_sanddirt),
-			res::GetT(res::t_terrain_marshmud), res::GetT(res::t_col_red),
+			res::GetT(res::t_terrain_01), res::GetT(res::t_terrain_02),
+			res::GetT(res::t_terrain_03), res::GetT(res::t_terrain_04),
 			graphics::Matrix4x4());
 	}
 	void DrawTerrainDebug()
 	{
 		graphics::Matrix4x4 matr;
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
-			res::GetT(res::t_terrain_scorch), res::GetT(res::t_terrain_sanddirt),
-			res::GetT(res::t_terrain_marshmud), res::GetT(res::t_col_red),
+			res::GetT(res::t_terrain_01), res::GetT(res::t_terrain_02),
+			res::GetT(res::t_terrain_03), res::GetT(res::t_terrain_04),
 			matr);
 		graphics::MatrixTransform(matr, m::Vector3(0.f, 0.01f, 0.f));
 		graphics::SetRenderWire();
@@ -300,5 +302,7 @@ namespace env
 	{
 		wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
 		wldMeshTerrain.ReBindGL();
+
+		CollisionMakeEnvMesh(&wldMeshTerrain);
 	}
 }

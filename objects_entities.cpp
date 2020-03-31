@@ -11,6 +11,9 @@
 
 #include "audio.hpp"
 
+#include "collision.h"
+
+
 graphics::GUIText text_inventory_temp;
 graphics::GUIBox guibox_selection;
 
@@ -39,7 +42,7 @@ void Inventory::Destroy(btID item_template)
 {
 	for (int i = 0; i < items.Size(); ++i)
 	{
-		if (GETITEM_MISC(items[i])->item_template == item_template) // if we already have a stack of this item
+		if (GETITEM_MISC(items[i])->id_item_template == item_template) // if we already have a stack of this item
 		{
 			DestroyIndex(i);
 			return;
@@ -74,9 +77,27 @@ btID Inventory::GetItemOfTemplate(btID item_template)
 	{
 		if (items.Used(i))
 		{
-			if (((HeldItem*)index::GetItemPtr(items[i]))->item_template == item_template) // if we have this item instance
+			if (((HeldItem*)index::GetItemPtr(items[i]))->id_item_template == item_template) // if we have this item instance
 			{
 				return items[i];
+			}
+		}
+	}
+	return ID_NULL;
+}
+btID Inventory::GetItemOfAmmunitionType(btui8 ammo_type)
+{
+	for (int i = 0; i < items.Size(); ++i)
+	{
+		if (items.Used(i))
+		{
+			if (index::GetItemType(items[i]) == ITEM_TYPE_CONS)
+			{
+				// TODO: again, this is the fucking worst, i mean jus look at it...
+				if (ammo_type == acv::projectiles[((acv::BaseItemCon*)acv::items[((HeldItem*)index::GetItemPtr(items[i]))->id_item_template])->id_projectile].ammunition_type)
+				{
+					return items[i];
+				}
 			}
 		}
 	}
@@ -97,9 +118,9 @@ void Inventory::Draw(btui16 active_slot)
 		if (items.Used(i))
 		{
 			if (i == active_slot)
-				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 30, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->id_item_template]->id_icon), offset + i * invspace, p1_y_start + 30, 64, 64);
 			else
-				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->id_item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
 		}
 	}
 	// Draw Count GUI on top
@@ -175,22 +196,31 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 		}
 		break;
 	default:
-		ent->t.height_velocity -= 0.006f; // Add gravity
-		env::GetHeight(eheight, ent->t.csi);
-		if (eheight > ent->t.height + ent->t.height_velocity)
+		if (!ent->grounded)
 		{
-			ent->t.height = eheight;
-			ent->t.height_velocity = 0.f;
-			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.f;
+			ent->t.height_velocity -= 0.006f; // Add gravity
+			env::GetHeight(eheight, ent->t.csi);
+			if (eheight > ent->t.height + ent->t.height_velocity)
+			{
+				ent->t.height = eheight;
+				ent->t.height_velocity = 0.f;
+				if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.f;
+			}
+			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
+			ent->slideVelocity *= 0.8f;
 		}
-		if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
-		ent->slideVelocity *= 0.8f;
+		else
+		{
+
+		}
 		ent->t.position += ent->t.velocity; // Apply velocity
 		ent->t.height += ent->t.height_velocity; // Apply velocity
 		break;
 	}
 
 	index::EntDeintersect(ent, ent->t.csi);
+	
+	CollideEntity(ent->id);
 }
 
 char* DisplayNameActor(void* ent)
@@ -201,7 +231,7 @@ char* DisplayNameActor(void* ent)
 char* DisplayNameRestingItem(void* ent)
 {
 	//return (char*)acv::items[GETITEM_MISC(((RestingItem*)index::GetEntityPtr(ent))->item_instance)->item_template]->name;
-	return (char*)acv::items[GETITEM_MISC(((RestingItem*)ent)->item_instance)->item_template]->name;
+	return (char*)acv::items[GETITEM_MISC(((RestingItem*)ent)->item_instance)->id_item_template]->name;
 };
 void DrawRestingItem(void* ent)
 {
@@ -212,12 +242,12 @@ void DrawRestingItem(void* ent)
 	{
 		graphics::GetShader(graphics::S_SOLID).Use();
 		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, false);
-		DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
+		DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, true);
 	}
 	else
 	{
-		DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->matrix);
+		DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 	}
 }
 m::Vector3 SetFootPos(m::Vector2 position)
@@ -341,7 +371,7 @@ void TickRestingItem(void* ent, btf32 dt)
 	}
 
 	chr->matrix = graphics::Matrix4x4();
-	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)index::GetItemPtr(chr->item_instance))->item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
+	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)index::GetItemPtr(chr->item_instance))->id_item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
 
 	EntityTransformTick(chr, chr->id, 0.f, 0.f, 0.f);
 }
@@ -355,13 +385,13 @@ void Actor::TakeItem(btID id)
 	if (index::players[0] == this->id)
 	{
 		char string[64] = "Picked up ";
-		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->item_template]->name);
+		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->id_item_template]->name);
 		index::GUISetMessag(0, string);
 	}
 	else if (index::players[1] == this->id)
 	{
 		char string[64] = "Picked up ";
-		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->item_template]->name);
+		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->id_item_template]->name);
 		index::GUISetMessag(1, string);
 	}
 }
@@ -429,20 +459,21 @@ void TickChara(void* ent, btf32 dt)
 {
 	Chara* chr = (Chara*)ent;
 
+	if (chr->inputBV.get(Actor::IN_CROUCH))
+	{
+		chr->aniCrouch = !chr->aniCrouch;
+	}
+
+	if (chr->aniCrouch)
+		chr->grounded = RayEntity(chr->id, 0.3f);
+	else
+		chr->grounded = RayEntity(chr->id, 0.6f);
+
 	#define t_body chr->t_body
 	#define viewYaw chr->viewYaw
 	#define speed chr->speed
 	#define inventory chr->inventory
 	#define inv_active_slot chr->inv_active_slot
-	#define matLegHipR chr->matLegHipR
-	#define matLegUpR chr->matLegUpR
-	#define matLegLoR chr->matLegLoR
-	#define matLegFootR chr->matLegFootR
-	#define matLegHipL chr->matLegHipL
-	#define matLegUpL chr->matLegUpL
-	#define matLegLoL chr->matLegLoL
-	#define matLegFootL chr->matLegFootL
-	#define t_skin chr->t_skin
 	#define viewPitch chr->viewPitch
 	#define foot_state chr->foot_state
 	#define footPosTargR chr->footPosTargR
@@ -451,7 +482,6 @@ void TickChara(void* ent, btf32 dt)
 	#define t_head chr->t_head
 	#define state chr->state
 	#define input chr->input
-	//#define moving chr->moving
 	#define csi chr->t.csi
 	#define aiControlled chr->aiControlled
 	#define atk_target chr->atk_target
@@ -465,6 +495,7 @@ void TickChara(void* ent, btf32 dt)
 		can_turn = !HELDINSTANCE->fpBlockTurn(inventory.items[inv_active_slot]);
 		#undef HELDINSTANCE
 	}
+	//if (!chr->grounded) can_move = false;
 
 	if (state.stateFlags.get(ActiveState::eDIED_REPORT))
 	{
@@ -473,27 +504,24 @@ void TickChara(void* ent, btf32 dt)
 	}
 	if (state.stateFlags.get(ActiveState::eALIVE))
 	{
-		if (cfg::bEditMode)
-		{
-			//ENTITY[index]->chr->t.velocity = fw::Lerp(ENTITY[index]->chr->t.velocity, fw::Rotate(f2Input, aViewYaw.Rad()) * fw::Vector2(-1.f, 1.f) * dt * fSpeed, 0.3f);
-			input.x = -input.x;
-			chr->t. velocity = m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * 5.f;
-		}
-		else
+		if (chr->grounded)
 		{
 			if (can_move)
 			{
 				input.x = -input.x;
-				chr->t. velocity = m::Lerp(chr->t. velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed, 0.2f);
+				if (!chr->aniCrouch)
+					chr->t.velocity = m::Lerp(chr->t.velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed, 0.2f);
+				else
+					chr->t.velocity = m::Lerp(chr->t.velocity, m::Rotate(input, viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * speed * 0.5f, 0.2f);
 			}
 			else
 			{
 				input = m::Vector2(0.f, 0.f);
-				chr->t. velocity = m::Lerp(chr->t.velocity, m::Vector2(0.f, 0.f), 0.2f);
+				chr->t.velocity = m::Lerp(chr->t.velocity, m::Vector2(0.f, 0.f), 0.2f);
 			}
-			if (can_turn && abs(m::AngDif(chr->t.yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
-				chr->t.yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
 		}
+		if (can_turn && abs(m::AngDif(chr->t.yaw.Deg(), viewYaw.Deg())) > 65.f || m::Length(input) > 0.2f)
+			chr->t.yaw.RotateTowards(viewYaw.Deg(), 8.f); // Rotate body towards the target direction
 
 		//-------------------------------- APPLY MOVEMENT
 
@@ -525,10 +553,14 @@ void TickChara(void* ent, btf32 dt)
 		t_body = Transform3D();
 		t_head = Transform3D();
 
-		t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.6f - (m::Length(chr->slideVelocity) * 0.5f), chr->t.position.y));
+		//t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.6f - (m::Length(chr->slideVelocity) * 0.5f), chr->t.position.y));
+		t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height- (m::Length(chr->slideVelocity) * 0.5f), chr->t.position.y));
 		t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 
-		ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
+		if (!chr->aniCrouch)
+			ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
+		else 
+			ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f) + m::Vector2(0.f, 20.f), 0.25f);
 
 		t_body.Rotate(glm::radians(ani_body_lean.y), m::Vector3(1, 0, 0));
 		t_body.Rotate(glm::radians(ani_body_lean.x), m::Vector3(0, 0, 1));
@@ -537,7 +569,11 @@ void TickChara(void* ent, btf32 dt)
 		t_head.SetPosition(t_body.GetPosition());
 		t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
 		t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
-		t_head.Translate(t_body.GetUp() * 0.7f);
+		//t_head.Translate(t_body.GetUp() * 0.7f);
+		if (!chr->aniCrouch)
+			t_head.Translate(t_body.GetUp() * 0.63f);
+		else
+			t_head.Translate(t_body.GetUp() * 0.5f);
 		t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
 
 		//-------------------------------- HANDLE ANIMATION
@@ -557,14 +593,11 @@ void TickChara(void* ent, btf32 dt)
 		t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 		t_body.Rotate(glm::radians(90.f), m::Vector3(1, 0, 0));
 
-		ani_body_lean = m::Lerp(ani_body_lean, input * m::Vector2(8.f, 15.f), 0.25f);
-
 		// Set head transform
 		t_head.SetPosition(t_body.GetPosition());
 		t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
 		//t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
-		t_head.Translate(t_body.GetUp() * 0.7f);
-		//t_head.SetScale(m::Vector3(0.8f, 0.8f, 0.8f));
+		t_head.Translate(t_body.GetUp() * 0.65f);
 	}
 	#undef t_body
 	#undef viewYaw
@@ -572,15 +605,6 @@ void TickChara(void* ent, btf32 dt)
 	#undef speed
 	#undef inventory
 	#undef inv_active_slot
-	#undef matLegHipR
-	#undef matLegUpR
-	#undef matLegLoR
-	#undef matLegFootR
-	#undef matLegHipL
-	#undef matLegUpL
-	#undef matLegLoL
-	#undef matLegFootL
-	#undef t_skin
 	#undef viewPitch
 	#undef foot_state
 	#undef footPosTargR
@@ -589,16 +613,18 @@ void TickChara(void* ent, btf32 dt)
 	#undef t_head
 	#undef state
 	#undef input
-	#undef moving
 	#undef csi
 	#undef aiControlled
 	#undef atk_target
 }
 void DrawChara(void* ent)
 {
-	#define leglen 0.75f
+	//#define leglen 0.75f
+	#define leglen 0.625f
+	#define armlen 0.75f
 	// leg disconnect length? not sure
-	#define legDClen 0.85f
+	//#define legDClen 0.85f
+	#define legDClen 0.675f
 	//#define legDClen 0.75f
 	//#define velocityStepMult 0.5f
 	#define velocityStepMult 10.f
@@ -619,7 +645,6 @@ void DrawChara(void* ent)
 	#define matLegUpL chr->matLegUpL
 	#define matLegLoL chr->matLegLoL
 	#define matLegFootL chr->matLegFootL
-	#define t_skin chr->t_skin
 	#define viewPitch chr->viewPitch
 	#define foot_state chr->foot_state
 	#define footPosTargR chr->footPosTargR
@@ -632,14 +657,16 @@ void DrawChara(void* ent)
 
 	btf32 lerpAmt = 0.05f * speed;
 
-	// draw arms
+	//-------------------------------- DRAW ARMS
 
 	graphics::Matrix4x4 matrix;
 
 	m::Vector3 newpos2 = t_body.GetPosition() + t_upperbody.GetUp() * 0.55f;
+	
+	btf32 shoulder_width = 0.16f;
 
-	m::Vector3 jointPosR = newpos2 + t_upperbody.GetRight() * 0.11f;
-	m::Vector3 jointPosL = newpos2 + t_upperbody.GetRight() * -0.11f;
+	m::Vector3 jointPosR = newpos2 + t_upperbody.GetRight() * shoulder_width;
+	m::Vector3 jointPosL = newpos2 + t_upperbody.GetRight() * -shoulder_width;
 
 	btf32 distR;
 	btf32 distL;
@@ -651,47 +678,48 @@ void DrawChara(void* ent)
 
 	if (inventory.items.Used(inv_active_slot))
 	{
-		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
+		HeldItem* heldItem = ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]));
 
 		// draw item
-		HELDINSTANCE->fpDraw(inventory.items[inv_active_slot], GETITEM_MISC(inventory.items[inv_active_slot])->item_template, t.position, t.height, viewYaw, viewPitch);
+		heldItem->fpDraw(inventory.items[inv_active_slot],
+			GETITEM_MISC(inventory.items[inv_active_slot])->id_item_template,
+			t.position, t.height + 0.3f, viewYaw, viewPitch);
 
-		m::Vector3 handPosR = HELDINSTANCE->fpGetRightHandPos(inventory.items[inv_active_slot]);
-		m::Vector3 handPosL = HELDINSTANCE->fpGetLeftHandPos(inventory.items[inv_active_slot]);
+		m::Vector3 handPosR = heldItem->fpGetRightHandPos(inventory.items[inv_active_slot]);
+		m::Vector3 handPosL = heldItem->fpGetLeftHandPos(inventory.items[inv_active_slot]);
 
 		m::Vector3 bodyForwardR = m::Normalize((t_upperbody.GetRight() * -1.f) + t_upperbody.GetUp() + t_upperbody.GetForward());
 		m::Vector3 bodyForwardL = m::Normalize(t_upperbody.GetRight() + t_upperbody.GetUp() + t_upperbody.GetForward());
 
+		// arm 1
 		btf32 len = m::Length(jointPosR - handPosR);
-		if (len > leglen) len = leglen;
-		btf32 lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
+		if (len > armlen) len = armlen;
+		btf32 lenUp = sqrtf(armlen * armlen - len * len); // Pythagorean theorem
 		m::Vector3 vecfw = m::Normalize(handPosR - jointPosR);
 		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, bodyForwardR));
 		m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
-		graphics::MatrixTransformXFlip(matLegHipR, jointPosR, t_body.GetUp() * -1.f, vecup);
-		graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len + vecup * lenUp), vecup);
-		graphics::MatrixTransformXFlip(matLegLoR, jointPosR + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
-		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup);
-		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::GetT(t_skin), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
-		graphics::SetFrontFace();
-
+		graphics::MatrixTransform(matLegHipR, jointPosR, t_body.GetUp() * -1.f, vecup);
+		graphics::MatrixTransform(matLegUpR, jointPosR, m::Normalize(vecfw * len + vecup * lenUp), vecup);
+		graphics::MatrixTransform(matLegLoR, jointPosR + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
+		graphics::MatrixTransform(matLegFootR, jointPosR - vecfw * (armlen - len), vecfw, vecup);
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::GetT(chr->t_skin), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+		// arm 2
 		len = m::Length(jointPosL - handPosL);
-		if (len > leglen) len = leglen;
-		lenUp = sqrtf(leglen * leglen - len * len); // Pythagorean theorem
+		if (len > armlen) len = armlen;
+		lenUp = sqrtf(armlen * armlen - len * len); // Pythagorean theorem
 		vecfw = m::Normalize(handPosL - jointPosL);
 		vecside = m::Normalize(m::Cross(vecfw, bodyForwardL));
 		vecup = m::Normalize(m::Cross(vecfw, vecside));
-		graphics::MatrixTransform(matLegHipL, jointPosL, t_body.GetUp() * -1.f, vecup);
-		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len + vecup * lenUp), vecup);
-		graphics::MatrixTransform(matLegLoL, jointPosL + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
-		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup);
-		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::GetT(t_skin), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
-
-		#undef HELDINSTANCE
+		graphics::MatrixTransformXFlip(matLegHipL, jointPosL, t_body.GetUp() * -1.f, vecup);
+		graphics::MatrixTransformXFlip(matLegUpL, jointPosL, m::Normalize(vecfw * len + vecup * lenUp), vecup);
+		graphics::MatrixTransformXFlip(matLegLoL, jointPosL + vecup * lenUp, m::Normalize(vecfw * len - vecup * lenUp), vecup);
+		graphics::MatrixTransformXFlip(matLegFootL, jointPosL - vecfw * (armlen - len), vecfw, vecup);
+		graphics::SetFrontFaceInverse();
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_arm), res::GetT(chr->t_skin), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+		graphics::SetFrontFace();
 	}
 
-	// draw legs
+	//-------------------------------- DRAW LEGS
 
 	if (chr->state.stateFlags.get(ActiveState::eALIVE))
 	{
@@ -708,7 +736,6 @@ void DrawChara(void* ent)
 		m::Vector2 right = m::Vector2(t_body.GetRight().x, t_body.GetRight().z);
 
 		// TODO: instead measure difference between base velocity and footslide velocity
-		//btf32 velocityAmt = m::Length(t.velocity);
 		btf32 velocityAmt = m::Length(t.velocity - chr->slideVelocity);
 
 		if (foot_state == eL_DOWN)
@@ -725,7 +752,7 @@ void DrawChara(void* ent)
 					foot_state = eR_DOWN;
 				}
 			}
-			// if too far off balance
+			// else if too far off balance
 			else if (m::Length(jointPosL - footPosTargL) > legDClen && chr->aniStepAmountL == 1.f)
 			{
 				chr->footPosL = footPosTargL;
@@ -748,7 +775,7 @@ void DrawChara(void* ent)
 					foot_state = eL_DOWN;
 				}
 			}
-			// if too far off balance
+			// else if too far off balance
 			else if (m::Length(jointPosR - footPosTargR) > legDClen && chr->aniStepAmountR == 1.f)
 			{
 				chr->footPosR = footPosTargR;
@@ -758,19 +785,21 @@ void DrawChara(void* ent)
 			}
 		}
 
+		btf32 myspeed = m::Length(t.velocity);
+
 		// set step positions
-		chr->aniStepAmountL += 0.04f;
+		btf32 anispeed = 0.4f * myspeed;
+		if (anispeed < 0.018f) anispeed = 0.018f;
+
+		chr->aniStepAmountL += anispeed;
 		if (chr->aniStepAmountL > 1.f)
-		{
 			chr->aniStepAmountL = 1.f;
-		}
-		chr->aniStepAmountR += 0.04f;
+		chr->aniStepAmountR += anispeed;
 		if (chr->aniStepAmountR > 1.f)
-		{
 			chr->aniStepAmountR = 1.f;
-		}
-		btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountL * 2.f - 1.f);
-		btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 3.f, chr->aniStepAmountR * 2.f - 1.f);
+
+		btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 6.f, chr->aniStepAmountL * 2.f - 1.f);
+		btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 6.f, chr->aniStepAmountR * 2.f - 1.f);
 
 		m::Vector3 fpCurrentL = m::Lerp(chr->footPosL, footPosTargL, chr->aniStepAmountL) + m::Vector3(0.f, fpHeightL, 0.f);
 		m::Vector3 fpCurrentR = m::Lerp(chr->footPosR, footPosTargR, chr->aniStepAmountR) + m::Vector3(0.f, fpHeightR, 0.f);
@@ -783,16 +812,16 @@ void DrawChara(void* ent)
 		m::Vector3 vecfw = m::Normalize(fpCurrentR - jointPosR);
 		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
 		m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
-		m::Vector3 vecup2 = vecup * -1.f;
-		graphics::MatrixTransformXFlip(matLegHipR, jointPosR, t_body.GetUp() * -1.f, vecup2);
-		graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
-		graphics::MatrixTransformXFlip(matLegLoR, jointPosR - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
-		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup2);
+		m::Vector3 vecup_inv = vecup * -1.f;
+		graphics::MatrixTransformXFlip(matLegHipR, jointPosR, t_body.GetUp() * -1.f, vecup_inv);
+		graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len - vecup * lenUp), vecup_inv);
+		graphics::MatrixTransformXFlip(matLegLoR, jointPosR - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup_inv);
+		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (leglen - len), vecfw, vecup_inv);
 		graphics::SetFrontFaceInverse();
 		#ifdef DEF_NMP
 		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(t_skin), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 		#else
-		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_NORMAL, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 		#endif
 		graphics::SetFrontFace();
 		// transform legR for cloak
@@ -805,16 +834,16 @@ void DrawChara(void* ent)
 		vecfw = m::Normalize(fpCurrentL - jointPosL);
 		vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
 		vecup = m::Normalize(m::Cross(vecfw, vecside));
-		vecup2 = vecup * -1.f;
-		graphics::MatrixTransform(matLegHipL, jointPosL, t_body.GetUp() * -1.f, vecup2);
-		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len - vecup * lenUp), vecup2);
-		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup2);
-		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup2);
+		vecup_inv = vecup * -1.f;
+		graphics::MatrixTransform(matLegHipL, jointPosL, t_body.GetUp() * -1.f, vecup_inv);
+		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len - vecup * lenUp), vecup_inv);
+		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup_inv);
+		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (leglen - len), vecfw, vecup_inv);
 		//graphics::MatrixTransform(matLegFootL, fpCurrentL - m::Vector3(0.f, leglen, 0.f), m::Vector3(0.f, 1.f, 0.f), m::Vector3(1.f, 0.f, 0.f));
 		#ifdef DEF_NMP
 		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(t_skin), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 		#else
-		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_CHARA, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(chr->id, res::GetMD(res::md_char_leg), res::GetT(res::t_equip_legs_robe_01), SS_NORMAL, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 		#endif
 		// transform legL for cloak
 		//graphics::MatrixTransformForwardUp(matrixLegL, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp * 0.5f), t_body.GetForward());
@@ -822,32 +851,45 @@ void DrawChara(void* ent)
 
 	}
 
-	// draw head
+	//-------------------------------- DRAW BODY
 
-	//DrawBlendMeshAtTransform(index, res::mb_char_head, 0, t_skin, graphics::shader_blend, t_head);
-	//DrawBlendMesh(chr->id, res::GetMB(res::mb_char_head), 0, res::GetT(t_skin), SS_CHARA, t_head.getMatrix());
-	//DrawMesh(chr->id, res::GetM(res::m_char_head), res::GetT(t_skin), SS_CHARA, t_head.getMatrix());
+	{ // scope
+		#define bodylen 0.65
+
+		graphics::Matrix4x4 matBodyUp;
+		graphics::Matrix4x4 matBodyLo;
+
+		btf32 len = m::Length(t_body.GetPosition() - t_head.GetPosition());
+		if (len > bodylen) len = bodylen;
+		btf32 lenUp = sqrtf(bodylen * bodylen - len * len); // Pythagorean theorem
+		m::Vector3 vecfw = m::Normalize(t_body.GetPosition() - t_head.GetPosition());
+		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, t_body.GetForward()));
+		m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
+		m::Vector3 vecside_upper = m::Normalize(m::Cross(vecfw, t_head.GetForward()));
+		m::Vector3 vecup_upper = m::Normalize(m::Cross(vecfw, vecside_upper));
+		graphics::MatrixTransformForwardUp(matBodyLo, t_body.GetPosition(), m::Normalize(vecfw * len - vecup * lenUp), vecup * -1.f);
+		graphics::MatrixTransformForwardUp(matBodyUp, t_body.GetPosition() + vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup_upper * -1.f);
+
+		DrawMeshDeform(chr->id, res::GetMD(res::md_chr_body), res::GetT(chr->t_skin), SS_CHARA, 2u,
+			matBodyLo, matBodyUp, graphics::Matrix4x4(), graphics::Matrix4x4());
+
+		#ifndef DEF_NMP
+		if (chr->state.stateFlags.get(ActiveState::eALIVE))
+		{
+			//DrawMeshDeform(chr->id, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_NORMAL, 4u,
+				//matBodyLo, matBodyUp, matLegUpL, matLegUpR);
+		}
+		#endif
+	}
+
+	//-------------------------------- DRAW HEAD
 
 	Transform3D t2;
 	t2.SetPosition(t_body.GetPosition());
 	t2.SetRotation(t_upperbody.GetRotation());
 	t2.TranslateLocal(m::Vector3(0.f, 0.7f, 0.f));
-	DrawMeshDeform(chr->id, res::GetMD(res::md_char_head), res::GetT(t_skin), SS_CHARA, 4u,
+	DrawMeshDeform(chr->id, res::GetMD(res::md_char_head), res::GetT(chr->t_skin), SS_CHARA, 4u,
 		t2.getMatrix(), t_head.getMatrix(), t_head.getMatrix(), t_head.getMatrix());
-
-	//DrawMeshAtTransform(index, res::m_proj_2, res::t_proj_2, graphics::shader_solid, t_head);
-	//DrawMesh(index, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_default), SS_NORMAL, t_head.getMatrix());
-
-	// need a good way of knowing own index
-	DrawMeshDeform(chr->id, res::GetMD(res::md_chr_body), res::GetT(t_skin), SS_CHARA, 2u,
-		t_body.getMatrix(), t_upperbody.getMatrix(), graphics::Matrix4x4(), graphics::Matrix4x4());
-	#ifndef DEF_NMP
-	if (chr->state.stateFlags.get(ActiveState::eALIVE))
-	{
-		DrawMeshDeform(chr->id, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_CHARA, 4u,
-			t_body.getMatrix(), t_upperbody.getMatrix(), matLegUpL, matLegUpR);
-	}
-	#endif
 
 	#undef t_body
 	#undef viewYaw
@@ -863,7 +905,6 @@ void DrawChara(void* ent)
 	#undef matLegUpL
 	#undef matLegLoL
 	#undef matLegFootL
-	#undef t_skin
 	#undef viewPitch
 	#undef foot_state
 	#undef footPosTargR

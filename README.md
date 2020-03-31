@@ -6,8 +6,6 @@ Below is the expected folder layout:
 
 libraries/
 	include/
-		zlib/
-			... (zlib headers)
 		SDL2/
 			... (SDL headers)
 	lib/

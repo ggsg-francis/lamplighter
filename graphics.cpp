@@ -823,49 +823,6 @@ namespace graphics
 		SetEdgeMode[edge_mode]();
 	}
 
-	/*
-	void Texture::LoadFile(char * fn)
-	{
-	glGenTextures(1, &glID);
-
-	FILE *file = fopen(fn, "rb"); // Open the file
-	if (file)
-	{
-	// Seek the beginning of the file
-	fseek(file, 0, SEEK_SET);
-	// Read version
-	version_t v;
-	fread(&v, sizeof(version_t), 1, file);
-	TextureFilterMode fm;
-	TextureEdgeMode em;
-	fread(&fm, 1, 1, file);
-	fread(&em, 1, 1, file);
-	// Read dimensions
-	fread(&width, sizeof(btui16), 1, file);
-	fread(&height, sizeof(btui16), 1, file);
-	// Read pixel buffer
-	graphics::colour* buffer = new colour[width * height];
-	fread(buffer, sizeof(graphics::colour), width * height, file);
-
-	fclose(file);
-
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, glID);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-
-	#ifdef DEF_OLDSKOOL
-	SetFilterMode[TextureFilterMode::eNEAREST]();
-	#else
-	SetFilterMode[fm]();
-	#endif
-	SetEdgeMode[em]();
-
-	delete[] buffer;
-	}
-	}
-	*/
-
 	void Texture::LoadFile(char * fn)
 	{
 		glGenTextures(1, &glID);

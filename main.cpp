@@ -59,7 +59,6 @@
 #include "audio.hpp"
 #include "core.h"
 #include "weather.h"
-#include "time.hpp"
 #include "test_zone.h"
 
 //-------------------------------- WINDOWING GLOBAL VARIABLES
@@ -174,7 +173,8 @@ inline void TranslateInput()
 		false,
 		input::GetHit(input::key::ACTION_A),
 		input::GetHit(input::key::ACTION_B),
-		input::GetHit(input::key::ACTION_C));
+		input::GetHit(input::key::ACTION_C),
+		input::GetHit(input::key::CROUCH));
 	if (cfg::bSplitScreen)
 	{
 		// Generate analogue input from joystick input
@@ -190,7 +190,8 @@ inline void TranslateInput()
 			false,
 			input::GetHit(input::key::C_ACTION_A),
 			input::GetHit(input::key::C_ACTION_B),
-			input::GetHit(input::key::C_ACTION_C));
+			input::GetHit(input::key::C_ACTION_C),
+			input::GetHit(input::key::CROUCH));
 	}
 	#endif
 }
@@ -227,7 +228,8 @@ inline void TranslateInputEditor()
 			false,
 			input::GetHit(input::key::ACTION_A),
 			input::GetHit(input::key::ACTION_B),
-			input::GetHit(input::key::ACTION_C)); // 3rd 'aim' variable was here
+			input::GetHit(input::key::ACTION_C),
+			input::GetHeld(input::key::CROUCH)); // 3rd 'aim' variable was here
 
 		//do stuff
 		index::Tick(FRAME_TIME);
@@ -427,9 +429,9 @@ updtime:
 			current_frame_time = (btf64)SDL_GetTicks() / 1000.;
 		}
 		next_frame_time = current_frame_time + FRAME_TIME;
-		Time::Update(current_frame_time);
 
-		aud::Update(Time::deltaTime);
+		//aud::Update(Time::deltaTime);
+		aud::Update(FRAME_TIME);
 
 		#else
 		// Just run the new frame now
@@ -456,7 +458,6 @@ updtime:
 		#endif
 
 		// If we reach this point, its time to run the tick
-		Time::Step();
 		#ifdef DEF_NMP
 		input::CycleBuffers();
 		// Quit if any player quits
@@ -620,7 +621,7 @@ render:
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
-	index::DrawPostDraw(Time::deltaTick);
+	index::DrawPostDraw(FRAME_TIME);
 
 	glFrontFace(GL_CCW);
 
@@ -649,7 +650,7 @@ loop_editor:
 	printf("Entered Editor Loop\n");
 	while (true)
 	{
-		Time::Update((btf64)SDL_GetTicks() / 1000.);
+		//Time::Update((btf64)SDL_GetTicks() / 1000.);
 
 		input::ClearHitsAndDelta();
 		while (SDL_PollEvent(&e)) input::UpdateInput(&e);

@@ -110,7 +110,24 @@ eidt 0
 edrt 1000.0
 emgt 1
 <<<<
+PROJ proj
+hndl ProjSlug
+pdam 250
+psav 0
+atyp b
+srcm Mprjctil
+srct Tprjctil
+<<<<
+PROJ proj
+hndl ProjSave
+pdam 10000
+psav 1
+atyp a
+srcm Mprjctil
+srct Tprjctil
+<<<<
 ITEM wgun
+hndl CwpnLnam
 name Coolweapon Longname
 radi 1.0
 mdlh 0.2
@@ -120,8 +137,10 @@ held twohandpierce
 srcm Mmatchlc
 srct Tmatchlc
 icon TIcoMtch
+atyp b
 <<<<
 ITEM misc
+hndl beachbal
 name Beachball
 radi 0.5
 mdlh 0.5
@@ -132,6 +151,7 @@ srct TdebugBB
 icon TIcoBBal
 <<<<
 ITEM cons
+hndl mushroom
 name Mushroom (Drugs)
 radi 0.05
 mdlh 0.0
@@ -143,6 +163,7 @@ icon T_______
 cspl SpelMush
 <<<<
 ITEM wmgc
+hndl SpBkHeal
 name Spellbook Heal Self
 radi 0.25
 mdlh 0.07
@@ -153,6 +174,7 @@ srct TSBHealS
 icon TdebugBB
 <<<<
 ITEM wmel
+hndl UranFist
 name Uranium Fist
 radi 0.5
 mdlh 0.1
@@ -167,6 +189,7 @@ srct TUraFist
 icon TIcoMtch
 <<<<
 ITEM wmel
+hndl God_Hamr
 name Shining Great Hammer of God
 radi 0.5
 mdlh 0.5
@@ -181,6 +204,7 @@ srct TGodHamr
 icon TGodHamr
 <<<<
 ITEM wgun
+hndl longsmig
 name Long Smig
 radi 0.5
 mdlh 0.2
@@ -190,8 +214,10 @@ held twohandpierce
 srcm MRifleWp
 srct TRifleWp
 icon TIcoMtch
+atyp b
 <<<<
 ITEM cons
+hndl sc_sandw
 name Shit & Cum Sandwich
 radi 0.2
 mdlh 0.05
@@ -203,6 +229,7 @@ icon TSCSandw
 cspl SpelSCSw
 <<<<
 ITEM cons
+hndl magazine
 name Magazine
 radi 0.05
 mdlh 0.12
@@ -212,8 +239,10 @@ srcm MRiflMag
 srct TRifleWp
 icon TIcoMMag
 cspl SpelLead
+cprj ProjSlug
 <<<<
 ITEM cons
+hndl testtest
 name The Crime Minister
 radi 0.2
 mdlh 0.05
@@ -224,8 +253,47 @@ srct TSCSandw
 icon TSCSandw
 cspl SpelSCSw
 <<<<
-ENTT entt
-hndl EntEodor
+ITEM wgun
+hndl savegun_
+name Possibility Splitter
+radi 0.5
+mdlh 0.2
+wght 1.1
+muns 123456
+held twohandpierce
+srcm MSaveGun
+srct TRifleWp
+icon TIcoMtch
+atyp a
+<<<<
+ITEM cons
+hndl mag_save
+name Splitter Slug Canister
+radi 0.05
+mdlh 0.12
+wght 0.1
+muns 10
+srcm MRiflMag
+srct TRifleWp
+icon TIcoMMag
+cspl SpelLead
+cprj ProjSave
+<<<<
+ITEM wgun
+hndl blunderb
+name Blunderbuss
+radi 0.5
+mdlh 0.2
+wght 1.1
+muns 123456
+held twohandpierce
+srcm MRifleWp
+srct TRifleWp
+icon TIcoMtch
+atyp b
+<<<<
+ACTT actt
+hndl ActEodor
 srcm head MChrHead
 srcm body MChrBody
 srcm larm MChrArm_

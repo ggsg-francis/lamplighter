@@ -250,7 +250,7 @@
     <ClCompile Include="archive.cpp" />
     <ClCompile Include="bt_archiver.cpp" />
     <ClCompile Include="graphics_convert.cpp" />
-    <ClCompile Include="serializer.cpp" />
+    <ClCompile Include="archive_read_write.cpp" />
     <ClCompile Include="tga_reader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -258,7 +258,7 @@
     <ClInclude Include="global-archiver.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="graphics_convert.h" />
-    <ClInclude Include="serializer.h" />
+    <ClInclude Include="archive_read_write.h" />
     <ClInclude Include="tga_reader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

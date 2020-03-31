@@ -8,21 +8,19 @@
 
 //#define DEF_OLDSKOOL // Use old rendering settings (nearest neighbor filtering, etc.
 //#define DEF_DEBUG_DISPLAY // Draw debug information
-//#define DEF_MULTISAMPLE // TODO: why does this make my deform meshes invisible lol
+//#define DEF_MULTISAMPLE // TODO: chara shader doesnt work with multisampling for, er, some reason?
 #define DEF_MULTISAMPLE_DEPTH 4
 #define DEF_HDR
 //#define DEF_LINEAR_FB
 //#define DEF_DRAW_WIREFRAME
 #define DEF_SMOOTH_FRAMERATE // Run the CPU a little hotter to make sure the framerate is as smooth as possible
-// use cute sound
-#define DEF_USE_CS
-//#ifndef DEF_NMP
-//#define DEF_AUTO_RELOAD_ON_DEATH
+#define DEF_USE_CS // Use cute sound
+#define DEF_AUTO_RELOAD_ON_DEATH
 //#define DEF_SPAWN_ON_START
-#define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
+//#define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
 //#define DEF_AUTOSAVE_ON_START // temporary definition that enables autosave
 //#define DEF_TERRAIN_USE_EROSION_TRIANGULATION
-//#endif
+//#define DEF_3PP // Use third person perspective (for the purpose of testing the entity animation quality)
 
 #ifdef DEF_NMP
 #define NUM_PLAYERS 2

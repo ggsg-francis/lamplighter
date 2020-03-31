@@ -32,6 +32,7 @@ public:
 	void TransferItemSend(btID ITEM_ID);
 	//btID GetItemOfType(ItemType TYPE);
 	btID GetItemOfTemplate(btID ITEM_TEMPLATE);
+	btID GetItemOfAmmunitionType(btui8 AMMO_TYPE);
 	void Draw(btui16 ACTIVE_SLOT);
 };
 
@@ -164,6 +165,7 @@ struct Entity
 	Transform2D t;
 	// foot slide for slippery surfaces / knockback etc.
 	m::Vector2 slideVelocity;
+	bool grounded = true;
 };
 // Entity type representing placed items
 struct RestingItem : public Entity
@@ -173,7 +175,7 @@ struct RestingItem : public Entity
 };
 struct Actor : public Entity
 {
-	enum ActorInput : btui8
+	enum ActorInput : btui16
 	{
 		IN_RUN = 0x1ui8 << 0x0ui8,
 		IN_AIM = 0x1ui8 << 0x1ui8,
@@ -183,6 +185,7 @@ struct Actor : public Entity
 		IN_ACTN_A = 0x1ui8 << 0x5ui8,
 		IN_ACTN_B = 0x1ui8 << 0x6ui8,
 		IN_ACTN_C = 0x1ui8 << 0x7ui8,
+		IN_CROUCH = 0x1ui8 << 0x8ui8,
 
 		IN_COM_ALERT = IN_USE | IN_USE_HIT | IN_USE_ALT,
 	};
@@ -194,7 +197,7 @@ struct Actor : public Entity
 	m::Angle viewPitch;
 	// Movement stuff
 	//bool moving = false;
-	mem::bv<btui8, ActorInput> inputBV;
+	mem::bv<btui16, ActorInput> inputBV;
 
 	//res::AssetConstantID t_skin; // The texture we use for drawing the character
 	assetID t_skin;
@@ -260,6 +263,7 @@ struct Chara : public Actor
 	btf32 aniStepAmountR;
 	graphics::Matrix4x4 matLegHipR, matLegUpR, matLegLoR, matLegFootR;
 	graphics::Matrix4x4 matLegHipL, matLegUpL, matLegLoL, matLegFootL;
+	bool aniCrouch = false;
 
 	//FootState foot_state = eBOTH_DOWN;
 	FootState foot_state = eL_DOWN;

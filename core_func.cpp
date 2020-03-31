@@ -4,6 +4,9 @@
 
 namespace index
 {
+	//________________________________________________________________________________________________________________________________
+	// GENERAL FUNCTIONS -------------------------------------------------------------------------------------------------------------
+
 	#define HEAD_TURN_SPEED 8.f
 
 	void ActorRunAI(btID id)
@@ -252,6 +255,7 @@ namespace index
 			} // End for each cell group X
 		} // end does collide entities check
 
+		/*
 		//-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
 
 		offsetx = ent->t.position.x - ent->t.csi.c[eCELL_I].x;
@@ -326,6 +330,7 @@ namespace index
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
+		*/
 	}
 
 	void RemoveAllReferences(btID index)
@@ -527,9 +532,8 @@ namespace index
 		return id;
 	}
 
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	//--------------------------- PREFABS --------------------------------------------------------------------------------------------
-	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	//________________________________________________________________________________________________________________________________
+	// PREFABS -----------------------------------------------------------------------------------------------------------------------
 
 	char Capitalize(char c)
 	{
@@ -563,6 +567,8 @@ namespace index
 					fseek(file, 0L, SEEK_END);
 					long sz = ftell(file);
 					long random = (long)m::Random(0, sz);
+					// TODO: quick fix, this system has no answer for reaching the end of the file
+					random = 0;
 					fseek(file, random, SEEK_SET); // Seek file beginning
 
 					int name_index = 0;
@@ -724,8 +730,8 @@ namespace index
 		AddEntityCell(ENTITY(index)->t.csi.c[eCELL_I].x, ENTITY(index)->t.csi.c[eCELL_I].y, index);
 		ENTITY(index)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(index)->state.damagestate = STATE_DAMAGE_MAX;
-		ENTITY(index)->radius = 0.5f;
-		ENTITY(index)->height = 1.9f;
+		ENTITY(index)->radius = 0.15f;
+		ENTITY(index)->height = 0.7f;
 		if (ENTITY(index)->type == ENTITY_TYPE_CHARA)
 		{
 			CHARA(index)->atk_target = BUF_NULL;
@@ -801,7 +807,7 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = false;
-		CHARA(id)->speed = 2.9f;
+		CHARA(id)->speed = 1.45f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u); // long smig
 		CHARA(id)->inventory.AddNew(4u); // fist
@@ -809,6 +815,8 @@ namespace index
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(10u); // time gun
+		CHARA(id)->inventory.AddNew(11u); // time mag
 		CHARA(id)->foot_state = FootState::eL_DOWN;
 	}
 
@@ -821,7 +829,7 @@ namespace index
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 2.9f;
+		CHARA(id)->speed = 1.45f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(6u);
 		CHARA(id)->inventory.AddNew(8u); // magazine
@@ -839,7 +847,7 @@ namespace index
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 2.9f;
+		CHARA(id)->speed = 1.45f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(0u);
 		CHARA(id)->inventory.AddNew(8u); // magazine
@@ -856,7 +864,7 @@ namespace index
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 7.f;
+		CHARA(id)->speed = 3.5f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(4u);
 		CHARA(id)->foot_state = FootState::eL_DOWN;

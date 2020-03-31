@@ -78,7 +78,7 @@ bool HeldGunMatchLockBlockMove(btID id);
 // Base item instance
 struct HeldItem
 {
-	btID item_template = ID_NULL;
+	btID id_item_template = ID_NULL;
 	Transform3D t_item;
 
 	// Tick this item
@@ -168,7 +168,7 @@ struct HeldGun : public HeldItem
 
 	btui64 fire_time = 0.f;
 
-	btID ammoInstance = ID_NULL;
+	btID id_ammoInstance = ID_NULL;
 };
 
 // Magic caster instance

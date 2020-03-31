@@ -44,13 +44,7 @@
       <Filter>framework\3rdparty</Filter>
     </ClInclude>
     <ClInclude Include="test_zone.h" />
-    <ClInclude Include="time.hpp">
-      <Filter>framework</Filter>
-    </ClInclude>
     <ClInclude Include="archive.hpp">
-      <Filter>framework</Filter>
-    </ClInclude>
-    <ClInclude Include="serializer.h">
       <Filter>framework</Filter>
     </ClInclude>
     <ClInclude Include="objects_items.h">
@@ -89,6 +83,10 @@
     <ClInclude Include="network.h">
       <Filter>framework</Filter>
     </ClInclude>
+    <ClInclude Include="collision.h" />
+    <ClInclude Include="archive_read_write.h">
+      <Filter>framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
@@ -114,13 +112,7 @@
       <Filter>framework</Filter>
     </ClCompile>
     <ClCompile Include="test_zone.cpp" />
-    <ClCompile Include="time.cpp">
-      <Filter>framework</Filter>
-    </ClCompile>
     <ClCompile Include="archive.cpp">
-      <Filter>framework</Filter>
-    </ClCompile>
-    <ClCompile Include="serializer.cpp">
       <Filter>framework</Filter>
     </ClCompile>
     <ClCompile Include="objects_items.cpp">
@@ -146,6 +138,10 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="network.cpp">
+      <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="collision.cpp" />
+    <ClCompile Include="archive_read_write.cpp">
       <Filter>framework</Filter>
     </ClCompile>
   </ItemGroup>

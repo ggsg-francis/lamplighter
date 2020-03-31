@@ -28,12 +28,11 @@ extern "C" {
 		TransformC t;
 		btui64 ttd;
 		btui32 faction;
+		btID type;
 	} Projectile;
 
 	btID IndexSpawnProjectile();
 	void IndexDestroyProjectileC(btID id);
-
-	void IndexDrawTemp();
 
 	extern ObjBufCP block_proj; // Projectile buffer
 	extern Projectile proj[BUF_SIZE];

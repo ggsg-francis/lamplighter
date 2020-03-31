@@ -68,7 +68,6 @@ namespace res
 		md_chr_body,
 		md_char_arm,
 		md_char_head,
-		mb_char_leg,
 		md_char_leg,
 		// Err....
 		m_ex1e_air_carrier,
@@ -93,9 +92,10 @@ namespace res
 		t_proj_2,
 		mb_smoke_trail_segment,
 		t_smoke_trail,
-		t_terrain_sanddirt,
-		t_terrain_scorch,
-		t_terrain_marshmud,
+		t_terrain_01,
+		t_terrain_02,
+		t_terrain_03,
+		t_terrain_04,
 		// Gui stuff
 		t_gui_crosshair,
 		t_gui_font,
@@ -131,6 +131,8 @@ namespace res
 #define PROPS_COUNT 32
 // -
 #define SPELL_COUNT 8
+// -
+#define PROJECTILE_TEMPLATE_COUNT 4
 // -
 #define ENTT_COUNT 8
 
@@ -196,8 +198,18 @@ namespace acv
 		btui32 target_effect_magnitude;
 	} Spell;
 
+	typedef struct ProjectileTemplate
+	{
+		char handle[8];
+		btui32 damage;
+		bool saveOnHit;
+		btui8 ammunition_type;
+		btID mesh;
+		btID texture;
+	} ProjectileTemplate;
+
 	#define ENTITY_MAX_LIMB_NUM 4
-	typedef struct EntityTemplate
+	typedef struct ActorTemplate
 	{
 		char handle[8];
 		btID m_head;
@@ -217,6 +229,7 @@ namespace acv
 	struct BaseItem
 	{
 		// Root
+		char handle[8];
 		btID id = 0u;
 		btID id_icon = 0u;
 		bti8 name[64];
@@ -247,6 +260,8 @@ namespace acv
 	struct BaseItemGun : public BaseItem
 	{
 		float f_temp;
+		bool b_automatic;
+		btui8 ammunition_type;
 	};
 
 	struct BaseItemMgc : public BaseItem
@@ -257,7 +272,8 @@ namespace acv
 	struct BaseItemCon : public BaseItem
 	{
 		// Spell effects
-		btID effect;
+		btID id_effect = ID_NULL;
+		btID id_projectile = ID_NULL;
 	};
 
 	// art assets archive
@@ -281,8 +297,11 @@ namespace acv
 	extern Spell spells[SPELL_COUNT];
 	extern btui32 spell_index;
 
-	extern EntityTemplate entt[ENTT_COUNT];
-	extern btui32 entt_index;
+	extern ProjectileTemplate projectiles[PROJECTILE_TEMPLATE_COUNT];
+	extern btui32 projectiles_index;
+
+	extern ActorTemplate actor_templates[ENTT_COUNT];
+	extern btui32 actor_template_index;
 
 	// make inaccessable
 	extern archive_asset assets[FN_COUNT];
