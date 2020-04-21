@@ -1,5 +1,7 @@
 #pragma once
 
+#include "global.h"
+
 namespace fac
 {
 	// What are the factions

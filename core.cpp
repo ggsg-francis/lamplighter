@@ -38,7 +38,7 @@ namespace index
 		graphics::SetMatViewEditor(&chara->t_head);
 		#else
 		cfg::bEditMode ?
-			graphics::SetMatViewEditor(&chara->t_head) :
+			graphics::SetMatViewEditor(&((EditorPawn*)chara)->t_head) :
 			graphics::SetMatView(&chara->t_head);
 		#endif // DEF_3PP
 	}
@@ -61,13 +61,13 @@ namespace index
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
 		{
-			if (env::eCells.terrain_height[x][y] < env::eCells.terrain_height[srcx][srcy] + 8ui8 //incline check
-			&& env::eCells.terrain_height[x][y] > env::eCells.terrain_height[srcx][srcy] - 12ui8) // decline check
+			if (env::eCells.terrain_height[x][y] < env::eCells.terrain_height[srcx][srcy] + 8u //incline check
+			&& env::eCells.terrain_height[x][y] > env::eCells.terrain_height[srcx][srcy] - 12u) // decline check
 			{
 				t_EnvLightmap.SetPixelChannelG(x, y, col.g);
-				if (col.g > 31ui8)
+				if (col.g > 31u)
 				{
-					col.g -= 32ui8;
+					col.g -= 32u;
 					flood_fill_temp(srcx, srcy, x + 1, y, col);
 					flood_fill_temp(srcx, srcy, x - 1, y, col);
 					flood_fill_temp(srcx, srcy, x, y + 1, col);
@@ -180,7 +180,6 @@ namespace index
 
 	void Init()
 	{
-		CollisionInit();
 		IndexInitialize();
 
 		// Generate debug version display
@@ -204,7 +203,7 @@ namespace index
 
 		// Lightmap
 
-		t_EnvLightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(255ui8, 0ui8, 0ui8, 255ui8));
+		t_EnvLightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(255u, 0u, 0u, 255u));
 
 		for (btui32 x = 0u; x < WORLD_SIZE; ++x)
 		{
@@ -212,7 +211,7 @@ namespace index
 			{
 				t_EnvLightmap.SetPixelChannelA(x, y, env::eCells.terrain_height[x][y]);
 				if (env::Get(x, y, env::eflag::EF_LIGHTSRC))
-					flood_fill_temp(x, y, x, y, graphics::colour(0ui8, 255ui8, 0ui8, 0ui8));
+					flood_fill_temp(x, y, x, y, graphics::colour(0u, 255u, 0u, 0u));
 			}
 		}
 
@@ -221,7 +220,7 @@ namespace index
 
 		// Heightmap
 
-		t_EnvHeightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(0ui8, 0ui8, 0ui8, 0ui8));
+		t_EnvHeightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(0u, 0u, 0u, 0u));
 
 		for (btui16 x = 0; x < WORLD_SIZE; x++)
 			for (btui16 y = 0; y < WORLD_SIZE; y++)
@@ -250,14 +249,14 @@ namespace index
 				//CHARA(players[1])->faction = fac::faction::playerhunter;
 
 				/*
-				SpawnNewEntityItem(0ui16, m::Vector2(1025.1f, 1022.6f), 15.f);
-				SpawnNewEntityItem(1ui16, m::Vector2(1025.5f, 1024.0f), 120.f);
-				SpawnNewEntityItem(2ui16, m::Vector2(1025.5f, 1023.3f), 15.f);
-				SpawnNewEntityItem(3ui16, m::Vector2(1025.8f, 1024.f), 15.f);
-				SpawnNewEntityItem(4ui16, m::Vector2(1026.8f, 1026.f), 15.f);
-				SpawnNewEntityItem(5ui16, m::Vector2(1023.5f, 1023.3f), 15.f);
-				SpawnNewEntityItem(6ui16, m::Vector2(1023.8f, 1023.4f), 15.f);
-				SpawnNewEntityItem(7ui16, m::Vector2(1023.6f, 1023.2f), 15.f);
+				SpawnNewEntityItem(0u, m::Vector2(1025.1f, 1022.6f), 15.f);
+				SpawnNewEntityItem(1u, m::Vector2(1025.5f, 1024.0f), 120.f);
+				SpawnNewEntityItem(2u, m::Vector2(1025.5f, 1023.3f), 15.f);
+				SpawnNewEntityItem(3u, m::Vector2(1025.8f, 1024.f), 15.f);
+				SpawnNewEntityItem(4u, m::Vector2(1026.8f, 1026.f), 15.f);
+				SpawnNewEntityItem(5u, m::Vector2(1023.5f, 1023.3f), 15.f);
+				SpawnNewEntityItem(6u, m::Vector2(1023.8f, 1023.4f), 15.f);
+				SpawnNewEntityItem(7u, m::Vector2(1023.6f, 1023.2f), 15.f);
 				//*/
 
 				#ifdef DEF_SPAWN_ON_START
@@ -288,7 +287,6 @@ namespace index
 	}
 	void End()
 	{
-		CollisionEnd();
 		ClearBuffers();
 	}
 
@@ -313,7 +311,7 @@ namespace index
 		{
 			for (int y = 0; y < WORLD_SIZE; ++y)
 			{
-				cells[x][y].ents.clear();
+				refCells[x][y].ref_ents.clear();
 			}
 		}
 	}
@@ -405,14 +403,14 @@ namespace index
 			if (input::GetHit(input::key::USE))
 			{
 				++env::eCells.terrain_material[GetCellX][GetCellY];
-				if (env::eCells.terrain_material[GetCellX][GetCellY] > 3ui8)
-					env::eCells.terrain_material[GetCellX][GetCellY] = 0ui8;
-				env::GenerateTerrainMesh();
+				if (env::eCells.terrain_material[GetCellX][GetCellY] > 7u)
+					env::eCells.terrain_material[GetCellX][GetCellY] = 0u;
+				env::GenerateTerrainMeshEditor();
 			}
 			else if (input::GetHeld(input::key::USE_ALT))
 			{
 				env::eCells.terrain_material[GetCellX][GetCellY] = editor_material_copy;
-				env::GenerateTerrainMesh();
+				env::GenerateTerrainMeshEditor();
 			}
 			else if (input::GetHit(input::key::ACTIVATE))
 			{
@@ -450,8 +448,17 @@ namespace index
 			}
 			else if (input::GetHit(input::key::FUNCTION_4)) // TOGGLE SPAWN
 			{
-				env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST)
-					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST) : env::Set(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
+				if (env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST)) {
+					env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
+					env::Set(GetCellX, GetCellY, env::eflag::EF_SPAWN_ITEM_TEST);
+				}
+				else if (env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_ITEM_TEST)) {
+					env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
+					env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_ITEM_TEST);
+				}
+				else {
+					env::Set(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
+				}
 			}
 			else if (input::GetHit(input::key::FUNCTION_5)) // SAVE
 			{
@@ -473,7 +480,7 @@ namespace index
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_R))
 			{
-				if (input::GetHeld(input::key::RUN))
+				if (!input::GetHeld(input::key::RUN))
 				{
 					if (env::eCells.terrain_height[GetCellX][GetCellY] > 0u)
 						++env::eCells.terrain_height[GetCellX][GetCellY];
@@ -496,11 +503,11 @@ namespace index
 				}
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
-				env::GenerateTerrainMesh();
+				env::GenerateTerrainMeshEditor();
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_L))
 			{
-				if (input::GetHeld(input::key::RUN))
+				if (!input::GetHeld(input::key::RUN))
 				{
 					if (env::eCells.terrain_height[GetCellX][GetCellY] < 255)
 						--env::eCells.terrain_height[GetCellX][GetCellY];
@@ -523,7 +530,7 @@ namespace index
 				}
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
-				env::GenerateTerrainMesh();
+				env::GenerateTerrainMeshEditor();
 			}
 
 			#undef GetCellX
@@ -575,9 +582,12 @@ namespace index
 
 		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x * 0.25f, 1.f, sunrot.x * 0.25f));
 		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(0.25f, 1.f, 0.25f));
-		m::Vector3 sunVec = m::Vector3(0.f, 1.f, 0.f);
+		m::Vector3 sunVec = m::Normalize(m::Vector3(0.5f, 1.f, 0.5f));
+		//m::Vector3 sunVec = m::Vector3(0.f, 1.f, 0.f);
 
 		graphics::Matrix4x4 matrix; // Matrix used for rendering env. props (so far...)
+
+		graphics::SetFrontFace(); // reset front face (is set wrong in other places because i'm an idiota)
 
 		if (oob)
 		{
@@ -587,7 +597,6 @@ namespace index
 
 			//-------------------------------- DRAW SKY
 
-			graphics::SetFrontFace();
 			graphics::SetMatProj();
 
 			//-------------------------------- DRAW OOB TERRAIN
@@ -615,7 +624,7 @@ namespace index
 			m::Vector3 LightVecSide = m::Normalize(m::Cross(lightVecForw, m::Vector3(0.f, 0.f, 1.f)));
 			m::Vector3 LightVecUp = m::Normalize(m::Cross(lightVecForw, LightVecSide));
 
-			#define LIGHT_RND ((SHADOW_WIDTH / LIGHT_WIDTH) / 2)
+			#define LIGHT_RND ((SHADOW_RESOLUTION / SHADOW_WIDTH) / 2)
 
 			btf32 moveF = roundf(m::Dot(lightVecForw, lightPos));
 			btf32 moveS = roundf(m::Dot(LightVecSide, lightPos) * LIGHT_RND) / LIGHT_RND;
@@ -660,9 +669,9 @@ namespace index
 
 			btui32 drawrange = 8u; // Create min/max draw coordinates
 			bti32 minx = x2 - drawrange; if (minx < 0) minx = 0;
-			bti32 maxx = x2 + drawrange; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
+			bti32 maxx = x2 + drawrange; if (maxx > WORLD_SIZE_MAXINT) maxx = WORLD_SIZE_MAXINT;
 			bti32 miny = y2 - drawrange; if (miny < 0) miny = 0;
-			bti32 maxy = y2 + drawrange; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
+			bti32 maxy = y2 + drawrange; if (maxy > WORLD_SIZE_MAXINT) maxy = WORLD_SIZE_MAXINT;
 			for (bti32 x = minx; x <= maxx; x++)
 			{
 				for (bti32 y = miny; y < maxy; y++)
@@ -675,18 +684,23 @@ namespace index
 
 					if (env::Get(x, y, env::eflag::eIMPASSABLE))
 					{
-						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y));
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
 						DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), res::GetT(res::t_debug_bb), SS_NORMAL, matrix);
 					}
 					if (env::Get(x, y, env::eflag::EF_LIGHTSRC))
 					{
-						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y));
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
 						DrawMesh(ID_NULL, res::GetM(res::m_debug_bb), res::GetT(res::t_default), SS_NORMAL, matrix);
 					}
 					if (env::Get(x, y, env::eflag::EF_SPAWN_TEST))
 					{
-						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y));
-						DrawMesh(ID_NULL, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_default), SS_NORMAL, matrix);
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
+						DrawMesh(ID_NULL, res::GetM(res::m_debug_monkey), res::GetT(res::t_col_red), SS_NORMAL, matrix);
+					}
+					if (env::Get(x, y, env::eflag::EF_SPAWN_ITEM_TEST))
+					{
+						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
+						DrawMesh(ID_NULL, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_col_red), SS_NORMAL, matrix);
 					}
 					if (env::eCells.prop[x][y] == ID_NULL) env::eCells.prop[x][y] = 0u;
 					//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
@@ -718,16 +732,16 @@ namespace index
 			Entity* entity = ENTITY(players[activePlayer]);
 			// Set min/max draw coordinates
 			bti32 minx = entity->t.csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
-			bti32 maxx = entity->t.csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE - 1) maxx = WORLD_SIZE - 1;
+			bti32 maxx = entity->t.csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE_MAXINT) maxx = WORLD_SIZE_MAXINT;
 			bti32 miny = entity->t.csi.c[0].y - DRAWRANGE; if (miny < 0) miny = 0;
-			bti32 maxy = entity->t.csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE - 1) maxy = WORLD_SIZE - 1;
+			bti32 maxy = entity->t.csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE_MAXINT) maxy = WORLD_SIZE_MAXINT;
 			for (bti32 x = minx; x <= maxx; x++) {
 				for (bti32 y = miny; y < maxy; y++) {
 					//-------------------------------- DRAW ENTITIES ON THIS CELL
-					for (int e = 0; e <= cells[x][y].ents.end(); e++)
-						if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]])
+					for (int e = 0; e <= refCells[x][y].ref_ents.end(); e++)
+						if (refCells[x][y].ref_ents[e] != ID_NULL && block_entity.used[refCells[x][y].ref_ents[e]])
 							//ENTITY(cells[x][y].ents[e])->fpDraw(ENT_VOID(cells[x][y].ents[e]));
-							fpDraw[block_entity_data[cells[x][y].ents[e]].type](ENT_VOID(cells[x][y].ents[e]));
+							fpDraw[block_entity_data[refCells[x][y].ref_ents[e]].type](ENT_VOID(refCells[x][y].ref_ents[e]));
 							//ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
 					if (oob)
 					{
@@ -740,7 +754,9 @@ namespace index
 					}
 				}
 			}
+			#ifndef DEF_SHADOW_ALL_OBJECTS
 			if (oob)
+			#endif
 			{
 				env::DrawProps();
 				env::DrawTerrain();
@@ -886,7 +902,7 @@ namespace index
 		{
 			graphics::DrawGUITexture(&res::GetT(res::t_gui_hurt), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(),
 				(btf32)(player_hp[activePlayer] - ENTITY(players[activePlayer])->state.damagestate) * (10.f / 1000.f));
-			player_hp[activePlayer] -= 5ui16;
+			player_hp[activePlayer] -= 5u;
 		}
 		else
 		{
@@ -935,7 +951,8 @@ namespace index
 
 	void SetInput(btID playerIndex, m::Vector2 input, btf32 rot_x, btf32 rot_y,
 		bool atk, bool atk_hit, bool atk2,
-		bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C, bool crouch)
+		bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C,
+		bool crouch, bool jump)
 	{
 		ACTOR(players[playerIndex])->input = input;
 		ACTOR(players[playerIndex])->viewYaw.Rotate(rot_x);
@@ -949,16 +966,17 @@ namespace index
 		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
 		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
 		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_CROUCH, crouch);
+		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_JUMP, jump);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
 	{
-		cells[x][y].ents.add(e);
+		refCells[x][y].ref_ents.add(e);
 	}
 
 	void RemoveEntityCell(btui32 x, btui32 y, btID e)
 	{
-		cells[x][y].ents.remove(e);
+		refCells[x][y].ref_ents.remove(e);
 	}
 
 	void SpawnProjectile(fac::faction faction, btID type, m::Vector2 pos, btf32 height,
@@ -1100,12 +1118,21 @@ namespace index
 	//________________________________________________________________________________________________________________________________
 	// PROJECTILES -------------------------------------------------------------------------------------------------------------------
 
-	//-------------------------------- PROJECTILE FORWARD DECLARATION
-
 	bool ProjectileCollideEnv(btID index)
 	{
-		return RayProjectile(proj[index].t.position_x, proj[index].t.position_h, proj[index].t.position_y,
-			proj[index].t.velocity_x, proj[index].t.velocity_h, proj[index].t.velocity_y);
+		int x = (int)roundf(proj[index].t.position_x);
+		int y = (int)roundf(proj[index].t.position_y);
+		if (env::Get(x, y, env::eflag::eIMPASSABLE)) // if hit an impassable tile
+			return true;
+
+		CellSpace csi;
+		GetCellSpaceInfo(m::Vector2(proj[index].t.position_x, proj[index].t.position_y), csi);
+		btf32 height;
+		env::GetHeight(height, csi);
+		if (proj[index].t.position_h < height) // if below the ground surface
+			return true;
+
+		return false;
 	}
 
 	//-------------------------------- PROJECTILE FUNCTIONS
@@ -1121,8 +1148,8 @@ namespace index
 			if (block_proj.used[index])
 			{
 				// out of bounds check
-				if (proj[index].t.position_x <= 1.f || proj[index].t.position_x >= WORLD_SIZE - 1 ||
-					proj[index].t.position_y <= 1.f || proj[index].t.position_y >= WORLD_SIZE - 1)
+				if (proj[index].t.position_x <= 1.f || proj[index].t.position_x >= WORLD_SIZE_MAXINT ||
+					proj[index].t.position_y <= 1.f || proj[index].t.position_y >= WORLD_SIZE_MAXINT)
 					DestroyProjectile(index);
 				// If it's time to die, or collided
 				if (tickCount_temp >= proj[index].ttd || ProjectileCollideEnv(index))
@@ -1238,7 +1265,7 @@ namespace index
 									float dist = m::Length(vec);
 									if (dist < 0.5f)
 									{
-										// to do: pass angle to damage fn
+										// TODO: pass angle to damage fn
 										ENTITY(i)->state.Damage(150u, glm::degrees(m::Vec2ToAng(vec)));
 										DestroyProjectile(index); // Destroy the projectile
 									}

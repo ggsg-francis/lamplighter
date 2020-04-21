@@ -5,7 +5,7 @@ in vec2 TexCoords;
 in vec3 Normal;
 in vec3 Pos;
 in vec4 Col;
-in vec4 TBlend;
+in float TBlend[8];
 in vec4 LightSpacePos;
 in vec3 LC; // Light Colour
 
@@ -19,6 +19,10 @@ uniform sampler2D tt1;
 uniform sampler2D tt2;
 uniform sampler2D tt3;
 uniform sampler2D tt4;
+uniform sampler2D tt5;
+uniform sampler2D tt6;
+uniform sampler2D tt7;
+uniform sampler2D tt8;
 uniform sampler2D tlm; // texture lightmap
 uniform sampler2D thm; // texture heightmap
 uniform sampler2D ts; // texture sky
@@ -103,10 +107,26 @@ void main()
 {
 	//FragColor = mix(texture(tt1, TexCoords), texture(tt2, TexCoords), TBlend.r);
 	//FragColor = mix(texture(tt1, TexCoords), texture(tt2, TexCoords), TBlend.r);
-	FragColor.rgb = texture(tt1, TexCoords).rgb * TBlend.r;
-	FragColor.rgb += texture(tt2, TexCoords).rgb * TBlend.g;
-	FragColor.rgb += texture(tt3, TexCoords).rgb * TBlend.b;
-	FragColor.rgb += texture(tt4, TexCoords).rgb * TBlend.a;
+	
+	FragColor.rgb =  texture(tt1, TexCoords).rgb * TBlend[0];
+	FragColor.rgb += texture(tt2, TexCoords).rgb * TBlend[1];
+	FragColor.rgb += texture(tt3, TexCoords).rgb * TBlend[2];
+	FragColor.rgb += texture(tt4, TexCoords).rgb * TBlend[3];
+	FragColor.rgb += texture(tt5, TexCoords).rgb * TBlend[4];
+	FragColor.rgb += texture(tt6, TexCoords).rgb * TBlend[5];
+	FragColor.rgb += texture(tt7, TexCoords).rgb * TBlend[6];
+	FragColor.rgb += texture(tt8, TexCoords).rgb * TBlend[7];
+	
+	//float vala = texture(tt1, TexCoords).rgb;
+	//float valb;
+	//float valc;
+	//float vald;
+	//
+	//FragColor.rgb =                    texture(tt1, TexCoords).rgb * clamp(TBlend.r * 2.f, 0.f, 1.f);
+	//FragColor.rgb = max(FragColor.rgb, texture(tt2, TexCoords).rgb * clamp(TBlend.g * 2.f, 0.f, 1.f));
+	//FragColor.rgb = max(FragColor.rgb, texture(tt3, TexCoords).rgb * clamp(TBlend.b * 2.f, 0.f, 1.f));
+	//FragColor.rgb = max(FragColor.rgb, texture(tt4, TexCoords).rgb * clamp(TBlend.a * 2.f, 0.f, 1.f));
+	
 	FragColor.a = 1.f;
 	if (FragColor.a < 0.5) discard;
 

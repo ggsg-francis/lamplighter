@@ -88,21 +88,21 @@ typedef struct StatusEffect {
 	btui32 reserved;
 } StatusEffect;
 
-#define STATE_DAMAGE_MAX 1000ui16
+#define STATE_DAMAGE_MAX 1000u
 // TODO: merge with entity?? should be able to produce sfx
 struct ActiveState
 {
 	// Global properties, ultimately to be used by every object in the game, incl. environment tiles
 	enum ActiveFlags : btui64 // WIP
 	{
-		eALIVE = 1ui64,
-		eDIED_REPORT = 1ui64 << 1ui64,
+		eALIVE = 1u,
+		eDIED_REPORT = 1u << 1u,
 	};
 	mem::bv<btui64, ActiveFlags> stateFlags;
 	enum StaticFlags : btui64 // WIP
 	{
-		eNOTHING = 1ui64,
-		eFLAMMABLE = 1ui64 << 1ui64,
+		eNOTHING = 1u,
+		eFLAMMABLE = 1u << 1u,
 	};
 	mem::bv<btui64, StaticFlags> properties2;
 	btui16 damagestate = STATE_DAMAGE_MAX;
@@ -140,14 +140,14 @@ struct Entity
 	enum EntityFlags : btui8
 	{
 		// Basic properties
-		eCOLLIDE_ENV = 1ui8, // Handle collision between this entity and the environment
-		eCOLLIDE_ENT = 1ui8 << 1ui8, // Handle collision between this entity and other entities
-		eCOLLIDE_PRJ = 1ui8 << 2ui8, // Handle collision between this entity and physical projectiles
-		eCOLLIDE_MAG = 1ui8 << 3ui8, // Handle collision between this entity and magic effects
-		eREPORT_TOUCH = 1ui8 << 4ui8, // Use callback function when another entity touches this one
-		eNO_TICK = 1ui8 << 5ui8, // Do not tick every frame
-		ePHYS_DRAG = 1ui8 << 6ui8, // Do not tick every frame
-		//eALIGN_MESH_TO_GROUND = 1ui8 << 6ui8, // Align this object's mesh to the ground normal (useless because each class has its own draw fn anyway)
+		eCOLLIDE_ENV = 1u, // Handle collision between this entity and the environment
+		eCOLLIDE_ENT = 1u << 1u, // Handle collision between this entity and other entities
+		eCOLLIDE_MAG = 1u << 3u, // Handle collision between this entity and magic effects
+		eCOLLIDE_PRJ = 1u << 2u, // Handle collision between this entity and physical projectiles
+		eREPORT_TOUCH = 1u << 4u, // Use callback function when another entity touches this one
+		eNO_TICK = 1u << 5u, // Do not tick every frame
+		ePHYS_DRAG = 1u << 6u, // Do not tick every frame
+		//eALIGN_MESH_TO_GROUND = 1u << 6ui8, // Align this object's mesh to the ground normal (useless because each class has its own draw fn anyway)
 		// Can go up to 1 << 7
 
 		ePREFAB_FULLSOLID = eCOLLIDE_ENV | eCOLLIDE_ENT | eCOLLIDE_PRJ | eCOLLIDE_MAG,
@@ -177,20 +177,23 @@ struct Actor : public Entity
 {
 	enum ActorInput : btui16
 	{
-		IN_RUN = 0x1ui8 << 0x0ui8,
-		IN_AIM = 0x1ui8 << 0x1ui8,
-		IN_USE = 0x1ui8 << 0x2ui8,
-		IN_USE_HIT = 0x1ui8 << 0x3ui8,
-		IN_USE_ALT = 0x1ui8 << 0x4ui8,
-		IN_ACTN_A = 0x1ui8 << 0x5ui8,
-		IN_ACTN_B = 0x1ui8 << 0x6ui8,
-		IN_ACTN_C = 0x1ui8 << 0x7ui8,
-		IN_CROUCH = 0x1ui8 << 0x8ui8,
+		IN_RUN = 0x1u << 0x0u,
+		IN_AIM = 0x1u << 0x1u,
+		IN_USE = 0x1u << 0x2u,
+		IN_USE_HIT = 0x1u << 0x3u,
+		IN_USE_ALT = 0x1u << 0x4u,
+		IN_ACTN_A = 0x1u << 0x5u,
+		IN_ACTN_B = 0x1u << 0x6u,
+		IN_ACTN_C = 0x1u << 0x7u,
+		IN_CROUCH = 0x1u << 0x8u,
+		IN_JUMP = 0x1u << 0x9u,
 
 		IN_COM_ALERT = IN_USE | IN_USE_HIT | IN_USE_ALT,
 	};
 
 	//-------------------------------- Actor stuff
+
+	btui8 actorBase = 0u;
 
 	m::Vector2 input; // Input vector, might be temporary
 	m::Angle viewYaw;
@@ -199,8 +202,6 @@ struct Actor : public Entity
 	//bool moving = false;
 	mem::bv<btui16, ActorInput> inputBV;
 
-	//res::AssetConstantID t_skin; // The texture we use for drawing the character
-	assetID t_skin;
 	m::Vector3 skin_col_a;
 	m::Vector3 skin_col_b;
 	m::Vector3 skin_col_c;
@@ -213,6 +214,20 @@ struct Actor : public Entity
 
 	btID atk_target = BUF_NULL;
 	m::Angle atkYaw;
+
+	//-------------------------------- CHARA stuff
+
+	Transform3D t_body, t_head;
+	m::Vector3 footPosTargR, footPosTargL, footPosR, footPosL, fpCurrentR, fpCurrentL;
+	m::Vector2 ani_body_lean;
+	bool aniSteppingL;
+	bool aniSteppingR;
+	btf32 aniStepAmountL;
+	btf32 aniStepAmountR;
+	btf32 aniStandHeight;
+	bool aniCrouch = false;
+	btf32 aniSlideResponse = 0.f;
+	bool aniRun = true;
 
 	//-------------------------------- AI stuff
 
@@ -244,26 +259,17 @@ struct Chara : public Actor
 
 	enum CharaStaticProperties : btui8
 	{
-		eLEFT_HANDED = (0x1ui8 << 0x0ui8),
+		eLEFT_HANDED = (0x1u << 0x0u),
 	};
 	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
 
 	//enum CharaActiveState : btui8
 	//{
-	//	ani_right_foot = (0x1ui8 << 0x0ui8),
+	//	ani_right_foot = (0x1u << 0x0u),
 	//}; 
 	//mem::bv<btui8, CharaActiveState> charastatebv;
 
-	Transform3D t_body, t_head;
-	m::Vector3 footPosTargR, footPosTargL, footPosR, footPosL;
-	m::Vector2 ani_body_lean;
-	bool aniSteppingL;
-	bool aniSteppingR;
-	btf32 aniStepAmountL;
-	btf32 aniStepAmountR;
-	graphics::Matrix4x4 matLegHipR, matLegUpR, matLegLoR, matLegFootR;
-	graphics::Matrix4x4 matLegHipL, matLegUpL, matLegLoL, matLegFootL;
-	bool aniCrouch = false;
+	
 
 	//FootState foot_state = eBOTH_DOWN;
 	FootState foot_state = eL_DOWN;
@@ -278,13 +284,13 @@ struct EditorPawn : public Actor
 
 	enum CharaStaticProperties : btui8
 	{
-		eLEFT_HANDED = (0x1ui8 << 0x0ui8),
+		eLEFT_HANDED = (0x1u << 0x0u),
 	};
 	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
 
 	enum CharaActiveState : btui8
 	{
-		ani_right_foot = (0x1ui8 << 0x0ui8),
+		ani_right_foot = (0x1u << 0x0u),
 	};
 	mem::bv<btui8, CharaActiveState> charastatebv;
 

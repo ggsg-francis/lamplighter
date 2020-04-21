@@ -15,10 +15,7 @@
 //#define CUTE_SOUND_FORCE_SDL
 #define CUTE_SOUND_IMPLEMENTATION
 #include "3rdparty\cute_sound.h"
-#else
-#include <irrklang/irrKlang.h>
-using namespace irrklang;
-#endif // DEF_USE_CS
+#endif
 
 namespace aud
 {
@@ -46,8 +43,8 @@ namespace aud
 	cs_play_sound_def_t def_shot;
 	cs_playing_sound_t* sound_shot;
 
-	//btf32 mstrVol = 0.1f;
-	btf32 mstrVol = 1.f;
+	btf32 mstrVol = 0.2f;
+	//btf32 mstrVol = 1.f;
 
 	void Init(void* handle)
 	{
@@ -65,10 +62,10 @@ namespace aud
 				def[i] = cs_make_def(&loaded[i]);
 			}
 
-			sound[FILE_TAUNT] = cs_play_sound(ctx, def[FILE_TAUNT]);
+			//sound[FILE_TAUNT] = cs_play_sound(ctx, def[FILE_TAUNT]);
 
-			loaded_shot = cs_load_wav("snd/fire_smg.wav");
-			def_shot = cs_make_def(&loaded_shot);
+			//loaded_shot = cs_load_wav("snd/fire_smg.wav");
+			//def_shot = cs_make_def(&loaded_shot);
 		}
 		else
 		{
@@ -87,7 +84,7 @@ namespace aud
 	void PlaySnd(AudioFile file, m::Vector3 src)
 	{
 		#ifdef DEF_NMP
-		// todo: caluclate panning based on proximity to L and R player
+		// TODO: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
 		btf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[network::nid])->t.position);
 		// get closest distance (temp until using panning)
@@ -103,7 +100,7 @@ namespace aud
 			sound[file]->volume1 = vol * mstrVol;
 		}
 		#else
-		// todo: caluclate panning based on proximity to L and R player
+		// TODO: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
 		btf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[0])->t.position);
 		btf32 distance_1 = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[1])->t.position);
@@ -135,53 +132,21 @@ namespace aud
 
 	#else
 
-	ISoundEngine *SoundEngine;
-
-	void Init()
+	void Init(void* handle)
 	{
-		SoundEngine = createIrrKlangDevice();
-		SoundEngine->setSoundVolume(0.08f);
 	}
 
-	void PlaySnd()
+	void Update(btf64 dt)
 	{
-		SoundEngine->play2D("snd/hey.wav", false);
 	}
 
-	void PlayGunshotTemp(bool shot, m::Vector3 src)
+	void PlaySnd(AudioFile file, m::Vector3 src)
 	{
-		btf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[0])->t.position);
-		btf32 vol = 5.f - (distance / 5.f);
-		if (vol > 1.f) vol = 1.f;
-
-		if (shot)
-		{
-			//ISound* snd = SoundEngine->play2D("snd/fire_smg.wav", false);
-			ISound* snd =SoundEngine->play3D("snd/fire_smg.wav", vec3df(-1, 0, 0));
-			if (snd)
-			{
-				snd->setVolume(0.f);
-			}
-		}
-		else
-		{
-			ISound* snd = SoundEngine->play2D("snd/fire_no_shot.wav", false);
-			if (snd)
-			{
-				snd->setVolume(vol);
-			}
-		}
-		
-		//m::Vector3 globalOffset = src - m::Vector3(listener.position.x, listener.height, listener.position.y);
-		//m::Vector2 ang = m::AngToVec2(listener.yaw.Rad());
-		//btf32 LRDot = m::Dot(m::Vector2(globalOffset.x, globalOffset.z), ang);
-		//SoundEngine->play3D("snd/fire_smg.wav", vec3df(-1, 0, 0));
 	}
 
 	void End()
 	{
-		
 	}
 
-	#endif // DEF_USE_CS
+	#endif
 }

@@ -37,6 +37,8 @@ namespace m
 	Vector2 Vector2::operator*=(float f) { return Vector2(x *= f, y *= f); }
 	Vector2 Vector2::operator/=(float f) { return Vector2(x /= f, y /= f); }
 
+	Vector2 Vector2::operator=(const btf32& f) { return Vector2(f, f); }
+
 	//-------------------------------- VECTOR3 OPERATORS
 
 	Vector3 Vector3::operator+(const Vector3& v) { return Vector3(x + v.x, y + v.y, z + v.z); }
@@ -360,6 +362,27 @@ namespace m
 	{
 		return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
 	}
+	btf32 Clamp(btf32 val, btf32 min, btf32 max)
+	{
+		if (val < min) return min;
+		if (val > max) return min;
+		return val;
+	}
+
+	/*btf32 MaxF(btui32 num, ...)
+	{
+		va_list args;
+		__crt_va_start(args, num);
+		btf32 max = 0.f;
+		btf32 fget;
+		for (btui32 x = 0; x < num; x++)
+		{
+			fget = __crt_va_arg(args, btf32);
+			if (fget > max) max = fget;
+		}
+		__crt_va_end(args);
+		return max;
+	}*/
 	btf32 Quadratic(const btf32 a = -1.f, const btf32 b = 0.f, const btf32 c = 1.f, const btf32 x = 0.f)
 	{
 		//f(x) = ax 2 + bx + c

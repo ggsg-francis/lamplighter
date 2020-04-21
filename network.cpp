@@ -37,7 +37,7 @@ namespace network
 	SDLNet_SocketSet socketset;
 	
 	// Network ID
-	btui8 nid = 0ui8;
+	btui8 nid = 0u;
 
 	//-------------------------------- RECEIVE
 
@@ -194,7 +194,7 @@ namespace network
 									printf("Version accepted! \n");
 									// send connection packet
 									PACKET_WRITE(pak, 0, eSERVER_CONNECT_CONFIRM, paktype);
-									PACKET_WRITE(pak, 1, 1ui8, btui8); // send client NID (TODO:)
+									PACKET_WRITE(pak, 1, 1u, btui8); // send client NID (TODO:)
 									PACKET_WRITE(pak, 4, seed, btui32); // send RNG seed
 									SDLNet_TCP_Send(socket_reliable, pak, PACKET_SIZE);
 									Sleep(1000);

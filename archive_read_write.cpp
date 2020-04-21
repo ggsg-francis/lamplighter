@@ -1,6 +1,6 @@
 #include "archive_read_write.h"
 #ifdef DEF_ARCHIVER
-#include "graphics_convert.h"
+#include "archiver_graphics_convert.h"
 #endif
 #include "graphics.hpp"
 #include "archive.hpp"
@@ -71,7 +71,7 @@ namespace serializer
 	{
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "FILENAMES" << std::endl;
-		for (btui32 i = 0ui32; i < acv::assetCount; i++)
+		for (btui32 i = 0u; i < acv::assetCount; i++)
 		{
 			std::cout << "FILE " << i << " | TYPE " << acv::assets[i].type << " | ADDR " << acv::assets[i].filename << std::endl;
 		}
@@ -148,7 +148,7 @@ namespace serializer
 			#undef PTNI
 		}
 		std::cout << "__________________________________________" << std::endl;
-		std::cout << "ACTOR TEMPLATES" << std::endl;
+		std::cout << "ACTOR BASES" << std::endl;
 		for (int i = 0; i < acv::actor_template_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
@@ -160,14 +160,19 @@ namespace serializer
 			std::cout << "MESH ID BODY         " << acv::actor_templates[i].m_body << std::endl;
 			std::cout << "MESH ID ARM          " << acv::actor_templates[i].m_arm << std::endl;
 			std::cout << "MESH ID LEG          " << acv::actor_templates[i].m_leg << std::endl;
+			std::cout << "TXTR ID HEAD         " << acv::actor_templates[i].t_head << std::endl;
+			std::cout << "TXTR ID BODY         " << acv::actor_templates[i].t_body << std::endl;
+			std::cout << "TXTR ID ARM          " << acv::actor_templates[i].t_arm << std::endl;
+			std::cout << "TXTR ID LEG          " << acv::actor_templates[i].t_leg << std::endl;
 			std::cout << "JPOS ARM FORWARD     " << acv::actor_templates[i].jpos_arm_fw[0] << std::endl;
 			std::cout << "JPOS ARM RIGHT       " << acv::actor_templates[i].jpos_arm_rt[0] << std::endl;
 			std::cout << "JPOS ARM UP          " << acv::actor_templates[i].jpos_arm_up[0] << std::endl;
-			std::cout << "JPOS ARM FORWARD     " << acv::actor_templates[i].jpos_leg_fw[0] << std::endl;
-			std::cout << "JPOS ARM RIGHT       " << acv::actor_templates[i].jpos_leg_rt[0] << std::endl;
-			std::cout << "JPOS ARM UP          " << acv::actor_templates[i].jpos_leg_up[0] << std::endl;
+			std::cout << "JPOS LEG FORWARD     " << acv::actor_templates[i].jpos_leg_fw[0] << std::endl;
+			std::cout << "JPOS LEG RIGHT       " << acv::actor_templates[i].jpos_leg_rt[0] << std::endl;
+			std::cout << "JPOS LEG UP          " << acv::actor_templates[i].jpos_leg_up[0] << std::endl;
 			std::cout << "ARM LENGTH           " << acv::actor_templates[i].leng_arm[0] << std::endl;
 			std::cout << "LEG LENGTH           " << acv::actor_templates[i].leng_leg[0] << std::endl;
+			std::cout << "BODY LENGTH          " << acv::actor_templates[i].leng_body[0] << std::endl;
 		}
 	}
 
@@ -271,6 +276,8 @@ namespace serializer
 								t_filter_mode = graphics::eLINEAR;
 							else if (strcmp(value, "linearmip") == 0)
 								t_filter_mode = graphics::eLINEAR_MIPMAP;
+							else if (strcmp(value, "foliage") == 0)
+								t_filter_mode = graphics::eFOLIAGE;
 						}
 						else if (strcmp(elem, "tedg") == 0) // Texture edge mode
 						{
@@ -325,7 +332,14 @@ namespace serializer
 					else if (type == ASSET_MESHDEFORM_FILE)
 					{
 						std::cout << "CONV MESHDEFORM      [" << cdest << "]" << std::endl;
-						graphics::ConvertMD(csrca, cdest); // Create source file
+						if (acv::assets[index].handle[0] == 'L' && acv::assets[index].handle[1] == 'e' && acv::assets[index].handle[2] == 'g')
+							graphics::ConvertMD(csrca, cdest, graphics::eLEG); // Create source file
+						else if (acv::assets[index].handle[0] == 'B' && acv::assets[index].handle[1] == 'o' && acv::assets[index].handle[2] == 'd')
+							graphics::ConvertMD(csrca, cdest, graphics::eBODY); // Create source file
+						else if (acv::assets[index].handle[0] == 'A' && acv::assets[index].handle[1] == 'r' && acv::assets[index].handle[2] == 'm')
+							graphics::ConvertMD(csrca, cdest, graphics::eARM); // Create source file
+						else
+							graphics::ConvertMD(csrca, cdest, graphics::eDEFAULT); // Create source file
 						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
 						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
 						acv::assets[index].type = ASSET_MESHDEFORM_FILE;
@@ -347,21 +361,21 @@ namespace serializer
 
 	void InterpretWord(FILE* file, char* value, int* size)
 	{
+		*size = 1;
 		char oper;
-		fpos_t start; fpos_t end; // Start and end points of the value (eg. name = dick; dick is the value)
+		fpos_t start; // Start position of the value (eg. name = dick; dick is the value)
 		fgetpos(file, &start);
 		while (true)
 		{
+			++*size;
 			oper = fgetc(file); // Get character
 			if (oper == '\n')
 			{
-				fgetpos(file, &end);
+				fsetpos(file, &start);
+				fgets(value, (int)(*size) - 1, file); // Get element name
 				break;
 			}
 		}
-		*size = (int)(end - start);
-		fseek(file, (long)start, SEEK_SET);
-		fgets(value, (int)(*size) - 1, file); // Get element name
 	}
 
 	void InterpretCommand(FILE* file, char* value)
@@ -371,7 +385,7 @@ namespace serializer
 
 	void AdvanceSpace(FILE* file)
 	{
-		char oper = fgetc(file); //  Advance past space
+		fgetc(file); //  Advance past space
 	}
 
 	void InterpretArchiveContents(char* fn)
@@ -721,7 +735,27 @@ namespace serializer
 						AdvanceSpace(file);
 						InterpretCommand(file, elem);
 					}
-					else if (strcmp(elem, "lpos") == 0) // Limb Position
+					else if (strcmp(elem, "srct") == 0) // Source Texture
+					{
+						InterpretCommand(file, elem);
+						AdvanceSpace(file);
+						char value[256]; int value_size = 0;
+						InterpretWord(file, value, &value_size);
+
+						if (strcmp(elem, "head") == 0) // Head
+							acv::actor_templates[acv::actor_template_index].t_head = (btui16)GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
+						if (strcmp(elem, "body") == 0) // Body
+							acv::actor_templates[acv::actor_template_index].t_body = (btui16)GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
+						if (strcmp(elem, "larm") == 0) // Arm
+							acv::actor_templates[acv::actor_template_index].t_arm = (btui16)GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
+						if (strcmp(elem, "lleg") == 0) // Leg
+							acv::actor_templates[acv::actor_template_index].t_leg = (btui16)GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
+
+						// Get name of next operator
+						AdvanceSpace(file);
+						InterpretCommand(file, elem);
+					}
+					else if (strcmp(elem, "jpos") == 0) // Limb Position
 					{
 						InterpretCommand(file, elem);
 						AdvanceSpace(file);
@@ -734,9 +768,9 @@ namespace serializer
 							
 							if (strcmp(elem, "fw__") == 0) // Arm
 								acv::actor_templates[acv::actor_template_index].jpos_arm_fw[0] = (btf32)atof(value);
-							if (strcmp(elem, "rt__") == 0) // Arm
+							else if (strcmp(elem, "rt__") == 0) // Arm
 								acv::actor_templates[acv::actor_template_index].jpos_arm_rt[0] = (btf32)atof(value);
-							if (strcmp(elem, "up__") == 0) // Arm
+							else if (strcmp(elem, "up__") == 0) // Arm
 								acv::actor_templates[acv::actor_template_index].jpos_arm_up[0] = (btf32)atof(value);
 
 							// Get name of next operator
@@ -752,9 +786,9 @@ namespace serializer
 							
 							if (strcmp(elem, "fw__") == 0) // Arm
 								acv::actor_templates[acv::actor_template_index].jpos_leg_fw[0] = (btf32)atof(value);
-							if (strcmp(elem, "rt__") == 0) // Arm
+							else if (strcmp(elem, "rt__") == 0) // Arm
 								acv::actor_templates[acv::actor_template_index].jpos_leg_rt[0] = (btf32)atof(value);
-							if (strcmp(elem, "up__") == 0) // Arm
+							else if (strcmp(elem, "up__") == 0) // Arm
 								acv::actor_templates[acv::actor_template_index].jpos_leg_up[0] = (btf32)atof(value);
 
 							// Get name of next operator
@@ -762,7 +796,7 @@ namespace serializer
 							InterpretCommand(file, elem);
 						}
 					}
-					else if (strcmp(elem, "llen") == 0) // Limb Length
+					else if (strcmp(elem, "leng") == 0) // Limb Length
 					{
 						InterpretCommand(file, elem);
 						AdvanceSpace(file);
@@ -771,8 +805,10 @@ namespace serializer
 						
 						if (strcmp(elem, "larm") == 0) // Arm
 							acv::actor_templates[acv::actor_template_index].leng_arm[0] = (btf32)atof(value);
-						if (strcmp(elem, "lleg") == 0) // Leg
+						else if (strcmp(elem, "lleg") == 0) // Leg
 							acv::actor_templates[acv::actor_template_index].leng_leg[0] = (btf32)atof(value);
+						else if (strcmp(elem, "body") == 0) // Leg
+							acv::actor_templates[acv::actor_template_index].leng_body[0] = (btf32)atof(value);
 
 						// Get name of next operator
 						AdvanceSpace(file);
@@ -810,11 +846,11 @@ namespace serializer
 			//-------------------------------- Asset part
 
 			fread(&acv::assetCount, sizeof(btui32), 1, file); // Read filename count
-			for (btui32 i = 0ui32; i < acv::assetCount; i++) // Write file types
+			for (btui32 i = 0u; i < acv::assetCount; i++) // Write file types
 			{
 				fread(&acv::assets[i].type, sizeof(btui8), 1, file);
 			}
-			for (btui32 i = 0ui32; i < acv::assetCount; i++)
+			for (btui32 i = 0u; i < acv::assetCount; i++)
 			{
 				btui8 sl;
 				fread(&sl, sizeof(btui8), 1, file); // Read string length
@@ -870,8 +906,8 @@ namespace serializer
 
 			//-------------------------------- Entity Template part
 
-			fwrite(&acv::actor_template_index, sizeof(btui32), 1, file);
-			fwrite(&acv::actor_templates, sizeof(acv::ActorTemplate), acv::actor_template_index, file);
+			fread(&acv::actor_template_index, sizeof(btui32), 1, file);
+			fread(&acv::actor_templates, sizeof(acv::ActorBase), acv::actor_template_index, file);
 
 			fclose(file); // Close file
 
@@ -893,11 +929,11 @@ namespace serializer
 			btui32 count = acv::assetCount;
 			fwrite(&count, sizeof(btui32), 1, file); // Write number of filenames
 
-			for (btui32 i = 0ui32; i < acv::assetCount; i++) // Write file types
+			for (btui32 i = 0u; i < acv::assetCount; i++) // Write file types
 			{
 				fwrite(&acv::assets[i].type, sizeof(btui8), 1, file);
 			}
-			for (btui32 i = 0ui32; i < acv::assetCount; i++) // Write file names
+			for (btui32 i = 0u; i < acv::assetCount; i++) // Write file names
 			{
 				btui8 sl = (btui8)strlen(acv::assets[i].filename);
 				fwrite(&sl, sizeof(btui8), 1, file);
@@ -957,7 +993,7 @@ namespace serializer
 
 			count = acv::actor_template_index;
 			fwrite(&count, sizeof(btui32), 1, file);
-			fwrite(&acv::actor_templates, sizeof(acv::ActorTemplate), count, file);
+			fwrite(&acv::actor_templates, sizeof(acv::ActorBase), count, file);
 
 			fclose(file); // Close file
 

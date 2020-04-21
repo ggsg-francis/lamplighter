@@ -1,14 +1,19 @@
 #pragma once
 #include "graphics_structures.h"
 
+// TODO: shit
+#ifdef __GNUC__
+#include "global.h"
+#endif
+
 //opengl stuff
-#include <glm\glm.hpp>
-#include <glad\glad.h> // include glad to get all the required OpenGL headers
+#include <glm/glm.hpp>
+#include <glad/glad.h> // include glad to get all the required OpenGL headers
 //assimp stuff
-#include <assimp/Importer.hpp>      // C++ importer interface
-#include <assimp/scene.h>           // Output data structure
-#include <assimp/postprocess.h>		// Post processing flags
-//#include <assimp/config.h>		//why not config?
+#include <assimp/Importer.hpp> // C++ importer interface
+#include <assimp/scene.h> // Output data structure
+#include <assimp/postprocess.h> // Post processing flags
+//#include <assimp/config.h> // Tutorial told me to include this but it doesn't seem to be necessary
 //c++ stuff
 #include <vector>
 #include <string>
@@ -125,7 +130,7 @@ namespace graphics
 	// TODO: MOVE TO MATHS!!!
 	m::Vector3 operator*(const m::Vector3& VECTOR, const Matrix4x4& MATRIX);
 
-	// to do CLEAR THE RETURNS ON ALL OF THESE
+	// TODO: CLEAR THE RETURNS ON ALL OF THESE
 
 	// Translate matrix (copied from glm)
 	Matrix4x4 MatrixTranslate(Matrix4x4 const& MATRIX, m::Vector3 const& VECTOR);
@@ -147,14 +152,20 @@ namespace graphics
 	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
 	void MatrixTransformForwardUp(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
 	void MatrixTransformXFlip(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
+	void MatrixTransformXFlipForwardUp(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
+	Matrix4x4 MatrixGetMirror(Matrix4x4& SRC_MATRIX);
+	m::Vector3 MatrixGetPosition(Matrix4x4& SRC_MATRIX);
+	m::Vector3 MatrixGetForward(Matrix4x4& SRC_MATRIX);
+	m::Vector3 MatrixGetRight(Matrix4x4& SRC_MATRIX);
+	m::Vector3 MatrixGetUp(Matrix4x4& SRC_MATRIX);
 
 	struct colour
 	{
-		btui8 r = 0ui8;
-		btui8 g = 0ui8;
-		btui8 b = 0ui8;
-		btui8 a = 0ui8;
-		colour(btui8 x = 0ui8, btui8 y = 0ui8, btui8 z = 0ui8, btui8 w = 0ui8) : r{ x }, g{ y }, b{ z }, a{ w } {}
+		btui8 r = 0u;
+		btui8 g = 0u;
+		btui8 b = 0u;
+		btui8 a = 0u;
+		colour(btui8 x = 0u, btui8 y = 0u, btui8 z = 0u, btui8 w = 0u) : r{ x }, g{ y }, b{ z }, a{ w } {}
 	};
 
 	void Init();
@@ -213,12 +224,16 @@ namespace graphics
 			texTerrain2, // Terrain shader
 			texTerrain3, // Terrain shader
 			texTerrain4, // Terrain shader
+			texTerrain5, // Terrain shader
+			texTerrain6, // Terrain shader
+			texTerrain7, // Terrain shader
+			texTerrain8, // Terrain shader
 			Opacity, // GUI shader
 			Colour_A, // Chara shader
 			Colour_B, // Chara shader
 			Colour_C, // Chara shader
-			Colour_Ambient,
 			Colour_Sunlight,
+			Colour_Ambient,
 			Colour_Fog,
 			Colour_Lightmap,
 			Fog_Density,
@@ -253,6 +268,10 @@ namespace graphics
 			"tt2",
 			"tt3",
 			"tt4",
+			"tt5",
+			"tt6",
+			"tt7",
+			"tt8",
 			"opa",
 			"c_a",
 			"c_b",
@@ -277,6 +296,10 @@ namespace graphics
 			TXTR_TERRAIN2,
 			TXTR_TERRAIN3,
 			TXTR_TERRAIN4,
+			TXTR_TERRAIN5,
+			TXTR_TERRAIN6,
+			TXTR_TERRAIN7,
+			TXTR_TERRAIN8,
 		};
 	private:
 		const GLenum temp[32u]
@@ -367,6 +390,7 @@ namespace graphics
 		eNEAREST_MIPMAP,
 		eLINEAR,
 		eLINEAR_MIPMAP,
+		eFOLIAGE,
 	};
 	enum TextureEdgeMode : btui8
 	{
@@ -487,10 +511,11 @@ namespace graphics
 		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void AddMesh(Mesh* MESH, Matrix4x4 position);
 		void AddMesh(Mesh* MESH, m::Vector3 position, MeshOrientation ori);
-		// todo: remove me
+		// TODO: remove me
 		void AddTerrainTile(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE]);
 		void ReBindGL();
 		// add void unload?
+		void Unload();
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
@@ -501,25 +526,25 @@ namespace graphics
 	};
 
 	// Like a composite mesh but uses a different vertex type
+	// (TODO: This is the first class to be completely memory safe -- follow this example with the others!)
 	class TerrainMesh
 	{
 	public:
-		GLuint vao; // Vertex Array Object
 		void Draw();
 		void GenerateFromHMap(btui8(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE], btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]);
-		void ReBindGL();
-		// add void unload?
 	private:
-		GLuint vbo; // Vertex Buffer Object
-		GLuint ebo; // Element Buffer Object
-		VertexTerrain* vces; // Vertices
-		btui32* ices; // Indices
+		void ReBindGL();
+		GLuint vao = UI32_NULL; // Vertex Array Object
+		GLuint vbo = UI32_NULL; // Vertex Buffer Object
+		GLuint ebo = UI32_NULL; // Element Buffer Object
+		VertexTerrain* vces = nullptr; // Vertices
+		btui32* ices = nullptr; // Indices
 		size_t vces_size;
 		size_t ices_size;
 	public:
 		size_t GetVertexCount() { return vces_size; };
 		size_t GetIndexCount() { return ices_size; };
-		btui32* GetIndices() { return ices; };
+		/*btui32* GetIndices() { return ices; };
 		btf32* GenVertexPositionBuffer()
 		{
 			btf32* buf = (btf32*)malloc(vces_size * 3 * sizeof(btf32));
@@ -530,7 +555,7 @@ namespace graphics
 				buf[i * 3 + 2] = vces[i].pos.z;
 			}
 			return buf;
-		};
+		};*/
 	};
 
 	class GUIBitmap
@@ -589,7 +614,7 @@ namespace graphics
 		unsigned int VBO, VAO, EBO;
 	public:
 		void Init();
-		void ReGen(bti16 XA, bti16 XB, bti16 YA, bti16 YB, btui16 MARGIN_SIZE, btui16 BLEED_SIZE = 0ui16);
+		void ReGen(bti16 XA, bti16 XB, bti16 YA, bti16 YB, btui16 MARGIN_SIZE, btui16 BLEED_SIZE = 0u);
 		void Draw(Texture* TEXTURE);
 	};
 
@@ -642,4 +667,6 @@ void DrawCompositeMesh(btID ID, graphics::CompositeMesh& MESH,
 void DrawTerrainMesh(btID ID, graphics::TerrainMesh MESH,
 	graphics::TextureBase TEXTURE_A, graphics::TextureBase TEXTURE_B,
 	graphics::TextureBase TEXTURE_C, graphics::TextureBase TEXTURE_D,
+	graphics::TextureBase TEXTURE_E, graphics::TextureBase TEXTURE_F,
+	graphics::TextureBase TEXTURE_G, graphics::TextureBase TEXTURE_H,
 	graphics::Matrix4x4 MATRIX);

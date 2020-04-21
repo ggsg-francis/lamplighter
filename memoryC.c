@@ -1,14 +1,14 @@
 #include "memoryC.h"
 
 typedef btui8 bool;
-#define false 0ui8
-#define true 1ui8
+#define false 0u
+#define true 1u
 typedef unsigned long long btsize;
 
 // Get bit from any-size type
 bool bvget(btui32 flags, btui32 modflag)
 {
-	return (flags & modflag) != 0ui32;
+	return (flags & modflag) != 0u;
 }
 /*
 // Set bit of any-size type to value
@@ -176,7 +176,7 @@ typedef struct
 	CHUNK_BITVEC buffer_used[CHUNK_BUFFER_SIZE];
 } CkBuffer_c;
 
-void CkBufferAdd(CkBuffer_c* ckbuf, void* element)
+btui32 CkBufferAdd(CkBuffer_c* ckbuf, void* element)
 {
 	for (btui32 i = 0; i < CHUNK_BUFFER_MAX_INDEX; i++) // For every space in the buffer
 	{
@@ -188,9 +188,9 @@ void CkBufferAdd(CkBuffer_c* ckbuf, void* element)
 			ckbuf->buffer[iChunk] = (btui8*)malloc(CHUNK_SIZE);
 		}
 		// If this space is free, copy what we created into it
-		if (!bvget(ckbuf->buffer_used[iChunk], 1ui32 << iElement))
+		if (!bvget(ckbuf->buffer_used[iChunk], 1u << iElement))
 		{
-			//bvset(ckbuf->buffer_used[iChunk], 1ui32 << iElement);
+			//bvset(ckbuf->buffer_used[iChunk], 1u << iElement);
 			ckbuf->buffer[iChunk][iElement] = (btui8*)element;
 			free(element);
 			if (i > ckbuf->index_end) ckbuf->index_end = i; // If we hit new ground, expand the end index

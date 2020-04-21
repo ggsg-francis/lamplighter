@@ -7,18 +7,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="bt_archiver.cpp" />
     <ClCompile Include="tga_reader.cpp" />
     <ClCompile Include="archive.cpp" />
-    <ClCompile Include="graphics_convert.cpp" />
     <ClCompile Include="archive_read_write.cpp" />
+    <ClCompile Include="archiver_graphics_convert.cpp" />
+    <ClCompile Include="archiver_main.cpp" />
+    <ClCompile Include="glad.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h" />
     <ClInclude Include="tga_reader.h" />
     <ClInclude Include="global-archiver.h" />
     <ClInclude Include="archive.hpp" />
-    <ClInclude Include="graphics_convert.h" />
     <ClInclude Include="archive_read_write.h" />
+    <ClInclude Include="archiver_graphics_convert.h" />
   </ItemGroup>
 </Project>

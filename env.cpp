@@ -10,6 +10,9 @@
 
 #include "collision.h"
 
+#include <queue>
+#include <vector>
+
 // TODO: temporary until 'draw x soso' is removed from this file
 //#include "objects.h"
 
@@ -27,15 +30,15 @@ namespace env
 	btID wldTxtr[NUM_COMPOSITES];
 	btui32 wldNumTextures = 0u;
 
-	bool Get(uint x, uint y, eflag::flag bit)
+	bool Get(btui32 x, btui32 y, eflag::flag bit)
 	{
 		return mem::bvget((uint32_t)eCells.flags[x][y], (uint32_t)bit);
 	}
-	void Set(uint x, uint y, eflag::flag bit)
+	void Set(btui32 x, btui32 y, eflag::flag bit)
 	{
 		mem::bvset((uint32_t&)eCells.flags[x][y], (uint32_t)bit);
 	}
-	void UnSet(uint x, uint y, eflag::flag bit)
+	void UnSet(btui32 x, btui32 y, eflag::flag bit)
 	{
 		mem::bvunset((uint32_t&)eCells.flags[x][y], (uint32_t)bit);
 	}
@@ -189,6 +192,8 @@ namespace env
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
 			res::GetT(res::t_terrain_01), res::GetT(res::t_terrain_02),
 			res::GetT(res::t_terrain_03), res::GetT(res::t_terrain_04),
+			res::GetT(res::t_terrain_05), res::GetT(res::t_terrain_06),
+			res::GetT(res::t_terrain_07), res::GetT(res::t_terrain_08),
 			graphics::Matrix4x4());
 	}
 	void DrawTerrainDebug()
@@ -197,12 +202,16 @@ namespace env
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
 			res::GetT(res::t_terrain_01), res::GetT(res::t_terrain_02),
 			res::GetT(res::t_terrain_03), res::GetT(res::t_terrain_04),
+			res::GetT(res::t_terrain_05), res::GetT(res::t_terrain_06),
+			res::GetT(res::t_terrain_07), res::GetT(res::t_terrain_08),
 			matr);
 		graphics::MatrixTransform(matr, m::Vector3(0.f, 0.01f, 0.f));
 		graphics::SetRenderWire();
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
-			res::GetT(res::t_col_red), res::GetT(res::t_col_red),
-			res::GetT(res::t_col_red), res::GetT(res::t_col_red),
+			res::GetT(res::t_col_black), res::GetT(res::t_col_black),
+			res::GetT(res::t_col_black), res::GetT(res::t_col_black),
+			res::GetT(res::t_col_black), res::GetT(res::t_col_black),
+			res::GetT(res::t_col_black), res::GetT(res::t_col_black),
 			matr);
 		graphics::SetRenderSolid();
 	}
@@ -235,15 +244,7 @@ namespace env
 
 	void Clean()
 	{
-		/*
-		for (int x = 1; x < WORLD_SIZE - 1; x++)
-		{
-			for (int y = 1; y < WORLD_SIZE - 1; y++)
-			{
-				
-			}
-		}
-		*/
+		// empty
 	}
 
 	void GeneratePropMeshes()
@@ -295,14 +296,104 @@ namespace env
 		for (btui32 i = 0; i < wldNumTextures; ++i)
 		{
 			wldMeshes[i].ReBindGL();
+			//wldMeshes[i].Unload();
 		}
 	}
 
 	void GenerateTerrainMesh()
 	{
 		wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
-		wldMeshTerrain.ReBindGL();
-
-		CollisionMakeEnvMesh(&wldMeshTerrain);
 	}
+	void GenerateTerrainMeshEditor()
+	{
+		wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
+	}
+}
+
+enum NodeFromDir : btui8
+{
+	ND_UNSET,
+	ND_FROM_NORTH,
+	ND_FROM_SOUTH,
+	ND_FROM_EAST,
+	ND_FROM_WEST,
+};
+NodeFromDir node_cache[WORLD_SIZE][WORLD_SIZE];
+
+void path::PathFind(void* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest)
+{
+	std::queue<PathNode> openSet;
+	PathNode node; node.x = x; node.y = y;
+	openSet.push(node);
+	std::vector<PathNode> usedSet;
+	usedSet.push_back(node);
+	while(!openSet.empty())
+	{
+		PathNode current = openSet.front();
+		openSet.pop();
+		if (current.x == xDest && current.y == yDest)
+			break;
+		// N
+		if (current.y < WORLD_SIZE_MAXINT && node_cache[current.x][current.y + 1] == ND_UNSET)
+		{
+			PathNode next; next.x = current.x; next.y = current.y + 1;
+			openSet.push(next);
+			node_cache[current.x][current.y + 1] = ND_FROM_SOUTH;
+			usedSet.push_back(next);
+		}
+		// S
+		if (current.y > 0 && node_cache[current.x][current.y - 1] == ND_UNSET)
+		{
+			PathNode next; next.x = current.x; next.y = current.y - 1;
+			openSet.push(next);
+			node_cache[current.x][current.y - 1] = ND_FROM_NORTH;
+			usedSet.push_back(next);
+		}
+		// E
+		if (current.x < WORLD_SIZE_MAXINT && node_cache[current.x + 1][current.y] == ND_UNSET)
+		{
+			PathNode next; next.x = current.x + 1; next.y = current.y;
+			openSet.push(next);
+			node_cache[current.x + 1][current.y] = ND_FROM_WEST;
+			usedSet.push_back(next);
+		}
+		// W
+		if (current.x > 0 && node_cache[current.x - 1][current.y] == ND_UNSET)
+		{
+			PathNode next; next.x = current.x - 1; next.y = current.y;
+			openSet.push(next);
+			node_cache[current.x - 1][current.y] = ND_FROM_EAST;
+			usedSet.push_back(next);
+		}
+	}
+
+
+	std::vector<PathNode>* path2 = ((std::vector<PathNode>*)path);
+
+	// set path vector
+	path2->clear();
+	PathNode current; current.x = xDest; current.y = yDest;
+	while (current.x != x && current.y != y)
+	{
+		path2->push_back(current);
+		switch (node_cache[current.x][current.y])
+		{
+		case ND_FROM_NORTH:
+			++current.y;
+			break;
+		case ND_FROM_SOUTH:
+			--current.y;
+			break;
+		case ND_FROM_EAST:
+			++current.x;
+			break;
+		case ND_FROM_WEST:
+			--current.x;
+			break;
+		}
+	}
+
+	// clear modified cache
+	for (int i = 0; i < usedSet.size(); ++i)
+		node_cache[usedSet[i].x][usedSet[i].y] = ND_UNSET;
 }

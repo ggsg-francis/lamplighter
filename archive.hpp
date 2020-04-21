@@ -46,6 +46,7 @@ namespace res
 		t_debug_bb,
 		m_debugcell,
 		m_debug_sphere,
+		m_debug_monkey,
 		t_meat_test,
 		// Debug Colours
 		t_col_black,
@@ -64,11 +65,6 @@ namespace res
 		t_skin2,
 		t_skin3,
 		t_skin4,
-		// Chara models
-		md_chr_body,
-		md_char_arm,
-		md_char_head,
-		md_char_leg,
 		// Err....
 		m_ex1e_air_carrier,
 		// Equipment
@@ -96,6 +92,10 @@ namespace res
 		t_terrain_02,
 		t_terrain_03,
 		t_terrain_04,
+		t_terrain_05,
+		t_terrain_06,
+		t_terrain_07,
+		t_terrain_08,
 		// Gui stuff
 		t_gui_crosshair,
 		t_gui_font,
@@ -132,9 +132,9 @@ namespace res
 // -
 #define SPELL_COUNT 8
 // -
-#define PROJECTILE_TEMPLATE_COUNT 4
+#define PROJECTILE_TEMPLATE_COUNT 8
 // -
-#define ENTT_COUNT 8
+#define ACTORBASE_COUNT 8
 
 namespace acv
 {	
@@ -209,21 +209,26 @@ namespace acv
 	} ProjectileTemplate;
 
 	#define ENTITY_MAX_LIMB_NUM 4
-	typedef struct ActorTemplate
+	typedef struct ActorBase
 	{
 		char handle[8];
 		btID m_head;
 		btID m_body;
 		btID m_arm;
 		btID m_leg;
-		btf32 jpos_arm_fw[ENTITY_MAX_LIMB_NUM]{};
-		btf32 jpos_arm_rt[ENTITY_MAX_LIMB_NUM]{};
-		btf32 jpos_arm_up[ENTITY_MAX_LIMB_NUM]{};
+		btID t_head;
+		btID t_body;
+		btID t_arm;
+		btID t_leg;
+		btf32 jpos_arm_fw[ENTITY_MAX_LIMB_NUM];
+		btf32 jpos_arm_rt[ENTITY_MAX_LIMB_NUM];
+		btf32 jpos_arm_up[ENTITY_MAX_LIMB_NUM];
 		btf32 leng_arm[ENTITY_MAX_LIMB_NUM];
-		btf32 jpos_leg_fw[ENTITY_MAX_LIMB_NUM]{};
-		btf32 jpos_leg_rt[ENTITY_MAX_LIMB_NUM]{};
-		btf32 jpos_leg_up[ENTITY_MAX_LIMB_NUM]{};
+		btf32 jpos_leg_fw[ENTITY_MAX_LIMB_NUM];
+		btf32 jpos_leg_rt[ENTITY_MAX_LIMB_NUM];
+		btf32 jpos_leg_up[ENTITY_MAX_LIMB_NUM];
 		btf32 leng_leg[ENTITY_MAX_LIMB_NUM];
+		btf32 leng_body[ENTITY_MAX_LIMB_NUM];
 	} EntityTemplate;
 
 	struct BaseItem
@@ -300,7 +305,7 @@ namespace acv
 	extern ProjectileTemplate projectiles[PROJECTILE_TEMPLATE_COUNT];
 	extern btui32 projectiles_index;
 
-	extern ActorTemplate actor_templates[ENTT_COUNT];
+	extern ActorBase actor_templates[ACTORBASE_COUNT];
 	extern btui32 actor_template_index;
 
 	// make inaccessable

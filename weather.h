@@ -1,5 +1,7 @@
 #pragma once
 
+#include "global.h"
+
 namespace weather
 {
 	void Tick(btf32 DELTA);

@@ -30,17 +30,17 @@
 #endif
 
 // OpenGL
-#include <glad\glad.h>
-#include <glm\glm.hpp>
+#include "glad/glad.h"
+#include "glm/glm.hpp"
 //gtx is experimental, gtc is stable
-#include <glm\gtc\matrix_transform.hpp>
-#include <glm\gtc\type_ptr.hpp>
+#include "glm/gtc\matrix_transform.hpp"
+#include "glm/gtc\type_ptr.hpp"
 //for transform rotation
-#include <glm\gtc\quaternion.hpp>
+#include "glm/gtc\quaternion.hpp"
 
 // SDL
-#include <SDL2\SDL.h>
-#include <SDL2\SDL_syswm.h>
+#include "SDL2\SDL.h"
+#include "SDL2\SDL_syswm.h"
 
 //#ifdef DEF_USE_CS
 //// For getting the window handle
@@ -164,7 +164,7 @@ inline void TranslateInput()
 	if (input::GetHeld(input::key::DIR_L)) // Left
 		input_p1.x -= 1.f;
 	// Set input
-	index::SetInput(0ui16,
+	index::SetInput(0u,
 		input_p1, input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
 		input::GetHeld(input::key::USE),
 		input::GetHit(input::key::USE),
@@ -174,7 +174,8 @@ inline void TranslateInput()
 		input::GetHit(input::key::ACTION_A),
 		input::GetHit(input::key::ACTION_B),
 		input::GetHit(input::key::ACTION_C),
-		input::GetHit(input::key::CROUCH));
+		input::GetHit(input::key::CROUCH),
+		input::GetHeld(input::key::JUMP));
 	if (cfg::bSplitScreen)
 	{
 		// Generate analogue input from joystick input
@@ -182,7 +183,7 @@ inline void TranslateInput()
 		input_p2.x = input::BUF_LOCALGET.joy_x_a;
 		input_p2.y = -input::BUF_LOCALGET.joy_y_a;
 		// Set input
-		index::SetInput(1ui16, input_p2, input::BUF_LOCALGET.joy_x_b * 8.f, input::BUF_LOCALGET.joy_y_b * 8.f,
+		index::SetInput(1u, input_p2, input::BUF_LOCALGET.joy_x_b * 8.f, input::BUF_LOCALGET.joy_y_b * 8.f,
 			input::GetHeld(input::key::C_USE),
 			input::GetHit(input::key::C_USE),
 			input::GetHit(input::key::C_USE_ALT),
@@ -191,7 +192,8 @@ inline void TranslateInput()
 			input::GetHit(input::key::C_ACTION_A),
 			input::GetHit(input::key::C_ACTION_B),
 			input::GetHit(input::key::C_ACTION_C),
-			input::GetHit(input::key::CROUCH));
+			input::GetHit(input::key::C_CROUCH),
+			input::GetHeld(input::key::C_JUMP));
 	}
 	#endif
 }
@@ -220,7 +222,7 @@ inline void TranslateInputEditor()
 		//if (input::GetHeld(input::key::DIR_L)) // Left
 		//	input_p1.x -= 1.f;
 		// Set input
-		index::SetInput(0ui16, input_p1, input::BUF_LOCALGET.mouse_x * mouserot_mult, input::BUF_LOCALGET.mouse_y * mouserot_mult,
+		index::SetInput(0u, input_p1, input::BUF_LOCALGET.mouse_x * mouserot_mult, input::BUF_LOCALGET.mouse_y * mouserot_mult,
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE_ALT),
@@ -229,7 +231,8 @@ inline void TranslateInputEditor()
 			input::GetHit(input::key::ACTION_A),
 			input::GetHit(input::key::ACTION_B),
 			input::GetHit(input::key::ACTION_C),
-			input::GetHeld(input::key::CROUCH)); // 3rd 'aim' variable was here
+			input::GetHeld(input::key::CROUCH),
+			input::GetHit(input::key::JUMP));
 
 		//do stuff
 		index::Tick(FRAME_TIME);
@@ -341,7 +344,7 @@ int main(int argc, char * argv[]) // SDL Main
 	glGenFramebuffers(1, &framebuffer_shadow);
 	glGenTextures(1, &rendertexture_shadow);
 	glBindTexture(GL_TEXTURE_2D, rendertexture_shadow);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -396,7 +399,7 @@ int main(int argc, char * argv[]) // SDL Main
 	HWND hwnd = wmInfo.info.win.window;
 	aud::Init(hwnd);
 	#else
-	aud::Init();
+	aud::Init(nullptr);
 	#endif
 	index::Init();
 	input::Init();
@@ -408,6 +411,11 @@ int main(int argc, char * argv[]) // SDL Main
 
 	btf64 current_frame_time = 0.f;
 	btf64 next_frame_time = 0.f;
+
+	// Variable declarations (so that they are not crossed by the label jumps)
+	glm::vec3* fogC = nullptr;
+	glm::mat4 mat_fb;
+	btf64 test2;
 
 	// Skip to the editor loop if the game is running in edit mode
 	if (cfg::bEditMode) goto loop_editor;
@@ -487,7 +495,7 @@ render:
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
 
 	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-	glm::vec3* fogC = (glm::vec3*)weather::FogColour();
+	fogC = (glm::vec3*)weather::FogColour();
 	glClearColor(fogC->r, fogC->g, fogC->b, 1.0f);
 	//glClearColor(2.f, 2.f, 2.f, 1.0f);
 
@@ -498,7 +506,7 @@ render:
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
 	//-------------------------------- RENDER SHADOWMAP
-	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	index::SetViewFocus(0u); // Set render POV
@@ -518,7 +526,7 @@ render:
 		glDisable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ZERO);
 		//-------------------------------- RENDER SHADOWMAP
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		index::SetViewFocus(1u); // Set render POV to second player
@@ -572,7 +580,7 @@ render:
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glFrontFace(GL_CW);
 
-	glm::mat4 mat_fb = glm::mat4(1.0f);
+	mat_fb = glm::mat4(1.0f);
 	#ifndef DEF_NMP
 	// Set frame matrix to half-screen
 	if (cfg::bSplitScreen)
@@ -616,7 +624,7 @@ render:
 	}
 	#endif // MP
 
-	// to do check up on this later!!
+	// TODO check up on this later!!
 	glActiveTexture(GL_TEXTURE0); // For some reason or other, the texture must be reset (probably forgotten elsewhere)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
@@ -634,7 +642,7 @@ render:
 	// Get the time now that we've rendered the frame
 	current_frame_time = (btf64)SDL_GetTicks() / 1000.;
 	// Get the frame time remainder that we need to sleep for (rounded down)
-	btf64 test2 = (next_frame_time - current_frame_time) * 1000.;
+	test2 = (next_frame_time - current_frame_time) * 1000.;
 	if (test2 > 0.)
 	{
 		DWORD test = (DWORD)test2;
@@ -665,7 +673,7 @@ loop_editor:
 		glBlendFunc(GL_ONE, GL_ZERO);
 
 		// Test
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		index::SetViewFocus(0u);
@@ -682,7 +690,7 @@ loop_editor:
 		//unsigned char pixel[4];
 		//glReadPixels(320, 240, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
 
-		//if (pixel[2] == 0ui8)
+		//if (pixel[2] == 0u)
 		//	//index::SetViewTargetID((btID)pixel[0]);
 		//	index::SetViewTargetID((btID)pixel[0] + ((btID)pixel[1] << 8u));
 		//else

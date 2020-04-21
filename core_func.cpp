@@ -214,22 +214,22 @@ namespace index
 				for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y)
 				{
 					//de-intersect entities
-					for (int e = 0; e <= cells[x][y].ents.end(); e++)
+					for (int e = 0; e <= refCells[x][y].ref_ents.end(); e++)
 					{
-						if (cells[x][y].ents[e] != ID_NULL)
+						if (refCells[x][y].ref_ents[e] != ID_NULL)
 						{
-							if (block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->properties.get(Entity::eCOLLIDE_ENT))
+							if (block_entity.used[refCells[x][y].ref_ents[e]] && ENTITY(refCells[x][y].ref_ents[e])->properties.get(Entity::eCOLLIDE_ENT))
 							{
-								m::Vector2 vec = ent->t.position - ENTITY(cells[x][y].ents[e])->t.position;
+								m::Vector2 vec = ent->t.position - ENTITY(refCells[x][y].ref_ents[e])->t.position;
 								float dist = m::Length(vec);
-								btf32 combined_radius = ent->radius + ENTITY(cells[x][y].ents[e])->radius;
+								btf32 combined_radius = ent->radius + ENTITY(refCells[x][y].ref_ents[e])->radius;
 								if (dist < combined_radius && dist > 0.f)
 								{
 									// TEMP! if same type
-									if (ent->type == ENTITY(cells[x][y].ents[e])->type)
+									if (ent->type == ENTITY(refCells[x][y].ref_ents[e])->type)
 									{
 										ent->t.position += m::Normalize(vec) * (combined_radius - dist) * 0.5f;
-										ENTITY(cells[x][y].ents[e])->t.position -= m::Normalize(vec) * (combined_radius - dist) * 0.5f;
+										ENTITY(refCells[x][y].ref_ents[e])->t.position -= m::Normalize(vec) * (combined_radius - dist) * 0.5f;
 									}
 
 									// consider using some kind of collision callback
@@ -255,7 +255,7 @@ namespace index
 			} // End for each cell group X
 		} // end does collide entities check
 
-		/*
+		///*
 		//-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
 
 		offsetx = ent->t.position.x - ent->t.csi.c[eCELL_I].x;
@@ -330,13 +330,13 @@ namespace index
 			if (m::Length(offset) < 0.5f)
 				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 		}
-		*/
+		//*/
 	}
 
 	void RemoveAllReferences(btID index)
 	{
 		// Remove us from the cell we're on
-		cells[ENTITY(index)->t.csi.c[eCELL_I].x][ENTITY(index)->t.csi.c[eCELL_I].y].ents.remove(index);
+		refCells[ENTITY(index)->t.csi.c[eCELL_I].x][ENTITY(index)->t.csi.c[eCELL_I].y].ref_ents.remove(index);
 		// Remove all references to us by other entities
 		for (int i = 0; i <= block_entity.index_end; i++)
 		{
@@ -506,15 +506,15 @@ namespace index
 			for (int y = entity_index->t.csi.c[eCELL_I].y - 3u; y < entity_index->t.csi.c[eCELL_I].y + 3u; y++)
 			{
 				// Iterate through every entity space in this cell
-				for (int e = 0; e <= cells[x][y].ents.end(); e++)
+				for (int e = 0; e <= refCells[x][y].ref_ents.end(); e++)
 				{
 					//if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->Type() == Entity::eITEM)
-					if (cells[x][y].ents[e] != ID_NULL && cells[x][y].ents[e] != index && block_entity.used[cells[x][y].ents[e]])
+					if (refCells[x][y].ref_ents[e] != ID_NULL && refCells[x][y].ref_ents[e] != index && block_entity.used[refCells[x][y].ref_ents[e]])
 					{
-						btf32 check_distance = m::Length(ENTITY(cells[x][y].ents[e])->t.position - entity_index->t.position);
+						btf32 check_distance = m::Length(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
 						if (check_distance < closestDist)
 						{
-							m::Vector2 targetoffset = m::Normalize(ENTITY(cells[x][y].ents[e])->t.position - entity_index->t.position);
+							m::Vector2 targetoffset = m::Normalize(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
 
 							m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
 
@@ -522,7 +522,7 @@ namespace index
 							if (abs(angdif) < closest_angle)
 							{
 								closest_angle = angdif;
-								id = cells[x][y].ents[e];
+								id = refCells[x][y].ref_ents[e];
 							}
 						}
 					}
@@ -737,6 +737,10 @@ namespace index
 			CHARA(index)->atk_target = BUF_NULL;
 			CHARA(index)->ai_target_ent = BUF_NULL;
 			CHARA(index)->ai_ally_ent = BUF_NULL;
+			CHARA(index)->footPosL = m::Vector3(pos.x, 0, pos.y);
+			CHARA(index)->footPosTargL = m::Vector3(pos.x, 0, pos.y);
+			CHARA(index)->footPosR = m::Vector3(pos.x, 0, pos.y);
+			CHARA(index)->footPosTargR = m::Vector3(pos.x, 0, pos.y);
 
 			const m::Vector3 colEyes[]{
 				m::Vector3(232.f / 256.f, 17.f / 256.f, 17.f / 256.f), // red
@@ -805,7 +809,6 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
-		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = false;
 		CHARA(id)->speed = 1.45f;
 		CHARA(id)->agility = 0.f;
@@ -827,7 +830,6 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 1.45f;
 		CHARA(id)->agility = 0.f;
@@ -845,7 +847,6 @@ namespace index
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 1.45f;
 		CHARA(id)->agility = 0.f;
@@ -862,7 +863,6 @@ namespace index
 		ENTITY(id)->faction = fac::faction::undead;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = true;
 		CHARA(id)->speed = 3.5f;
 		CHARA(id)->agility = 0.f;
@@ -877,7 +877,6 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
-		CHARA(id)->t_skin = res::t_skin_template;
 		CHARA(id)->aiControlled = false;
 		CHARA(id)->speed = 0.1f;
 	}
@@ -888,41 +887,41 @@ namespace index
 	//--------------------------- CELL STUFF -----------------------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-	#define eN 1ui8
-	#define eE 2ui8
+	#define eN 1u
+	#define eE 2u
 
 	// Order is always: This -> X -> Y -> Diagonal
 
 	void GetCgNE(btcoord x, btcoord y, CellCoord* cc)
 	{
-		cc[eCELL_X].x = x + 1ui8; cc[eCELL_X].y = y;          // E (X)
-		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y + 1ui8;          // N (Y)
-		cc[eCELL_XY].x = x + 1ui8; cc[eCELL_XY].y = y + 1ui8; // NE
+		cc[eCELL_X].x = x + 1u; cc[eCELL_X].y = y; // E (X)
+		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y + 1u; // N (Y)
+		cc[eCELL_XY].x = x + 1u; cc[eCELL_XY].y = y + 1u; // NE
 	};
 	void GetCgNW(btcoord x, btcoord y, CellCoord* cc)
 	{
-		cc[eCELL_X].x = x - 1ui8; cc[eCELL_X].y = y;          // W (X)
-		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y + 1ui8;          // N (Y)
-		cc[eCELL_XY].x = x - 1ui8; cc[eCELL_XY].y = y + 1ui8; // NW
+		cc[eCELL_X].x = x - 1u; cc[eCELL_X].y = y; // W (X)
+		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y + 1u; // N (Y)
+		cc[eCELL_XY].x = x - 1u; cc[eCELL_XY].y = y + 1u; // NW
 	};
 	void GetCgSE(btcoord x, btcoord y, CellCoord* cc)
 	{
-		cc[eCELL_X].x = x + 1ui8; cc[eCELL_X].y = y;          // E (X)
-		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y - 1ui8;          // S (Y)
-		cc[eCELL_XY].x = x + 1ui8; cc[eCELL_XY].y = y - 1ui8; // SE
+		cc[eCELL_X].x = x + 1u; cc[eCELL_X].y = y; // E (X)
+		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y - 1u; // S (Y)
+		cc[eCELL_XY].x = x + 1u; cc[eCELL_XY].y = y - 1u; // SE
 	};
 	void GetCgSW(btcoord x, btcoord y, CellCoord* cc)
 	{
-		cc[eCELL_X].x = x - 1ui8; cc[eCELL_X].y = y;          // W (X)
-		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y - 1ui8;          // S (Y)
-		cc[eCELL_XY].x = x - 1ui8; cc[eCELL_XY].y = y - 1ui8; // SW
+		cc[eCELL_X].x = x - 1u; cc[eCELL_X].y = y; // W (X)
+		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y - 1u; // S (Y)
+		cc[eCELL_XY].x = x - 1u; cc[eCELL_XY].y = y - 1u; // SW
 	};
 
 	void(*GetCellNeighbors[])(btcoord, btcoord, CellCoord*) = { GetCgSW, GetCgNW, GetCgSE, GetCgNE };
 
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg)
 	{
-		btui8 dir = 0ui8; // Represents direction of offset
+		btui8 dir = 0u; // Represents direction of offset
 
 		cg.c[eCELL_I].x = (btcoord)roundf(vec.x); // X cell coordinate
 		cg.c[eCELL_I].y = (btcoord)roundf(vec.y); // Y cell coordinate
@@ -935,7 +934,12 @@ namespace index
 
 	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& cs)
 	{
-		btui8 dir = 0ui8; // Represents direction of offset
+		if (vec.x < 1.f) vec.x = 1.f;
+		if (vec.y < 1.f) vec.y = 1.f;
+		if (vec.x > WORLD_SIZE_MAXINT - 1.f) vec.x = WORLD_SIZE_MAXINT - 1.f;
+		if (vec.y > WORLD_SIZE_MAXINT - 1.f) vec.y = WORLD_SIZE_MAXINT - 1.f;
+
+		btui8 dir = 0u; // Represents direction of offset
 
 		cs.c[eCELL_I].x = (btcoord)roundf(vec.x); // X cell coordinate
 		cs.c[eCELL_I].y = (btcoord)roundf(vec.y); // Y cell coordinate

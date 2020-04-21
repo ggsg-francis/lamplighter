@@ -87,7 +87,7 @@ namespace acv
 	ProjectileTemplate projectiles[PROJECTILE_TEMPLATE_COUNT];
 	btui32 projectiles_index;
 
-	ActorTemplate actor_templates[ENTT_COUNT];
+	ActorBase actor_templates[ACTORBASE_COUNT];
 	btui32 actor_template_index = 0;
 
 	// Assets

@@ -3,8 +3,13 @@
 #ifndef MATHS_H
 #define MATHS_H
 
+#include "global.h"
+
 #include <glm\glm.hpp>
 #include <glm\gtc\type_ptr.hpp>
+
+// For variable argument function!
+#include <stdarg.h>
 
 namespace m
 {
@@ -120,7 +125,9 @@ namespace m
 		Vector2 operator-=(float);
 		Vector2 operator*=(float);
 		Vector2 operator/=(float);
+		Vector2 operator=(const btf32&);
 	};
+
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- VECTOR3 ------------------------------------------
@@ -255,6 +262,37 @@ namespace m
 
 	// Random float between min and max
 	btf32 Random(btf32 min, btf32 max);
+	//
+	btf32 Clamp(btf32 val, btf32 min, btf32 max);
+	//
+	//btf32 MaxF(btui32 num, ...);
+	template <typename T> T Max(btui32 num, ...)
+	{
+		va_list args;
+		va_start(args, num);
+		T max, get;
+		max = va_arg(args, T);
+		for (btui32 x = 1; x < num; x++) {
+			get = va_arg(args, T);
+			if (get > max) max = get;
+		}
+		va_end(args);
+		return max;
+	}
+	//
+	template <typename T> T Min(btui32 num, ...)
+	{
+		va_list args;
+		va_start(args, num);
+		T min, get;
+		min = va_arg(args, T);
+		for (btui32 x = 1; x < num; x++) {
+			get = va_arg(args, T);
+			if (get < min) min = get;
+		}
+		va_end(args);
+		return min;
+	}
 
 	// Quadratic function -- Makes a parabola
 	btf32 Quadratic(const btf32 a, const btf32 b, const btf32 c, const btf32 x);

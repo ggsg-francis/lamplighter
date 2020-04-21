@@ -2,7 +2,8 @@
 
 #include "memory.hpp"
 //#include "maths.hpp"
-
+#include "env.h"
+#include <vector>
 
 class testFixedPoint
 {
@@ -82,13 +83,18 @@ public:
 
 void InitTest()
 {
+	std::vector<path::PathNode> vec;
+	path::PathFind(&vec, 1024, 1024, 1026, 1026);
+
+
+	#ifdef FUFUFUF
+	sdfghdfh;
+	#endif
+
 	btf32 float_determinism_test_1 = ((8.586f + 1.2345f) + 4.4233f);
 	btf32 float_determinism_test_2 = (8.586f + (1.2345f + 4.4233f));
 
 	btui32 i;
-
-	// Test things here
-	btf32 f = INFINITY;
 
 	//testFixedPoint fp;
 	FixedPointU32 fp;

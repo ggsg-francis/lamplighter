@@ -1,6 +1,8 @@
 #ifndef GRAPHICS_STRUCTURES_H
 #define GRAPHICS_STRUCTURES_H
 
+#include "global.h"
+
 #ifdef __cplusplus
 extern "C" {
 	#endif
@@ -67,7 +69,8 @@ extern "C" {
 		vec3 pos; // Position
 		vec3 nor; // Normal
 		vec2 uvc; // UV Coords (TexCoords)
-		vec4 col; // Vertex Colour
+		//vec4 col; // Vertex Colour
+		btf32 txtr[8u]; // Texture blend values
 	} VertexTerrain;
 
 	#ifdef __cplusplus

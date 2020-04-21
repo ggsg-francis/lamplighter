@@ -2,11 +2,10 @@
 #include "graphics.hpp"
 
 //would like to drop this include
-#include <glm\gtc\matrix_transform.hpp>
+#include "glm/gtc\matrix_transform.hpp"
 //i dont know what the point of using this one is
-#include <glm\gtc\type_ptr.hpp>
+#include "glm/gtc\type_ptr.hpp"
 
-//#include "global.h"
 #include "cfg.h"
 
 #include "maths.hpp"
@@ -14,45 +13,76 @@
 
 //-------------------------------- VERTEX ATTRIBUTES
 
-// This looks ridiculous, but the 'offsetof' macro was on the fritz in release builds for some reason.
+// This looks ridiculous, but the 'offsetof' macro was on the fritz in release builds with MSC for some reason.
 enum v_i : btui32 { // Vert Indices
 	VI_POS, VI_NOR, VI_UVC, VI_COL,
 };
 enum v_o : size_t { // Vert Offsets
+	#ifdef __GNUC__
+	VO_POS = offsetof(Vertex, pos),
+	VO_NOR = offsetof(Vertex, nor),
+	VO_UVC = offsetof(Vertex, uvc),
+	VO_COL = offsetof(Vertex, col),
+	#elif defined _MSC_VER
 	VO_POS = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->pos))),
 	VO_NOR = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->nor))),
 	VO_UVC = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->uvc))),
 	VO_COL = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->col))),
+	#endif
 };
 enum vb_i : btui32 { // VertBlend Indices
 	vbi_pos_a, vbi_pos_b, vbi_nor_a, vbi_nor_b, vbi_uvc, vbi_col,
 };
 enum vb_o : size_t { // VertBlend Offsets
+	#ifdef __GNUC__
+	vb_pos_a = offsetof(VertexBlend, pos_a),
+	vb_pos_b = offsetof(VertexBlend, pos_b),
+	vb_nor_a = offsetof(VertexBlend, nor_a),
+	vb_nor_b = offsetof(VertexBlend, nor_b),
+	vb_uvc = offsetof(VertexBlend, uvc),
+	vb_col = offsetof(VertexBlend, col),
+	#elif defined _MSC_VER
 	vb_pos_a = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->pos_a))),
 	vb_pos_b = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->pos_b))),
 	vb_nor_a = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->nor_a))),
 	vb_nor_b = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->nor_b))),
 	vb_uvc = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->uvc))),
 	vb_col = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->col))),
+	#endif
 };
 enum vd_i : btui32 { // VertDeform Indices
 	vdi_pos, vdi_nor, vdi_uvc, vdi_col, vdi_mat,
 };
 enum vd_o : size_t { // VertDeform Offsets
+	#ifdef __GNUC__
+	vd_pos = offsetof(VertexDeform, pos),
+	vd_nor = offsetof(VertexDeform, nor),
+	vd_uvc = offsetof(VertexDeform, uvc),
+	vd_col = offsetof(VertexDeform, col),
+	vd_mat = offsetof(VertexDeform, mat),
+	#elif defined _MSC_VER
 	vd_pos = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->pos))),
 	vd_nor = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->nor))),
 	vd_uvc = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->uvc))),
 	vd_col = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->col))),
 	vd_mat = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->mat))),
+	#endif
 };
 enum vt_i : btui32 { // VertTerrain Indices
-	VT_I_POS, VT_I_NOR, VT_I_UVC, VT_I_COL,
+	VT_I_POS, VT_I_NOR, VT_I_UVC, VT_I_TXTR,
 };
 enum vt_o : size_t { // VertTerrain Offsets
+	#ifdef __GNUC__
+	VT_O_POS = offsetof(VertexTerrain, pos),
+	VT_O_NOR = offsetof(VertexTerrain, nor),
+	VT_O_UVC = offsetof(VertexTerrain, uvc),
+	VT_O_TXTR = offsetof(VertexTerrain, txtr),
+	#elif defined _MSC_VER
 	VT_O_POS = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->pos))),
 	VT_O_NOR = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->nor))),
 	VT_O_UVC = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->uvc))),
-	VT_O_COL = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->col))),
+	VT_O_TXTR = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexTerrain*)0)->txtr))),
+	#endif
 };
 
 extern TGA_ORDER *TGA_READER_ARGB;
@@ -144,6 +174,9 @@ namespace graphics
 		btui32 frameSizeX = 320u;
 		btui32 frameSizeY = 240u;
 		Shader shaders[S_COUNT];
+		bool bEditMode = false;
+		bool bSplitScreen = false;
+		btf32 fCameraFOV, fCameraNearClip, fCameraFarClip;
 	};
 	Graphics* gPtr;
 
@@ -152,22 +185,29 @@ namespace graphics
 
 	void SetFrameSize(btui32 x, btui32 y)
 	{
-		if (!cfg::bEditMode)
+		if (!gPtr->bEditMode)
 		{
 			btui32 scale = x / SCREEN_UPSCALE_THRESHOLD + 1u;
-			gPtr->frameSizeY = cfg::iWinY / scale;
+			gPtr->frameSizeY = y / scale;
 			#ifndef DEF_NMP
-			if (cfg::bSplitScreen) { scale *= 2u; x *= 0.5f; }
+			if (gPtr->bSplitScreen)
+			{
+				gPtr->frameSizeX = x / (scale * 2u);
+				x *= 0.5f;
+			}
+			else
 			#endif
-			gPtr->frameSizeX = cfg::iWinX / scale;
+			{
+				gPtr->frameSizeX = x / scale;
+			}
 			gPtr->shaders[S_POST].Use();
 			gPtr->shaders[S_POST].SetFloat(gPtr->shaders[S_POST].fWindowX, (GLfloat)x);
 			gPtr->shaders[S_POST].SetFloat(gPtr->shaders[S_POST].fWindowY, (GLfloat)y);
 		}
 		else
 		{
-			gPtr->frameSizeX = cfg::iWinX;
-			gPtr->frameSizeY = cfg::iWinY;
+			gPtr->frameSizeX = x;
+			gPtr->frameSizeY = y;
 		}
 	}
 
@@ -204,6 +244,12 @@ namespace graphics
 		gPtr->shaders[S_GUI].Init("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
 		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
 
+
+		gPtr->bEditMode = cfg::bEditMode;
+		gPtr->bSplitScreen = cfg::bSplitScreen;
+		gPtr->fCameraFOV = cfg::fCameraFOV;
+		gPtr->fCameraNearClip = cfg::fCameraNearClip;
+		gPtr->fCameraFarClip = cfg::fCameraFarClip;
 		SetFrameSize(cfg::iWinX, cfg::iWinY);
 	}
 
@@ -389,6 +435,49 @@ namespace graphics
 
 		matrix[0] = matrix[0] * -1.f;
 	}
+	void MatrixTransformXFlipForwardUp(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
+	{
+		// Translate matrix
+		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
+
+		// Rotate matrix
+		// Generate forward, right, up vectors for use in the matrix
+		m::Vector3 vForw = m::Normalize(dir);
+		m::Vector3 vSide = m::Normalize(m::Cross(up, dir));
+		// We need to make sure we have a local up vector at right angles with forwards, so cross side and forward
+		m::Vector3 vLoUp = m::Normalize(m::Cross(vForw, vSide));
+
+		// The 3 direction vectors translate directly into the matrix
+		// The third values are inverted for some reason beyond me.
+		// (Don't know why forward must be inverted but will leave for now)
+		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = -vSide.z;
+		matrix[1][0] = -vForw.x; matrix[1][1] = -vForw.y; matrix[1][2] = vForw.z;
+		matrix[2][0] = vLoUp.x; matrix[2][1] = vLoUp.y; matrix[2][2] = -vLoUp.z;
+
+		matrix[0] = matrix[0] * -1.f;
+	}
+	Matrix4x4 MatrixGetMirror(Matrix4x4& matrix)
+	{
+		Matrix4x4 rmat = matrix;
+		rmat[0] = rmat[0] * -1.f;
+		return rmat;
+	}
+	m::Vector3 MatrixGetPosition(Matrix4x4& matrix)
+	{
+		return m::Vector3(matrix[3][0], matrix[3][1], -matrix[3][2]);
+	}
+	m::Vector3 MatrixGetForward(Matrix4x4& matrix)
+	{
+		return m::Vector3(matrix[2][0], matrix[2][1], -matrix[2][2]);
+	}
+	m::Vector3 MatrixGetRight(Matrix4x4& matrix)
+	{
+		return m::Vector3(matrix[0][0], matrix[0][1], -matrix[0][2]);
+	}
+	m::Vector3 MatrixGetUp(Matrix4x4& matrix)
+	{
+		return m::Vector3(matrix[1][0], matrix[1][1], -matrix[1][2]);
+	}
 
 	m::Vector3 view;
 	m::Vector3 GetViewPos()
@@ -397,9 +486,9 @@ namespace graphics
 	}
 	void SetMatProj(btf32 fovMult)
 	{
-		cfg::bEditMode ?
-			mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult) :
-			mat_proj = glm::perspective(glm::radians(cfg::fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), cfg::fCameraNearClip * fovMult, cfg::fCameraFarClip * fovMult);
+		gPtr->bEditMode ?
+			mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult) :
+			mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
 	}
 	void SetMatView(void* t)
 	{
@@ -415,11 +504,11 @@ namespace graphics
 	// Lightsource
 	void SetMatProjLight()
 	{
-		mat_proj = glm::ortho(-LIGHT_WIDTH, LIGHT_WIDTH, -LIGHT_WIDTH, LIGHT_WIDTH, 0.f, LIGHT_FAR);
+		mat_proj = glm::ortho(-SHADOW_WIDTH, SHADOW_WIDTH, -SHADOW_WIDTH, SHADOW_WIDTH, 0.f, SHADOW_FAR);
 	}
 	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz)
 	{
-		mat_view = glm::lookAt(glm::vec3(x - (vx * LIGHT_HALF), y - (vy * LIGHT_HALF), z - (vz * LIGHT_HALF)),
+		mat_view = glm::lookAt(glm::vec3(x - (vx * SHADOW_HALF), y - (vy * SHADOW_HALF), z - (vz * SHADOW_HALF)),
 			glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
@@ -717,7 +806,7 @@ namespace graphics
 		height = sy;
 		// Read pixel buffer
 		buffer = new colour[width * height];
-		for (btui32 i = 0ui32; i < (btui32)(width * height); ++i)
+		for (btui32 i = 0u; i < (btui32)(width * height); ++i)
 		{
 			buffer[i] = col;
 		}
@@ -779,7 +868,9 @@ namespace graphics
 	void FMNearestMip() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		#ifndef DEF_CUSTOM_MIPMAP
 		glGenerateMipmap(GL_TEXTURE_2D);
+		#endif
 	}
 	void FMLinear() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -788,9 +879,20 @@ namespace graphics
 	void FMLinearMip() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		#ifndef DEF_CUSTOM_MIPMAP
 		glGenerateMipmap(GL_TEXTURE_2D);
+		#endif
 	}
-	void(*SetFilterMode[])() = { FMNearest, FMNearestMip, FMLinear, FMLinearMip };
+	void FMFoliage() {
+		#ifdef DEF_OLDSKOOL
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		#else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		#endif
+	}
+	void(*SetFilterMode[])() = { FMNearest, FMNearestMip, FMLinear, FMLinearMip, FMFoliage };
 	void EMRepeat() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -852,12 +954,98 @@ namespace graphics
 			glBindTexture(GL_TEXTURE_2D, glID);
 			glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+			//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width / 2, height / 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_mip);
+
+			// Custom Mip test
+			#ifdef DEF_CUSTOM_MIPMAP
+			if (fm == eLINEAR_MIPMAP || fm == eNEAREST_MIPMAP)
+			{
+				graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
+				graphics::colour* buffer_mip02 = new colour[width / 4 * height / 4];
+				graphics::colour* buffer_mip03 = new colour[width / 8 * height / 8];
+				graphics::colour* buffer_mip04 = new colour[width / 16 * height / 16];
+				graphics::colour* buffer_mip05 = new colour[width / 32 * height / 32];
+				graphics::colour* buffer_mip06 = new colour[width / 64 * height / 64];
+				graphics::colour* buffer_mip07 = new colour[width / 128 * height / 128];
+				graphics::colour* buffer_mip08 = new colour[width / 256 * height / 256];
+				graphics::colour* buffer_mip09 = new colour[width / 512 * height / 512];
+				graphics::colour* buffer_mip10 = new colour[width / 1024 * height / 1024];
+				graphics::colour* buffer_mip11 = new colour[width / 2048 * height / 2048];
+				graphics::colour* buffer_mip12 = new colour[width / 4096 * height / 4096];
+				graphics::colour* buffer_array[]{ buffer,
+					buffer_mip01, buffer_mip02, buffer_mip03, buffer_mip04, buffer_mip05, buffer_mip06,
+					buffer_mip07, buffer_mip08, buffer_mip09, buffer_mip10, buffer_mip11, buffer_mip12 };
+				int division = 2;
+				for (int i = 1; i < 13; ++i)
+				{
+					for (int x = 0; x < width / division; ++x)
+					{
+						for (int y = 0; y < height / division; ++y)
+						{
+							buffer_array[i][x * (width / division) + y].r = buffer[(x * division) * width + (y * division)].r;
+							buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
+							buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
+							buffer_array[i][x * (width / division) + y].a = buffer[(x * division) * width + (y * division)].a;
+						}
+					}
+					glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, width / division, height / division, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_array[i]);
+					division *= 2;
+				}
+				for (int i = 1; i < 13; ++i)
+					delete[] buffer_array[i];
+			}
+			else if (fm == eFOLIAGE)
+			{
+				graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
+				graphics::colour* buffer_mip02 = new colour[width / 4 * height / 4];
+				graphics::colour* buffer_mip03 = new colour[width / 8 * height / 8];
+				graphics::colour* buffer_mip04 = new colour[width / 16 * height / 16];
+				graphics::colour* buffer_mip05 = new colour[width / 32 * height / 32];
+				graphics::colour* buffer_mip06 = new colour[width / 64 * height / 64];
+				graphics::colour* buffer_mip07 = new colour[width / 128 * height / 128];
+				graphics::colour* buffer_mip08 = new colour[width / 256 * height / 256];
+				graphics::colour* buffer_mip09 = new colour[width / 512 * height / 512];
+				graphics::colour* buffer_mip10 = new colour[width / 1024 * height / 1024];
+				graphics::colour* buffer_mip11 = new colour[width / 2048 * height / 2048];
+				graphics::colour* buffer_mip12 = new colour[width / 4096 * height / 4096];
+				graphics::colour* buffer_array[]{ buffer,
+					buffer_mip01, buffer_mip02, buffer_mip03, buffer_mip04, buffer_mip05, buffer_mip06,
+					buffer_mip07, buffer_mip08, buffer_mip09, buffer_mip10, buffer_mip11, buffer_mip12 };
+				int division = 2;
+				for (int i = 1; i < 13; ++i)
+				{
+					for (int x = 0; x < width / division; ++x)
+					{
+						for (int y = 0; y < height / division; ++y)
+						{
+							buffer_array[i][x * (width / division) + y].r = buffer[(x * division) * width + (y * division)].r;
+							buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
+							buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
+							// Get minimum alpha
+							#ifdef DEF_CUSTOM_MIPMAP_FOLIAGE_MIN
+							buffer_array[i][x * (width / division) + y].a = m::Min<btui8>(4u,
+								#else
+							buffer_array[i][x * (width / division) + y].a = m::Max<btui8>(4u,
+								#endif
+								buffer_array[i - 1][(x * 2)     * (width / (division / 2)) + (y * 2)].a,
+								buffer_array[i - 1][(x * 2 + 1) * (width / (division / 2)) + (y * 2)].a,
+								buffer_array[i - 1][(x * 2)     * (width / (division / 2)) + (y * 2 + 1)].a,
+								buffer_array[i - 1][(x * 2 + 1) * (width / (division / 2)) + (y * 2 + 1)].a);
+						}
+					}
+					glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, width / division, height / division, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_array[i]);
+					division *= 2;
+				}
+				for (int i = 1; i < 13; ++i)
+					delete[] buffer_array[i];
+			}
+			#endif
 
 			#ifdef DEF_OLDSKOOL
-			SetFilterMode[TextureFilterMode::eNEAREST]();
-			#else
-			SetFilterMode[fm]();
+			if (fm == eLINEAR) fm = eNEAREST;
+			if (fm == eLINEAR_MIPMAP) fm = eNEAREST_MIPMAP;
 			#endif
+			SetFilterMode[fm]();
 			SetEdgeMode[em]();
 
 			delete[] buffer;
@@ -1438,9 +1626,9 @@ namespace graphics
 				bool cliffNS = false;
 				bool cliffEW = false;
 
-				if (HEIGHTMAP[x][y] > HEIGHTMAP[x + 1][y] + 5ui16 || HEIGHTMAP[x][y] < HEIGHTMAP[x + 1][y] - 5ui16)
+				if (HEIGHTMAP[x][y] > HEIGHTMAP[x + 1][y] + (btui16)5u || HEIGHTMAP[x][y] < HEIGHTMAP[x + 1][y] - (btui16)5u)
 					cliffNS = true;
-				if (HEIGHTMAP[x][y] > HEIGHTMAP[x][y + 1] + 5ui16 || HEIGHTMAP[x][y] < HEIGHTMAP[x][y + 1] - 5ui16)
+				if (HEIGHTMAP[x][y] > HEIGHTMAP[x][y + 1] + (btui16)5u || HEIGHTMAP[x][y] < HEIGHTMAP[x][y + 1] - (btui16)5u)
 					cliffEW = true;
 				
 				// Copy in the things from the new mesh
@@ -1579,6 +1767,11 @@ namespace graphics
 
 		glBindVertexArray(0); // Bind default vertex array
 	}
+	void CompositeMesh::Unload()
+	{
+		delete[] vces;
+		delete[] ices;
+	}
 
 	//________________________________________________________________________________________________________________________________
 	// TERRAIN MESH ------------------------------------------------------------------------------------------------------------------
@@ -1588,13 +1781,6 @@ namespace graphics
 		glBindVertexArray(vao); // Bind vertex array
 		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
 		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
-	}
-
-	int clamp(int val, int min, int max)
-	{
-		if (val < min) return min;
-		if (val > max) return max;
-		return val;
 	}
 
 	void TerrainMesh::GenerateFromHMap(
@@ -1610,11 +1796,12 @@ namespace graphics
 
 		vces_size = (tile_radius * tile_radius);
 		ices_size = 6u * (tile_radius * tile_radius);
-		//
-		vces = new VertexTerrain[vces_size];
-		ices = new btui32[ices_size];
 
-		btf32 uvscale = 0.125f;
+		vces = (VertexTerrain*)malloc(sizeof(VertexTerrain) * vces_size);
+		ices = (btui32*)malloc(sizeof(btui32) * ices_size);
+
+		//btf32 uvscale = 0.125f;
+		btf32 uvscale = 0.25f;
 		int v = 0;
 		int i = 0;
 		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x)
@@ -1627,29 +1814,31 @@ namespace graphics
 				vces[v].pos.y = (((btf32)hmap[x][y]) + (btf32)hmap[x][y]) / 2 / TERRAIN_HEIGHT_DIVISION;
 				vces[v].uvc.x = vces[v].pos.x * uvscale;
 				vces[v].uvc.y = vces[v].pos.z * uvscale;
-				vces[v].nor.y = 1.f; vces[v].nor.x = 0.f; vces[v].nor.z = 0.f;
 
-				vces[v].col.x = 0.f;
-				vces[v].col.y = 0.f;
-				vces[v].col.z = 0.f;
-				vces[v].col.w = 0.f;
-				switch (MATMAP[x][y])
-				{
-				case 0ui8:
-					vces[v].col.x = 1.f;
-					break;
-				case 1ui8:
-					vces[v].col.y = 1.f;
-					break;
-				case 2ui8:
-					vces[v].col.z = 1.f;
-					break;
-				case 3ui8:
-					vces[v].col.w = 1.f;
-					break;
-				default:
-					break;
+				vces[v].nor.y = 1.f; vces[v].nor.x = 0.f; vces[v].nor.z = 1.f;
+				vces[v].nor.x += (btf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+				vces[v].nor.x -= (btf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+				vces[v].nor.z += (btf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+				vces[v].nor.z -= (btf32)(hmap[x][y] - hmap[x][y - 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+
+				// normalize
+				btf32 nlen = sqrt(vces[v].nor.x * vces[v].nor.x + vces[v].nor.y * vces[v].nor.y + vces[v].nor.z * vces[v].nor.z);
+				if (nlen != 0) {
+					vces[v].nor.x = vces[v].nor.x / nlen;
+					vces[v].nor.y = vces[v].nor.y / nlen;
+					vces[v].nor.z = vces[v].nor.z / nlen;
 				}
+
+				vces[v].txtr[0] = 0.f;
+				vces[v].txtr[1] = 0.f;
+				vces[v].txtr[2] = 0.f;
+				vces[v].txtr[3] = 0.f;
+				vces[v].txtr[4] = 0.f;
+				vces[v].txtr[5] = 0.f;
+				vces[v].txtr[6] = 0.f;
+				vces[v].txtr[7] = 0.f;
+
+				vces[v].txtr[MATMAP[x][y]] = 1.f;
 
 				// r--r+1
 				// |\ |
@@ -1702,11 +1891,16 @@ namespace graphics
 
 		//-------------------------------- INITIALIZE OPENGL BUFFER
 
-		//if (old_vces_size == 0)
-		{
-			glGenVertexArrays(1, &vao); // Create vertex buffer
-			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
-		}
+		// Initial check prevents regeneration memory leak
+		if (vao == UI32_NULL) glGenVertexArrays(1, &vao); // Create vertex buffer
+		if (vbo == UI32_NULL) glGenBuffers(1, &vbo); // Generate vertex buffer
+		if (ebo == UI32_NULL) glGenBuffers(1, &ebo); // Generate element buffer
+
+		ReBindGL();
+
+		// Free vertex and index buffers!
+		free((void*)vces);
+		free((void*)ices);
 	}
 
 	void TerrainMesh::ReBindGL()
@@ -1715,18 +1909,25 @@ namespace graphics
 
 		glBindVertexArray(vao); // Bind this vertex array
 		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexTerrain), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(VT_I_POS); // Set Vertex positions
-		glVertexAttribPointer(VT_I_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_POS);
+		glVertexAttribPointer(VT_I_POS, 3, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)VT_O_POS);
 		glEnableVertexAttribArray(VT_I_NOR); // Set Vertex normals
-		glVertexAttribPointer(VT_I_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_NOR);
+		glVertexAttribPointer(VT_I_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)VT_O_NOR);
 		glEnableVertexAttribArray(VT_I_UVC); // Set Vertex texture coords
-		glVertexAttribPointer(VT_I_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_UVC);
-		glEnableVertexAttribArray(VT_I_COL); // Set Vertex colour
-		glVertexAttribPointer(VT_I_COL, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VT_O_COL);
+		glVertexAttribPointer(VT_I_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)VT_O_UVC);
+		// Set the texture blend value array
+		for (btui32 i = 0u; i < 8u; ++i)
+		{
+			glEnableVertexAttribArray(VT_I_TXTR + i); // Set Vertex colour
+			glVertexAttribPointer(VT_I_TXTR + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)(VT_O_TXTR + (sizeof(btf32) * i)));
+		}
+
+		//glEnableVertexAttribArray(VT_I_TXTR); // Set Vertex colour
+		//glVertexAttribPointer(VT_I_TXTR, 4, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)VT_O_TXTR);
 
 		glBindVertexArray(0); // Bind default vertex array
 	}
@@ -2020,7 +2221,17 @@ namespace graphics
 			//insert linebreaks
 			for (int i = 0; i <= stringlength; i++)
 			{
-				if (c[i] == CHARCODE::space)
+				// Convert ascii linebreaks
+				if (c[i] == CHARCODE_ASCII::CR || c[i] == CHARCODE_ASCII::LF)
+				{
+					c[i] = CHARCODE::LB;
+					x = xa;
+					y2 -= ch;
+					lines++;
+					sizey += ch;
+					lastLineWidth = 0;
+				}
+				else if (c[i] == CHARCODE::space)
 				{
 					last_space = i;
 				}
@@ -2156,8 +2367,12 @@ void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex, ShaderSty
 	shd->Use();
 
 	// Set matrices on shader
-	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
-	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	/*shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());*/
+	glm::mat4 gmatp = graphics::GetMatProj();
+	glm::mat4 gmatv = graphics::GetMatView();
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&gmatp);
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&gmatv);
 	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
 
 	// Render the mesh
@@ -2181,8 +2396,10 @@ void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::Textur
 	shd->Use();
 
 	// Set matrices on shader
-	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
-	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	glm::mat4 gmatp = graphics::GetMatProj();
+	glm::mat4 gmatv = graphics::GetMatView();
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&gmatp);
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&gmatv);
 	shd->setMat4(shd->matModel, matrix);
 	// Set blend state
 	shd->SetFloat(shd->fBlendState, bs);
@@ -2215,8 +2432,10 @@ void DrawMeshDeform(
 	shd->Use();
 
 	// Set shader properties
-	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
-	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	glm::mat4 gmatp = graphics::GetMatProj();
+	glm::mat4 gmatv = graphics::GetMatView();
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&gmatp);
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&gmatv);
 	shd->SetUint(shd->uiMatrixCount, matrix_count);
 	if (matrix_count >= 1u) shd->setMat4(shd->matModelA, transform_a);
 	if (matrix_count >= 2u) shd->setMat4(shd->matModelB, transform_b);
@@ -2244,15 +2463,22 @@ void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::TextureB
 	shd->Use();
 
 	// Set matrices on shader
-	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
-	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	glm::mat4 gmatp = graphics::GetMatProj();
+	glm::mat4 gmatv = graphics::GetMatView();
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&gmatp);
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&gmatv);
 	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
 
 	// Render the mesh
 	mdl.Draw(tex.glID, shd->ID);
 }
 
-void DrawTerrainMesh(btID id, graphics::TerrainMesh mdl, graphics::TextureBase tex_a, graphics::TextureBase tex_b, graphics::TextureBase tex_c, graphics::TextureBase tex_d, graphics::Matrix4x4 matrix)
+void DrawTerrainMesh(btID id, graphics::TerrainMesh mdl,
+	graphics::TextureBase tex_a, graphics::TextureBase tex_b,
+	graphics::TextureBase tex_c, graphics::TextureBase tex_d,
+	graphics::TextureBase tex_e, graphics::TextureBase tex_f,
+	graphics::TextureBase tex_g, graphics::TextureBase tex_h,
+	graphics::Matrix4x4 matrix)
 {
 	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID_TERRAIN);
 	//graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID);
@@ -2261,8 +2487,10 @@ void DrawTerrainMesh(btID id, graphics::TerrainMesh mdl, graphics::TextureBase t
 	shd->Use();
 
 	// Set matrices on shader
-	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
-	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());
+	glm::mat4 gmatp = graphics::GetMatProj();
+	glm::mat4 gmatv = graphics::GetMatView();
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&gmatp);
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&gmatv);
 	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
 
 	// terrain textures
@@ -2270,6 +2498,10 @@ void DrawTerrainMesh(btID id, graphics::TerrainMesh mdl, graphics::TextureBase t
 	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain2, tex_b.glID, graphics::Shader::TXTR_TERRAIN2);
 	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain3, tex_c.glID, graphics::Shader::TXTR_TERRAIN3);
 	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain4, tex_d.glID, graphics::Shader::TXTR_TERRAIN4);
+	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain5, tex_e.glID, graphics::Shader::TXTR_TERRAIN5);
+	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain6, tex_f.glID, graphics::Shader::TXTR_TERRAIN6);
+	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain7, tex_g.glID, graphics::Shader::TXTR_TERRAIN7);
+	graphics::GetShader(graphics::S_SOLID_TERRAIN).SetTexture(graphics::Shader::texTerrain8, tex_h.glID, graphics::Shader::TXTR_TERRAIN8);
 
 	// Render the mesh
 	mdl.Draw();

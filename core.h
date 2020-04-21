@@ -1,5 +1,7 @@
 #pragma once
 
+#include "global.h"
+
 //Forward declarations
 namespace m
 {
@@ -96,7 +98,7 @@ namespace index
 	// Get HP (Health Points) of entity at X ID
 	btui16 GetHP(btID id);
 
-	// Set shadow texture ID (to do: hacky, get rid of this)
+	// Set shadow texture ID (TODO: hacky, get rid of this)
 	void SetShadowTexture(btui32 ID);
 
 	extern btui64 spawnz_time_temp;
@@ -147,7 +149,8 @@ namespace index
 
 	void SetInput(btID PLAYER_INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH,
 		bool WantAttack, bool use_hit, bool WantAttack2,
-		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C, bool crouch);
+		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C,
+		bool crouch, bool jump);
 
 	void SetViewTargetID(btID ID, btui32 player);
 	btID GetViewTargetID(btui32 player);

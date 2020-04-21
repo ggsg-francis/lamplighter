@@ -1,5 +1,7 @@
 #pragma once
 
+#include "global.h"
+
 namespace m
 {
 	class Vector3;
@@ -19,11 +21,7 @@ namespace aud
 		FILE_COUNT,
 	};
 
-	#ifdef DEF_USE_CS
 	void Init(void* handle);
-	#else
-	void Init();
-	#endif
 	void Update(btf64 dt);
 	void PlaySnd(AudioFile file, m::Vector3 src);
 	void End();

@@ -6,6 +6,7 @@ in vec3 Normal;
 in vec3 Pos;
 in vec4 Col;
 in vec4 LightSpacePos;
+in vec3 LC; // Light Colour
 
 uniform uint id; // identity
 uniform bool idn; // id null
@@ -181,6 +182,14 @@ void main()
 	FragColor.rgb =  c_a * txtr.r;
 	FragColor.rgb += c_b * txtr.g;
 	FragColor.rgb += c_c * txtr.b;
+	//FragColor.rgb =  c_a * round(txtr.r * 2.f) / 2.f;
+	//FragColor.rgb += c_b * round(txtr.g * 2.f) / 2.f;
+	//FragColor.rgb += c_c * round(txtr.b * 2.f) / 2.f;
+	//FragColor.rgb =                   c_a * clamp(round(txtr.r * 2.f) / 2.f,0.f,1.f);
+	//FragColor.rgb = mix(FragColor.rgb, c_b, clamp(round(txtr.g * 2.f) / 2.f,0.f,1.f));
+	//FragColor.rgb = mix(FragColor.rgb, c_c, clamp(round(txtr.b * 2.f) / 2.f,0.f,1.f));
+	//FragColor.rgb = mix(mix(c_a * round(clamp(txtr.r * 4.f - 1.5f, 0.f, 1.f)), c_b, round(clamp(txtr.g * 4.f - 1.5f, 0.f, 1.f))), c_c, round(clamp(txtr.b * 4.f - 1.5f, 0.f, 1.f)));
+
 
 	vec3 vd = Pos - pcam;
 	float amboffset = dot(normalize(Normal), normalize(vd));
@@ -213,16 +222,7 @@ void main()
 	//float shadow = clamp(round(ShadowCalculation(LightSpacePos)), 0.f, 1.f); // Rounded
 	//float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
 	
-	//FragColor.rgb = vec3(shadow_heightmap.g); // test
-	
-	// Ambient
-	// max: if the sky is lighter than the sun, override it
-	//if (shadow_heightmap.g < 0.5f)
-		//FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
-	//else
-	//	FragColor.rgb *= mix(skycol, max(suncol, skycol), shadow * ndotl) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
-	FragColor.rgb *= max(suncol, skycol) + litcol * texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f).g;
-	FragColor.rgb *= shadow * 0.4f + 0.6f;		
+	FragColor.rgb *= LC * (shadow * 0.4f + 0.6f);
 
 	// Add fog
 	float fog_start = 0.1f; // for long distance default to 0.2f

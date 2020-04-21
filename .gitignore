@@ -16,3 +16,4 @@ IntermediateGame/
 *.ipdb
 *.pdb
 save.bin
+/Debug/

@@ -6,6 +6,9 @@
 //attempts at error resolution
 #include <sstream>
 
+// for gnuc
+#include <cstring>
+
 struct CFG
 {
 	bool bFullscreen = false;

@@ -31,6 +31,15 @@ struct CellSpace
 	btf32 offsety;
 };
 
+namespace path
+{
+	struct PathNode
+	{
+		btcoord x, y;
+	};
+	void PathFind(void* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest);
+}
+
 namespace env
 {
 	// Environment flags
@@ -58,7 +67,7 @@ namespace env
 			eBLOCK_LIGHT_SKY = (0x1u << 0xcu),
 			EF_LIGHTSRC = (0x1u << 0xdu),
 			EF_SPAWN_TEST = (0x1u << 0xeu),
-			EF_UNUSED_15 = (0x1u << 0xfu),
+			EF_SPAWN_ITEM_TEST = (0x1u << 0xfu),
 			// Status effects
 			EF_UNUSED_16 = (0x1u << 0x10u),
 			EF_BURNING = (0x1u << 0x11u),
@@ -113,9 +122,9 @@ namespace env
 
 	extern EnvNode eCells;
 
-	bool Get(uint x, uint y, eflag::flag bit);
-	void Set(uint x, uint y, eflag::flag bit);
-	void UnSet(uint x, uint y, eflag::flag bit);
+	bool Get(btui32 x, btui32 y, eflag::flag bit);
+	void Set(btui32 x, btui32 y, eflag::flag bit);
+	void UnSet(btui32 x, btui32 y, eflag::flag bit);
 
 	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
 
@@ -134,4 +143,5 @@ namespace env
 	void Clean();
 	void GeneratePropMeshes();
 	void GenerateTerrainMesh();
+	void GenerateTerrainMeshEditor();
 }

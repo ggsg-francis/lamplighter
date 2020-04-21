@@ -36,6 +36,10 @@ item mesh
 hndl MdebgSph
 srca res_src/debug_sphere.obj
 <<<<
+item mesh
+hndl MdebgMon
+srca res_src/monkey.fbx
+<<<<
 item txtr
 hndl TMeatTex
 srca res_src/meat/tree_01.tga
@@ -114,27 +118,6 @@ hndl Tchrskn4
 srca res_src/character_palette_bright.tga
 tfil linear
 tedg clamp
-<<<<
-**** CHARACTER MODELS
-item mshd
-**** body base step
-hndl MBodBase
-srca res_src/chr_body.fbx
-<<<<
-item mshd
-**** arm
-hndl MArmBase
-srca res_src/chr_arm.fbx
-<<<<
-item mshd
-**** head
-hndl MHedBase
-srca res_src/chr_head.fbx
-<<<<
-item mshd
-**** leg
-hndl MLegBase
-srca res_src/chr_leg.fbx
 <<<<
 **** EX1E AIR CARRIER
 item mesh
@@ -265,6 +248,30 @@ srca res_src/environment/terrain/t_concrete_01.tga
 tfil linearmip
 tedg repeat
 <<<<
+item txtr
+hndl TTMarsh3
+srca res_src/environment/terrain/t_pine_cover_01.tga
+tfil linearmip
+tedg repeat
+<<<<
+item txtr
+hndl TTMarsh4
+srca res_src/environment/terrain/t_scree_01.tga
+tfil linearmip
+tedg repeat
+<<<<
+item txtr
+hndl TTMarsh5
+srca res_src/environment/terrain/t_dirt_03.tga
+tfil linearmip
+tedg repeat
+<<<<
+item txtr
+hndl TTMarsh6
+srca res_src/environment/terrain/rocks_01.tga
+tfil linearmip
+tedg repeat
+<<<<
 **** GUI
 item txtr
 hndl TGUIcros
@@ -312,6 +319,39 @@ tedg clamp
 **** ASSETS BEYOND THIS POINT ARE NOT DIRECTLY REFERENCED WITHIN THE GAME CODE ----------
 **** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ****
+**** CHARACTER MODELS
+item mshd
+**** body base step
+hndl Bod0Base
+srca res_src/chr_body.fbx
+<<<<
+item mshd
+**** arm
+hndl Arm0Base
+srca res_src/chr_arm.fbx
+<<<<
+item mshd
+**** head
+hndl Hed0Base
+srca res_src/chr_head.fbx
+<<<<
+item mshd
+**** head
+hndl Hed0Skel
+srca res_src/chr_head_skel.fbx
+<<<<
+item txtr
+**** head
+hndl TchrSkel
+srca res_src/character_palette_skel.tga
+tfil linear
+tedg clamp
+<<<<
+item mshd
+**** leg
+hndl Leg0Base
+srca res_src/chr_leg.fbx
+<<<<
 **** MISC ITEMS
 item mesh
 hndl MSCSandw
@@ -467,7 +507,7 @@ srca res_src/environment/nature/dry_tree_large_01.obj
 item txtr
 hndl TNTree01
 srca res_src/environment/nature/dry_tree_large_01.tga
-tfil linearmip
+tfil foliage
 tedg clamp
 <<<<
 item mesh
@@ -477,7 +517,7 @@ srca res_src/environment/nature/marsh_tree_01.obj
 item txtr
 hndl TNFern01
 srca res_src/environment/nature/marsh_foliage.tga
-tfil linear
+tfil foliage
 tedg clamp
 <<<<
 **** ROCKS

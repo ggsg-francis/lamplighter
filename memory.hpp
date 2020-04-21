@@ -1,22 +1,82 @@
 #pragma once
 
+#include "global.h"
+
 // This include provides the malloc function
 #include <iostream>
 
-typedef unsigned int uint;
+#define CHUNK_SIZE 32u
+typedef btui32 CHUNK_BITVEC;
+#define CHUNK_BUFFER_SIZE 32u
+#define CHUNK_BUFFER_MAX_INDEX (CHUNK_SIZE * CHUNK_BUFFER_SIZE)
 
 namespace mem
 {
+	//-------------------------------- BIT-VECTOR OPERATIONS
+
+	// Bitvector (the safest iteration yet)
+	template <class tcast, class trecv> class bv
+	{
+	//private:
+	public:
+		tcast bits = (tcast)0u; // Always start at zeroed
+	public:
+
+		inline bool get(trecv mask)
+		{
+			return (bits & (tcast)mask) != (tcast)0u;
+		}
+		inline void setto(trecv mask, bool to)
+		{
+			to ? bits |= (tcast)mask : bits &= ~(tcast)mask;
+		}
+		inline void toggle(trecv mask)
+		{
+			bits & (tcast)mask ? bits &= ~(tcast)mask : bits |= (tcast)mask;
+		}
+		inline void set(trecv mask)
+		{
+			bits |= (tcast)mask;
+		}
+		inline void unset(trecv mask)
+		{
+			bits &= ~(tcast)mask;
+		}
+	};
+
+	// Get bit from any-size type
+	template <class T> inline bool bvget(T flags, T modflag)
+	{
+		return (flags & modflag) != (T)0u;
+	}
+	// Set bit of any-size type to value
+	template <class T> inline void bvsetto(T& flags, T modflag, bool to)
+	{
+		to ? flags |= modflag : flags &= ~modflag;
+	}
+	// Set bit of any-size type to value
+	template <class typea, class typeb> inline void bvsetto2(typea& flags, typeb modflag, bool to)
+	{
+		to ? flags |= modflag : flags &= ~modflag;
+	}
+	// Set bit of any-size type
+	template <class T> inline void bvset(T& flags, T modflag)
+	{
+		flags |= modflag;
+	}
+	// Unset bit of any-size type
+	template <class T> inline void bvunset(T& flags, T modflag)
+	{
+		flags &= ~modflag;
+	}
+
 	//-------------------------------- BUFFER TYPES
-	#define CHUNK_SIZE 32u
-	#define CHUNK_BITVEC btui32
-	#define CHUNK_BUFFER_SIZE 32u
-	#define CHUNK_BUFFER_MAX_INDEX (CHUNK_SIZE * CHUNK_BUFFER_SIZE)
+
 	template <class type> class Chunk
 	{
 	public:
 		type buffer[CHUNK_SIZE];
-		CHUNK_BITVEC buffer_used = 0ui32;
+		CHUNK_BITVEC buffer_used = 0u;
 	};
 	template <class type> class CkBuffer
 	{
@@ -44,7 +104,7 @@ namespace mem
 				{
 					for (btui32 iElement = 0u; iElement < CHUNK_SIZE; ++iChunk)
 						// If this space is used, call it's destructor
-						if (bvget<CHUNK_BITVEC>(chunks[iChunk]->buffer_used, (CHUNK_BITVEC)(1ui32 << iElement)))
+						if (bvget<CHUNK_BITVEC>(chunks[iChunk]->buffer_used, (CHUNK_BITVEC)(1u << iElement)))
 							chunks[iChunk]->buffer[iElement].~type();
 					// Delete the chunk
 					delete (void*)chunks[iChunk];
@@ -59,9 +119,9 @@ namespace mem
 				// If this chunk is not created, create it
 				if (chunks[iChunk] == nullptr) chunks[iChunk] = new Chunk<type>;
 				// If this space is free, copy what we created into it
-				if (!bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement))
+				if (!bvget(chunks[iChunk]->buffer_used, 1u << iElement))
 				{
-					bvset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+					bvset(chunks[iChunk]->buffer_used, 1u << iElement);
 					chunks[iChunk]->buffer[iElement] = *element;
 					delete (void*)element;
 					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
@@ -77,7 +137,7 @@ namespace mem
 			{
 				btui32 iChunk = index / CHUNK_SIZE;
 				btui32 iElement = index - iChunk * CHUNK_SIZE;
-				bvunset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+				bvunset(chunks[iChunk]->buffer_used, 1u << iElement);
 				chunks[iChunk]->buffer[iElement].~type();
 				if (index == index_end && index > 0u)
 				{
@@ -93,10 +153,10 @@ namespace mem
 			btui32 iChunk = index / CHUNK_SIZE;
 			btui32 iElement = index - iChunk * CHUNK_SIZE;
 			if (chunks[iChunk] != nullptr)
-				return bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+				return bvget(chunks[iChunk]->buffer_used, 1u << iElement);
 			else return false;
 		}
-		btui32 Size() { return index_end + 1ui32; }
+		btui32 Size() { return index_end + 1u; }
 		type& operator[](btui32 index)
 		{
 			btui32 iChunk = index / CHUNK_SIZE;
@@ -130,7 +190,7 @@ namespace mem
 				{
 					for (btui32 iElement = 0u; iElement < CHUNK_SIZE; ++iChunk)
 						// If this space is used, call it's destructor
-						if (bvget<CHUNK_BITVEC>(chunks[iChunk]->buffer_used, (CHUNK_BITVEC)(1ui32 << iElement)))
+						if (bvget<CHUNK_BITVEC>(chunks[iChunk]->buffer_used, (CHUNK_BITVEC)(1u << iElement)))
 							chunks[iChunk]->buffer[iElement].~type();
 					// Delete the chunk
 					delete (void*)chunks[iChunk];
@@ -145,9 +205,9 @@ namespace mem
 				// If this chunk is not created, create it
 				if (chunks[iChunk] == nullptr) chunks[iChunk] = new Chunk<type>;
 				// If this space is free, copy what we created into it
-				if (!bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement))
+				if (!bvget(chunks[iChunk]->buffer_used, 1u << iElement))
 				{
-					bvset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+					bvset(chunks[iChunk]->buffer_used, 1u << iElement);
 					chunks[iChunk]->buffer[iElement] = *element;
 					delete (void*)element;
 					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
@@ -163,7 +223,7 @@ namespace mem
 			{
 				btui32 iChunk = index / CHUNK_SIZE;
 				btui32 iElement = index - iChunk * CHUNK_SIZE;
-				bvunset(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+				bvunset(chunks[iChunk]->buffer_used, 1u << iElement);
 				chunks[iChunk]->buffer[iElement].~type();
 				if (index == index_end && index > 0u)
 				{
@@ -179,10 +239,10 @@ namespace mem
 			btui32 iChunk = index / CHUNK_SIZE;
 			btui32 iElement = index - iChunk * CHUNK_SIZE;
 			if (chunks[iChunk] != nullptr)
-				return bvget(chunks[iChunk]->buffer_used, 1ui32 << iElement);
+				return bvget(chunks[iChunk]->buffer_used, 1u << iElement);
 			else return false;
 		}
-		btui32 Size() { return index_end + 1ui32; }
+		btui32 Size() { return index_end + 1u; }
 		type& operator[](btui32 index)
 		{
 			btui32 iChunk = index / CHUNK_SIZE;
@@ -200,7 +260,7 @@ namespace mem
 	{
 	private:
 		btui32 index_end = 0u;
-		btui64 used = 0ui64;
+		btui64 used = 0u;
 		type buffer[64u];
 		inline void DecrementEnd()
 		{
@@ -210,12 +270,12 @@ namespace mem
 	public:
 		btui32 Add(type element)
 		{
-			for (btui32 i = 0; i < 64ui32; i++) // For every space in the buffer
+			for (btui32 i = 0; i < 64u; i++) // For every space in the buffer
 			{
 				// If this space is free, copy what we created into it
-				if (!bvget(used, 1ui64 << (btui64)i))
+				if (!bvget(used, (btui64)1u << (btui64)i))
 				{
-					bvset(used, 1ui64 << (btui64)i);
+					bvset(used, (btui64)1u << (btui64)i);
 					buffer[i] = element;
 					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
 					return i; // End the loop
@@ -228,7 +288,7 @@ namespace mem
 			// If within range (attempt to fix buffer overrun)
 			if (index <= index_end)
 			{
-				bvunset(used, 1ui64 << (btui64)index);
+				bvunset(used, (btui64)1u << (btui64)index);
 				if (index == index_end && index > 0u)
 				{
 					// Decrement index last (no point checking if it's not used, we already know)
@@ -240,9 +300,9 @@ namespace mem
 		}
 		bool Used(btui32 index)
 		{
-			return bvget(used, 1ui64 << (btui64)index);
+			return bvget(used, (btui64)1u << (btui64)index);
 		}
-		btui32 Size() { return index_end + 1ui32; }
+		btui32 Size() { return index_end + 1u; }
 		type& operator[](btui32 index) { return buffer[index]; }
 	};
 
@@ -250,7 +310,7 @@ namespace mem
 	{
 	private:
 		btui32 index_end = 0u;
-		btui32 used = 0ui32;
+		btui32 used = 0u;
 		type buffer[32u];
 		inline void DecrementEnd()
 		{
@@ -260,12 +320,12 @@ namespace mem
 	public:
 		btui32 Add(type element)
 		{
-			for (btui32 i = 0; i < 32ui32; i++) // For every space in the buffer
+			for (btui32 i = 0; i < 32u; i++) // For every space in the buffer
 			{
 				// If this space is free, copy what we created into it
-				if (!bvget(used, 1ui32 << (btui32)i))
+				if (!bvget(used, (btui32)1u << (btui32)i))
 				{
-					bvset(used, 1ui32 << (btui32)i);
+					bvset(used, (btui32)1u << (btui32)i);
 					buffer[i] = element;
 					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
 					return i; // End the loop
@@ -278,7 +338,7 @@ namespace mem
 			// If within range (attempt to fix buffer overrun)
 			if (index <= index_end)
 			{
-				bvunset(used, 1ui32 << (btui32)index);
+				bvunset(used, (btui32)1u << (btui32)index);
 				if (index == index_end && index > 0u)
 				{
 					// Decrement index last (no point checking if it's not used, we already know)
@@ -290,12 +350,12 @@ namespace mem
 		}
 		bool Used(btui32 index)
 		{
-			return bvget(used, 1ui32 << (btui32)index);
+			return bvget(used, (btui32)1u << (btui32)index);
 		}
 		btui32 Size() 
 		{
 			// TODO: returns 1 on an empty array, needs to be fixed
-			return index_end + 1ui32;
+			return index_end + 1u;
 		}
 		type& operator[](btui32 index) { return buffer[index]; }
 	};
@@ -324,56 +384,6 @@ namespace mem
 			return buf[index];
 		}
 	};
-
-	//template <class type> class Buffer
-	//{
-	//	btui32 size = 0u;
-	//	type* buf = nullptr;
-	//public:
-	//	Buffer() {}
-	//	~Buffer() { delete[] buf; }
-	//	void Add(type itemid)
-	//	{
-	//		// If there's already one element, the buffer is already initialized
-	//		if (size > 0u)
-	//		{
-	//			++size;
-	//			type* _buf = new type[size];
-	//			if (_buf) {
-	//				// Copy the existing buffer contents
-	//				for (btui32 i = 0; i < size - 1u; i++) _buf[i] = buf[i];
-	//				// Set the new element in the buffer
-	//				_buf[size - 1u] = itemid;
-	//				// Delete the old buffer and set buffer pointer to the new one
-	//				delete[] buf; buf = _buf;
-	//			}
-	//		}
-	//		// Else initialize new buffer
-	//		else { buf = new type[1u]{ itemid }; size = 1u; }
-	//	}
-	//	void Remove(btui32 index)
-	//	{
-	//		// If within range (attempt to fix buffer overrun)
-	//		if (size > 1u && index < size)
-	//		{
-	//			--size;
-	//			type* _buf = new type[size];
-	//			if (_buf) {
-	//				btui32 i;
-	//				// Copy up until this index directly
-	//				for (i = 0; i < index; i++) _buf[i] = buf[i];
-	//				// Copy this index & after with offset
-	//				for (i = index; i < size; i++) _buf[i] = buf[i + 1u];
-	//				// Delete old buffer and set buffer pointer to the new one
-	//				delete[] buf; buf = _buf;
-	//			}
-	//		}
-	//		// Else delete the buffer as it is empty
-	//		else { delete[] buf; size = 0u; }
-	//	}
-	//	btui32 Size() { return size; }
-	//	type& operator[](btui32 index) { return buf[index]; }
-	//};
 
 	// Fixed size object ID buffer
 	struct objbuf
@@ -513,62 +523,4 @@ namespace mem
 		btui32 end();
 		btID operator[] (btui32 x);
 	};
-
-	//-------------------------------- BIT-VECTOR OPERATIONS
-
-	// Bitvector (the safest iteration yet)
-	template <class tcast, class trecv> class bv
-	{
-	//private:
-	public:
-		tcast bits = (tcast)0u; // Always start at zeroed
-	public:
-		
-		inline bool get(trecv mask)
-		{
-			return (bits & (tcast)mask) != (tcast)0u;
-		}
-		inline void setto(trecv mask, bool to)
-		{
-			to ? bits |= (tcast)mask : bits &= ~(tcast)mask;
-		}
-		inline void toggle(trecv mask)
-		{
-			bits & (tcast)mask ? bits &= ~(tcast)mask : bits |= (tcast)mask;
-		}
-		inline void set(trecv mask)
-		{
-			bits |= (tcast)mask;
-		}
-		inline void unset(trecv mask)
-		{
-			bits &= ~(tcast)mask;
-		}
-	};
-
-	// Get bit from any-size type
-	template <class T> inline bool bvget(T flags, T modflag)
-	{
-		return (flags & modflag) != (T)0u;
-	}
-	// Set bit of any-size type to value
-	template <class T> inline void bvsetto(T& flags, T modflag, bool to)
-	{
-		to ? flags |= modflag : flags &= ~modflag;
-	}
-	// Set bit of any-size type to value
-	template <class typea, class typeb> inline void bvsetto2(typea& flags, typeb modflag, bool to)
-	{
-		to ? flags |= modflag : flags &= ~modflag;
-	}
-	// Set bit of any-size type
-	template <class T> inline void bvset(T& flags, T modflag)
-	{
-		flags |= modflag;
-	}
-	// Unset bit of any-size type
-	template <class T> inline void bvunset(T& flags, T modflag)
-	{
-		flags &= ~modflag;
-	}
 }

@@ -1,6 +1,13 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include "global.h"
+
+// TODO: temp because eclipse is badly configd
+#ifdef __GNUC__
+#include "global.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 	#endif

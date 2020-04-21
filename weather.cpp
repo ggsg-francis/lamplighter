@@ -1,5 +1,5 @@
 #include "weather.h"
-#include "glm\glm.hpp"
+#include "glm/glm.hpp"
 #include "maths.hpp"
 //#include "global.h"
 #include <iostream>
@@ -7,14 +7,13 @@
 namespace weather
 {
 	//templates
-	glm::vec3 col_clear_sun = glm::vec3(1.1f, 1.05f, 0.95f);
-	//glm::vec3 col_clear_amb = glm::vec3(0.34f, 0.5f, 0.8f);
+	glm::vec3 col_clear_sun = glm::vec3(1.6f, 1.55f, 1.45f);
 	glm::vec3 col_clear_amb = glm::vec3(0.64f, 0.9f, 0.96f);
 	glm::vec3 col_clear_fog = glm::vec3(0.7f, 0.73f, 0.77f);
 
-	glm::vec3 col_foggy_sun = glm::vec3(0.56f, 0.58f, 0.6f);
-	glm::vec3 col_foggy_amb = glm::vec3(0.2f, 0.3f, 0.35f);
-	glm::vec3 col_foggy_fog = glm::vec3(0.35f, 0.37f, 0.4f);
+	glm::vec3 col_foggy_sun = glm::vec3(0.56f * 0.5f, 0.58f * 0.5f, 0.6f * 0.5f);
+	glm::vec3 col_foggy_amb = glm::vec3(0.2f, 0.25f, 0.275f);
+	glm::vec3 col_foggy_fog = glm::vec3(0.35f * 0.75f, 0.37f * 0.75f, 0.4f * 0.75f);
 
 	//current
 	glm::vec3 col_sun = glm::vec3(0.f, 0.f, 0.f);
@@ -40,7 +39,7 @@ namespace weather
 	float stat_overcast_level;
 
 //#define TIMER_TIME 120.f
-#define TIMER_TIME 120.f
+#define TIMER_TIME 20.f
 //#define TIMER_TIME 2.f
 
 	void Tick(btf32 dt)
@@ -68,11 +67,8 @@ namespace weather
 			float r2 = lo_hue + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (hi_hue - lo_hue)));
 			float r3 = lo_hue + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (hi_hue - lo_hue)));
 
-			//stat_overcast_level = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 			stat_overcast_level = m::Random(0.f, 1.f);
-			//if (stat_overcast_level > 1.f) stat_overcast_level = 1.f;
-			//if (stat_overcast_level < 0.f) stat_overcast_level = 0.f;
-			//stat_overcast_level = 1.f; //temp foggy override
+			stat_overcast_level = 1.f; //temp overcast override
 			std::cout << "Recalculated weather, overcast level " << stat_overcast_level << std::endl;
 
 			if (stat_overcast_level > 0.5f)
@@ -104,6 +100,8 @@ namespace weather
 				fog_level_dest = m::Random(0.01f, 0.15f);
 			else
 				fog_level_dest = 0.015f;
+			// temp fog override
+			fog_level_dest = m::Random(0.01f, 0.15f);
 		}
 
 		float transition_point = recalc_ticker;

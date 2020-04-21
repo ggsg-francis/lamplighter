@@ -110,6 +110,13 @@ eidt 0
 edrt 1000.0
 emgt 1
 <<<<
+SPEL spel
+hndl SpelAids
+name AIDS
+eidt 0
+edrt 600.0
+emgt 10
+<<<<
 PROJ proj
 hndl ProjSlug
 pdam 250
@@ -292,19 +299,56 @@ srct TRifleWp
 icon TIcoMtch
 atyp b
 <<<<
+ITEM cons
+hndl alc_0001
+name Gamer's Lament
+radi 0.2
+mdlh 0.05
+wght 0.1
+muns 10
+srcm MSCSandw
+srct TSCSandw
+icon TSCSandw
+cspl SpelSCSw
+<<<<
 ACTT actt
 hndl ActEodor
-srcm head MChrHead
-srcm body MChrBody
-srcm larm MChrArm_
-srcm lleg MChrLeg2
-lpos larm fw__ 0.0
-lpos larm rt__ 0.11
-lpos larm up__ 0.55
-llen larm 0.75
-lpos lleg fw__ 0.0
-lpos lleg rt__ 0.125
-lpos lleg up__ 0.0
-llen lleg 0.75
+srcm head Hed0Base
+srcm body Bod0Base
+srcm larm Arm0Base
+srcm lleg Leg0Base
+srct head Tchrskn1
+srct body Tchrskn1
+srct larm Tchrskn1
+srct lleg Tchrskn1
+jpos larm fw__ 0.0
+jpos larm rt__ 0.11
+jpos larm up__ 0.55
+leng larm 0.75
+jpos lleg fw__ 0.0
+jpos lleg rt__ 0.125
+jpos lleg up__ 0.0
+leng lleg 0.75
+leng body 0.65
+<<<<
+ACTT actt
+hndl ActSkele
+srcm head Hed0Skel
+srcm body Bod0Base
+srcm larm Arm0Base
+srcm lleg Leg0Base
+srct head TchrSkel
+srct body TchrSkel
+srct larm TchrSkel
+srct lleg TchrSkel
+jpos larm fw__ 0.0
+jpos larm rt__ 0.11
+jpos larm up__ 0.55
+leng larm 0.75
+jpos lleg fw__ 0.0
+jpos lleg rt__ 0.125
+jpos lleg up__ 0.0
+leng lleg 0.75
+leng body 0.65
 <<<<
 eof_

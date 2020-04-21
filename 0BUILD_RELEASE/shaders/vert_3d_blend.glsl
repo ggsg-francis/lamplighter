@@ -63,7 +63,7 @@ void main()
 	// Shading
 	
 	float ndotl = clamp(dot(Normal, vsun) * Col.r, 0, 1);
-	float ndotl_amb = clamp(dot(Normal, vec3(0,-1,0)) + 0.5f, 0, 1);
+	float ndotl_amb = clamp(dot(Normal, vec3(0,1,0)) * 0.5f + 0.75f, 0, 1);
 	
 	if (lit)
 	{
@@ -71,19 +71,29 @@ void main()
 		// edge light
 		vec3 vd = Pos - pcam;
 		vec3 halfwayDir = normalize(vsun - normalize(-vd));
-		vec3 edge_light = edgcol * pow(max(dot(normalize(Normal), halfwayDir), 0.0), 2.0);
+		float edge_light = pow(max(dot(normalize(Normal), halfwayDir), 0.0), 2.0);
 	
 		vec4 lightmap = texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
 		
 		float xoffs = -Pos.z + 0.5f - round(-Pos.z + 0.5f);
 		float yoffs = -Pos.x + 0.5f - round(-Pos.x + 0.5f);
 		
-		float light_value = (1 - clamp(           (((Pos.y / 64.) - lightmap.a))*32.          , 0., 1.)) * lightmap.g;
-		//float light_value = mix(
-		//	1 - clamp((((pos2.y) / 64.) - lightmap.a)*16., 0., 1.) * lightmap.g,
-		//	1 - clamp((((pos2.y + 1) / 64.) - lightmap.a)*16., 0., 1.) * lightmap.g, xoffs);
-		LC = clamp(mix(cAmb + ((cLit + (cSun * ndotl) + edge_light) * light_value), vec3(1.f), Col.g), 0.0, 10.0);
-		//LC = heightmap.rgb;
+		float light_value = (1 - clamp(((Pos.y / 64.) - lightmap.a) * 32., 0., 1.)) * lightmap.g;
+		
+		LC =  (cAmb * ndotl_amb) // Ambient light
+			+ (cSun * (ndotl + edge_light)) // Sunlight (and rim light)
+			+ (cLit * light_value) // err
+			+ vec3(Col.g); // Emissive vertices
+			
+		edge_light = clamp(dot(Normal, normalize(vd)) * 0.5f + 0.5f, 0, 1);
+		vec3 spec_light = vec3(pow(max(dot(normalize(Normal), normalize(vd)), 0.0), 6.0));
+		
+		// Mix between diffuse and metallic
+		LC = mix(LC,
+			(cAmb * ndotl_amb) // Ambient light
+			+ (cSun * max(spec_light * 2, edge_light)) // Sunlight (and rim light)
+			+ (cLit * light_value * (edge_light * 2.f)) // err
+			+ vec3(Col.g), Col.b); // Emissive vertices
 	}
 	else
 	{

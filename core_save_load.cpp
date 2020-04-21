@@ -12,11 +12,11 @@
 
 namespace index
 {
-	struct cell
+	struct ReferenceCell
 	{
-		mem::idbuf ents;
+		mem::idbuf ref_ents;
 	};
-	extern cell cells[WORLD_SIZE][WORLD_SIZE];
+	extern ReferenceCell refCells[WORLD_SIZE][WORLD_SIZE];
 }
 
 bool SaveExists()
@@ -89,9 +89,9 @@ void SaveState()
 		//-------------------------------- ENTITIES
 
 		fwrite(&index::block_entity.index_end, SIZE_16, 1, file);
-		fwrite(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1ui16), file);
+		fwrite(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1u), file);
 		//unneeded...
-		//fwrite(&index::block_entity_data, 4ui64, (size_t)(index::block_entity.index_end + 1ui16), file);
+		//fwrite(&index::block_entity_data, 4ui64, (size_t)(index::block_entity.index_end + 1u), file);
 
 		for (btID i = 0; i <= index::block_entity.index_end; i++) // For every entity
 		{
@@ -121,7 +121,6 @@ void SaveState()
 					fwrite(&ACTOR(i)->name, 32, 1, file);
 					fwrite(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
 					fwrite(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
-					fwrite(&ACTOR(i)->t_skin, SIZE_16, 1, file);
 					fwrite(&ACTOR(i)->speed, SIZE_32, 1, file);
 					fwrite(&ACTOR(i)->agility, SIZE_32, 1, file);
 					fwrite(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
@@ -137,7 +136,7 @@ void SaveState()
 		//-------------------------------- ITEMS
 
 		fwrite(&index::block_item.index_end, SIZE_16, 1, file);
-		fwrite(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1ui16), file);
+		fwrite(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1u), file);
 
 		for (btID i = 0; i <= index::block_item.index_end; i++) // For every item
 		{
@@ -178,8 +177,8 @@ void LoadStateFileV001()
 		//-------------------------------- ENTITIES
 
 		fread(&index::block_entity.index_end, SIZE_16, 1, file);
-		fread(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1ui16), file);
-		//fread(&index::block_entity_data, 4ui64, (size_t)(index::block_entity.index_end + 1ui16), file);
+		fread(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1u), file);
+		//fread(&index::block_entity_data, 4ui64, (size_t)(index::block_entity.index_end + 1u), file);
 
 		for (btID i = 0; i <= index::block_entity.index_end; i++) // For every entity
 		{
@@ -214,7 +213,6 @@ void LoadStateFileV001()
 					fread(&ACTOR(i)->name, 32, 1, file);
 					fread(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
 					fread(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
-					fread(&ACTOR(i)->t_skin, SIZE_16, 1, file);
 					fread(&ACTOR(i)->speed, SIZE_32, 1, file);
 					fread(&ACTOR(i)->agility, SIZE_32, 1, file);
 					fread(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
@@ -234,7 +232,7 @@ void LoadStateFileV001()
 		//-------------------------------- ITEMS
 
 		fread(&index::block_item.index_end, SIZE_16, 1, file);
-		fread(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1ui16), file);
+		fread(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1u), file);
 
 		for (btID i = 0; i <= index::block_item.index_end; i++) // For every entity
 		{

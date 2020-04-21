@@ -1,12 +1,12 @@
 #pragma once
 
-//union SDL_Event;
+#include "global.h"
 
 struct InputBuffer
 {
 	// new test keys
-	btui64 keyBitsHeld = 0ui64;
-	btui64 keyBitsHit = 0ui64;
+	btui64 keyBitsHeld = 0u;
+	btui64 keyBitsHit = 0u;
 
 	btf32 mouse_x = 0.f;
 	btf32 mouse_y = 0.f;
@@ -70,6 +70,7 @@ namespace input
 			USE_ALT, // Use equipped item
 			RUN,
 			CROUCH,
+			JUMP,
 			ACTIVATE, // Activate other actor
 			ACTION_A, // Perform action A on item
 			ACTION_B, // Perform action B on item
@@ -88,6 +89,7 @@ namespace input
 			C_USE_ALT, // Use equipped item
 			C_RUN,
 			C_CROUCH,
+			C_JUMP,
 			C_ACTIVATE, // Activate other actor
 			C_ACTION_A, // Perform action A on item
 			C_ACTION_B, // Perform action B on item

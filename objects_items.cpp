@@ -200,17 +200,13 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 	if (owner->inputBV.get(Actor::IN_USE) && self->ePose == HOLDSTATE_AIM && self->fire_time < tickCount_temp)
 	{
 		// if we try to fire, see if we can load the weapon
-		if (self->id_ammoInstance = ID_NULL)
-			//self->id_ammoInstance = owner->inventory.GetItemOfTemplate(8); // TODO: use get ammo type
-			// TODO: still terrible
-			self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::BaseItemGun*)acv::items[((HeldItem*)index::GetItemPtr(0))->id_item_template])->ammunition_type);
+		if (self->id_ammoInstance == ID_NULL)
+			self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::BaseItemGun*)acv::items[self->id_item_template])->ammunition_type);
 
 		if (self->id_ammoInstance != ID_NULL)
 		{
 			if (!HeldConUse(self->id_ammoInstance, owner))
-				//self->id_ammoInstance = owner->inventory.GetItemOfTemplate(8);
-				// TODO: still terrible
-				self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::BaseItemGun*)acv::items[((HeldItem*)index::GetItemPtr(0))->id_item_template])->ammunition_type);
+				self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::BaseItemGun*)acv::items[self->id_item_template])->ammunition_type);
 
 			self->fire_time = tickCount_temp + 3u;
 
@@ -221,10 +217,9 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 			self->pitch = owner->viewPitch.Deg();
 			self->pitch_velocity -= m::Random(5.f, 7.5f);
 
+
 			if (owner->atk_target != BUF_NULL)
 			{
-				//aud::PlayGunshotTemp(true); // Play gunshot sound
-
 				Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
@@ -249,21 +244,11 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
 			}
 
-			//owner->t.velocity = m::AngToVec2(owner->viewYaw.Rad()) * -0.07f; // set my velocity
 			//owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.03f; // set my velocity
+			if (!owner->grounded) // if we're in the air, the gunfire pushes us backwards
+				owner->t.velocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.03f; // set my velocity
 		}
 	}
-
-	/*if (owner->inputBV.get(Actor::IN_ACTN_A))
-		if (self->ePose == HOLDSTATE_IDLE)
-			self->ePose = HOLDSTATE_AIM;
-		else if (self->ePose == HOLDSTATE_AIM)
-			self->ePose = HOLDSTATE_IDLE;
-		else self->ePose = HOLDSTATE_AIM;
-	else if (owner->inputBV.get(Actor::IN_ACTN_B))
-		self->ePose = HOLDSTATE_INSPECT;
-	else if (owner->inputBV.get(Actor::IN_ACTN_C))
-		self->ePose = HOLDSTATE_BARREL;*/
 
 	if (owner->inputBV.get(Actor::IN_ACTN_A))
 			self->ePose = HOLDSTATE_AIM;
@@ -323,6 +308,8 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 	{
 		self->ang_aim_offset_temp = 0.f;
 		self->ang_aim_pitch = owner->viewPitch.Deg();
+		self->ang_aim_pitch += owner->aniSlideResponse * 30.f;
+		if (owner->aniRun) self->ang_aim_pitch += 15.f;
 	}
 }
 void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
@@ -536,7 +523,7 @@ void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 	self->t_item.SetRotation(0.f);
 	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
 	//self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.3f)); // set pose
-	self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.25f + acv::items[itemid]->f_radius)); // set pose
+	self->t_item.TranslateLocal(m::Vector3(0.f, 0.1f, 0.25f + acv::items[itemid]->f_radius)); // set pose
 	self->t_item.Rotate(glm::radians(45.f), m::Vector3(1, 0, 0));
 	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }

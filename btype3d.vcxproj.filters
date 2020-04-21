@@ -10,9 +10,6 @@
     <Filter Include="gamework">
       <UniqueIdentifier>{1ac77d2b-1a55-495e-97b0-05c629ce522c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="gamework\index">
-      <UniqueIdentifier>{83628805-b22f-4e11-a781-f279c91fbd09}</UniqueIdentifier>
-    </Filter>
     <Filter Include="0global">
       <UniqueIdentifier>{c7908f46-388d-4d76-b263-5b44cbeb8eaf}</UniqueIdentifier>
     </Filter>
@@ -59,23 +56,8 @@
     <ClInclude Include="memory.hpp">
       <Filter>framework</Filter>
     </ClInclude>
-    <ClInclude Include="core_decl.cpp">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
-    <ClInclude Include="core_func.cpp">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
-    <ClInclude Include="core.h">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
     <ClInclude Include="memoryC.h">
       <Filter>framework</Filter>
-    </ClInclude>
-    <ClInclude Include="index.h">
-      <Filter>gamework\index</Filter>
-    </ClInclude>
-    <ClInclude Include="core_save_load.h">
-      <Filter>gamework\index</Filter>
     </ClInclude>
     <ClInclude Include="objects_entities.h">
       <Filter>gamework</Filter>
@@ -83,9 +65,26 @@
     <ClInclude Include="network.h">
       <Filter>framework</Filter>
     </ClInclude>
-    <ClInclude Include="collision.h" />
     <ClInclude Include="archive_read_write.h">
       <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="collision.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="core.h">
+      <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="core_decl.cpp">
+      <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="core_func.cpp">
+      <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="core_save_load.h">
+      <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="index.h">
+      <Filter>gamework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -121,17 +120,8 @@
     <ClCompile Include="audio.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="core.cpp">
-      <Filter>gamework\index</Filter>
-    </ClCompile>
     <ClCompile Include="memoryC.c">
       <Filter>framework</Filter>
-    </ClCompile>
-    <ClCompile Include="index.c">
-      <Filter>gamework\index</Filter>
-    </ClCompile>
-    <ClCompile Include="core_save_load.cpp">
-      <Filter>gamework\index</Filter>
     </ClCompile>
     <ClCompile Include="objects_entities.cpp">
       <Filter>gamework</Filter>
@@ -140,9 +130,20 @@
     <ClCompile Include="network.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="collision.cpp" />
     <ClCompile Include="archive_read_write.cpp">
       <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="collision.cpp">
+      <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="core.cpp">
+      <Filter>gamework</Filter>
+    </ClCompile>
+    <ClCompile Include="core_save_load.cpp">
+      <Filter>gamework</Filter>
+    </ClCompile>
+    <ClCompile Include="index.c">
+      <Filter>gamework</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

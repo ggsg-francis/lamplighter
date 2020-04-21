@@ -37,7 +37,7 @@ namespace index
 	btID viewtarget[2]{ ID_NULL, ID_NULL };
 	btID viewtarget_last_tick[2]{ ID_NULL, ID_NULL };
 	// for measuring HP changes for gui display
-	btui16 player_hp[2]{ 1.f, 1.f };
+	btui16 player_hp[2]{ 1000u, 1000u };
 
 	//env::EnvNode editor_node_copy;
 	btID editor_prop_copy;
@@ -45,11 +45,12 @@ namespace index
 	btui8 editor_height_copy;
 	btui8 editor_material_copy;
 
-	struct cell
+	struct ReferenceCell
 	{
-		mem::idbuf ents;
+		mem::idbuf ref_ents; // Entity references
+		btID ref_avr; // Activator reference
 	};
-	cell cells[WORLD_SIZE][WORLD_SIZE];
+	ReferenceCell refCells[WORLD_SIZE][WORLD_SIZE];
 
 	// inventory stuff
 	graphics::GUIBox guibox;
