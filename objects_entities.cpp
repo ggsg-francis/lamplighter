@@ -169,7 +169,7 @@ void EntityCheckGrounded(Entity* ent)
 		}
 	}
 }
-void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
+void EntityTransformTick(Entity* ent, btID id, btf32 dt)
 {
 	// Regenerate csi
 
@@ -241,6 +241,7 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 
 			m::Vector2 surfMod(1.f, 1.f);
 
+			// TODO this part is way too long and im sure it can be cut down
 			if (ent->t.csi.c[eCELL_I].x < ent->t.csi.c[eCELL_X].x) {
 				if (ent->slideVelocity.x > 0.f && slope.x < 0.f) {
 					surfMod.x = 0.5f;
@@ -284,7 +285,7 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 				}
 			}
 
-			btf32 slide_reduce = 0.005f;
+			btf32 slide_reduce = 0.18f * dt; // Slide reduction per second multiplied by frame length
 			// Linear slide reduction (with slope adjustment)
 			m::Vector2 slideMag = (btf32)m::Length(ent->slideVelocity);
 			slideMag.y = slideMag.x;
@@ -297,7 +298,6 @@ void EntityTransformTick(Entity* ent, btID id, btf32 x, btf32 y, btf32 z)
 			}
 			else slideMag.y = 0.f;
 			ent->slideVelocity = m::Normalize(ent->slideVelocity) * slideMag;
-
 
 			// Linear slide reduction
 			/*
@@ -480,7 +480,7 @@ void TickRestingItem(void* ent, btf32 dt)
 	chr->matrix = graphics::Matrix4x4();
 	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)index::GetItemPtr(chr->item_instance))->id_item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
 
-	EntityTransformTick(chr, chr->id, 0.f, 0.f, 0.f);
+	EntityTransformTick(chr, chr->id, dt);
 }
 
 void Actor::TakeItem(btID id)
@@ -836,7 +836,7 @@ void TickChara(void* ent, btf32 dt)
 
 		//-------------------------------- APPLY MOVEMENT
 
-		EntityTransformTick(chr, chr->id, 0, 0, 0);
+		EntityTransformTick(chr, chr->id, dt);
 
 		//-------------------------------- RUN AI FUNCTION
 

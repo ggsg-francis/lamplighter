@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OBJECTS_ITEMS_H
+#define OBJECTS_ITEMS_H
 
 // Inherited from index.cpp
 #include "archive.hpp"
@@ -226,3 +227,5 @@ struct HeldGunMatchLock : public HeldItem
 	btf32 ang_aim_offset_temp = 0.f;
 	btf32 ang_aim_pitch = 0.f;
 };
+
+#endif

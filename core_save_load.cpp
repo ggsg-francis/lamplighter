@@ -99,7 +99,6 @@ void SaveState()
 			{
 				fwrite(&ENTITY(i)->type, SIZE_8, 1, file);
 
-				//fwrite(&ENTITY(i)->id, SIZE_16, 1, file);
 				fwrite(&ENTITY(i)->radius, SIZE_32, 1, file);
 				fwrite(&ENTITY(i)->height, SIZE_32, 1, file);
 				fwrite(&ENTITY(i)->properties, SIZE_8, 1, file);
@@ -191,7 +190,6 @@ void LoadStateFileV001()
 				index::IndexInitEntity(i, type_temp);
 
 				ENTITY(i)->type = type_temp;
-				//fread(&ENTITY(i)->id, SIZE_16, 1, file);
 				fread(&ENTITY(i)->radius, SIZE_32, 1, file);
 				fread(&ENTITY(i)->height, SIZE_32, 1, file);
 				fread(&ENTITY(i)->properties, SIZE_8, 1, file);

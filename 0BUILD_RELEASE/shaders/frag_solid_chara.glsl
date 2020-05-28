@@ -230,5 +230,7 @@ void main()
 	// the one we use for long distance
 	//FragColor.rgb = mix(FragColor.rgb, fogcol, clamp((length((Pos.xz - pcam.xz) * 0.0015f) - 0.2f), 0.f, 1.f));
 	// oppressive
-	FragColor.rgb = mix(FragColor.rgb, cFog, clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start), 0.f, 1.f));
+	float fog_mix = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start), 0.f, 1.f);
+	float fog_mix_half = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start) * 0.5f, 0.f, 1.f);
+	FragColor.rgb = mix(FragColor.rgb, cFog, mix(fog_mix, fog_mix_half, Col.g));
 }

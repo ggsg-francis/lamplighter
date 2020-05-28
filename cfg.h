@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CFG_H
+#define CFG_H
+
 #include <map>
 #include <string>
 
@@ -32,3 +34,5 @@ namespace cfg
 
 	void LoadCfg();
 }
+
+#endif

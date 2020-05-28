@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ENVIRONMENT_H
+#define ENVIRONMENT_H
 
 #include "memory.hpp"
 
@@ -145,3 +146,5 @@ namespace env
 	void GenerateTerrainMesh();
 	void GenerateTerrainMeshEditor();
 }
+
+#endif

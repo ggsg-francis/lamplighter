@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CORE_H
+#define CORE_H
 
 #include "global.h"
 
@@ -172,3 +173,5 @@ namespace index
 	btID GetClosestEntityAllegLOS(btID INDEX, btf32 DISTANCE, fac::facalleg ALLEGIANCE);
 	btID GetClosestActivator(btID INDEX);
 }
+
+#endif

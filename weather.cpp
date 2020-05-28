@@ -4,6 +4,8 @@
 //#include "global.h"
 #include <iostream>
 
+#include "cfg.h"
+
 namespace weather
 {
 	//templates
@@ -38,9 +40,8 @@ namespace weather
 	float stat_tod;
 	float stat_overcast_level;
 
-//#define TIMER_TIME 120.f
-#define TIMER_TIME 20.f
-//#define TIMER_TIME 2.f
+#define TIMER_TIME 120.f
+//#define TIMER_TIME 20.f
 
 	void Tick(btf32 dt)
 	{
@@ -68,7 +69,7 @@ namespace weather
 			float r3 = lo_hue + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (hi_hue - lo_hue)));
 
 			stat_overcast_level = m::Random(0.f, 1.f);
-			stat_overcast_level = 1.f; //temp overcast override
+			if (cfg::bEditMode) stat_overcast_level = 0.f; // temp overcast override
 			std::cout << "Recalculated weather, overcast level " << stat_overcast_level << std::endl;
 
 			if (stat_overcast_level > 0.5f)
@@ -101,7 +102,7 @@ namespace weather
 			else
 				fog_level_dest = 0.015f;
 			// temp fog override
-			fog_level_dest = m::Random(0.01f, 0.15f);
+			//fog_level_dest = m::Random(0.01f, 0.15f);
 		}
 
 		float transition_point = recalc_ticker;

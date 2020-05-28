@@ -286,37 +286,37 @@ namespace input
 	#ifdef DEF_NMP
 	bool GetHeld(btui32 index, key::Key2 i)
 	{
-		return mem::bvget(buf[index][INPUT_BUF_GET].keyBitsHeld, 1u << (btui64)i);
+		return mem::bvget<btui64>(buf[index][INPUT_BUF_GET].keyBitsHeld, 1u << (btui64)i);
 	}
 	bool GetHit(btui32 index, key::Key2 i)
 	{
-		return mem::bvget(buf[index][INPUT_BUF_GET].keyBitsHit, 1u << (btui64)i);
+		return mem::bvget<btui64>(buf[index][INPUT_BUF_GET].keyBitsHit, 1u << (btui64)i);
 	}
 	#endif
 	bool GetHeld(key::Key2 i)
 	{
-		return mem::bvget(BUF_LOCALGET.keyBitsHeld, (btui64)1u << (btui64)i);
+		return mem::bvget<btui64>(BUF_LOCALGET.keyBitsHeld, (btui64)1u << (btui64)i);
 	}
 	bool GetHit(key::Key2 i)
 	{
-		return mem::bvget(BUF_LOCALGET.keyBitsHit, (btui64)1u << (btui64)i);
+		return mem::bvget<btui64>(BUF_LOCALGET.keyBitsHit, (btui64)1u << (btui64)i);
 	}
 	void Set(key::Key2 i)
 	{
-		mem::bvset(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i);
-		mem::bvset(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i);
+		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i);
+		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i);
 	}
 	void Unset(key::Key2 i)
 	{
-		mem::bvunset(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i);
+		mem::bvunset<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i);
 	}
 	void SetTo(key::Key2 i, bool b)
 	{
-		mem::bvsetto(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i, b);
-		mem::bvsetto(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i, b);
+		mem::bvsetto<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i, b);
+		mem::bvsetto<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i, b);
 	}
 	void SetHit(key::Key2 i)
 	{
-		mem::bvset(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i);
+		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i);
 	}
 }

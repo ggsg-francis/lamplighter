@@ -1,4 +1,5 @@
-#pragma once
+#ifndef NETWORK_H
+#define NETWORK_H
 
 #ifdef DEF_NMP
 
@@ -41,3 +42,5 @@ namespace network
 	void End();
 }
 #endif // DEF_NMP
+
+#endif

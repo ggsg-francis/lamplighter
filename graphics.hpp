@@ -1,4 +1,6 @@
-#pragma once
+#ifndef GRAPHICS_H
+#define GRAPHICS_H
+
 #include "graphics_structures.h"
 
 // TODO: shit
@@ -670,3 +672,5 @@ void DrawTerrainMesh(btID ID, graphics::TerrainMesh MESH,
 	graphics::TextureBase TEXTURE_E, graphics::TextureBase TEXTURE_F,
 	graphics::TextureBase TEXTURE_G, graphics::TextureBase TEXTURE_H,
 	graphics::Matrix4x4 MATRIX);
+
+#endif

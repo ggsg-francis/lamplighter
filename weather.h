@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WEATHER_H
+#define WEATHER_H
 
 #include "global.h"
 
@@ -11,3 +12,5 @@ namespace weather
 	void* FogColour();
 	void* FogDensity();
 }
+
+#endif

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef TRANSFORM_H
+#define TRANSFORM_H
+
 #include "glm/glm.hpp"
 #include "glm/gtc\matrix_transform.hpp"
 #include "glm/gtc\type_ptr.hpp"
@@ -87,3 +89,5 @@ public:
 	glm::mat4 getModelMatrix();
 	graphics::Matrix4x4 getMatrix();
 };
+
+#endif

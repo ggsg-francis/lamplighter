@@ -78,7 +78,7 @@ void HeldMelTick(btID id, btf32 dt, Actor* owner)
 				Entity* ent = (Entity*)index::GetEntityPtr(owner->atk_target);
 				ent->state.Damage(300u, self->yaw);
 				aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
-				ent->slideVelocity += m::AngToVec2(owner->t.yaw.Rad()) * 0.2f;
+				ent->slideVelocity += m::AngToVec2(owner->t.yaw.Rad()) * 0.05f;
 				// exit swing early
 				self->swinging = HeldMel::SWINGSTATE_RESET;
 			}
@@ -246,7 +246,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 
 			//owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.03f; // set my velocity
 			if (!owner->grounded) // if we're in the air, the gunfire pushes us backwards
-				owner->t.velocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.03f; // set my velocity
+				owner->t.velocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.01f; // set my velocity
 		}
 	}
 

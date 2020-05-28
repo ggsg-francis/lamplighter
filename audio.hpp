@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AUDIO_H
+#define AUDIO_H
 
 #include "global.h"
 
@@ -26,3 +27,5 @@ namespace aud
 	void PlaySnd(AudioFile file, m::Vector3 src);
 	void End();
 }
+
+#endif

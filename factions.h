@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FACTIONS_H
+#define FACTIONS_H
 
 #include "global.h"
 
@@ -27,3 +28,5 @@ namespace fac
 	facalleg GetAllegiance(faction FACTION_THIS, faction FACTION_OTHER);
 	void SetAllegiance(faction FACTION_THIS, faction FACTION_OTHER, facalleg LEVEL);
 }
+
+#endif

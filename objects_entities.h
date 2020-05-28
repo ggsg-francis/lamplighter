@@ -116,7 +116,7 @@ struct ActiveState
 };
 
 // Handle this entitiy's position, receives desired motion
-void EntityTransformTick(Entity* ENTITY, btID ID, btf32 X, btf32 Y, btf32 Z);
+void EntityTransformTick(Entity* ENTITY, btID ID, btf32 DELTA_TIME);
 
 char* DisplayNameActor(void* ent);
 char* DisplayNameRestingItem(void* ent);

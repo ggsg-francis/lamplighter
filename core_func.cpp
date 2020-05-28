@@ -836,6 +836,12 @@ namespace index
 		CHARA(id)->inventory.AddNew(6u);
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(7u); // heal
 		CHARA(id)->foot_state = FootState::eL_DOWN;
 	}
@@ -851,6 +857,12 @@ namespace index
 		CHARA(id)->speed = 1.45f;
 		CHARA(id)->agility = 0.f;
 		CHARA(id)->inventory.AddNew(0u);
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
+		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->inventory.AddNew(8u); // magazine
 		CHARA(id)->foot_state = FootState::eL_DOWN;

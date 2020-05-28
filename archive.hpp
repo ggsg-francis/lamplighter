@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ARCHIVE_H
+#define ARCHIVE_H
 
 #include "graphics.hpp"
 
@@ -321,3 +322,5 @@ namespace acv
 
 	void ClearMemory();
 }
+
+#endif

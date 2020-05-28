@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GLOBAL_H
+#define GLOBAL_H
 
 // Compiler configuration definitions
 
@@ -18,6 +19,7 @@
 #endif
 //#define DEF_AUTO_RELOAD_ON_DEATH
 //#define DEF_SPAWN_ON_START
+//#define DEF_SPAWN_NPC
 //#define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
 //#define DEF_AUTOSAVE_ON_START // temporary definition that enables autosave
 #define DEF_TERRAIN_USE_EROSION_TRIANGULATION
@@ -130,7 +132,7 @@ extern "C" {
 	// For specific uses
 	typedef unsigned __int16 btID;
 	#else
-	#error Using different c++ version than written for, please review! (global.h) 
+	#error Using different c++ compiler than written for, please review! (global.h)
 	#endif
 
 	typedef btui8 EntityType;
@@ -188,4 +190,6 @@ extern "C" {
 
 	#ifdef __cplusplus
 }
+#endif
+
 #endif

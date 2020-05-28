@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INPUT_H
+#define INPUT_H
 
 #include "global.h"
 
@@ -160,3 +161,5 @@ namespace input
 	void SetTo(key::Key2 KEY, bool VALUE);
 	void SetHit(key::Key2 KEY);
 }
+
+#endif

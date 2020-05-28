@@ -81,34 +81,41 @@ public:
 	}
 } FixedPointU32;
 
+#define STOREBLOCK_SIZE 1024
+typedef struct StoreBlock {
+	btui8 bytes[STOREBLOCK_SIZE];
+	bool byte_used[STOREBLOCK_SIZE];
+} StoreBlock;
+typedef struct StoreBlockAddr {
+	btui16 addr;
+	btui16 size;
+} StoreBlockAddr;
+void StoreBlockAdd(StoreBlock* block, StoreBlockAddr* out_addr, btui16 size)
+{
+	
+}
+
+struct teststr1
+{
+	int i;
+	int i2;
+};
+
+struct teststr2
+{
+	int i;
+};
+
 void InitTest()
 {
 	std::vector<path::PathNode> vec;
 	path::PathFind(&vec, 1024, 1024, 1026, 1026);
 
+	//StoreBlock store;
 
-	#ifdef FUFUFUF
-	sdfghdfh;
-	#endif
+	//StoreBlockAddr addr[16];
 
-	btf32 float_determinism_test_1 = ((8.586f + 1.2345f) + 4.4233f);
-	btf32 float_determinism_test_2 = (8.586f + (1.2345f + 4.4233f));
 
-	btui32 i;
-
-	//testFixedPoint fp;
-	FixedPointU32 fp;
-	fp.SetF(6.24);
-
-	bti32 i1 = fp.GetIntegral();
-	bti32 i2 = fp.GetDecimal();
-	btf64 ff = (btf64)i2 / (btf64)FPSCALE32;
-
-	FixedPointU32 fp2;
-	fp2.SetF(6.f + ff);
-
-	int dddd = 0;
-	//fp.mult = 1000;
 }
 
 struct p_settarget

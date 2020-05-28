@@ -115,6 +115,8 @@ namespace index
 
 	void DoSpawn()
 	{
+		#ifdef DEF_SPAWN_NPC
+
 		// for every entity
 		for (int e = 0; e < block_entity.index_end; e++)
 		{
@@ -148,8 +150,6 @@ namespace index
 			{
 				if (env::Get(x, y, env::eflag::EF_SPAWN_TEST))
 				{
-					//env::UnSet(x, y, env::eflag::EF_SPAWN_TEST);
-					std::cout << "spawn flag" << std::endl;
 					//for (int i = 0; i < 8; ++i)
 					btf32 dist;
 					m::Vector2 pos1 = ENTITY(players[0])->t.position;
@@ -173,6 +173,29 @@ namespace index
 
 						}
 					}
+				}
+			}
+		}
+
+		#endif
+
+		// temp
+		for (int x = 0; x < WORLD_SIZE; ++x)
+		{
+			for (int y = 0; y < WORLD_SIZE; ++y)
+			{
+				if (env::Get(x, y, env::eflag::EF_SPAWN_ITEM_TEST))
+				{
+					//env::UnSet(x, y, env::eflag::EF_SPAWN_ITEM_TEST);
+					btf32 random = m::Random(0.f, acv::item_index);
+					btui32 rand_rnd = (btui32)floor(random);
+					SpawnEntityItem(rand_rnd, m::Vector2(x,y), 0.f);
+					/*if (rand_rnd < 2u)
+						SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
+					else if (rand_rnd < 9u)
+						SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
+					else
+						SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);*/
 				}
 			}
 		}
@@ -728,7 +751,17 @@ namespace index
 		}
 		else
 		{
+			for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
+			{
+				if (block_entity.used[i])
+				{
+					//ENTITY(i)->state.TickEffects(dt);
+					fpDraw[block_entity_data[i].type](ENTITY(i)); // Call tick on entity
+				}
+			}
+
 			#define DRAWRANGE 16u
+			/*
 			Entity* entity = ENTITY(players[activePlayer]);
 			// Set min/max draw coordinates
 			bti32 minx = entity->t.csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
@@ -754,6 +787,7 @@ namespace index
 					}
 				}
 			}
+			*/
 			#ifndef DEF_SHADOW_ALL_OBJECTS
 			if (oob)
 			#endif

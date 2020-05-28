@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ARCHIVERW_H
+#define ARCHIVERW_H
 
 namespace serializer
 {
@@ -9,3 +10,5 @@ namespace serializer
 	void LoadArchive(char* fn);
 	void SaveArchive(char* fn);
 }
+
+#endif

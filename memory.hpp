@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MEMORY_H
+#define MEMORY_H
 
 #include "global.h"
 
@@ -524,3 +525,5 @@ namespace mem
 		btID operator[] (btui32 x);
 	};
 }
+
+#endif

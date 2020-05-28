@@ -146,7 +146,7 @@ void main()
 	else
 	{
 		//LC *= ndotl * 2.f; Moon shading
-		LC = vec3(1.5f);
+		LC = vec3(3.f, 0.f, 0.f);
 	}
 	
 	//LC = vec3((1 - aDeform[1]) - aDeform[0]) * 5.f;
