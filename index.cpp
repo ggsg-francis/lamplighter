@@ -22,11 +22,11 @@ EntAddr block_entity_data[BUF_SIZE];
 mem::objbuf buf_resting_item;
 RestingItem buf_resting_item_data[BUF_SIZE];
 mem::objbuf buf_chara;
-Chara       buf_chara_data[BUF_SIZE];
+Actor       buf_chara_data[BUF_SIZE];
 
 mem::objbuf* BufPtr[ENTITY_TYPE_COUNT] = { &buf_chara, &buf_resting_item, &buf_chara };
 void* BufDataPtr[ENTITY_TYPE_COUNT] = { &buf_chara_data, &buf_resting_item_data, &buf_chara_data };
-unsigned long long BufDataSize[ENTITY_TYPE_COUNT] = { sizeof(EditorPawn), sizeof(RestingItem), sizeof(Chara) };
+unsigned long long BufDataSize[ENTITY_TYPE_COUNT] = { sizeof(EditorPawn), sizeof(RestingItem), sizeof(Actor) };
 
 // Return a string which will be printed to the screen when this entity is looked at
 char*(*fpName[ENTITY_TYPE_COUNT])(void* self) = {
@@ -52,12 +52,12 @@ void(*fpDraw[ENTITY_TYPE_COUNT])(void* self) = {
 // Get Entity address from ID
 void* getEntEditorPawn(btID id) { return &buf_chara_data[id]; }
 void* getEntRestingItem(btID id) { return &buf_resting_item_data[id]; }
-void* getEntChara(btID id) { return &buf_chara_data[id]; }
+void* getEntActor(btID id) { return &buf_chara_data[id]; }
 // Array lookup for the above functions
 void*(*GetEntArray[ENTITY_TYPE_COUNT])(btID) = {
 	getEntEditorPawn,
 	getEntRestingItem,
-	getEntChara
+	getEntActor,
 };
 // Array lookup function
 void* GetEntityPtr(btID id)
@@ -125,8 +125,8 @@ void IndexInitEntity(btID id, EntityType type)
 		break;
 	case ENTITY_TYPE_CHARA:
 		block_entity_data[id].type_buffer_index = buf_chara.add();
-		memset(ENT_VOID(id), 0, sizeof(Chara));
-		((Chara)*(CHARA(id))) = Chara();
+		memset(ENT_VOID(id), 0, sizeof(Actor));
+		((Actor)*(ACTOR(id))) = Actor();
 		{
 			// generate name
 			FILE* file = fopen("n.txt", "rb"); // Open file
@@ -154,9 +154,9 @@ void IndexInitEntity(btID id, EntityType type)
 				{
 					if (!has_advanced_word)
 						goto getchar;
-					CHARA(id)->name[0] = Capitalize(c);
+					ACTOR(id)->name[0] = Capitalize(c);
 					// else we can read from here assuming this is the start of a new word
-					fgets((char*)(&CHARA(id)->name[1]), 31, file);
+					fgets((char*)(&ACTOR(id)->name[1]), 31, file);
 				}
 			}
 			fclose(file);

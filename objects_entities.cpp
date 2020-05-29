@@ -162,7 +162,7 @@ void EntityCheckGrounded(Entity* ent)
 	else if (!ent->grounded)
 	{
 		if (ent->type == ENTITY_TYPE_CHARA)
-			ent->grounded = RayEntity(ent->id, ((Chara*)ent)->aniStandHeight);
+			ent->grounded = RayEntity(ent->id, ((Actor*)ent)->aniStandHeight);
 		else
 			ent->grounded = RayEntity(ent->id, 0.f);
 		if (ent->grounded)
@@ -229,7 +229,7 @@ void EntityTransformTick(Entity* ent, btID id, btf32 dt)
 			ent->t.height_velocity = 0.f;
 			env::GetHeight(ground_height, ent->t.csi);
 			if (ent->type == ENTITY_TYPE_CHARA)
-				ent->t.height = ground_height + ((Chara*)ent)->aniStandHeight;
+				ent->t.height = ground_height + ((Actor*)ent)->aniStandHeight;
 			else {
 				ent->t.height = ground_height;
 				ent->t.velocity *= 0.f; // Remove slide on non actors
@@ -369,7 +369,7 @@ m::Vector3 SetFootPos(m::Vector2 position)
 }
 void DrawEditorPawn(void* ent)
 {
-	Chara* chr = (Chara*)ent;
+	EditorPawn* chr = (EditorPawn*)ent;
 
 	// need a good way of knowing own index
 	DrawMesh(chr->id, res::GetM(res::m_debug_bb), res::GetT(res::t_col_red), SS_NORMAL, chr->t_body.getMatrix());
@@ -579,7 +579,7 @@ void Actor::DecrEquipSlot()
 
 #define velocityStepMult (8.f * LEGLEN(chr->actorBase,0)) // How far to place our foot ahead when walking
 
-void Chara_AnimateLegs(Chara* chr)
+void Chara_AnimateLegs(Actor* chr)
 {
 	//btf32 f = acv::actor_templates[chr->actorBase].leng_arm[0];
 
@@ -735,7 +735,7 @@ void Chara_AnimateLegs(Chara* chr)
 }
 void TickChara(void* ent, btf32 dt)
 {
-	Chara* chr = (Chara*)ent;
+	Actor* chr = (Actor*)ent;
 
 	chr->input.x = -chr->input.x;
 
@@ -918,7 +918,7 @@ void TickChara(void* ent, btf32 dt)
 }
 void DrawChara(void* ent)
 {
-	Chara* chr = (Chara*)ent;
+	Actor* chr = (Actor*)ent;
 
 	graphics::Matrix4x4 matLegHipR, matLegUpR, matLegLoR, matLegFootR;
 	graphics::Matrix4x4 matLegHipL, matLegUpL, matLegLoL, matLegFootL;

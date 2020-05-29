@@ -172,6 +172,11 @@ struct RestingItem : public Entity
 	btID item_instance;
 	graphics::Matrix4x4 matrix;
 };
+enum FootState : btui8
+{
+	eL_DOWN,
+	eR_DOWN,
+};
 struct Actor : public Entity
 {
 	enum ActorInput : btui16
@@ -216,6 +221,29 @@ struct Actor : public Entity
 
 	//-------------------------------- CHARA stuff
 
+	enum equipmode : btui8
+	{
+		spell,
+		weapon,
+	};
+
+	enum CharaStaticProperties : btui8
+	{
+		eLEFT_HANDED = (0x1u << 0x0u),
+	};
+	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
+
+	//enum CharaActiveState : btui8
+	//{
+	//	ani_right_foot = (0x1u << 0x0u),
+	//}; 
+	//mem::bv<btui8, CharaActiveState> charastatebv;
+
+
+
+	//FootState foot_state = eBOTH_DOWN;
+	FootState foot_state = eL_DOWN;
+
 	Transform3D t_body, t_head;
 	m::Vector3 footPosTargR, footPosTargL, footPosR, footPosL, fpCurrentR, fpCurrentL;
 	m::Vector2 ani_body_lean;
@@ -242,36 +270,6 @@ struct Actor : public Entity
 	void SetEquipSlot(btui32 slot);
 	void IncrEquipSlot();
 	void DecrEquipSlot();
-};
-enum FootState : btui8
-{
-	eL_DOWN,
-	eR_DOWN,
-};
-struct Chara : public Actor
-{
-	enum equipmode : btui8
-	{
-		spell,
-		weapon,
-	};
-
-	enum CharaStaticProperties : btui8
-	{
-		eLEFT_HANDED = (0x1u << 0x0u),
-	};
-	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
-
-	//enum CharaActiveState : btui8
-	//{
-	//	ani_right_foot = (0x1u << 0x0u),
-	//}; 
-	//mem::bv<btui8, CharaActiveState> charastatebv;
-
-	
-
-	//FootState foot_state = eBOTH_DOWN;
-	FootState foot_state = eL_DOWN;
 };
 struct EditorPawn : public Actor
 {

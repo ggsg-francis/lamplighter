@@ -34,8 +34,6 @@ extern void(*fpDraw[ENTITY_TYPE_COUNT])(void* self);
 // TODO: working on reducing the use of these functions
 //  ok
 #define ENT_VOID(a) (GetEntityPtr(a))
-// ok-ish
-#define CHARA(a) ((Chara*)GetEntityPtr(a))
 // not ok
 #define ACTOR(a) ((Actor*)GetEntityPtr(a))
 // not ok

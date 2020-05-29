@@ -126,9 +126,9 @@ void SaveState()
 					fwrite(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
 					fwrite(&ACTOR(i)->inv_active_slot, SIZE_32, 1, file);
 					fwrite(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
-					fwrite(&CHARA(i)->skin_col_a, sizeof(m::Vector3), 1, file);
-					fwrite(&CHARA(i)->skin_col_b, sizeof(m::Vector3), 1, file);
-					fwrite(&CHARA(i)->skin_col_c, sizeof(m::Vector3), 1, file);
+					fwrite(&ACTOR(i)->skin_col_a, sizeof(m::Vector3), 1, file);
+					fwrite(&ACTOR(i)->skin_col_b, sizeof(m::Vector3), 1, file);
+					fwrite(&ACTOR(i)->skin_col_c, sizeof(m::Vector3), 1, file);
 				}
 			}
 		}
@@ -219,9 +219,9 @@ void LoadStateFileV001()
 					fread(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
 					ACTOR(i)->ai_target_ent = ID_NULL; // temp
 					ACTOR(i)->ai_ally_ent = ID_NULL; // temp
-					fread(&CHARA(i)->skin_col_a, sizeof(m::Vector3), 1, file);
-					fread(&CHARA(i)->skin_col_b, sizeof(m::Vector3), 1, file);
-					fread(&CHARA(i)->skin_col_c, sizeof(m::Vector3), 1, file);
+					fread(&ACTOR(i)->skin_col_a, sizeof(m::Vector3), 1, file);
+					fread(&ACTOR(i)->skin_col_b, sizeof(m::Vector3), 1, file);
+					fread(&ACTOR(i)->skin_col_c, sizeof(m::Vector3), 1, file);
 				}
 
 				std::cout << "Loaded entity ID " << i << std::endl;

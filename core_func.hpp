@@ -550,13 +550,13 @@ namespace index
 		ENTITY(index)->height = 0.7f;
 		if (ENTITY(index)->type == ENTITY_TYPE_CHARA)
 		{
-			CHARA(index)->atk_target = BUF_NULL;
-			CHARA(index)->ai_target_ent = BUF_NULL;
-			CHARA(index)->ai_ally_ent = BUF_NULL;
-			CHARA(index)->footPosL = m::Vector3(pos.x, 0, pos.y);
-			CHARA(index)->footPosTargL = m::Vector3(pos.x, 0, pos.y);
-			CHARA(index)->footPosR = m::Vector3(pos.x, 0, pos.y);
-			CHARA(index)->footPosTargR = m::Vector3(pos.x, 0, pos.y);
+			ACTOR(index)->atk_target = BUF_NULL;
+			ACTOR(index)->ai_target_ent = BUF_NULL;
+			ACTOR(index)->ai_ally_ent = BUF_NULL;
+			ACTOR(index)->footPosL = m::Vector3(pos.x, 0, pos.y);
+			ACTOR(index)->footPosTargL = m::Vector3(pos.x, 0, pos.y);
+			ACTOR(index)->footPosR = m::Vector3(pos.x, 0, pos.y);
+			ACTOR(index)->footPosTargR = m::Vector3(pos.x, 0, pos.y);
 
 			const m::Vector3 colEyes[]{
 				m::Vector3(232.f / 256.f, 17.f / 256.f, 17.f / 256.f), // red
@@ -600,9 +600,9 @@ namespace index
 				+ (colBase[rand() % 10] * hue_offs) 
 				+ m::Vector3(m::Random(-bri_offs, bri_offs));
 
-			CHARA(index)->skin_col_a = col_base_a;
-			CHARA(index)->skin_col_b = col_eyes;
-			CHARA(index)->skin_col_c = col_base_b;
+			ACTOR(index)->skin_col_a = col_base_a;
+			ACTOR(index)->skin_col_b = col_eyes;
+			ACTOR(index)->skin_col_c = col_base_b;
 		}
 	}
 
@@ -625,18 +625,18 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
-		CHARA(id)->aiControlled = false;
-		CHARA(id)->speed = 1.45f;
-		CHARA(id)->agility = 0.f;
-		CHARA(id)->inventory.AddNew(6u); // long smig
-		CHARA(id)->inventory.AddNew(4u); // fist
-		CHARA(id)->inventory.AddNew(7u); // heal
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(10u); // time gun
-		CHARA(id)->inventory.AddNew(11u); // time mag
-		CHARA(id)->foot_state = FootState::eL_DOWN;
+		ACTOR(id)->aiControlled = false;
+		ACTOR(id)->speed = 1.45f;
+		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->inventory.AddNew(6u); // long smig
+		ACTOR(id)->inventory.AddNew(4u); // fist
+		ACTOR(id)->inventory.AddNew(7u); // heal
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(10u); // time gun
+		ACTOR(id)->inventory.AddNew(11u); // time mag
+		ACTOR(id)->foot_state = FootState::eL_DOWN;
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
@@ -646,20 +646,20 @@ namespace index
 		ENTITY(id)->faction = fac::faction::player;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 1.45f;
-		CHARA(id)->agility = 0.f;
-		CHARA(id)->inventory.AddNew(6u);
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(7u); // heal
-		CHARA(id)->foot_state = FootState::eL_DOWN;
+		ACTOR(id)->aiControlled = true;
+		ACTOR(id)->speed = 1.45f;
+		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->inventory.AddNew(6u);
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(7u); // heal
+		ACTOR(id)->foot_state = FootState::eL_DOWN;
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
@@ -669,19 +669,19 @@ namespace index
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 1.45f;
-		CHARA(id)->agility = 0.f;
-		CHARA(id)->inventory.AddNew(0u);
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->inventory.AddNew(8u); // magazine
-		CHARA(id)->foot_state = FootState::eL_DOWN;
+		ACTOR(id)->aiControlled = true;
+		ACTOR(id)->speed = 1.45f;
+		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->inventory.AddNew(0u);
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->foot_state = FootState::eL_DOWN;
 	}
 
 	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)
@@ -691,11 +691,11 @@ namespace index
 		ENTITY(id)->faction = fac::faction::undead;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		CHARA(id)->aiControlled = true;
-		CHARA(id)->speed = 3.5f;
-		CHARA(id)->agility = 0.f;
-		CHARA(id)->inventory.AddNew(4u);
-		CHARA(id)->foot_state = FootState::eL_DOWN;
+		ACTOR(id)->aiControlled = true;
+		ACTOR(id)->speed = 3.5f;
+		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->inventory.AddNew(4u);
+		ACTOR(id)->foot_state = FootState::eL_DOWN;
 	}
 
 	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)
@@ -705,8 +705,8 @@ namespace index
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
-		CHARA(id)->aiControlled = false;
-		CHARA(id)->speed = 0.1f;
+		ACTOR(id)->aiControlled = false;
+		ACTOR(id)->speed = 0.1f;
 	}
 
 	void(*PrefabEntity[])(btID, m::Vector2, btf32) = { prefab_pc, prefab_aipc, prefab_npc, prefab_zombie, prefab_editorpawn };

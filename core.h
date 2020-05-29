@@ -26,7 +26,6 @@ struct CellGroup;
 struct CellSpace;
 
 struct Entity;
-struct Chara;
 struct Actor;
 struct RestingItem;
 

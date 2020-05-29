@@ -33,7 +33,7 @@ namespace index
 		activePlayer = index;
 		viewpos = ENTITY(players[activePlayer])->t.position * -1.f;
 
-		Chara* chara = CHARA(players[activePlayer]);
+		Actor* chara = ACTOR(players[activePlayer]);
 		#ifdef DEF_3PP
 		graphics::SetMatViewEditor(&chara->t_head);
 		#else
@@ -268,8 +268,8 @@ namespace index
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
 				//players[0] = SpawnEntity(prefab::prefab_npc, m::Vector2(1023.f, 1022.f), 0.f);
-				//CHARA(players[0])->faction = fac::faction::playerhunter;
-				//CHARA(players[1])->faction = fac::faction::playerhunter;
+				//ACTOR(players[0])->faction = fac::faction::playerhunter;
+				//ACTOR(players[1])->faction = fac::faction::playerhunter;
 
 				/*
 				SpawnNewEntityItem(0u, m::Vector2(1025.1f, 1022.6f), 15.f);
@@ -836,7 +836,7 @@ namespace index
 			if (input::GetHit(i, input::key::DROP_HELD))
 			{
 				ACTOR(players[i])->DropItem(ACTOR(players[i])->inv_active_slot);
-				//network::SendCharaInv(CHARA(players[i]), players[i]); // TEMP FAILSAFE
+				//network::SendCharaInv(ACTOR(players[i]), players[i]); // TEMP FAILSAFE
 			}
 		}
 		#else
@@ -924,7 +924,7 @@ namespace index
 		graphics::GetShader(graphics::S_GUI).Use();
 
 		//TODO: use 'actor'?
-		Chara* chara = CHARA(players[activePlayer]);
+		Actor* chara = ACTOR(players[activePlayer]);
 
 		//text_message[activePlayer].ReGen("teststr", 0, -p1_x_start, 0);
 		if (message_time[activePlayer] > tickCount_temp)
