@@ -73,18 +73,7 @@ EntAddr block_item_data[BUF_SIZE];
 mem::objbuf buf_item_misc; // Item buffer
 HeldItem buf_item_misc_data[BUF_SIZE];
 
-mem::objbuf buf_item_melee; // Item buffer
-HeldMel buf_item_melee_data[BUF_SIZE];
-
-mem::objbuf buf_item_gun; // Item buffer
-HeldGun buf_item_gun_data[BUF_SIZE];
-
-mem::objbuf buf_item_mgc; // Item buffer
-HeldMgc buf_item_mgc_data[BUF_SIZE];
-
-mem::objbuf buf_item_con; // Item buffer
-HeldCons buf_item_con_data[BUF_SIZE];
-
+/*
 void* getItemMis(btID id) { return &buf_item_misc_data[id]; }
 void* getItemEqp(btID id) { return &buf_item_misc_data[id]; }
 void* getItemMel(btID id) { return &buf_item_melee_data[id]; }
@@ -92,10 +81,11 @@ void* getItemGun(btID id) { return &buf_item_gun_data[id]; }
 void* getItemMgc(btID id) { return &buf_item_mgc_data[id]; }
 void* getItemCon(btID id) { return &buf_item_con_data[id]; }
 void*(*GetItemArray[])(btID) = { getItemMis, getItemEqp, getItemMel, getItemGun, getItemMgc, getItemCon };
-mem::objbuf* ItemBufPtr[] = { &buf_item_misc, &buf_item_misc, &buf_item_melee, &buf_item_gun, &buf_item_mgc, &buf_item_con };
+mem::objbuf* ItemBufPtr[] = { &buf_item_misc, &buf_item_misc, &buf_item_melee, &buf_item_gun, &buf_item_mgc, &buf_item_con };*/
 void* GetItemPtr(btID id)
 {
-	return GetItemArray[block_item_data[id].type](block_item_data[id].type_buffer_index);
+	//return GetItemArray[block_item_data[id].type](block_item_data[id].type_buffer_index);
+	return &buf_item_misc_data[id];
 }
 ItemType GetItemType(btID id)
 {
@@ -193,12 +183,12 @@ void IndexInitItem(btID id, ItemType type)
 {
 	block_item.used[id] = true;
 	block_item_data[id].type = type;
-	block_item_data[id].type_buffer_index = ItemBufPtr[type]->add();
+	//block_item_data[id].type_buffer_index = ItemBufPtr[type]->add();
 	HeldItem* held_item = GETITEM_MISC(id);
+	*held_item = HeldItem();
 	switch (type)
 	{
 	case ITEM_TYPE_MISC:
-		*held_item = HeldItem();
 		held_item->fpTick = HeldItemTick;
 		held_item->fpDraw = HeldItemDraw;
 		held_item->fpOnEquip = HeldItemOnEquip;
@@ -208,7 +198,6 @@ void IndexInitItem(btID id, ItemType type)
 		held_item->fpBlockMove = HeldItemBlockMove;
 		break;
 	case ITEM_TYPE_EQUIP:
-		*held_item = HeldItem();
 		held_item->fpTick = HeldItemTick;
 		held_item->fpDraw = HeldItemDraw;
 		held_item->fpOnEquip = HeldItemOnEquip;
@@ -218,7 +207,6 @@ void IndexInitItem(btID id, ItemType type)
 		held_item->fpBlockMove = HeldItemBlockMove;
 		break;
 	case ITEM_TYPE_WPN_MELEE:
-		*held_item = HeldMel();
 		held_item->fpTick = HeldMelTick;
 		held_item->fpDraw = HeldMelDraw;
 		held_item->fpOnEquip = HeldMelOnEquip;
@@ -228,9 +216,6 @@ void IndexInitItem(btID id, ItemType type)
 		held_item->fpBlockMove = HeldMelBlockMove;
 		break;
 	case ITEM_TYPE_WPN_MATCHGUN:
-		*held_item = HeldGun();
-		//memset(held_item, 0, sizeof(HeldGun));
-		//*held_item = HeldGunMatchLock();
 		held_item->fpTick = HeldGunTick;
 		held_item->fpDraw = HeldGunDraw;
 		held_item->fpOnEquip = HeldGunOnEquip;
@@ -240,7 +225,6 @@ void IndexInitItem(btID id, ItemType type)
 		held_item->fpBlockMove = HeldGunBlockMove;
 		break;
 	case ITEM_TYPE_WPN_MAGIC:
-		*held_item = HeldMgc();
 		held_item->fpTick = HeldMgcTick;
 		held_item->fpDraw = HeldMgcDraw;
 		held_item->fpOnEquip = HeldMgcOnEquip;
@@ -250,7 +234,6 @@ void IndexInitItem(btID id, ItemType type)
 		held_item->fpBlockMove = HeldMgcBlockMove;
 		break;
 	case ITEM_TYPE_CONS:
-		*held_item = HeldCons();
 		held_item->fpTick = HeldConTick;
 		held_item->fpDraw = HeldConDraw;
 		held_item->fpOnEquip = HeldConOnEquip;
@@ -265,24 +248,7 @@ void IndexFreeItem(btID id)
 {
 	if (block_item.used[id])
 	{
-		switch (block_item_data[id].type)
-		{
-		case ITEM_TYPE_EQUIP:
-			buf_item_misc.remove(block_item_data[id].type_buffer_index);
-			break;
-		case ITEM_TYPE_WPN_MELEE:
-			buf_item_melee.remove(block_item_data[id].type_buffer_index);
-			break;
-		case ITEM_TYPE_WPN_MATCHGUN:
-			buf_item_gun.remove(block_item_data[id].type_buffer_index);
-			break;
-		case ITEM_TYPE_WPN_MAGIC:
-			buf_item_mgc.remove(block_item_data[id].type_buffer_index);
-			break;
-		case ITEM_TYPE_CONS:
-			buf_item_con.remove(block_item_data[id].type_buffer_index);
-			break;
-		}
+		buf_item_misc.remove(block_item_data[id].type_buffer_index);
 	}
 	block_item.remove(id);
 }

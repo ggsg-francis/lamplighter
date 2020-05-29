@@ -43,10 +43,10 @@ extern void(*fpDraw[ENTITY_TYPE_COUNT])(void* self);
 
 #define GETITEM_VOID(a) (GetItemPtr(a))
 #define GETITEM_MISC(a) ((HeldItem*)GetItemPtr(a))
-#define GETITEM_MELEE(a) ((HeldMel*)GetItemPtr(a))
-#define GETITEM_GUN(a) ((HeldGun*)GetItemPtr(a))
-#define GETITEM_MAGIC(a) ((HeldMgc*)GetItemPtr(a))
-#define GETITEM_CONS(a) ((HeldCons*)GetItemPtr(a))
+#define GETITEM_MELEE(a) ((HeldItem*)GetItemPtr(a))
+#define GETITEM_GUN(a) ((HeldItem*)GetItemPtr(a))
+#define GETITEM_MAGIC(a) ((HeldItem*)GetItemPtr(a))
+#define GETITEM_CONS(a) ((HeldItem*)GetItemPtr(a))
 
 void IndexInitEntity(btID ID, EntityType TYPE);
 void IndexFreeEntity(btID ID);
