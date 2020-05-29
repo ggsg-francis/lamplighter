@@ -3,6 +3,7 @@
 // not desirable but necessary for draw functions
 #include "objects_entities.h"
 #include "core.h"
+#include "index.h"
 
 //-------------------------------- HELD ITEM MISC
 
@@ -75,7 +76,7 @@ void HeldMelTick(btID id, btf32 dt, Actor* owner)
 			// if has enemy target, damage it
 			if (owner->atk_target != BUF_NULL)
 			{
-				Entity* ent = (Entity*)index::GetEntityPtr(owner->atk_target);
+				Entity* ent = (Entity*)GetEntityPtr(owner->atk_target);
 				ent->state.Damage(300u, self->yaw);
 				aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
 				ent->slideVelocity += m::AngToVec2(owner->t.yaw.Rad()) * 0.05f;
@@ -216,7 +217,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 
 			if (owner->atk_target != BUF_NULL)
 			{
-				Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
+				Entity* target = (Entity*)GetEntityPtr(owner->atk_target);
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
 				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - self->t_item.GetPosition().y);
@@ -224,18 +225,18 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
 
-				if (index::GetItemType(self->id_ammoInstance) == ITEM_TYPE_CONS)
+				if (GetItemType(self->id_ammoInstance) == ITEM_TYPE_CONS)
 					index::SpawnProjectileSpread(owner->faction, // TODO: fucking hell please make this easier to access
-					((acv::BaseItemCon*)acv::items[((HeldItem*)index::GetItemPtr(self->id_ammoInstance))->id_item_template])->id_projectile,
+					((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemPtr(self->id_ammoInstance))->id_item_template])->id_projectile,
 						m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 2.5f);
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
 			}
 			else
 			{
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
-				if (index::GetItemType(self->id_ammoInstance) == ITEM_TYPE_CONS)
+				if (GetItemType(self->id_ammoInstance) == ITEM_TYPE_CONS)
 					index::SpawnProjectileSpread(owner->faction, // TODO: fucking hell please make this easier to access
-					((acv::BaseItemCon*)acv::items[((HeldItem*)index::GetItemPtr(self->id_ammoInstance))->id_item_template])->id_projectile,
+					((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemPtr(self->id_ammoInstance))->id_item_template])->id_projectile,
 						m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 2.5f);
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
 			}
@@ -292,7 +293,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 
 	if (owner->atk_target != BUF_NULL)
 	{
-		Entity* target = (Entity*)index::GetEntityPtr(owner->atk_target);
+		Entity* target = (Entity*)GetEntityPtr(owner->atk_target);
 		m::Vector2 targetoffset = m::Normalize(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z));
 		btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 		self->ang_aim_offset_temp = -m::AngDif(owner->viewYaw.Deg(), glm::degrees(angle_yaw));

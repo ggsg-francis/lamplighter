@@ -85,12 +85,6 @@ namespace index
 	// Removes a given projectile from the index
 	void DestroyProjectile(btID ID);
 
-	// TODO: move to index
-	void IndexInitEntity(btID id, EntityType type);
-	void IndexFreeEntity(btID id);
-	void IndexInitItem(btID id, ItemType type);
-	void IndexFreeItem(btID id);
-
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg);
 	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& csi);
 
@@ -107,44 +101,6 @@ namespace index
 	extern unsigned int activePlayer;
 	extern btID players[2];
 	extern btID viewtarget[2];
-
-	typedef struct EntAddr
-	{
-		EntityType type;
-		btID type_buffer_index;
-	} EntAddr;
-
-	// Block of IDs in memory, tracks the numbers and types of entities
-	extern mem::objbuf block_entity;
-	extern EntAddr block_entity_data[BUF_SIZE];
-	// Get the pointer address of the entity at X ID
-	void* GetEntityPtr(btID ID);
-
-	// Block of IDs in memory, tracks the numbers and types of items
-	extern mem::objbuf block_item;
-	// Get the pointer address of the item at ID
-	void* GetItemPtr(btID ID);
-	// Get the type of the item at ID
-	ItemType GetItemType(btID ID);
-
-	// TODO: working on reducing the use of these functions
-	//  ok
-	#define ENT_VOID(a) (index::GetEntityPtr(a))
-	// ok-ish
-	#define CHARA(a) ((Chara*)index::GetEntityPtr(a))
-	// not ok
-	#define ACTOR(a) ((Actor*)index::GetEntityPtr(a))
-	// not ok
-	#define ENTITY(a) ((Entity*)index::GetEntityPtr(a))
-	// not ok
-	#define ITEM(a) ((RestingItem*)index::GetEntityPtr(a))
-
-	#define GETITEM_VOID(a) (index::GetItemPtr(a))
-	#define GETITEM_MISC(a) ((HeldItem*)index::GetItemPtr(a))
-	#define GETITEM_MELEE(a) ((HeldMel*)index::GetItemPtr(a))
-	#define GETITEM_GUN(a) ((HeldGun*)index::GetItemPtr(a))
-	#define GETITEM_MAGIC(a) ((HeldMgc*)index::GetItemPtr(a))
-	#define GETITEM_CONS(a) ((HeldCons*)index::GetItemPtr(a))
 
 	void SetInput(btID PLAYER_INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH,
 		bool WantAttack, bool use_hit, bool WantAttack2,

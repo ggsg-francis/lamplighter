@@ -1,6 +1,7 @@
 #include "core_save_load.h"
 
 #include "core.h"
+#include "index.h"
 #include "objects_entities.h"
 
 #include <stdio.h>
@@ -30,14 +31,14 @@ void SaveState()
 	printf("SAVE FUNCTION CALLED ON TICK %i\n", tickCount_temp);
 
 	// clean all unused item instances
-	for (btID index_item = 0; index_item <= index::block_item.index_end; index_item++) // For every item
+	for (btID index_item = 0; index_item <= block_item.index_end; index_item++) // For every item
 	{
-		if (index::block_item.used[index_item])
+		if (block_item.used[index_item])
 		{
 			btui32 item_reference_count = 0u;
-			for (btID index_ent = 0; index_ent <= index::block_entity.index_end; index_ent++) // For every entity
+			for (btID index_ent = 0; index_ent <= block_entity.index_end; index_ent++) // For every entity
 			{
-				if (index::block_entity.used[index_ent])
+				if (block_entity.used[index_ent])
 				{
 					// if this entity has an inventory
 					if (ENTITY(index_ent)->type == ENTITY_TYPE_CHARA)
@@ -88,14 +89,14 @@ void SaveState()
 
 		//-------------------------------- ENTITIES
 
-		fwrite(&index::block_entity.index_end, SIZE_16, 1, file);
-		fwrite(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1u), file);
+		fwrite(&block_entity.index_end, SIZE_16, 1, file);
+		fwrite(&block_entity.used, SIZE_8, (size_t)(block_entity.index_end + 1u), file);
 		//unneeded...
-		//fwrite(&index::block_entity_data, 4ui64, (size_t)(index::block_entity.index_end + 1u), file);
+		//fwrite(&block_entity_data, 4ui64, (size_t)(block_entity.index_end + 1u), file);
 
-		for (btID i = 0; i <= index::block_entity.index_end; i++) // For every entity
+		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 		{
-			if (index::block_entity.used[i])
+			if (block_entity.used[i])
 			{
 				fwrite(&ENTITY(i)->type, SIZE_8, 1, file);
 
@@ -134,16 +135,16 @@ void SaveState()
 
 		//-------------------------------- ITEMS
 
-		fwrite(&index::block_item.index_end, SIZE_16, 1, file);
-		fwrite(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1u), file);
+		fwrite(&block_item.index_end, SIZE_16, 1, file);
+		fwrite(&block_item.used, SIZE_8, (size_t)(block_item.index_end + 1u), file);
 
-		for (btID i = 0; i <= index::block_item.index_end; i++) // For every item
+		for (btID i = 0; i <= block_item.index_end; i++) // For every item
 		{
-			if (index::block_item.used[i])
+			if (block_item.used[i])
 			{
 				fwrite(&GETITEM_MISC(i)->id_item_template, SIZE_16, 1, file);
 
-				switch (index::GetItemType(i))
+				switch (GetItemType(i))
 				{
 				case ITEM_TYPE_CONS:
 					fwrite(&GETITEM_CONS(i)->uses, SIZE_32, 1, file);
@@ -175,19 +176,19 @@ void LoadStateFileV001()
 
 		//-------------------------------- ENTITIES
 
-		fread(&index::block_entity.index_end, SIZE_16, 1, file);
-		fread(&index::block_entity.used, SIZE_8, (size_t)(index::block_entity.index_end + 1u), file);
-		//fread(&index::block_entity_data, 4ui64, (size_t)(index::block_entity.index_end + 1u), file);
+		fread(&block_entity.index_end, SIZE_16, 1, file);
+		fread(&block_entity.used, SIZE_8, (size_t)(block_entity.index_end + 1u), file);
+		//fread(&block_entity_data, 4ui64, (size_t)(block_entity.index_end + 1u), file);
 
-		for (btID i = 0; i <= index::block_entity.index_end; i++) // For every entity
+		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 		{
-			if (index::block_entity.used[i])
+			if (block_entity.used[i])
 			{
 				EntityType type_temp;
 				fread(&type_temp, SIZE_8, 1, file);
 
 				// initialize entity here (eg. new) 
-				index::IndexInitEntity(i, type_temp);
+				IndexInitEntity(i, type_temp);
 
 				ENTITY(i)->type = type_temp;
 				fread(&ENTITY(i)->radius, SIZE_32, 1, file);
@@ -229,21 +230,21 @@ void LoadStateFileV001()
 
 		//-------------------------------- ITEMS
 
-		fread(&index::block_item.index_end, SIZE_16, 1, file);
-		fread(&index::block_item.used, SIZE_8, (size_t)(index::block_item.index_end + 1u), file);
+		fread(&block_item.index_end, SIZE_16, 1, file);
+		fread(&block_item.used, SIZE_8, (size_t)(block_item.index_end + 1u), file);
 
-		for (btID i = 0; i <= index::block_item.index_end; i++) // For every entity
+		for (btID i = 0; i <= block_item.index_end; i++) // For every entity
 		{
-			if (index::block_item.used[i])
+			if (block_item.used[i])
 			{
 				btID template_temp;
 				fread(&template_temp, SIZE_16, 1, file);
 
-				index::IndexInitItem(i, acv::item_types[template_temp]);
+				IndexInitItem(i, acv::item_types[template_temp]);
 
 				GETITEM_MISC(i)->id_item_template = template_temp;
 
-				switch (index::GetItemType(i))
+				switch (GetItemType(i))
 				{
 				case ITEM_TYPE_CONS:
 					fread(&GETITEM_CONS(i)->uses, SIZE_32, 1, file);

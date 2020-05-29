@@ -7,6 +7,8 @@
 #include "archive.hpp"
 
 #include "core.h"
+#include "index.h"
+
 #include "cfg.h"
 
 #include "audio.hpp"
@@ -77,7 +79,7 @@ btID Inventory::GetItemOfTemplate(btID item_template)
 	{
 		if (items.Used(i))
 		{
-			if (((HeldItem*)index::GetItemPtr(items[i]))->id_item_template == item_template) // if we have this item instance
+			if (((HeldItem*)GetItemPtr(items[i]))->id_item_template == item_template) // if we have this item instance
 			{
 				return items[i];
 			}
@@ -91,14 +93,14 @@ btID Inventory::GetItemOfAmmunitionType(btui8 ammo_type)
 	{
 		if (items.Used(i))
 		{
-			if (index::GetItemType(items[i]) == ITEM_TYPE_CONS)
+			if (GetItemType(items[i]) == ITEM_TYPE_CONS)
 			{
-				#define i2 ((acv::BaseItemCon*)acv::items[((HeldItem*)index::GetItemPtr(items[i]))->id_item_template])->id_projectile
+				#define i2 ((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemPtr(items[i]))->id_item_template])->id_projectile
 				if (i2 != ID_NULL)
 				{
 					//btui8 c = acv::projectiles[((acv::BaseItemCon*)acv::items[((HeldItem*)index::GetItemPtr(items[i]))->id_item_template])->id_projectile].ammunition_type;
 					// TODO: again, this is the fucking worst, i mean jus look at it...
-					if (ammo_type == acv::projectiles[((acv::BaseItemCon*)acv::items[((HeldItem*)index::GetItemPtr(items[i]))->id_item_template])->id_projectile].ammunition_type)
+					if (ammo_type == acv::projectiles[((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemPtr(items[i]))->id_item_template])->id_projectile].ammunition_type)
 					{
 						return items[i];
 					}
@@ -135,7 +137,7 @@ void Inventory::Draw(btui16 active_slot)
 		if (items.Used(i))
 		{
 			// get item type
-			if (index::GetItemType(items[i]) == ITEM_TYPE_CONS)
+			if (GetItemType(items[i]) == ITEM_TYPE_CONS)
 			{
 				char textbuffer[8];
 				_itoa(GETITEM_CONS(items[i])->uses, textbuffer, 10);
@@ -478,14 +480,14 @@ void TickRestingItem(void* ent, btf32 dt)
 	}
 
 	chr->matrix = graphics::Matrix4x4();
-	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)index::GetItemPtr(chr->item_instance))->id_item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
+	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)GetItemPtr(chr->item_instance))->id_item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
 
 	EntityTransformTick(chr, chr->id, dt);
 }
 
 void Actor::TakeItem(btID id)
 {
-	RestingItem* item = (RestingItem*)index::GetEntityPtr(id);
+	RestingItem* item = (RestingItem*)GetEntityPtr(id);
 	HeldItem* item_held = GETITEM_MISC(item->item_instance);
 	inventory.TransferItemRecv(item->item_instance);
 	index::DestroyEntity(id);
@@ -788,7 +790,7 @@ void TickChara(void* ent, btf32 dt)
 	bool can_turn = true;
 	if (chr->inventory.items.Used(chr->inv_active_slot))
 	{
-		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(chr->inventory.items[chr->inv_active_slot]))
+		#define HELDINSTANCE ((HeldItem*)GetItemPtr(chr->inventory.items[chr->inv_active_slot]))
 		can_move = !HELDINSTANCE->fpBlockMove(chr->inventory.items[chr->inv_active_slot]);
 		can_turn = !HELDINSTANCE->fpBlockTurn(chr->inventory.items[chr->inv_active_slot]);
 		#undef HELDINSTANCE
@@ -849,7 +851,7 @@ void TickChara(void* ent, btf32 dt)
 
 		if (chr->inventory.items.Used(chr->inv_active_slot))
 		{
-			#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(chr->inventory.items[chr->inv_active_slot]))
+			#define HELDINSTANCE ((HeldItem*)GetItemPtr(chr->inventory.items[chr->inv_active_slot]))
 			if (HELDINSTANCE != nullptr) HELDINSTANCE->fpTick(chr->inventory.items[chr->inv_active_slot], dt, chr);
 			#undef HELDINSTANCE
 		}
@@ -988,7 +990,7 @@ void DrawChara(void* ent)
 
 	if (inventory.items.Used(inv_active_slot))
 	{
-		HeldItem* heldItem = ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]));
+		HeldItem* heldItem = ((HeldItem*)GetItemPtr(inventory.items[inv_active_slot]));
 
 		// Draw held item
 		heldItem->fpDraw(inventory.items[inv_active_slot],
@@ -1195,7 +1197,7 @@ void TickEditorPawn(void* ent, btf32 dt)
 	bool can_turn = true;
 	if (inventory.items.Used(inv_active_slot))
 	{
-		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
+		#define HELDINSTANCE ((HeldItem*)GetItemPtr(inventory.items[inv_active_slot]))
 		can_move = !HELDINSTANCE->fpBlockMove(inventory.items[inv_active_slot]);
 		can_turn = !HELDINSTANCE->fpBlockTurn(inventory.items[inv_active_slot]);
 		#undef HELDINSTANCE
@@ -1255,7 +1257,7 @@ void TickEditorPawn(void* ent, btf32 dt)
 
 	if (inventory.items.Used(inv_active_slot))
 	{
-		#define HELDINSTANCE ((HeldItem*)index::GetItemPtr(inventory.items[inv_active_slot]))
+		#define HELDINSTANCE ((HeldItem*)GetItemPtr(inventory.items[inv_active_slot]))
 		if (HELDINSTANCE != nullptr) HELDINSTANCE->fpTick(inventory.items[inv_active_slot], dt, chr);
 		#undef HELDINSTANCE
 	}

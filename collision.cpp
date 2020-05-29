@@ -3,6 +3,7 @@
 #include "graphics.hpp"
 
 #include "core.h"
+#include "index.h"
 #include "objects_entities.h"
 
 bool RayEntity(btID ent, btf32 stand_height)
