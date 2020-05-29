@@ -114,8 +114,6 @@ void InitTest()
 	//StoreBlock store;
 
 	//StoreBlockAddr addr[16];
-
-
 }
 
 struct p_settarget

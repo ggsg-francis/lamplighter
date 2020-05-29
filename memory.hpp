@@ -5,6 +5,7 @@
 
 // This include provides the malloc function
 #include <iostream>
+//#include "C:\MinGW\lib\gcc\mingw32\9.2.0\include\c++\iostream"
 
 #define CHUNK_SIZE 32u
 typedef btui32 CHUNK_BITVEC;
@@ -353,7 +354,7 @@ namespace mem
 		{
 			return bvget(used, (btui32)1u << (btui32)index);
 		}
-		btui32 Size() 
+		btui32 Size()
 		{
 			// TODO: returns 1 on an empty array, needs to be fixed
 			return index_end + 1u;
@@ -422,7 +423,7 @@ namespace mem
 			if (items2) {
 				t_mem = items2;
 				size_alloc = (btui32)s;
-				std::cout << "IDBUF resized to size " << size_alloc << std::endl; std::cout << "IDBUF current usage: " << size_used << std::endl;
+				//std::cout << "IDBUF resized to size " << size_alloc << std::endl; std::cout << "IDBUF current usage: " << size_used << std::endl;
 			}//*/
 
 			// 'new' way
@@ -470,7 +471,7 @@ namespace mem
 		void remove(btui32 index)
 		{
 			if (index >= size_used) { ERR_OOR; return; } // Error, index too large
-			t_mem[index] = nullptr; std::cout << "IDBUF deleted index " << index << std::endl; // Set this index to null
+			t_mem[index] = nullptr; //std::cout << "IDBUF deleted index " << index << std::endl; // Set this index to null
 			for (int i = index; i < size_used - 1; ++i) { // For every index after this
 				t_mem[i] = t_mem[i + 1]; t_mem[i + 1] = nullptr;
 			} // Shift the next index's data back by one space
@@ -481,7 +482,7 @@ namespace mem
 		void remove_noshift(btui32 index)
 		{
 			if (index >= size_used) { ERR_OOR; return; } // Error, index too large
-			t_mem[index] = nullptr; std::cout << "IDBUF deleted index " << index << std::endl; // Set this index to null
+			t_mem[index] = nullptr; //std::cout << "IDBUF deleted index " << index << std::endl; // Set this index to null
 			if (index == size_used - 1) // If this is the last one
 				--size_used; // Decrement number of used spaces
 			if (size_used > 0 && size_used == size_alloc / 4) // If size is low enough
@@ -508,7 +509,7 @@ namespace mem
 	};
 
 	#define IDBUF_SIZE 16u
-	// Automatic unfixed size object ID buffer 
+	// Automatic unfixed size object ID buffer
 	struct idbuf
 	{
 	private:

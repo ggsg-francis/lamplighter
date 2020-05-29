@@ -56,9 +56,6 @@
     <ClInclude Include="memory.hpp">
       <Filter>framework</Filter>
     </ClInclude>
-    <ClInclude Include="memoryC.h">
-      <Filter>framework</Filter>
-    </ClInclude>
     <ClInclude Include="objects_entities.h">
       <Filter>gamework</Filter>
     </ClInclude>
@@ -74,16 +71,16 @@
     <ClInclude Include="core.h">
       <Filter>gamework</Filter>
     </ClInclude>
-    <ClInclude Include="core_decl.cpp">
-      <Filter>gamework</Filter>
-    </ClInclude>
-    <ClInclude Include="core_func.cpp">
-      <Filter>gamework</Filter>
-    </ClInclude>
     <ClInclude Include="core_save_load.h">
       <Filter>gamework</Filter>
     </ClInclude>
     <ClInclude Include="index.h">
+      <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="core_func.hpp">
+      <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="core_decl.hpp">
       <Filter>gamework</Filter>
     </ClInclude>
   </ItemGroup>
@@ -120,9 +117,6 @@
     <ClCompile Include="audio.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="memoryC.c">
-      <Filter>framework</Filter>
-    </ClCompile>
     <ClCompile Include="objects_entities.cpp">
       <Filter>gamework</Filter>
     </ClCompile>
@@ -142,7 +136,7 @@
     <ClCompile Include="core_save_load.cpp">
       <Filter>gamework</Filter>
     </ClCompile>
-    <ClCompile Include="index.c">
+    <ClCompile Include="index.cpp">
       <Filter>gamework</Filter>
     </ClCompile>
   </ItemGroup>

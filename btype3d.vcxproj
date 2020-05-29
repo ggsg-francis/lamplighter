@@ -279,8 +279,7 @@
     <ClCompile Include="archive_read_write.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="core_save_load.cpp" />
-    <ClCompile Include="index.c" />
-    <ClCompile Include="memoryC.c" />
+    <ClCompile Include="index.cpp" />
     <ClCompile Include="network.cpp" />
     <ClCompile Include="audio.cpp" />
     <ClCompile Include="cfg.cpp" />
@@ -308,14 +307,13 @@
     <ClInclude Include="core_save_load.h" />
     <ClInclude Include="graphics_structures.h" />
     <ClInclude Include="index.h" />
-    <ClInclude Include="memoryC.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="audio.hpp" />
     <ClInclude Include="cfg.h" />
     <ClInclude Include="env.h" />
     <ClInclude Include="factions.h" />
-    <ClInclude Include="core_decl.cpp" />
-    <ClInclude Include="core_func.cpp" />
+    <ClInclude Include="core_decl.hpp" />
+    <ClInclude Include="core_func.hpp" />
     <ClInclude Include="core.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="memory.hpp" />

@@ -49,7 +49,7 @@ bool HeldItemBlockMove(btID id)
 void HeldMelTick(btID id, btf32 dt, Actor* owner)
 {
 	HeldMel* self = GETITEM_MELEE(id);
-	
+
 	if (self->swinging == HeldMel::SWINGSTATE_IDLE)
 	{
 		if (owner->inputBV.get(Actor::IN_ACTN_A))
@@ -141,14 +141,12 @@ m::Vector3 HeldMelGetLeftHandPos(btID id)
 	{
 	case HeldMel::HOLD_POSE_SWING_OVERHEAD:
 		return self->t_item.GetPosition();
-		break;
 	case HeldMel::HOLD_POSE_SWING_SIDE:
 		return self->t_item.GetPosition();
-		break;
 	case HeldMel::HOLD_POSE_THRUST:
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 0.25f;
-		break;
 	}
+	return m::Vector3(0.f, 0.f, 0.f);
 }
 m::Vector3 HeldMelGetRightHandPos(btID id)
 {
@@ -157,14 +155,12 @@ m::Vector3 HeldMelGetRightHandPos(btID id)
 	{
 	case HeldMel::HOLD_POSE_SWING_OVERHEAD:
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 0.2f;
-		break;
 	case HeldMel::HOLD_POSE_SWING_SIDE:
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 0.3f;
-		break;
 	case HeldMel::HOLD_POSE_THRUST:
 		return self->t_item.GetPosition() + self->t_item.GetForward() * -0.15f;
-		break;
 	}
+	return m::Vector3(0.f, 0.f, 0.f);
 }
 bool HeldMelBlockTurn(btID id)
 {
@@ -393,7 +389,7 @@ void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 #undef HOLDSTATE_AIM
 #undef HOLDSTATE_IDLE
 #undef HOLDSTATE_INSPECT
-#undef HOLDSTATE_BARREL 
+#undef HOLDSTATE_BARREL
 
 #undef LATCH_PULLED
 #undef FPAN_HATCH_OPEN

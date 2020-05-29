@@ -23,8 +23,6 @@
 #include <sstream>
 #include <iostream>
 
-#include "tga_reader.h"
-
 namespace m
 {
 	class Vector3;

@@ -1,5 +1,5 @@
 #include "core.h"
-#include "core_func.cpp"
+#include "core_func.hpp"
 #include "weather.h"
 
 #include "index.h"
@@ -1016,18 +1016,18 @@ namespace index
 	void SpawnProjectile(fac::faction faction, btID type, m::Vector2 pos, btf32 height,
 		float yaw, float pitch)
 	{
-		btID id = IndexSpawnProjectile();
-		proj[id].t.position_x = pos.x;
-		proj[id].t.position_y = pos.y;
-		proj[id].t.position_h = height;
+		PrjID id = IndexSpawnProjectile();
+		Projectile* proj = GetProj(id);
 
-		proj[id].t.velocity_h = -sin(pitch);
-		proj[id].t.velocity_x = (m::AngToVec2(yaw) * cos(pitch)).x; // '* cos(pitch)' makes it move less horizontally if shot upwards
-		proj[id].t.velocity_y = (m::AngToVec2(yaw) * cos(pitch)).y; // '* cos(pitch)' makes it move less horizontally if shot upwards
-		proj[id].ttd = tickCount_temp + 60u;
-
-		proj[id].faction = faction;
-		proj[id].type = type;
+		proj->t.position_x = pos.x;
+		proj->t.position_y = pos.y;
+		proj->t.position_h = height;
+		proj->t.velocity_h = -sin(pitch);
+		proj->t.velocity_x = (m::AngToVec2(yaw) * cos(pitch)).x; // '* cos(pitch)' makes it move less horizontally if shot upwards
+		proj->t.velocity_y = (m::AngToVec2(yaw) * cos(pitch)).y; // '* cos(pitch)' makes it move less horizontally if shot upwards
+		proj->ttd = tickCount_temp + 60u;
+		proj->faction = faction;
+		proj->type = type;
 
 		// save check
 		if (acv::projectiles[type].saveOnHit)
@@ -1047,7 +1047,7 @@ namespace index
 
 	void DestroyProjectile(btID id)
 	{
-		IndexDestroyProjectileC(id);
+		IndexDestroyProjectileC(MakePrjID(id));
 	}
 
 	btID SpawnNewEntityItem(btID item_template, m::Vector2 pos, btf32 dir)
@@ -1117,7 +1117,7 @@ namespace index
 
 	btID SpawnItem(btID item_template)
 	{
-		btID id = ObjBuf_add(&block_item);
+		btID id = block_item.add();
 		if (id != BUF_NULL)
 		{
 			IndexInitItem(id, acv::item_types[item_template]);
@@ -1141,6 +1141,30 @@ namespace index
 		SpawnProjectileSpread(ENTITY(i)->faction, 0, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->t.yaw.Rad()) * 0.55f), ENTITY(i)->t.height, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
 	}
 
+	//________________________________________________________________________________________________________________________________
+	// PROJECTILES -------------------------------------------------------------------------------------------------------------------
+
+	bool ProjectileCollideEnv(btID index)
+	{
+		Projectile* proj = GetProj(MakePrjID(index));
+
+		int x = (int)roundf(proj->t.position_x);
+		int y = (int)roundf(proj->t.position_y);
+		if (env::Get(x, y, env::eflag::eIMPASSABLE)) // if hit an impassable tile
+			return true;
+
+		CellSpace csi;
+		GetCellSpaceInfo(m::Vector2(proj->t.position_x, proj->t.position_y), csi);
+		btf32 height;
+		env::GetHeight(height, csi);
+		if (proj->t.position_h < height) // if below the ground surface
+			return true;
+
+		return false;
+	}
+
+	//-------------------------------- PROJECTILE FUNCTIONS
+
 	int cater_loop_index(int i)
 	{
 		i++;
@@ -1148,28 +1172,6 @@ namespace index
 			i = 0; // loop around
 		return i;
 	}
-
-	//________________________________________________________________________________________________________________________________
-	// PROJECTILES -------------------------------------------------------------------------------------------------------------------
-
-	bool ProjectileCollideEnv(btID index)
-	{
-		int x = (int)roundf(proj[index].t.position_x);
-		int y = (int)roundf(proj[index].t.position_y);
-		if (env::Get(x, y, env::eflag::eIMPASSABLE)) // if hit an impassable tile
-			return true;
-
-		CellSpace csi;
-		GetCellSpaceInfo(m::Vector2(proj[index].t.position_x, proj[index].t.position_y), csi);
-		btf32 height;
-		env::GetHeight(height, csi);
-		if (proj[index].t.position_h < height) // if below the ground surface
-			return true;
-
-		return false;
-	}
-
-	//-------------------------------- PROJECTILE FUNCTIONS
 
 	void ProjectileTick(btf32 dt) // Projectile tick
 	{

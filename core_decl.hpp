@@ -1,12 +1,11 @@
 // Included in index_fn.cpp
 
-#define CUTE_C2_IMPLEMENTATION
-#include "3rdparty/cute_c2.h"
+//#define CUTE_C2_IMPLEMENTATION
+//#include "3rdparty/cute_c2.h"
 
 #include "objects_entities.h"
 #include "objects_items.h"
 #include "network.h"
-#include "memoryC.h"
 
 struct Index
 {
@@ -100,22 +99,22 @@ namespace index
 
 	//-------------------------------- ITEMS
 
-	ObjBuf block_item; // Item buffer
+	mem::objbuf block_item; // Item buffer
 	EntAddr block_item_data[BUF_SIZE];
 
-	ObjBuf buf_item_misc; // Item buffer
+	mem::objbuf buf_item_misc; // Item buffer
 	HeldItem buf_item_misc_data[BUF_SIZE];
 
-	ObjBuf buf_item_melee; // Item buffer
+	mem::objbuf buf_item_melee; // Item buffer
 	HeldMel buf_item_melee_data[BUF_SIZE];
 
-	ObjBuf buf_item_gun; // Item buffer
+	mem::objbuf buf_item_gun; // Item buffer
 	HeldGun buf_item_gun_data[BUF_SIZE];
 
-	ObjBuf buf_item_mgc; // Item buffer
+	mem::objbuf buf_item_mgc; // Item buffer
 	HeldMgc buf_item_mgc_data[BUF_SIZE];
 
-	ObjBuf buf_item_con; // Item buffer
+	mem::objbuf buf_item_con; // Item buffer
 	HeldCons buf_item_con_data[BUF_SIZE];
 
 	void* getItemMis(btID id) { return &buf_item_misc_data[id]; }
@@ -125,7 +124,7 @@ namespace index
 	void* getItemMgc(btID id) { return &buf_item_mgc_data[id]; }
 	void* getItemCon(btID id) { return &buf_item_con_data[id]; }
 	void*(*GetItemArray[])(btID) = { getItemMis, getItemEqp, getItemMel, getItemGun, getItemMgc, getItemCon };
-	ObjBuf* ItemBufPtr[] = { &buf_item_misc, &buf_item_misc, &buf_item_melee, &buf_item_gun, &buf_item_mgc, &buf_item_con };
+	mem::objbuf* ItemBufPtr[] = { &buf_item_misc, &buf_item_misc, &buf_item_melee, &buf_item_gun, &buf_item_mgc, &buf_item_con };
 	void* GetItemPtr(btID id)
 	{
 		return GetItemArray[block_item_data[id].type](block_item_data[id].type_buffer_index);

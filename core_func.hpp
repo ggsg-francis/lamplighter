@@ -1,6 +1,6 @@
 // Included in index.cpp
 
-#include "core_decl.cpp"
+#include "core_decl.hpp"
 
 namespace index
 {
@@ -625,7 +625,7 @@ namespace index
 	{
 		block_item.used[id] = true;
 		block_item_data[id].type = type;
-		block_item_data[id].type_buffer_index = ObjBuf_add(ItemBufPtr[type]);
+		block_item_data[id].type_buffer_index = ItemBufPtr[type]->add();
 		HeldItem* held_item = GETITEM_MISC(id);
 		switch (type)
 		{
@@ -700,23 +700,23 @@ namespace index
 			switch (block_item_data[id].type)
 			{
 			case ITEM_TYPE_EQUIP:
-				ObjBuf_remove(&buf_item_misc, block_item_data[id].type_buffer_index);
+				buf_item_misc.remove(block_item_data[id].type_buffer_index);
 				break;
 			case ITEM_TYPE_WPN_MELEE:
-				ObjBuf_remove(&buf_item_melee, block_item_data[id].type_buffer_index);
+				buf_item_melee.remove(block_item_data[id].type_buffer_index);
 				break;
 			case ITEM_TYPE_WPN_MATCHGUN:
-				ObjBuf_remove(&buf_item_gun, block_item_data[id].type_buffer_index);
+				buf_item_gun.remove(block_item_data[id].type_buffer_index);
 				break;
 			case ITEM_TYPE_WPN_MAGIC:
-				ObjBuf_remove(&buf_item_mgc, block_item_data[id].type_buffer_index);
+				buf_item_mgc.remove(block_item_data[id].type_buffer_index);
 				break;
 			case ITEM_TYPE_CONS:
-				ObjBuf_remove(&buf_item_con, block_item_data[id].type_buffer_index);
+				buf_item_con.remove(block_item_data[id].type_buffer_index);
 				break;
 			}
 		}
-		ObjBuf_remove(&block_item, id);
+		block_item.remove(id);
 	}
 
 	inline void spawn_setup_t(btID index, m::Vector2 pos, btf32 dir)

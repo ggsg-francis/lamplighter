@@ -39,8 +39,14 @@
 #include "glm/gtc\quaternion.hpp"
 
 // SDL
-#include "SDL2\SDL.h"
-#include "SDL2\SDL_syswm.h"
+#ifdef __cplusplus
+extern "C" {
+	#endif
+	#include <SDL2\SDL.h>
+	#include <SDL2\SDL_syswm.h>
+	#ifdef __cplusplus
+}
+#endif
 
 //#ifdef DEF_USE_CS
 //// For getting the window handle
@@ -64,7 +70,7 @@
 //-------------------------------- WINDOWING GLOBAL VARIABLES
 
 SDL_Window* sdl_window;
-SDL_GLContext sdl_glcontext; 
+SDL_GLContext sdl_glcontext;
 bool focus = true;
 
 //-------------------------------- GAME GLOBAL VARIABLES (SHOULD GO ELSEWHERE, PROBABLY)
@@ -294,21 +300,21 @@ int main(int argc, char * argv[]) // SDL Main
 	#endif
 
 	//-------------------------------- INITIALIZE GLAD
-	
+
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) // Load all OpenGL function pointers
 	{
 		std::cout << "ERROR: gladLoadGLLoader failed!" << std::endl;
 		return -1;
 	}
 	glViewport(0, 0, cfg::iWinX, cfg::iWinY); // Set opengl viewport size to window size X, Y, W, H
-	
+
 	//-------------------------------- INITIALIZE GRAPHICS
 
 	graphics::Init();
 
 	//-------------------------------- CONFIGURE GLOBAL OPENGL STATE
 
-	glEnable(GL_CULL_FACE); // Enable face culling	
+	glEnable(GL_CULL_FACE); // Enable face culling
 	glCullFace(GL_FRONT); // Set culling mode
 	glFrontFace(GL_CCW); // Set front face
 
@@ -489,7 +495,7 @@ updtime:
 	//________________________________________________________________________________________________________________________________
 	// RENDER ------------------------------------------------------------------------------------------------------------------------
 
-render:
+//render:
 
 	// BUFFER 1 (LEFT SCREEN)
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
@@ -729,6 +735,6 @@ exit:
 	//_CrtDumpMemoryLeaks();
 	#endif // _DEBUG
 
-exitnoinit:
+//exitnoinit:
 	return 0; // Goodbye
 }

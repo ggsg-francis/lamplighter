@@ -85,9 +85,6 @@ enum vt_o : size_t { // VertTerrain Offsets
 	#endif
 };
 
-extern TGA_ORDER *TGA_READER_ARGB;
-extern TGA_ORDER *TGA_READER_ABGR;
-
 #define FILE_VERSION_MB 0x0u
 #define FILE_VERSION_M 0x0u
 #define FILE_VERSION_TEX 0x0u

@@ -40,8 +40,6 @@ namespace mem
 	struct idbuf;
 }
 
-struct ObjBuf;
-
 extern btui64 tickCount_temp;
 
 namespace index
@@ -123,7 +121,7 @@ namespace index
 	void* GetEntityPtr(btID ID);
 
 	// Block of IDs in memory, tracks the numbers and types of items
-	extern ObjBuf block_item;
+	extern mem::objbuf block_item;
 	// Get the pointer address of the item at ID
 	void* GetItemPtr(btID ID);
 	// Get the type of the item at ID

@@ -1,44 +1,45 @@
 #ifndef INDEX_H
 #define INDEX_H
 
-#include "memoryC.h"
+#include "memory.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-	#endif
+typedef struct _prjid { btID id; } PrjID;
 
-	void IndexInitialize();
+PrjID MakePrjID(int i);
 
-	// Transform structure used for game simulation (C version)
-	typedef struct
-	{
-		// world space position
-		btf32 position_x;
-		btf32 position_y;
-		btf32 position_h;
-		btf32 velocity_x;
-		btf32 velocity_y;
-		btf32 velocity_h;
-		btui8 cellx;
-		btui8 celly;
-	} TransformC;
+void IndexInitialize();
 
-	typedef struct
-	{
-		TransformC t;
-		btui64 ttd;
-		btui32 faction;
-		btID type;
-	} Projectile;
+// Transform structure used for game simulation (C version)
+typedef struct
+{
+	// world space position
+	btf32 position_x;
+	btf32 position_y;
+	btf32 position_h;
+	btf32 velocity_x;
+	btf32 velocity_y;
+	btf32 velocity_h;
+	btui8 cellx;
+	btui8 celly;
+} TransformC;
 
-	btID IndexSpawnProjectile();
-	void IndexDestroyProjectileC(btID id);
+typedef struct
+{
+	TransformC t;
+	btui64 ttd;
+	btui32 faction;
+	btID type;
+} Projectile;
 
-	extern ObjBufCP block_proj; // Projectile buffer
-	extern Projectile proj[BUF_SIZE];
+PrjID IndexSpawnProjectile();
+void IndexDestroyProjectileC(PrjID id);
 
-	#ifdef __cplusplus
-}
-#endif
+Projectile* GetProj(PrjID id);
+
+PrjID ProjFirst();
+PrjID ProjLast();
+
+extern mem::objbuf_caterpillar block_proj; // Projectile buffer
+extern Projectile proj[BUF_SIZE];
 
 #endif // END OF FILE

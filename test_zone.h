@@ -1,5 +1,5 @@
-#ifndef PIS_H
-#define PIS_H
+#ifndef GAMERFILE_H
+#define GAMERFILE_H
 
 void InitTest();
 

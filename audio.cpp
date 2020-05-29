@@ -1,7 +1,5 @@
 #include "audio.hpp"
 
-//#include <SDL2\SDL.h>
-
 #include "maths.hpp"
 // for transform2d only
 // TODO: put transform in its own file

@@ -1,6 +1,17 @@
+#ifdef __GNUC__
+#include <math.h>
+#endif
+
 #include "index.h"
 
 #define INLINE __forceinline
+
+PrjID MakePrjID(int i)
+{
+	PrjID h;
+	h.id = (btID)i;
+	return h;
+}
 
 //________________________________________________________________________________________________________________________________
 // TEMP MATHS --------------------------------------------------------------------------------------------------------------------
@@ -8,12 +19,6 @@
 // temp
 #define CONV_RAD 0.01745329251994329576923690768489
 #define CONV_DEG 57.295779513082320876798154814105
-
-#define NULL 0
-
-//(copied from std)
-// Maximum value that can be returned by the rand function:
-#define RAND_MAX 0x7fff
 
 btf32 Random(btf32 min, btf32 max)
 {
@@ -72,25 +77,25 @@ vec3 Vec3Div(vec3 a, vec3 b)
 //________________________________________________________________________________________________________________________________
 // INDEX -------------------------------------------------------------------------------------------------------------------------
 
-ObjBufCP block_proj; // Projectile buffer
+mem::objbuf_caterpillar block_proj; // Projectile buffer
 Projectile proj[BUF_SIZE];
+
+Projectile* GetProj(PrjID id)
+{
+	return &(proj[id.id]);
+}
 
 void IndexInitialize()
 {
-	ObjBufCP_init(&block_proj);
+	//
 }
 
-btID IndexSpawnProjectile()
+PrjID IndexSpawnProjectile()
 {
-	//yaw += Radians(Random(spread * -0.5f, spread * 0.5f)); // Add horizontal spread
-	//pitch += Radians(Random(spread * -0.5f, spread * 0.5f)); // Add vertical spread
-
-	//btID id = block_proj.add();
-	return ObjBufCP_add(&block_proj);
+	return MakePrjID(block_proj.add());
 }
 
-void IndexDestroyProjectileC(btID id)
+void IndexDestroyProjectileC(PrjID id)
 {
-	//block_proj.remove(id);
-	ObjBufCP_remove(&block_proj, id);
+	block_proj.remove(id.id);
 }
