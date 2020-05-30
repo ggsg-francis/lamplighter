@@ -1,0 +1,1548 @@
+# depslib dependency file v1.0
+1589687683 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\archive.cpp
+	"archive.hpp"
+	"archive_read_write.h"
+	"memory.hpp"
+	"maths.hpp"
+
+1590649299 c:\users\user\documents\shared\games\gitsrc\bt3de2\archive.hpp
+	"graphics.hpp"
+
+1590662713 c:\users\user\documents\shared\games\gitsrc\bt3de2\graphics.hpp
+	"graphics_structures.h"
+	"global.h"
+	<glm/glm.hpp>
+	<glad/glad.h>
+	<assimp/Importer.hpp>
+	<assimp/scene.h>
+	<assimp/postprocess.h>
+	<vector>
+	<string>
+	<fstream>
+	<sstream>
+	<iostream>
+
+1589862499 c:\users\user\documents\shared\games\gitsrc\bt3de2\graphics_structures.h
+	"global.h"
+
+1590649255 c:\users\user\documents\shared\games\gitsrc\bt3de2\global.h
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\glm.hpp
+	"detail/_fixes.hpp"
+	"detail/setup.hpp"
+	<cmath>
+	<climits>
+	<cfloat>
+	<limits>
+	<cassert>
+	"fwd.hpp"
+	"vec2.hpp"
+	"vec3.hpp"
+	"vec4.hpp"
+	"mat2x2.hpp"
+	"mat2x3.hpp"
+	"mat2x4.hpp"
+	"mat3x2.hpp"
+	"mat3x3.hpp"
+	"mat3x4.hpp"
+	"mat4x2.hpp"
+	"mat4x3.hpp"
+	"mat4x4.hpp"
+	"trigonometric.hpp"
+	"exponential.hpp"
+	"common.hpp"
+	"packing.hpp"
+	"geometric.hpp"
+	"matrix.hpp"
+	"vector_relational.hpp"
+	"integer.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\_fixes.hpp
+	<cmath>
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\setup.hpp
+	<cassert>
+	<cstddef>
+	"../simd/platform.h"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\simd\platform.h
+	<cuda.h>
+	<intrin.h>
+	<immintrin.h>
+	<immintrin.h>
+	<popcntintrin.h>
+	<nmmintrin.h>
+	<smmintrin.h>
+	<tmmintrin.h>
+	<pmmintrin.h>
+	<emmintrin.h>
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\fwd.hpp
+	"detail/setup.hpp"
+	"detail/type_int.hpp"
+	"detail/type_float.hpp"
+	"detail/type_vec.hpp"
+	"detail/type_mat.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_int.hpp
+	"setup.hpp"
+	<type_traits>
+	<cstdint>
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_float.hpp
+	"setup.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec.hpp
+	"qualifier.hpp"
+	"type_int.hpp"
+	"compute_vector_relational.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\qualifier.hpp
+	"setup.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\compute_vector_relational.hpp
+	"setup.hpp"
+	<cstring>
+	<limits>
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat.hpp
+	"qualifier.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\vec2.hpp
+	"detail/setup.hpp"
+	"detail/type_vec2.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec2.hpp
+	"type_vec.hpp"
+	"_swizzle.hpp"
+	"_swizzle_func.hpp"
+	<cstddef>
+	"type_vec2.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\_swizzle.hpp
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\_swizzle_func.hpp
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec2.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\vec3.hpp
+	"detail/setup.hpp"
+	"detail/type_vec3.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec3.hpp
+	"type_vec.hpp"
+	"_swizzle.hpp"
+	"_swizzle_func.hpp"
+	<cstddef>
+	"type_vec3.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec3.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\vec4.hpp
+	"detail/setup.hpp"
+	"detail/type_vec4.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec4.hpp
+	"type_vec.hpp"
+	"_swizzle.hpp"
+	"_swizzle_func.hpp"
+	<cstddef>
+	"type_vec4.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec4.inl
+	"type_vec4_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec4_simd.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat2x2.hpp
+	"detail/setup.hpp"
+	"detail/type_mat2x2.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat2x2.hpp
+	"../fwd.hpp"
+	"type_vec2.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat2x2.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat2x2.inl
+	"../matrix.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\matrix.hpp
+	"detail/qualifier.hpp"
+	"detail/setup.hpp"
+	"detail/type_mat.hpp"
+	"vec2.hpp"
+	"vec3.hpp"
+	"vec4.hpp"
+	"mat2x2.hpp"
+	"mat2x3.hpp"
+	"mat2x4.hpp"
+	"mat3x2.hpp"
+	"mat3x3.hpp"
+	"mat3x4.hpp"
+	"mat4x2.hpp"
+	"mat4x3.hpp"
+	"mat4x4.hpp"
+	"detail/func_matrix.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat2x3.hpp
+	"detail/setup.hpp"
+	"detail/type_mat2x3.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat2x3.hpp
+	"../fwd.hpp"
+	"type_vec2.hpp"
+	"type_vec3.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat2x3.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat2x3.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat2x4.hpp
+	"detail/setup.hpp"
+	"detail/type_mat2x4.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat2x4.hpp
+	"../fwd.hpp"
+	"type_vec2.hpp"
+	"type_vec4.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat2x4.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat2x4.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat3x2.hpp
+	"detail/setup.hpp"
+	"detail/type_mat3x2.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat3x2.hpp
+	"../fwd.hpp"
+	"type_vec2.hpp"
+	"type_vec3.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat3x2.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat3x2.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat3x3.hpp
+	"detail/setup.hpp"
+	"detail/type_mat3x3.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat3x3.hpp
+	"../fwd.hpp"
+	"type_vec3.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat3x3.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat3x3.inl
+	"../matrix.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat3x4.hpp
+	"detail/setup.hpp"
+	"detail/type_mat3x4.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat3x4.hpp
+	"../fwd.hpp"
+	"type_vec3.hpp"
+	"type_vec4.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat3x4.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat3x4.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat4x2.hpp
+	"detail/setup.hpp"
+	"detail/type_mat4x2.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat4x2.hpp
+	"../fwd.hpp"
+	"type_vec2.hpp"
+	"type_vec4.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat4x2.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat4x2.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat4x3.hpp
+	"detail/setup.hpp"
+	"detail/type_mat4x3.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat4x3.hpp
+	"../fwd.hpp"
+	"type_vec3.hpp"
+	"type_vec4.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat4x3.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat4x3.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\mat4x4.hpp
+	"detail/setup.hpp"
+	"detail/type_mat4x4.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat4x4.hpp
+	"../fwd.hpp"
+	"type_vec4.hpp"
+	"type_mat.hpp"
+	<limits>
+	<cstddef>
+	"type_mat4x4.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat4x4.inl
+	"../matrix.hpp"
+	"type_mat4x4_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_mat4x4_simd.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_matrix.inl
+	"../geometric.hpp"
+	<limits>
+	"func_matrix_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\geometric.hpp
+	"detail/type_vec3.hpp"
+	"detail/func_geometric.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_geometric.inl
+	"../exponential.hpp"
+	"../common.hpp"
+	"type_vec2.hpp"
+	"type_vec4.hpp"
+	"type_float.hpp"
+	"func_geometric_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\exponential.hpp
+	"detail/type_vec1.hpp"
+	"detail/type_vec2.hpp"
+	"detail/type_vec3.hpp"
+	"detail/type_vec4.hpp"
+	<cmath>
+	"detail/func_exponential.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec1.hpp
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_exponential.inl
+	"../vector_relational.hpp"
+	"_vectorize.hpp"
+	<limits>
+	<cmath>
+	<cassert>
+	"func_exponential_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\vector_relational.hpp
+	"detail/qualifier.hpp"
+	"detail/setup.hpp"
+	"detail/func_vector_relational.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_vector_relational.inl
+	"compute_vector_relational.hpp"
+	"func_vector_relational_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_vector_relational_simd.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\_vectorize.hpp
+	"type_vec1.hpp"
+	"type_vec2.hpp"
+	"type_vec3.hpp"
+	"type_vec4.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_exponential_simd.inl
+	"../simd/exponential.h"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\simd\exponential.h
+	"platform.h"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\common.hpp
+	"detail/setup.hpp"
+	"detail/qualifier.hpp"
+	"detail/type_int.hpp"
+	"detail/_fixes.hpp"
+	"detail/func_common.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_common.inl
+	"../vector_relational.hpp"
+	"type_vec2.hpp"
+	"type_vec3.hpp"
+	"type_vec4.hpp"
+	"_vectorize.hpp"
+	<limits>
+	"func_common_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_common_simd.inl
+	"../simd/common.h"
+	<immintrin.h>
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\simd\common.h
+	"platform.h"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_geometric_simd.inl
+	"../simd/geometric.h"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\simd\geometric.h
+	"common.h"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_matrix_simd.inl
+	"type_mat4x4.hpp"
+	"../geometric.hpp"
+	"../simd/matrix.h"
+	<cstring>
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\simd\matrix.h
+	"geometric.h"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\trigonometric.hpp
+	"detail/setup.hpp"
+	"detail/qualifier.hpp"
+	"detail/func_trigonometric.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_trigonometric.inl
+	"_vectorize.hpp"
+	<cmath>
+	<limits>
+	"func_trigonometric_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_trigonometric_simd.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\packing.hpp
+	"detail/type_vec2.hpp"
+	"detail/type_vec4.hpp"
+	"detail/func_packing.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_packing.inl
+	"../common.hpp"
+	"type_half.hpp"
+	"../fwd.hpp"
+	"func_packing_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_half.hpp
+	"setup.hpp"
+	"type_half.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_half.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_packing_simd.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\integer.hpp
+	"detail/setup.hpp"
+	"detail/qualifier.hpp"
+	"common.hpp"
+	"vector_relational.hpp"
+	"detail/func_integer.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_integer.inl
+	"../ext/vec1.hpp"
+	"type_vec2.hpp"
+	"type_vec3.hpp"
+	"type_vec4.hpp"
+	"type_int.hpp"
+	"_vectorize.hpp"
+	<intrin.h>
+	<limits>
+	"func_integer_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\ext\vec1.hpp
+	"../fwd.hpp"
+	"../detail/type_vec.hpp"
+	"../detail/_swizzle.hpp"
+	"../detail/_swizzle_func.hpp"
+	<cstddef>
+	"../detail/type_vec1.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\type_vec1.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\detail\func_integer_simd.inl
+	"../simd/integer.h"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\simd\integer.h
+
+1527051832 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glad\glad.h
+	<windows.h>
+	<stddef.h>
+	<KHR/khrplatform.h>
+	<inttypes.h>
+	<inttypes.h>
+	<inttypes.h>
+	<stdint.h>
+	<stdint.h>
+	<inttypes.h>
+
+1527051832 c:\users\user\documents\shared\games\gitsrc\libraries\include\\khr\khrplatform.h
+	<stdint.h>
+	<inttypes.h>
+	<stdint.h>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\importer.hpp
+	<assimp/types.h>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\types.h
+	<sys/types.h>
+	<stddef.h>
+	<string.h>
+	<limits.h>
+	"defs.h"
+	"vector3.h"
+	"vector2.h"
+	"color4.h"
+	"matrix3x3.h"
+	"matrix4x4.h"
+	"quaternion.h"
+	<cstring>
+	<new>
+	<string>
+	"vector2.inl"
+	"vector3.inl"
+	"color4.inl"
+	"quaternion.inl"
+	"matrix3x3.inl"
+	"matrix4x4.inl"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\defs.h
+	<assimp/config.h>
+
+1526904620 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\config.h
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\vector3.h
+	<cmath>
+	<math.h>
+	"defs.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\vector2.h
+	<cmath>
+	<math.h>
+	"./Compiler/pushpack1.h"
+	"defs.h"
+	"./Compiler/poppack1.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\compiler\pushpack1.h
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\compiler\poppack1.h
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\color4.h
+	"defs.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\matrix3x3.h
+	"defs.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\matrix4x4.h
+	"vector3.h"
+	"defs.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\quaternion.h
+	"defs.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\vector2.inl
+	"vector2.h"
+	<cmath>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\vector3.inl
+	"vector3.h"
+	<cmath>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\color4.inl
+	"color4.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\quaternion.inl
+	"quaternion.h"
+	<cmath>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\matrix3x3.inl
+	"matrix3x3.h"
+	"matrix4x4.h"
+	<algorithm>
+	<cmath>
+	<limits>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\matrix4x4.inl
+	"matrix4x4.h"
+	"matrix3x3.h"
+	"quaternion.h"
+	<algorithm>
+	<limits>
+	<cmath>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\scene.h
+	"types.h"
+	"texture.h"
+	"mesh.h"
+	"light.h"
+	"camera.h"
+	"material.h"
+	"anim.h"
+	"metadata.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\texture.h
+	"types.h"
+	"./Compiler/pushpack1.h"
+	"./Compiler/poppack1.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\mesh.h
+	"types.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\light.h
+	"types.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\camera.h
+	"types.h"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\material.h
+	"types.h"
+	"./Compiler/pushpack1.h"
+	"./Compiler/poppack1.h"
+	"material.inl"
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\material.inl
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\anim.h
+	<assimp/types.h>
+	<assimp/quaternion.h>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\metadata.h
+	"Compiler/pstdint.h"
+	<stdint.h>
+	<string>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\compiler\pstdint.h
+	<stddef.h>
+	<limits.h>
+	<signal.h>
+	<stdint.h>
+	<sys/inttypes.h>
+	<wchar.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+
+1512930164 c:\users\user\documents\shared\games\gitsrc\libraries\include\\assimp\postprocess.h
+	"types.h"
+
+1574220384 c:\users\user\documents\shared\games\gitsrc\bt3de2\tga_reader.h
+	<stdio.h>
+	<stdlib.h>
+
+1590649360 c:\users\user\documents\shared\games\gitsrc\bt3de2\archive_read_write.h
+
+1590653546 c:\users\user\documents\shared\games\gitsrc\bt3de2\memory.hpp
+	"global.h"
+	<iostream>
+
+1590649399 c:\users\user\documents\shared\games\gitsrc\bt3de2\maths.hpp
+	"global.h"
+	<glm\glm.hpp>
+	<glm\gtc\type_ptr.hpp>
+	<stdarg.h>
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\type_ptr.hpp
+	"../gtc/quaternion.hpp"
+	"../gtc/vec1.hpp"
+	"../vec2.hpp"
+	"../vec3.hpp"
+	"../vec4.hpp"
+	"../mat2x2.hpp"
+	"../mat2x3.hpp"
+	"../mat2x4.hpp"
+	"../mat3x2.hpp"
+	"../mat3x3.hpp"
+	"../mat3x4.hpp"
+	"../mat4x2.hpp"
+	"../mat4x3.hpp"
+	"../mat4x4.hpp"
+	<cstring>
+	"type_ptr.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\quaternion.hpp
+	"../mat3x3.hpp"
+	"../mat4x4.hpp"
+	"../vec3.hpp"
+	"../vec4.hpp"
+	"../gtc/constants.hpp"
+	"quaternion.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\constants.hpp
+	"../detail/setup.hpp"
+	"constants.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\constants.inl
+	<limits>
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\quaternion.inl
+	"../trigonometric.hpp"
+	"../geometric.hpp"
+	"../exponential.hpp"
+	"../detail/compute_vector_relational.hpp"
+	"epsilon.hpp"
+	<limits>
+	"quaternion_simd.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\epsilon.hpp
+	"../detail/setup.hpp"
+	"../detail/qualifier.hpp"
+	"epsilon.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\epsilon.inl
+	"quaternion.hpp"
+	"../vector_relational.hpp"
+	"../common.hpp"
+	"../detail/type_vec.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\quaternion_simd.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\vec1.hpp
+	"../ext/vec1.hpp"
+	"vec1.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\vec1.inl
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\type_ptr.inl
+	<cstring>
+
+1590300910 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\archive_read_write.cpp
+	"archive_read_write.h"
+	"archiver_graphics_convert.h"
+	"graphics.hpp"
+	"archive.hpp"
+	<fstream>
+	<vector>
+	<iostream>
+
+1587527936 c:\users\user\documents\shared\games\gitsrc\bt3de2\archiver_graphics_convert.h
+	"graphics_structures.h"
+
+1590664255 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\audio.cpp
+	"audio.hpp"
+	"maths.hpp"
+	"objects_entities.h"
+	"index.h"
+	"network.h"
+	"3rdparty\cute_sound.h"
+
+1590649357 c:\users\user\documents\shared\games\gitsrc\bt3de2\audio.hpp
+	"global.h"
+
+1590651133 c:\users\user\documents\shared\games\gitsrc\bt3de2\objects_entities.h
+	"archive.hpp"
+	"cfg.h"
+	"factions.h"
+	"env.h"
+	"input.h"
+	"memory.h"
+	"Transform.h"
+	"maths.hpp"
+	"graphics.hpp"
+	"objects_items.h"
+	"core.h"
+
+1590649571 c:\users\user\documents\shared\games\gitsrc\bt3de2\cfg.h
+	<map>
+	<string>
+
+1590649603 c:\users\user\documents\shared\games\gitsrc\bt3de2\factions.h
+	"global.h"
+
+1590649590 c:\users\user\documents\shared\games\gitsrc\bt3de2\env.h
+	"memory.hpp"
+
+1590649621 c:\users\user\documents\shared\games\gitsrc\bt3de2\input.h
+	"global.h"
+
+1589862660 c:\users\user\documents\shared\games\gitsrc\bt3de2\memoryc.h
+	"global.h"
+	"global.h"
+
+1590649457 c:\users\user\documents\shared\games\gitsrc\bt3de2\transform.h
+	"glm/glm.hpp"
+	"glm/gtc\matrix_transform.hpp"
+	"glm/gtc\type_ptr.hpp"
+	"glm/gtc\quaternion.hpp"
+	<vector>
+	"maths.hpp"
+	"graphics.hpp"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\matrix_transform.hpp
+	"../mat4x4.hpp"
+	"../vec2.hpp"
+	"../vec3.hpp"
+	"../vec4.hpp"
+	"../gtc/constants.hpp"
+	"matrix_transform.inl"
+
+1525746442 c:\users\user\documents\shared\games\gitsrc\libraries\include\\glm\gtc\matrix_transform.inl
+	"../geometric.hpp"
+	"../trigonometric.hpp"
+	"../matrix.hpp"
+
+1590649544 c:\users\user\documents\shared\games\gitsrc\bt3de2\objects_items.h
+	"archive.hpp"
+	"cfg.h"
+	"factions.h"
+	"env.h"
+	"input.h"
+	"memory.h"
+	"Transform.h"
+	"maths.hpp"
+	"graphics.hpp"
+
+1590651208 c:\users\user\documents\shared\games\gitsrc\bt3de2\core.h
+	"global.h"
+
+1590651048 c:\users\user\documents\shared\games\gitsrc\bt3de2\index.h
+	"memory.hpp"
+
+1590649435 c:\users\user\documents\shared\games\gitsrc\bt3de2\network.h
+
+1589875044 c:\users\user\documents\shared\games\gitsrc\bt3de2\3rdparty\cute_sound.h
+	<SDL2/SDL.h>
+	<stdint.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<xmmintrin.h>
+	<emmintrin.h>
+	<Windows.h>
+	<mmreg.h>
+	<dsound.h>
+	<CoreAudio/CoreAudio.h>
+	<AudioUnit/AudioUnit.h>
+	<pthread.h>
+	<mach/mach_time.h>
+	<math.h>
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl.h
+	"SDL_main.h"
+	"SDL_stdinc.h"
+	"SDL_assert.h"
+	"SDL_atomic.h"
+	"SDL_audio.h"
+	"SDL_clipboard.h"
+	"SDL_cpuinfo.h"
+	"SDL_endian.h"
+	"SDL_error.h"
+	"SDL_events.h"
+	"SDL_filesystem.h"
+	"SDL_gamecontroller.h"
+	"SDL_haptic.h"
+	"SDL_hints.h"
+	"SDL_joystick.h"
+	"SDL_loadso.h"
+	"SDL_log.h"
+	"SDL_messagebox.h"
+	"SDL_metal.h"
+	"SDL_mutex.h"
+	"SDL_power.h"
+	"SDL_render.h"
+	"SDL_rwops.h"
+	"SDL_sensor.h"
+	"SDL_shape.h"
+	"SDL_system.h"
+	"SDL_thread.h"
+	"SDL_timer.h"
+	"SDL_version.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_main.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_stdinc.h
+	"SDL_config.h"
+	<sys/types.h>
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<stdarg.h>
+	<stdlib.h>
+	<malloc.h>
+	<stddef.h>
+	<stdarg.h>
+	<memory.h>
+	<string.h>
+	<strings.h>
+	<wchar.h>
+	<inttypes.h>
+	<stdint.h>
+	<ctype.h>
+	<math.h>
+	<float.h>
+	<alloca.h>
+	<malloc.h>
+	<malloc.h>
+	<malloc.h>
+	<stdlib.h>
+	<sal.h>
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_config.h
+	"SDL_platform.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_platform.h
+	"AvailabilityMacros.h"
+	"TargetConditionals.h"
+	<winapifamily.h>
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\begin_code.h
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\close_code.h
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_assert.h
+	"SDL_config.h"
+	"begin_code.h"
+	<signal.h>
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_atomic.h
+	"SDL_stdinc.h"
+	"SDL_platform.h"
+	"begin_code.h"
+	<sys/cpuinline.h>
+	<mbarrier.h>
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_audio.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_endian.h"
+	"SDL_mutex.h"
+	"SDL_thread.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_error.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_endian.h
+	"SDL_stdinc.h"
+	<endian.h>
+	<endian.h>
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_mutex.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_thread.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_atomic.h"
+	"SDL_mutex.h"
+	"begin_code.h"
+	<process.h>
+	<process.h>
+	<stdlib.h>
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_rwops.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_clipboard.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_cpuinfo.h
+	"SDL_stdinc.h"
+	<intrin.h>
+	<intrin.h>
+	<altivec.h>
+	<arm_neon.h>
+	<armintr.h>
+	<arm_neon.h>
+	<arm64intr.h>
+	<arm64_neon.h>
+	<mm3dnow.h>
+	<immintrin.h>
+	<mmintrin.h>
+	<xmmintrin.h>
+	<emmintrin.h>
+	<pmmintrin.h>
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_events.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_keyboard.h"
+	"SDL_mouse.h"
+	"SDL_joystick.h"
+	"SDL_gamecontroller.h"
+	"SDL_quit.h"
+	"SDL_gesture.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_video.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_pixels.h
+	"SDL_stdinc.h"
+	"SDL_endian.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_rect.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_pixels.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_surface.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_blendmode.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_blendmode.h
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_keyboard.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_keycode.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_keycode.h
+	"SDL_stdinc.h"
+	"SDL_scancode.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_scancode.h
+	"SDL_stdinc.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_mouse.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_joystick.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_gamecontroller.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_rwops.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_quit.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_gesture.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_touch.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_filesystem.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_haptic.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_hints.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_loadso.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_log.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_messagebox.h
+	"SDL_stdinc.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_power.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_render.h
+	"SDL_stdinc.h"
+	"SDL_rect.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_sensor.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_shape.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_system.h
+	"SDL_stdinc.h"
+	"SDL_keyboard.h"
+	"SDL_render.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_timer.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_version.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1589855865 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\cfg.cpp
+	"cfg.h"
+	<iostream>
+	<fstream>
+	<sstream>
+	<cstring>
+
+1590136621 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\collision.cpp
+	"collision.h"
+	"graphics.hpp"
+	"core.h"
+	"objects_entities.h"
+
+1590649142 c:\users\user\documents\shared\games\gitsrc\bt3de2\collision.h
+	"global.h"
+
+1590662467 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\core.cpp
+	"core.h"
+	"core_func.hpp"
+	"weather.h"
+	"index.h"
+	"core_save_load.h"
+	"collision.h"
+
+1590651361 c:\users\user\documents\shared\games\gitsrc\bt3de2\core_func.cpp
+	"core_decl.cpp"
+
+1590662245 c:\users\user\documents\shared\games\gitsrc\bt3de2\core_decl.cpp
+	"objects_entities.h"
+	"objects_items.h"
+	"network.h"
+
+1574220384 c:\users\user\documents\shared\games\gitsrc\bt3de2\3rdparty\cute_c2.h
+	<string.h>
+	<math.h>
+	<float.h>
+
+1590649557 c:\users\user\documents\shared\games\gitsrc\bt3de2\weather.h
+	"global.h"
+
+1590649506 c:\users\user\documents\shared\games\gitsrc\bt3de2\core_save_load.h
+
+1590563957 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\core_save_load.cpp
+	"core_save_load.h"
+	"core.h"
+	"objects_entities.h"
+	<stdio.h>
+
+1590411987 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\env.cpp
+	"env.h"
+	"global.h"
+	<iostream>
+	"memory.hpp"
+	"maths.hpp"
+	"graphics.hpp"
+	"archive.hpp"
+	"collision.h"
+	<queue>
+	<vector>
+
+1574220384 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\factions.cpp
+	"factions.h"
+
+1589861146 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\glad.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<glad/glad.h>
+	<windows.h>
+	<winapifamily.h>
+	<dlfcn.h>
+
+1590662695 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\graphics.cpp
+	"graphics.hpp"
+	"glm/gtc\matrix_transform.hpp"
+	"glm/gtc\type_ptr.hpp"
+	"cfg.h"
+	"maths.hpp"
+	"Transform.h"
+
+1588295665 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\index.c
+	"index.h"
+
+1590469088 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\maths.cpp
+	"maths.hpp"
+	<math.h>
+
+1582257475 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\memory.cpp
+	"memory.hpp"
+
+1590664368 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\input.cpp
+	"input.h"
+	"memory.hpp"
+	<SDL2\SDL.h>
+	"network.h"
+
+1590667005 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\main.cpp
+	<time.h>
+	"glad/glad.h"
+	"glm/glm.hpp"
+	"glm/gtc\matrix_transform.hpp"
+	"glm/gtc\type_ptr.hpp"
+	"glm/gtc\quaternion.hpp"
+	<SDL2\SDL.h>
+	<SDL2\SDL_syswm.h>
+	"graphics.hpp"
+	"maths.hpp"
+	"archive.hpp"
+	"input.h"
+	"cfg.h"
+	"network.h"
+	"audio.hpp"
+	"core.h"
+	"weather.h"
+	"test_zone.h"
+
+1583887078 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_syswm.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_version.h"
+	<windows.h>
+	<Inspectable.h>
+	<X11/Xlib.h>
+	<X11/Xatom.h>
+	<directfb.h>
+	<UIKit/UIKit.h>
+	"SDL_egl.h"
+	"begin_code.h"
+	"close_code.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_egl.h
+	<EGL/egl.h>
+	<EGL/eglext.h>
+	<stdint.h>
+	<inttypes.h>
+	<stdint.h>
+	<windows.h>
+	<Unknwn.h>
+	<mir_toolkit/mir_client_library.h>
+	<X11/Xlib.h>
+	<X11/Xutil.h>
+
+1590666694 c:\users\user\documents\shared\games\gitsrc\bt3de2\test_zone.h
+
+1589861992 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\memoryc.c
+	"memoryC.h"
+
+1589806684 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\network.cpp
+	<iostream>
+	<array>
+	<string>
+	"SDL2\SDL_net.h"
+	<stdio.h>
+	<time.h>
+	"network.h"
+	"cfg.h"
+	"core.h"
+	"maths.hpp"
+	"objects_entities.h"
+
+1583453342 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_net.h
+	<stdint.h>
+	"SDL.h"
+	"SDL_endian.h"
+	"SDL_version.h"
+	"begin_code.h"
+	"close_code.h"
+
+1590495315 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\objects_entities.cpp
+	"objects_entities.h"
+	"objects_items.h"
+	"graphics.hpp"
+	<glm\gtc\matrix_transform.hpp>
+	"archive.hpp"
+	"core.h"
+	"cfg.h"
+	"audio.hpp"
+	"collision.h"
+
+1590666969 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\objects_items.cpp
+	"objects_items.h"
+	"audio.hpp"
+	"objects_entities.h"
+	"core.h"
+
+1590563442 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\test_zone.cpp
+	"test_zone.h"
+	"memory.hpp"
+	"env.h"
+	<vector>
+
+1575345697 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\transform.cpp
+	"Transform.h"
+
+1590558614 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\weather.cpp
+	"weather.h"
+	"glm/glm.hpp"
+	"maths.hpp"
+	<iostream>
+	"cfg.h"
+
+1590651249 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\core_decl.cpp
+	"3rdparty/cute_c2.h"
+	"objects_entities.h"
+	"objects_items.h"
+	"network.h"
+
+1590651361 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\core_func.cpp
+	"core_decl.cpp"
+
+1574220384 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\3rdparty\cute_c2.h
+	<string.h>
+	<math.h>
+	<float.h>
+
+1589875044 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\3rdparty\cute_sound.h
+	<SDL2/SDL.h>
+	<stdint.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<xmmintrin.h>
+	<emmintrin.h>
+	<Windows.h>
+	<mmreg.h>
+	<dsound.h>
+	<CoreAudio/CoreAudio.h>
+	<AudioUnit/AudioUnit.h>
+	<pthread.h>
+	<mach/mach_time.h>
+	<math.h>
+
+1590649299 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\archive.hpp
+	"graphics.hpp"
+
+1590649360 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\archive_read_write.h
+
+1590649357 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\audio.hpp
+	"global.h"
+
+1590649571 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\cfg.h
+	<map>
+	<string>
+
+1589862660 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\memoryc.h
+	"global.h"
+	"global.h"
+
+1574220384 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\tga_reader.c
+	"tga_reader.h"
+
+1574220384 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\tga_reader.cpp
+	"tga_reader.h"
+
+1590651208 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\core.h
+	"global.h"
+
+1590649506 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\core_save_load.h
+
+1590649590 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\env.h
+	"memory.hpp"
+
+1590649603 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\factions.h
+	"global.h"
+
+1574220384 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\global-archiver.h
+	"global.h"
+
+1590649255 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\global.h
+
+1590649390 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\graphics.hpp
+	"graphics_structures.h"
+	"global.h"
+	<glm/glm.hpp>
+	<glad/glad.h>
+	<assimp/Importer.hpp>
+	<assimp/scene.h>
+	<assimp/postprocess.h>
+	<vector>
+	<string>
+	<fstream>
+	<sstream>
+	<iostream>
+	"tga_reader.h"
+
+1589862499 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\graphics_structures.h
+	"global.h"
+
+1590651048 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\index.h
+	"memory.hpp"
+
+1590649621 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\input.h
+	"global.h"
+
+1590649399 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\maths.hpp
+	"global.h"
+	<glm\glm.hpp>
+	<glm\gtc\type_ptr.hpp>
+	<stdarg.h>
+
+1590653546 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\memory.hpp
+	"global.h"
+	<iostream>
+
+1590649435 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\network.h
+
+1590494787 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\objects_entities.h
+	"archive.hpp"
+	"cfg.h"
+	"factions.h"
+	"env.h"
+	"input.h"
+	"memory.h"
+	"memoryC.h"
+	"Transform.h"
+	"maths.hpp"
+	"graphics.hpp"
+	"objects_items.h"
+	"core.h"
+
+1585817966 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\objects_items.h
+	"archive.hpp"
+	"cfg.h"
+	"factions.h"
+	"env.h"
+	"input.h"
+	"memory.h"
+	"Transform.h"
+	"maths.hpp"
+	"graphics.hpp"
+
+1574220384 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\test_zone.h
+
+1574220384 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\tga_reader.h
+	<stdio.h>
+	<stdlib.h>
+
+1589858915 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\transform.h
+	"glm/glm.hpp"
+	"glm/gtc\matrix_transform.hpp"
+	"glm/gtc\type_ptr.hpp"
+	"glm/gtc\quaternion.hpp"
+	<vector>
+	"maths.hpp"
+	"graphics.hpp"
+
+1589862536 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\weather.h
+	"global.h"
+
+1590649142 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\collision.h
+	"global.h"
+
+1582823511 c:\mingw\lib\gcc\mingw32\9.2.0\include\c++\iostream
+	<bits/c++config.h>
+	<ostream>
+	<istream>
+
+1590657184 source:c:\users\user\documents\shared\games\gitsrc\bt3de2\index.cpp
+	<math.h>
+	"index.h"
+
+1590662470 c:\users\user\documents\shared\games\gitsrc\bt3de2\core_func.hpp
+	"core_decl.hpp"
+
+1590662245 c:\users\user\documents\shared\games\gitsrc\bt3de2\core_decl.hpp
+	"objects_entities.h"
+	"objects_items.h"
+	"network.h"
+
+1583887077 c:\users\user\documents\shared\games\gitsrc\libraries\include\\sdl2\sdl_metal.h
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+

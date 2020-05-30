@@ -9,34 +9,8 @@
 // for gnuc
 #include <cstring>
 
-struct CFG
-{
-	bool bFullscreen = false;
-	bool bHost = false;
-	bool bEditMode = false;
-	bool bSplitScreen = false;
-	bool bCrossHairs = true;
-
-	// IP address variables
-	unsigned int iIPA = 0;
-	unsigned int iIPB = 0;
-	unsigned int iIPC = 0;
-	unsigned int iIPD = 0;
-	unsigned int iIPPORT = 0;
-
-	// Config variables loaded from a file
-	// Window size
-	unsigned int iWinX = 640;
-	unsigned int iWinY = 480;
-
-	// Camera stuff
-	float fCameraFOV = 80.f;
-	float fCameraSensitivity = 0.f;
-	float fCameraNearClip = 0.1f;
-	float fCameraFarClip = 100.f;
-
-	char* sConnectionAddr;
-};
+#include <map>
+#include <string>
 
 namespace cfg
 {
@@ -59,7 +33,7 @@ namespace cfg
 	float fCameraNearClip = 0.1f;
 	float fCameraFarClip = 100.f;
 
-	char* sConnAddr;
+	char sConnAddr[HOSTNAME_MAX_LEN];
 
 	void LoadCfg()
 	{
@@ -69,15 +43,14 @@ namespace cfg
 		{
 			fseek(file, 0, SEEK_SET); // Seek file beginning
 
-			while (true)
+			bool exit = false;
+
+			while (!exit)
 			{
 				char type = fgetc(file);
 
 				//if we're at the end of the file
-				if (type == EOF)
-				{
-					return;
-				}
+				if (type == EOF) return;
 				//load variable name
 				std::string variable;
 				while (true)
@@ -105,7 +78,8 @@ namespace cfg
 					}
 					else if (c == EOF)
 					{
-						return;
+						exit = true;
+						break;
 					}
 					else
 					{
@@ -153,9 +127,8 @@ namespace cfg
 					std::cout << "Configured float " << variable << " as " << value << std::endl;
 					break;
 				case 's':
-					//convert to string (char*)
-					if (strcmp(variable.c_str(), "ConnAddr") == 0)
-						sConnAddr = (char*)value.c_str();
+					if (strcmp(variable.c_str(), "ConnAddr") == 0 && value.length() < HOSTNAME_MAX_LEN)
+						strcpy(sConnAddr, value.c_str());
 					std::cout << "Configured string " << variable << " as " << value << std::endl;
 					break;
 				default:

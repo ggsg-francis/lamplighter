@@ -50,12 +50,10 @@ extern void(*fpDraw[ENTITY_TYPE_COUNT])(void* self);
 
 void IndexInitEntity(btID ID, EntityType TYPE);
 void IndexFreeEntity(btID ID);
-void IndexInitItem(btID ID, ItemType TYPE);
+void IndexInitItemInstance(btID ID, ItemType TYPE);
 void IndexFreeItem(btID ID);
 
 //-------------------------------- PROJECTILES
-
-
 
 typedef struct _prjid { btID id; } PrjID;
 

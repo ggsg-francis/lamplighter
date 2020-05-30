@@ -156,7 +156,9 @@ inline void TranslateInput()
 			false,
 			input::GetHit(i, input::key::ACTION_A),
 			input::GetHit(i, input::key::ACTION_B),
-			input::GetHit(i, input::key::ACTION_C));
+			input::GetHit(i, input::key::ACTION_C),
+			input::GetHit(i, input::key::CROUCH),
+			input::GetHeld(i, input::key::JUMP));
 	}
 	#else
 	// Generate analogue input from directional keys
@@ -495,7 +497,7 @@ updtime:
 	//________________________________________________________________________________________________________________________________
 	// RENDER ------------------------------------------------------------------------------------------------------------------------
 
-//render:
+render:
 
 	// BUFFER 1 (LEFT SCREEN)
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
@@ -551,7 +553,7 @@ updtime:
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
 	//-------------------------------- RENDER SHADOWMAP
-	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	index::SetViewFocus(network::nid); // Set render POV
@@ -735,6 +737,6 @@ exit:
 	//_CrtDumpMemoryLeaks();
 	#endif // _DEBUG
 
-//exitnoinit:
+exitnoinit:
 	return 0; // Goodbye
 }

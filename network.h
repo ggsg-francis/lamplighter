@@ -1,6 +1,8 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include "global.h"
+
 #ifdef DEF_NMP
 
 // Maximum IPv4 size: 576 bytes

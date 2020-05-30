@@ -22,7 +22,10 @@ graphics::GUIBox guibox_selection;
 void Inventory::AddNew(btID item_template)
 {
 	btID id = index::SpawnItem(item_template);
-	if (id != BUF_NULL) items.Add(id);
+	if (id != BUF_NULL)
+	{
+		items.Add(id);
+	}
 }
 void Inventory::DestroyIndex(btui32 index)
 {
@@ -317,7 +320,7 @@ void EntityTransformTick(Entity* ent, btID id, btf32 dt)
 		else
 		{
 			// Add gravity
-			ent->t.height_velocity -= 0.006f;
+			ent->t.height_velocity -= 0.18f * dt;
 			// Velocity reduction (Air drag)
 			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
 		}

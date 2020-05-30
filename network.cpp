@@ -222,12 +222,15 @@ namespace network
 			addr.port = (Uint16)cfg::iPort;
 
 			int found_other = SDLNet_ResolveHost(&addr, cfg::sConnAddr, (Uint16)cfg::iPort);
-			if (found_other == -1) goto exiterr;
+			if (found_other == -1) {
+				printf("Could not find the host!\n");
+				goto exiterr;
+			}
 			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
 
 			//open socket
 			socket_reliable = SDLNet_TCP_Open(&addr);
-			if (!socket_reliable){
+			if (!socket_reliable) {
 				printf("Could not open socket!\n");
 				goto exiterr;
 			}

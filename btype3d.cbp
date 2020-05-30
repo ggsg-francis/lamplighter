@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="lamplighter" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Release_NMP x64">
+				<Option output="./1BUILD_RELEASE_NMP/tsoa_mp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="IntermediateGame/" />
+				<Option deps_output="./1BUILD_RELEASE_NMP/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-DDEF_NMP" />
+					<Add option="-D_CRT_SECURE_NO_WARNINGS" />
+					<Add option="-D_CRT_SECURE_NO_DEPRECATE" />
+					<Add option="-DD_SCL_SECURE_NO_WARNINGS" />
+					<Add option="-O1" />
+					<Add option="-Wall" />
+					<Add directory="../libraries/include/" />
+					<Add directory="../libraries/include_physx/" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="opengl32.lib" />
+					<Add library="SDL2.lib" />
+					<Add library="SDL2main.lib" />
+					<Add library="SDL2_net.lib" />
+					<Add library="winmm.lib" />
+					<Add library="comctl32.lib" />
+					<Add library="kernel32.lib" />
+					<Add library="user32.lib" />
+					<Add library="gdi32.lib" />
+					<Add library="winspool.lib" />
+					<Add library="comdlg32.lib" />
+					<Add library="advapi32.lib" />
+					<Add library="shell32.lib" />
+					<Add library="ole32.lib" />
+					<Add library="oleaut32.lib" />
+					<Add library="uuid.lib" />
+					<Add library="odbc32.lib" />
+					<Add library="odbccp32.lib" />
+					<Add directory="../libraries/lib/" />
+					<Add directory="../libraries/lib_physx/" />
+				</Linker>
+			</Target>
+			<Target title="Debug Win32">
+				<Option output="./Debug/lamplighter" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Debug/" />
+				<Option deps_output="./Debug/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-O0" />
+					<Add option="-Wall" />
+					<Add directory="../SFML-2.4.2/include/" />
+				</Compiler>
+				<Linker>
+					<Add library="sfml-graphics-d.lib" />
+					<Add library="sfml-window-d.lib" />
+					<Add library="sfml-system-d.lib" />
+					<Add library="winmm.lib" />
+					<Add library="comctl32.lib" />
+					<Add library="kernel32.lib" />
+					<Add library="user32.lib" />
+					<Add library="gdi32.lib" />
+					<Add library="winspool.lib" />
+					<Add library="comdlg32.lib" />
+					<Add library="advapi32.lib" />
+					<Add library="shell32.lib" />
+					<Add library="ole32.lib" />
+					<Add library="oleaut32.lib" />
+					<Add library="uuid.lib" />
+					<Add library="odbc32.lib" />
+					<Add library="odbccp32.lib" />
+					<Add directory="../SFML-2.4.2/lib/" />
+				</Linker>
+			</Target>
+			<Target title="Debug_NMP x64">
+				<Option output="./1BUILD_DEBUG_NMP/tsoa-debug" prefix_auto="1" extension_auto="1" />
+				<Option object_output="IntermediateGame/" />
+				<Option deps_output="./1BUILD_DEBUG_NMP/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-DDEF_NMP" />
+					<Add option="-D_CRT_SECURE_NO_WARNINGS" />
+					<Add option="-D_CRT_SECURE_NO_DEPRECATE" />
+					<Add option="-DD_SCL_SECURE_NO_WARNINGS" />
+					<Add option="-O0" />
+					<Add option="-Wall" />
+					<Add directory="../libraries/include/" />
+					<Add directory="../libraries/include_physx/" />
+				</Compiler>
+				<Linker>
+					<Add library="opengl32.lib" />
+					<Add library="SDL2.lib" />
+					<Add library="SDL2main.lib" />
+					<Add library="SDL2_net.lib" />
+					<Add library="winmm.lib" />
+					<Add library="comctl32.lib" />
+					<Add library="kernel32.lib" />
+					<Add library="user32.lib" />
+					<Add library="gdi32.lib" />
+					<Add library="winspool.lib" />
+					<Add library="comdlg32.lib" />
+					<Add library="advapi32.lib" />
+					<Add library="shell32.lib" />
+					<Add library="ole32.lib" />
+					<Add library="oleaut32.lib" />
+					<Add library="uuid.lib" />
+					<Add library="odbc32.lib" />
+					<Add library="odbccp32.lib" />
+					<Add directory="../libraries/lib/" />
+					<Add directory="../libraries/lib_physx/" />
+				</Linker>
+			</Target>
+			<Target title="Release_NMP Win32">
+				<Option output="./Release_NMP/lamplighter" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Release_NMP/" />
+				<Option deps_output="./Release_NMP/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O1" />
+					<Add option="-Wall" />
+					<Add directory="../SFML-2.4.2/include/" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="sfml-graphics.lib" />
+					<Add library="sfml-window.lib" />
+					<Add library="sfml-system.lib" />
+					<Add library="winmm.lib" />
+					<Add library="comctl32.lib" />
+					<Add library="kernel32.lib" />
+					<Add library="user32.lib" />
+					<Add library="gdi32.lib" />
+					<Add library="winspool.lib" />
+					<Add library="comdlg32.lib" />
+					<Add library="advapi32.lib" />
+					<Add library="shell32.lib" />
+					<Add library="ole32.lib" />
+					<Add library="oleaut32.lib" />
+					<Add library="uuid.lib" />
+					<Add library="odbc32.lib" />
+					<Add library="odbccp32.lib" />
+					<Add directory="../SFML-2.4.2/lib/" />
+				</Linker>
+			</Target>
+			<Target title="Debug x64">
+				<Option output="./0BUILD_DEBUG/tsoa-debug" prefix_auto="1" extension_auto="1" />
+				<Option object_output="IntermediateGame/" />
+				<Option deps_output="./0BUILD_DEBUG/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-D_CRT_SECURE_NO_WARNINGS" />
+					<Add option="-D_CRT_SECURE_NO_DEPRECATE" />
+					<Add option="-DD_SCL_SECURE_NO_WARNINGS" />
+					<Add option="-O0" />
+					<Add option="-Wall" />
+					<Add directory="../libraries/include/" />
+				</Compiler>
+				<Linker>
+					<Add library="opengl32.lib" />
+					<Add library="SDL2main.lib" />
+					<Add library="SDL2.lib" />
+					<Add library="winmm.lib" />
+					<Add library="comctl32.lib" />
+					<Add library="kernel32.lib" />
+					<Add library="user32.lib" />
+					<Add library="gdi32.lib" />
+					<Add library="winspool.lib" />
+					<Add library="comdlg32.lib" />
+					<Add library="advapi32.lib" />
+					<Add library="shell32.lib" />
+					<Add library="ole32.lib" />
+					<Add library="oleaut32.lib" />
+					<Add library="uuid.lib" />
+					<Add library="odbc32.lib" />
+					<Add library="odbccp32.lib" />
+					<Add directory="../libraries/lib/" />
+					<Add directory="../libraries/lib_physx/" />
+				</Linker>
+			</Target>
+			<Target title="Release x64">
+				<Option output="./0BUILD_RELEASE/tsoa" prefix_auto="1" extension_auto="1" />
+				<Option object_output="IntermediateGame/" />
+				<Option deps_output="./0BUILD_RELEASE/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O1" />
+					<Add option="-Wall" />
+					<Add option="-D_CRT_SECURE_NO_WARNINGS" />
+					<Add option="-D_CRT_SECURE_NO_DEPRECATE" />
+					<Add option="-DD_SCL_SECURE_NO_WARNINGS" />
+					<Add directory="../libraries/include/" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="../libraries/libgcc/libSDL2.a" />
+					<Add library="../libraries/libgcc/libSDL2main.a" />
+					<Add directory="../libraries/libgcc/" />
+				</Linker>
+			</Target>
+			<Target title="Debug_NMP Win32">
+				<Option output="./Debug_NMP/lamplighter" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Debug_NMP/" />
+				<Option deps_output="./Debug_NMP/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O0" />
+					<Add option="-Wall" />
+					<Add directory="../SFML-2.4.2/include/" />
+				</Compiler>
+				<Linker>
+					<Add library="sfml-graphics-d.lib" />
+					<Add library="sfml-window-d.lib" />
+					<Add library="sfml-system-d.lib" />
+					<Add library="winmm.lib" />
+					<Add library="comctl32.lib" />
+					<Add library="kernel32.lib" />
+					<Add library="user32.lib" />
+					<Add library="gdi32.lib" />
+					<Add library="winspool.lib" />
+					<Add library="comdlg32.lib" />
+					<Add library="advapi32.lib" />
+					<Add library="shell32.lib" />
+					<Add library="ole32.lib" />
+					<Add library="oleaut32.lib" />
+					<Add library="uuid.lib" />
+					<Add library="odbc32.lib" />
+					<Add library="odbccp32.lib" />
+					<Add directory="../SFML-2.4.2/lib/" />
+				</Linker>
+			</Target>
+			<Target title="Release Win32">
+				<Option output="./Release/lamplighter" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Release/" />
+				<Option deps_output="./Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O1" />
+					<Add option="-Wall" />
+					<Add directory="../SFML-2.4.2/include/" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="sfml-graphics.lib" />
+					<Add library="sfml-window.lib" />
+					<Add library="sfml-system.lib" />
+					<Add library="winmm.lib" />
+					<Add library="comctl32.lib" />
+					<Add library="kernel32.lib" />
+					<Add library="user32.lib" />
+					<Add library="gdi32.lib" />
+					<Add library="winspool.lib" />
+					<Add library="comdlg32.lib" />
+					<Add library="advapi32.lib" />
+					<Add library="shell32.lib" />
+					<Add library="ole32.lib" />
+					<Add library="oleaut32.lib" />
+					<Add library="uuid.lib" />
+					<Add library="odbc32.lib" />
+					<Add library="odbccp32.lib" />
+					<Add directory="../SFML-2.4.2/lib/" />
+				</Linker>
+			</Target>
+		</Build>
+		<Unit filename="Transform.cpp" />
+		<Unit filename="Transform.h" />
+		<Unit filename="archive.cpp" />
+		<Unit filename="archive.hpp" />
+		<Unit filename="archive_read_write.cpp" />
+		<Unit filename="archive_read_write.h" />
+		<Unit filename="audio.cpp" />
+		<Unit filename="audio.hpp" />
+		<Unit filename="cfg.cpp" />
+		<Unit filename="cfg.h" />
+		<Unit filename="collision.cpp" />
+		<Unit filename="collision.h" />
+		<Unit filename="core.cpp" />
+		<Unit filename="core.h" />
+		<Unit filename="core_decl.hpp" />
+		<Unit filename="core_func.hpp" />
+		<Unit filename="core_save_load.cpp" />
+		<Unit filename="core_save_load.h" />
+		<Unit filename="env.cpp" />
+		<Unit filename="env.h" />
+		<Unit filename="factions.cpp" />
+		<Unit filename="factions.h" />
+		<Unit filename="glad.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="global-archiver.h" />
+		<Unit filename="global.h" />
+		<Unit filename="graphics.cpp" />
+		<Unit filename="graphics.hpp" />
+		<Unit filename="graphics_structures.h" />
+		<Unit filename="index.cpp" />
+		<Unit filename="index.h" />
+		<Unit filename="input.cpp" />
+		<Unit filename="input.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="maths.cpp" />
+		<Unit filename="maths.hpp" />
+		<Unit filename="memory.cpp" />
+		<Unit filename="memory.hpp" />
+		<Unit filename="network.cpp" />
+		<Unit filename="network.h" />
+		<Unit filename="objects_entities.cpp" />
+		<Unit filename="objects_entities.h" />
+		<Unit filename="objects_items.cpp" />
+		<Unit filename="objects_items.h" />
+		<Unit filename="test_zone.cpp" />
+		<Unit filename="test_zone.h" />
+		<Unit filename="tga_reader.cpp" />
+		<Unit filename="tga_reader.h" />
+		<Unit filename="weather.cpp" />
+		<Unit filename="weather.h" />
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

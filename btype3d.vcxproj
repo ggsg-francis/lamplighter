@@ -128,8 +128,8 @@
     <IntDir>IntermediateGame\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_NMP|x64'">
-    <OutDir>$(SolutionDir)\1BUILD_DEBUG_NMP\</OutDir>
-    <TargetName>tsoa-debug</TargetName>
+    <OutDir>$(SolutionDir)\0BUILD_DEBUG\</OutDir>
+    <TargetName>tsoa-debug_nwmp</TargetName>
     <IntDir>IntermediateGame\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -138,9 +138,9 @@
     <TargetName>tsoa</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NMP|x64'">
-    <OutDir>$(SolutionDir)\1BUILD_RELEASE_NMP\</OutDir>
+    <OutDir>$(SolutionDir)\0BUILD_RELEASE\</OutDir>
     <IntDir>IntermediateGame\</IntDir>
-    <TargetName>tsoa_mp</TargetName>
+    <TargetName>tsoa_nwmp</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -189,10 +189,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\libraries\include;..\libraries\include_physx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEF_NMP;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>..\libraries\lib;..\libraries\lib_physx</AdditionalLibraryDirectories>
@@ -242,7 +243,8 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -261,9 +263,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\libraries\include;..\libraries\include_physx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libraries\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEF_NMP;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;D_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ForcedIncludeFiles>global.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -305,6 +308,7 @@
     <ClInclude Include="archive_read_write.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="core_save_load.h" />
+    <ClInclude Include="global_project.h" />
     <ClInclude Include="graphics_structures.h" />
     <ClInclude Include="index.h" />
     <ClInclude Include="network.h" />

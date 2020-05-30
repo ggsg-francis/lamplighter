@@ -83,6 +83,9 @@
     <ClInclude Include="core_decl.hpp">
       <Filter>gamework</Filter>
     </ClInclude>
+    <ClInclude Include="global_project.h">
+      <Filter>0global</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">

@@ -161,6 +161,9 @@ namespace index
 						if (m::Length(pos1 - pos3) < 64.f && m::Length(pos2 - pos3) < 64.f) // ..or too far away
 						{
 							//*
+							#ifdef DEF_SPAWN_ONLY_ENEMIES
+							SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
+							#else
 							btf32 random = m::Random(0.f, 15.f);
 							btui32 rand_rnd = (btui32)floor(random);
 							if (rand_rnd < 2u)
@@ -169,8 +172,7 @@ namespace index
 								SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
 							else
 								SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);//*/
-							//SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
-
+							#endif
 						}
 					}
 				}
@@ -179,7 +181,8 @@ namespace index
 
 		#endif
 
-		// temp
+		// spawn items
+		#ifndef DEF_SPAWN_ONLY_ENEMIES
 		for (int x = 0; x < WORLD_SIZE; ++x)
 		{
 			for (int y = 0; y < WORLD_SIZE; ++y)
@@ -199,6 +202,7 @@ namespace index
 				}
 			}
 		}
+		#endif
 	}
 
 	void Init()
@@ -659,10 +663,8 @@ namespace index
 
 			// Set light matrices
 			graphics::SetMatProjLight(); graphics::SetMatViewLight(
-				lightPos.x,
-				lightPos.y,
-				lightPos.z,
-				-sunVec.x, -sunVec.y, -sunVec.z);//*/
+				lightPos.x, lightPos.y, lightPos.z,
+				-sunVec.x, -sunVec.y, -sunVec.z);
 			shadowmat_temp = graphics::GetMatProj() * graphics::GetMatView();
 		}
 
@@ -753,10 +755,13 @@ namespace index
 		{
 			for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 			{
+				#ifdef DEF_FPP_INVISIBLE
+				if (i != players[activePlayer] && block_entity.used[i])
+				#else
 				if (block_entity.used[i])
+				#endif
 				{
-					//ENTITY(i)->state.TickEffects(dt);
-					fpDraw[block_entity_data[i].type](ENTITY(i)); // Call tick on entity
+					fpDraw[block_entity_data[i].type](ENTITY(i)); // Call draw on entity
 				}
 			}
 
@@ -1120,7 +1125,7 @@ namespace index
 		btID id = block_item.add();
 		if (id != BUF_NULL)
 		{
-			IndexInitItem(id, acv::item_types[item_template]);
+			IndexInitItemInstance(id, acv::item_types[item_template]);
 			GETITEM_MISC(id)->id_item_template = item_template;
 			std::cout << "Created item " << id << std::endl;
 		}

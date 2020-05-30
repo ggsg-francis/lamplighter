@@ -179,7 +179,7 @@ void IndexFreeEntity(btID id)
 	}
 	block_entity.remove(id);
 }
-void IndexInitItem(btID id, ItemType type)
+void IndexInitItemInstance(btID id, ItemType type)
 {
 	block_item.used[id] = true;
 	block_item_data[id].type = type;

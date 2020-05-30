@@ -682,6 +682,8 @@ namespace index
 		ACTOR(id)->inventory.AddNew(8u); // magazine
 		ACTOR(id)->inventory.AddNew(8u); // magazine
 		ACTOR(id)->foot_state = FootState::eL_DOWN;
+		//ACTOR(id)->inventory.items[ACTOR(id)->inv_active_slot];
+		//TODO: clean up this mess
 	}
 
 	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)

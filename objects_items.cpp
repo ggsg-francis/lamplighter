@@ -203,7 +203,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 			self->pitch = owner->viewPitch.Deg();
 			self->pitch_velocity -= m::Random(5.f, 7.5f);
 
-
+			#ifdef DEF_AUTOAIM
 			if (owner->atk_target != BUF_NULL)
 			{
 				Entity* target = (Entity*)GetEntityPtr(owner->atk_target);
@@ -221,6 +221,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
 			}
 			else
+			#endif
 			{
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
 				if (GetItemType(self->id_ammoInstance) == ITEM_TYPE_CONS)
@@ -230,7 +231,10 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
 			}
 
-			if (!owner->grounded) // if we're in the air, the gunfire pushes us backwards
+			// The gunfire pushes us backwards
+			if (owner->grounded) // if we're on the ground, 
+				owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.01f; // set my velocity
+			else // if we're in the air
 				owner->t.velocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.01f; // set my velocity
 		}
 	}

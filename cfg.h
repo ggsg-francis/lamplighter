@@ -1,8 +1,7 @@
 #ifndef CFG_H
 #define CFG_H
 
-#include <map>
-#include <string>
+#include "global.h"
 
 namespace cfg
 {
@@ -30,7 +29,7 @@ namespace cfg
 	extern float fCameraNearClip;
 	extern float fCameraFarClip;
 
-	extern char* sConnAddr;
+	extern char sConnAddr[HOSTNAME_MAX_LEN];
 
 	void LoadCfg();
 }

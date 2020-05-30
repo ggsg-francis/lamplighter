@@ -1,12 +1,10 @@
 0BUILD_DEBUG/
-0BUILD_RELEASE/res_src/
-0BUILD_RELEASE/snd_src/
-1BUILD_DEBUG_NMP/
-1BUILD_RELEASE_NMP/res_src/
-1BUILD_RELEASE_NMP/snd_src/
+0BUILD_RELEASE/
 IntermediateArchiver/
 IntermediateGame/
+obj/
 .vs/
+.metadata/
 *.suo
 *.db
 *.opendb
@@ -15,5 +13,8 @@ IntermediateGame/
 *.iobj
 *.ipdb
 *.pdb
+*.gch
+*.bak
 save.bin
 /Debug/
+global_project.h

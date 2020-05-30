@@ -3,6 +3,7 @@
 #include "core.h"
 #include "index.h"
 #include "objects_entities.h"
+#include "weather.h"
 
 #include <stdio.h>
 
@@ -117,6 +118,7 @@ void SaveState()
 				{
 				case ENTITY_TYPE_RESTING_ITEM:
 					fwrite(&ITEM(i)->item_instance, SIZE_16, 1, file);
+					break;
 				case ENTITY_TYPE_CHARA:
 					fwrite(&ACTOR(i)->name, 32, 1, file);
 					fwrite(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
@@ -129,6 +131,7 @@ void SaveState()
 					fwrite(&ACTOR(i)->skin_col_a, sizeof(m::Vector3), 1, file);
 					fwrite(&ACTOR(i)->skin_col_b, sizeof(m::Vector3), 1, file);
 					fwrite(&ACTOR(i)->skin_col_c, sizeof(m::Vector3), 1, file);
+					break;
 				}
 			}
 		}
@@ -144,13 +147,41 @@ void SaveState()
 			{
 				fwrite(&GETITEM_MISC(i)->id_item_template, SIZE_16, 1, file);
 
-				switch (GetItemType(i))
-				{
-				case ITEM_TYPE_CONS:
-					fwrite(&GETITEM_CONS(i)->uses, SIZE_32, 1, file);
-				}
+				fwrite(&GETITEM_MISC(i)->ePose, SIZE_8, 1, file);
+				fwrite(&GETITEM_MISC(i)->loc, SIZE_32 * 3, 1, file);
+				fwrite(&GETITEM_MISC(i)->loc_velocity, SIZE_32 * 3, 1, file);
+				fwrite(&GETITEM_MISC(i)->pitch, SIZE_32, 1, file);
+				fwrite(&GETITEM_MISC(i)->pitch_velocity, SIZE_32, 1, file);
+				fwrite(&GETITEM_MISC(i)->yaw, SIZE_32, 1, file);
+				fwrite(&GETITEM_MISC(i)->yaw_velocity, SIZE_32, 1, file);
+				
+				fwrite(&GETITEM_MISC(i)->swinging, SIZE_8, 1, file);
+				fwrite(&GETITEM_MISC(i)->swingState, SIZE_32, 1, file);
+				
+				fwrite(&GETITEM_MISC(i)->ang_aim_offset_temp, SIZE_32, 1, file);
+				fwrite(&GETITEM_MISC(i)->ang_aim_pitch, SIZE_32, 1, file);
+				fwrite(&GETITEM_MISC(i)->fire_time, SIZE_32, 1, file);
+				fwrite(&GETITEM_MISC(i)->id_ammoInstance, SIZE_16, 1, file);
+				
+				fwrite(&GETITEM_MISC(i)->charge, SIZE_32, 1, file);
+				
+				fwrite(&GETITEM_MISC(i)->uses, SIZE_32, 1, file);
 			}
 		}
+
+		//-------------------------------- WEATHER
+
+		fwrite(&weather::w.col_sun_from, SIZE_32 * 3, 1, file);
+		fwrite(&weather::w.col_amb_from, SIZE_32 * 3, 1, file);
+		fwrite(&weather::w.col_fog_from, SIZE_32 * 3, 1, file);
+		fwrite(&weather::w.col_sun_dest, SIZE_32 * 3, 1, file);
+		fwrite(&weather::w.col_amb_dest, SIZE_32 * 3, 1, file);
+		fwrite(&weather::w.col_fog_dest, SIZE_32 * 3, 1, file);
+		fwrite(&weather::w.fog_level_from, SIZE_32, 1, file);
+		fwrite(&weather::w.fog_level_dest, SIZE_32, 1, file);
+		fwrite(&weather::w.recalc_ticker, SIZE_32, 1, file);
+		fwrite(&weather::w.stat_tod, SIZE_32, 1, file);
+		fwrite(&weather::w.stat_overcast_level, SIZE_32, 1, file);
 
 		fclose(file); // Close file
 	}
@@ -208,6 +239,7 @@ void LoadStateFileV001()
 				{
 				case ENTITY_TYPE_RESTING_ITEM:
 					fread(&ITEM(i)->item_instance, SIZE_16, 1, file);
+					break;
 				case ENTITY_TYPE_CHARA:
 					fread(&ACTOR(i)->name, 32, 1, file);
 					fread(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
@@ -222,6 +254,7 @@ void LoadStateFileV001()
 					fread(&ACTOR(i)->skin_col_a, sizeof(m::Vector3), 1, file);
 					fread(&ACTOR(i)->skin_col_b, sizeof(m::Vector3), 1, file);
 					fread(&ACTOR(i)->skin_col_c, sizeof(m::Vector3), 1, file);
+					break;
 				}
 
 				std::cout << "Loaded entity ID " << i << std::endl;
@@ -240,19 +273,47 @@ void LoadStateFileV001()
 				btID template_temp;
 				fread(&template_temp, SIZE_16, 1, file);
 
-				IndexInitItem(i, acv::item_types[template_temp]);
+				IndexInitItemInstance(i, acv::item_types[template_temp]);
 
 				GETITEM_MISC(i)->id_item_template = template_temp;
 
-				switch (GetItemType(i))
-				{
-				case ITEM_TYPE_CONS:
-					fread(&GETITEM_CONS(i)->uses, SIZE_32, 1, file);
-				}
+				fread(&GETITEM_MISC(i)->ePose, SIZE_8, 1, file);
+				fread(&GETITEM_MISC(i)->loc, SIZE_32 * 3, 1, file);
+				fread(&GETITEM_MISC(i)->loc_velocity, SIZE_32 * 3, 1, file);
+				fread(&GETITEM_MISC(i)->pitch, SIZE_32, 1, file);
+				fread(&GETITEM_MISC(i)->pitch_velocity, SIZE_32, 1, file);
+				fread(&GETITEM_MISC(i)->yaw, SIZE_32, 1, file);
+				fread(&GETITEM_MISC(i)->yaw_velocity, SIZE_32, 1, file);
+
+				fread(&GETITEM_MISC(i)->swinging, SIZE_8, 1, file);
+				fread(&GETITEM_MISC(i)->swingState, SIZE_32, 1, file);
+
+				fread(&GETITEM_MISC(i)->ang_aim_offset_temp, SIZE_32, 1, file);
+				fread(&GETITEM_MISC(i)->ang_aim_pitch, SIZE_32, 1, file);
+				fread(&GETITEM_MISC(i)->fire_time, SIZE_32, 1, file);
+				fread(&GETITEM_MISC(i)->id_ammoInstance, SIZE_16, 1, file);
+
+				fread(&GETITEM_MISC(i)->charge, SIZE_32, 1, file);
+
+				fread(&GETITEM_MISC(i)->uses, SIZE_32, 1, file);
 
 				std::cout << "Loaded item ID " << i << std::endl;
 			}
 		}
+
+		//-------------------------------- WEATHER
+
+		fread(&weather::w.col_sun_from, SIZE_32 * 3, 1, file);
+		fread(&weather::w.col_amb_from, SIZE_32 * 3, 1, file);
+		fread(&weather::w.col_fog_from, SIZE_32 * 3, 1, file);
+		fread(&weather::w.col_sun_dest, SIZE_32 * 3, 1, file);
+		fread(&weather::w.col_amb_dest, SIZE_32 * 3, 1, file);
+		fread(&weather::w.col_fog_dest, SIZE_32 * 3, 1, file);
+		fread(&weather::w.fog_level_from, SIZE_32, 1, file);
+		fread(&weather::w.fog_level_dest, SIZE_32, 1, file);
+		fread(&weather::w.recalc_ticker, SIZE_32, 1, file);
+		fread(&weather::w.stat_tod, SIZE_32, 1, file);
+		fread(&weather::w.stat_overcast_level, SIZE_32, 1, file);
 
 		fclose(file); // Close file
 	}
