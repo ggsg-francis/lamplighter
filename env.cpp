@@ -218,6 +218,7 @@ namespace env
 
 	void SaveBin()
 	{
+		Clean();
 		printf("Saving [world.ltrwld]");
 		FILE *out = fopen("save/world.ltrwld", "wb");
 		if (out != NULL)
@@ -244,7 +245,16 @@ namespace env
 
 	void Clean()
 	{
-		// empty
+		for (int x = 0; x < WORLD_SIZE; ++x)
+		{
+			for (int y = 0; y < WORLD_SIZE; ++y)
+			{
+				eCells.terrain_height_ne[x][y] = eCells.terrain_height[x][y];
+				eCells.terrain_height_nw[x][y] = eCells.terrain_height[x][y];
+				eCells.terrain_height_se[x][y] = eCells.terrain_height[x][y];
+				eCells.terrain_height_sw[x][y] = eCells.terrain_height[x][y];
+			}
+		}
 	}
 
 	void GeneratePropMeshes()
@@ -302,11 +312,26 @@ namespace env
 
 	void GenerateTerrainMesh()
 	{
+		#ifdef DEF_TERRAIN_EXPERIMENTAL
+		wldMeshTerrain.GenerateComplexEnv(eCells.terrain_height, eCells.terrain_material,
+			(btui32*)&eCells.flags, eflag::EF_BLOCK_SHAPE,
+			eCells.terrain_height_ne, eCells.terrain_height_nw,
+			eCells.terrain_height_se, eCells.terrain_height_sw);
+		#else
 		wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
+		#endif
 	}
 	void GenerateTerrainMeshEditor()
 	{
+		//wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
+		#ifdef DEF_TERRAIN_EXPERIMENTAL
+		wldMeshTerrain.GenerateComplexEnv(eCells.terrain_height, eCells.terrain_material,
+			(btui32*)&eCells.flags, eflag::EF_BLOCK_SHAPE,
+			eCells.terrain_height_ne, eCells.terrain_height_nw,
+			eCells.terrain_height_se, eCells.terrain_height_sw);
+		#else
 		wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
+		#endif
 	}
 }
 

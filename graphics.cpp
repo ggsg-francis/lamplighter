@@ -1900,6 +1900,403 @@ namespace graphics
 		free((void*)ices);
 	}
 
+	enum TerrainGenData : btui8
+	{
+		eTGEN_FACE_N_COR_E = 1u,
+		eTGEN_FACE_N_COR_W = 1u << 1u,
+		eTGEN_FACE_E_COR_N = 1u << 2u,
+		eTGEN_FACE_E_COR_S = 1u << 3u,
+	};
+
+	void TerrainMesh::GenerateComplexEnv(
+		btui8(&hmap)[WORLD_SIZE][WORLD_SIZE],
+		btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE],
+		btui32* flags,
+		btui32 flag_block,
+		btui8(&hmap_ne)[WORLD_SIZE][WORLD_SIZE],
+		btui8(&hmap_nw)[WORLD_SIZE][WORLD_SIZE],
+		btui8(&hmap_se)[WORLD_SIZE][WORLD_SIZE],
+		btui8(&hmap_sw)[WORLD_SIZE][WORLD_SIZE])
+	{
+		glm::vec3 vector;
+		glm::mat4x4 matr;
+
+		int tile_radius = 128;
+
+		btui8 tgendata[128][128];
+		memset(tgendata, 0u, 128 * 128);
+
+		#define BVGET(x, y) (x & y)
+
+		bool b = BVGET(flags[0], flag_block);
+
+		int edge_VertexCount = 0;
+		int edge_IndexCount = 0;
+		{ // Scope
+			int datax = 0;
+			// Count edges that need tris
+			for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x, ++datax)
+			{
+				int datay = 0;
+				for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay)
+				{
+					// (Ramp ends only need 1 additional triangle, so each corner separation is counted separately)
+					//-------------------------------- North edge check
+					if (hmap_ne[x][y] != hmap_se[x][y + 1])
+						tgendata[datax][datay] |= eTGEN_FACE_N_COR_E;
+					if (hmap_nw[x][y] != hmap_sw[x][y + 1])
+						tgendata[datax][datay] |= eTGEN_FACE_N_COR_W;
+					// If both corners require new faces
+					if ((tgendata[datax][datay] & eTGEN_FACE_N_COR_E) != 0 && (tgendata[datax][datay] & eTGEN_FACE_N_COR_W) != 0) {
+						edge_IndexCount += 6;
+						edge_VertexCount += 4;
+					}
+					// If only one corner requires a face
+					else if ((tgendata[datax][datay] & eTGEN_FACE_N_COR_E) != 0 || (tgendata[datax][datay] & eTGEN_FACE_N_COR_W) != 0) {
+						edge_IndexCount += 3;
+						edge_VertexCount += 3;
+					}
+					//-------------------------------- East edge check
+					if (hmap_ne[x][y] != hmap_nw[x + 1][y])
+						tgendata[datax][datay] |= eTGEN_FACE_E_COR_N;
+					if (hmap_se[x][y] != hmap_sw[x + 1][y])
+						tgendata[datax][datay] |= eTGEN_FACE_E_COR_S;
+					// If both corners require new faces
+					if ((tgendata[datax][datay] & eTGEN_FACE_E_COR_N) != 0 && (tgendata[datax][datay] & eTGEN_FACE_E_COR_S) != 0) {
+						edge_IndexCount += 6;
+						edge_VertexCount += 4;
+					}
+					// If only one corner requires a face
+					else if ((tgendata[datax][datay] & eTGEN_FACE_E_COR_N) != 0 || (tgendata[datax][datay] & eTGEN_FACE_E_COR_S) != 0) {
+						edge_IndexCount += 3;
+						edge_VertexCount += 3;
+					}
+				}
+			}
+		}
+
+		// Assign memory to vertex and index counts
+		vces_size = 4u * (tile_radius * tile_radius) + edge_VertexCount;
+		ices_size = 6u * (tile_radius * tile_radius) + edge_IndexCount;
+
+		vces = (VertexTerrain*)malloc(sizeof(VertexTerrain) * vces_size);
+		ices = (btui32*)malloc(sizeof(btui32) * ices_size);
+
+		btf32 uvscale = 0.125f;
+		//btf32 uvscale = 0.25f;
+		int v = 0;
+		int i = 0;
+		int datax = 0;
+		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x, ++datax)
+		{
+			int datay = 0;
+			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay)
+			{
+				// Copy in the things from the new mesh
+				//ne
+				vces[v].pos.x = (btf32)x + 0.5f;
+				vces[v].pos.z = (btf32)y + 0.5f;
+				vces[v].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+				//nw
+				vces[v + 1u].pos.x = (btf32)x - 0.5f;
+				vces[v + 1u].pos.z = (btf32)y + 0.5f;
+				vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+				//se
+				vces[v + 2u].pos.x = (btf32)x + 0.5f;
+				vces[v + 2u].pos.z = (btf32)y - 0.5f;
+				vces[v + 2u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+				//sw
+				vces[v + 3u].pos.x = (btf32)x - 0.5f;
+				vces[v + 3u].pos.z = (btf32)y - 0.5f;
+				vces[v + 3u].pos.y = (btf32)hmap_sw[x][y] / TERRAIN_HEIGHT_DIVISION;
+
+				for (btui32 i = 0; i < 4; ++i)
+				{
+					vces[v + i].uvc.x = vces[v + i].pos.x * uvscale;
+					vces[v + i].uvc.y = vces[v + i].pos.z * uvscale;
+					vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+					//vces[v + i].nor.x += (btf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+					//vces[v + i].nor.x -= (btf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+					//vces[v + i].nor.z += (btf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+					//vces[v + i].nor.z -= (btf32)(hmap[x][y] - hmap[x][y - 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+				}
+
+				// normalize
+				btf32 nlen = sqrt(vces[v].nor.x * vces[v].nor.x + vces[v].nor.y * vces[v].nor.y + vces[v].nor.z * vces[v].nor.z);
+				if (nlen != 0) {
+					vces[v].nor.x = vces[v].nor.x / nlen;
+					vces[v].nor.y = vces[v].nor.y / nlen;
+					vces[v].nor.z = vces[v].nor.z / nlen;
+				}
+
+				for (int i = 0; i < 4; ++i)
+				{
+					vces[v+i].txtr[0] = 0.f; vces[v+i].txtr[1] = 0.f;
+					vces[v+i].txtr[2] = 0.f; vces[v+i].txtr[3] = 0.f;
+					vces[v+i].txtr[4] = 0.f; vces[v+i].txtr[5] = 0.f;
+					vces[v+i].txtr[6] = 0.f; vces[v+i].txtr[7] = 0.f;
+					vces[v+i].txtr[MATMAP[x][y]] = 1.f;
+				}
+
+				// 1--0
+				// | /|
+				// |/ |
+				// 3--2
+
+				// 1--0
+				// |\ |
+				// | \|
+				// 3--2
+
+				bool triangulate_alternate = false;
+
+				// Triangulate based on longest height difference
+				#ifdef DEF_TERRAIN_USE_EROSION_TRIANGULATION
+				//if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) < abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
+				if (abs((int)hmap_ne[x][y] - (int)hmap_sw[x][y]) < abs((int)hmap_nw[x][y] - (int)hmap_se[x][y]))
+					triangulate_alternate = true;
+				#else
+				if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) > abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
+					triangulate_alternate = true;
+				#endif
+
+				if (triangulate_alternate) {
+					ices[i + 0u] = v + 0u; ices[i + 1u] = v + 1u; ices[i + 2u] = v + 2u;
+					ices[i + 3u] = v + 1u; ices[i + 4u] = v + 3u; ices[i + 5u] = v + 2u;
+				}
+				else {
+					ices[i + 0u] = v + 0u; ices[i + 1u] = v + 1u; ices[i + 2u] = v + 3u;
+					ices[i + 3u] = v + 0u; ices[i + 4u] = v + 3u; ices[i + 5u] = v + 2u;
+				}
+
+				i += 6;
+				v += 4;
+
+				// Edge faces
+
+				//-------------------------------- Generate north face
+				// If both corners require new faces
+				if ((tgendata[datax][datay] & eTGEN_FACE_N_COR_E) != 0 && (tgendata[datax][datay] & eTGEN_FACE_N_COR_W) != 0) {
+					//ne
+					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
+					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//nw
+					vces[v + 1u].pos.x = (btf32)x - 0.5f; vces[v + 1u].pos.z = (btf32)y + 0.5f;
+					vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//ne
+					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
+					vces[v + 2u].pos.y = (btf32)hmap_se[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
+					//nw
+					vces[v + 3u].pos.x = (btf32)x - 0.5f; vces[v + 3u].pos.z = (btf32)y + 0.5f;
+					vces[v + 3u].pos.y = (btf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
+
+					for (int i = 0; i < 4; ++i)
+					{
+						vces[v + i].uvc.x = vces[v + i].pos.x * uvscale;
+						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
+						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+
+						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
+						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
+						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
+						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
+						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
+					}
+
+					ices[i + 0u] = v + 0u;
+					ices[i + 1u] = v + 2u;
+					ices[i + 2u] = v + 1u;
+					ices[i + 3u] = v + 1u;
+					ices[i + 4u] = v + 2u;
+					ices[i + 5u] = v + 3u;
+
+					i += 6;
+					v += 4;
+				}
+				// If only one corner requires a face
+				else if ((tgendata[datax][datay] & eTGEN_FACE_N_COR_E) != 0) {
+					//ne
+					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
+					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//nw
+					vces[v + 1u].pos.x = (btf32)x - 0.5f; vces[v + 1u].pos.z = (btf32)y + 0.5f;
+					vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//ne
+					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
+					vces[v + 2u].pos.y = (btf32)hmap_se[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
+					
+					for (int i = 0; i < 3; ++i)
+					{
+						vces[v + i].uvc.x = vces[v + i].pos.x * uvscale;
+						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
+						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+
+						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
+						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
+						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
+						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
+						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
+					}
+
+					ices[i + 0u] = v + 0u;
+					ices[i + 1u] = v + 2u;
+					ices[i + 2u] = v + 1u;
+
+					i += 3;
+					v += 3;
+				}
+				else if ((tgendata[datax][datay] & eTGEN_FACE_N_COR_W) != 0) {
+					//ne
+					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
+					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//nw
+					vces[v + 1u].pos.x = (btf32)x - 0.5f; vces[v + 1u].pos.z = (btf32)y + 0.5f;
+					vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//nw
+					vces[v + 2u].pos.x = (btf32)x - 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
+					vces[v + 2u].pos.y = (btf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
+					
+					for (int i = 0; i < 3; ++i)
+					{
+						vces[v + i].uvc.x = vces[v + i].pos.x * uvscale;
+						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
+						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+
+						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
+						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
+						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
+						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
+						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
+					}
+
+					ices[i + 0u] = v + 0u;
+					ices[i + 1u] = v + 2u;
+					ices[i + 2u] = v + 1u;
+
+					i += 3;
+					v += 3;
+				}
+				///*
+				//-------------------------------- Generate east face
+				// If both corners require new faces
+				if ((tgendata[datax][datay] & eTGEN_FACE_E_COR_N) != 0 && (tgendata[datax][datay] & eTGEN_FACE_E_COR_S) != 0) {
+					//ne
+					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
+					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//se
+					vces[v + 1u].pos.x = (btf32)x + 0.5f; vces[v + 1u].pos.z = (btf32)y - 0.5f;
+					vces[v + 1u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//ne
+					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
+					vces[v + 2u].pos.y = (btf32)hmap_nw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
+					//se
+					vces[v + 3u].pos.x = (btf32)x + 0.5f; vces[v + 3u].pos.z = (btf32)y - 0.5f;
+					vces[v + 3u].pos.y = (btf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
+
+					for (int i = 0; i < 4; ++i)
+					{
+						vces[v + i].uvc.x = vces[v + i].pos.z * uvscale;
+						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
+						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+
+						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
+						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
+						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
+						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
+						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
+					}
+
+					ices[i + 0u] = v + 2u;
+					ices[i + 1u] = v + 0u;
+					ices[i + 2u] = v + 3u;
+					ices[i + 3u] = v + 3u;
+					ices[i + 4u] = v + 0u;
+					ices[i + 5u] = v + 1u;
+
+					i += 6;
+					v += 4;
+				}
+				// If only one corner requires a face
+				else if ((tgendata[datax][datay] & eTGEN_FACE_E_COR_N) != 0) {
+					//ne
+					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
+					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//se
+					vces[v + 1u].pos.x = (btf32)x + 0.5f; vces[v + 1u].pos.z = (btf32)y - 0.5f;
+					vces[v + 1u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//ne
+					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
+					vces[v + 2u].pos.y = (btf32)hmap_nw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
+
+					for (int i = 0; i < 3; ++i)
+					{
+						vces[v + i].uvc.x = vces[v + i].pos.z * uvscale;
+						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
+						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+
+						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
+						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
+						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
+						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
+						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
+					}
+
+					ices[i + 0u] = v + 0u;
+					ices[i + 1u] = v + 1u;
+					ices[i + 2u] = v + 2u;
+
+					i += 3;
+					v += 3;
+				}
+				else if ((tgendata[datax][datay] & eTGEN_FACE_E_COR_S) != 0) {
+					//ne
+					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
+					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//se
+					vces[v + 1u].pos.x = (btf32)x + 0.5f; vces[v + 1u].pos.z = (btf32)y - 0.5f;
+					vces[v + 1u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//se
+					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y - 0.5f;
+					vces[v + 2u].pos.y = (btf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
+					
+					for (int i = 0; i < 3; ++i)
+					{
+						vces[v + i].uvc.x = vces[v + i].pos.z * uvscale;
+						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
+						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+
+						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
+						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
+						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
+						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
+						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
+					}
+
+					ices[i + 0u] = v + 0u;
+					ices[i + 1u] = v + 1u;
+					ices[i + 2u] = v + 2u;
+
+					i += 3;
+					v += 3;
+				}
+				//*/
+			}
+		}
+
+		//-------------------------------- INITIALIZE OPENGL BUFFER
+
+		// Initial check prevents regeneration memory leak
+		if (vao == UI32_NULL) glGenVertexArrays(1, &vao); // Create vertex buffer
+		if (vbo == UI32_NULL) glGenBuffers(1, &vbo); // Generate vertex buffer
+		if (ebo == UI32_NULL) glGenBuffers(1, &ebo); // Generate element buffer
+
+		ReBindGL();
+
+		// Free vertex and index buffers!
+		free((void*)vces);
+		free((void*)ices);
+	}
+
 	void TerrainMesh::ReBindGL()
 	{
 		//-------------------------------- UPDATE OPENGL BUFFER

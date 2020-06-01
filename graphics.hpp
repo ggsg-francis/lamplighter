@@ -532,6 +532,15 @@ namespace graphics
 	public:
 		void Draw();
 		void GenerateFromHMap(btui8(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE], btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]);
+		void GenerateComplexEnv(
+			btui8(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE],
+			btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE],
+			btui32* FLAGS,
+			btui32 FLAG_BLOCK,
+			btui8(&HEIGHTMAP_NE)[WORLD_SIZE][WORLD_SIZE],
+			btui8(&HEIGHTMAP_NW)[WORLD_SIZE][WORLD_SIZE],
+			btui8(&HEIGHTMAP_SE)[WORLD_SIZE][WORLD_SIZE],
+			btui8(&HEIGHTMAP_SW)[WORLD_SIZE][WORLD_SIZE]);
 	private:
 		void ReBindGL();
 		GLuint vao = UI32_NULL; // Vertex Array Object

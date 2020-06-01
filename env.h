@@ -50,21 +50,20 @@ namespace env
 		{
 			eNULL = 0x0u,
 			// Base collision
-			eIMPASSABLE = (0x1u << 0x0u),
+			eIMPASSABLE = (0x1u),
 			EF_BASE_1 = (0x1u << 0x1u),
-			NODE_FLAG_BASE_2 = (0x1u << 0x2u),
+			EF_NODE_FLAG_BASE_2 = (0x1u << 0x2u),
 			EF_CYLINDRIC = (0x1u << 0x3u), // If the tile is to be treated as a round object like a tree
-			// Edge collision
-			eSurfN = (0x1u << 0x4u),
-			eSurfS = (0x1u << 0x5u),
-			eSurfE = (0x1u << 0x6u),
-			eSurfW = (0x1u << 0x7u),
-			// Convex corner collision
-			eCorOutNE = (0x1u << 0x8u),
-			eCorOutNW = (0x1u << 0x9u),
-			eCorOutSE = (0x1u << 0xau),
-			eCorOutSW = (0x1u << 0xbu),
-			// Unused flag spaces (reserved for special collision, such as diagonal edges?)
+			// Shape information
+			EF_BLOCK_SHAPE = (0x1u << 0x4u),
+			EF_TEMP_2 = (0x1u << 0x5u),
+			EF_TEMP_3 = (0x1u << 0x6u),
+			EF_TEMP_4 = (0x1u << 0x7u),
+			EF_TEMP_5 = (0x1u << 0x8u),
+			EF_TEMP_6 = (0x1u << 0x9u),
+			EF_TEMP_7 = (0x1u << 0xau),
+			EF_TEMP_8 = (0x1u << 0xbu),
+			// Misc.
 			eBLOCK_LIGHT_SKY = (0x1u << 0xcu),
 			EF_LIGHTSRC = (0x1u << 0xdu),
 			EF_SPAWN_TEST = (0x1u << 0xeu),
@@ -88,7 +87,6 @@ namespace env
 			EF_CONTAINS_MEAT = (0x1u << 0x1du),
 			EF_30 = (0x1u << 0x1eu),
 			EF_PROPAGATES_MEAT = (0x1u << 0x1fu),
-			// 32 bits (4 bytes)
 		};
 	}
 
@@ -119,6 +117,10 @@ namespace env
 		btui8 terrain_height[WORLD_SIZE][WORLD_SIZE];
 		btui8 terrain_material[WORLD_SIZE][WORLD_SIZE];
 		btui8 water_height[WORLD_SIZE][WORLD_SIZE];
+		btui8 terrain_height_ne[WORLD_SIZE][WORLD_SIZE];
+		btui8 terrain_height_nw[WORLD_SIZE][WORLD_SIZE];
+		btui8 terrain_height_se[WORLD_SIZE][WORLD_SIZE];
+		btui8 terrain_height_sw[WORLD_SIZE][WORLD_SIZE];
 	};
 
 	extern EnvNode eCells;
