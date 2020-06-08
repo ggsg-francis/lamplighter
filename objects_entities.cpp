@@ -15,13 +15,14 @@
 
 #include "collision.h"
 
+#include "nonpc.h"
 
 graphics::GUIText text_inventory_temp;
 graphics::GUIBox guibox_selection;
 
 void Inventory::AddNew(btID item_template)
 {
-	btID id = index::SpawnItem(item_template);
+	btID id = core::SpawnItem(item_template);
 	if (id != BUF_NULL)
 	{
 		items.Add(id);
@@ -30,11 +31,11 @@ void Inventory::AddNew(btID item_template)
 void Inventory::DestroyIndex(btui32 index)
 {
 	items.Remove(index);
-	index::DestroyItem(items[index]);
+	core::DestroyItem(items[index]);
 }
 void Inventory::DestroyID(btID id)
 {
-	for (int i = 0; i < items.Size(); ++i)
+	for (btui32 i = 0; i < items.Size(); ++i)
 	{
 		if (items[i] == id) // if we already have a stack of this item
 		{
@@ -45,9 +46,9 @@ void Inventory::DestroyID(btID id)
 }
 void Inventory::Destroy(btID item_template)
 {
-	for (int i = 0; i < items.Size(); ++i)
+	for (btui32 i = 0; i < items.Size(); ++i)
 	{
-		if (GETITEM_MISC(items[i])->id_item_template == item_template) // if we already have a stack of this item
+		if (GETITEMINST(items[i])->id_item_template == item_template) // if we already have a stack of this item
 		{
 			DestroyIndex(i);
 			return;
@@ -64,7 +65,7 @@ void Inventory::TransferItemSendIndex(btui32 index)
 }
 void Inventory::TransferItemSend(btID item_ID)
 {
-	for (int i = 0; i < items.Size(); ++i)
+	for (btui32 i = 0; i < items.Size(); ++i)
 	{
 		if (items.Used(i))
 		{
@@ -78,7 +79,7 @@ void Inventory::TransferItemSend(btID item_ID)
 }
 btID Inventory::GetItemOfTemplate(btID item_template)
 {
-	for (int i = 0; i < items.Size(); ++i)
+	for (btui32 i = 0; i < items.Size(); ++i)
 	{
 		if (items.Used(i))
 		{
@@ -92,7 +93,7 @@ btID Inventory::GetItemOfTemplate(btID item_template)
 }
 btID Inventory::GetItemOfAmmunitionType(btui8 ammo_type)
 {
-	for (int i = 0; i < items.Size(); ++i)
+	for (btui32 i = 0; i < items.Size(); ++i)
 	{
 		if (items.Used(i))
 		{
@@ -101,7 +102,6 @@ btID Inventory::GetItemOfAmmunitionType(btui8 ammo_type)
 				#define i2 ((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemPtr(items[i]))->id_item_template])->id_projectile
 				if (i2 != ID_NULL)
 				{
-					//btui8 c = acv::projectiles[((acv::BaseItemCon*)acv::items[((HeldItem*)index::GetItemPtr(items[i]))->id_item_template])->id_projectile].ammunition_type;
 					// TODO: again, this is the fucking worst, i mean jus look at it...
 					if (ammo_type == acv::projectiles[((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemPtr(items[i]))->id_item_template])->id_projectile].ammunition_type)
 					{
@@ -129,9 +129,9 @@ void Inventory::Draw(btui16 active_slot)
 		if (items.Used(i))
 		{
 			if (i == active_slot)
-				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->id_item_template]->id_icon), offset + i * invspace, p1_y_start + 30, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEMINST(items[i])->id_item_template]->id_icon), offset + i * invspace, p1_y_start + 30, 64, 64);
 			else
-				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEM_MISC(items[i])->id_item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
+				graphics::DrawGUITexture(&res::GetT(acv::items[GETITEMINST(items[i])->id_item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
 		}
 	}
 	// Draw Count GUI on top
@@ -143,7 +143,7 @@ void Inventory::Draw(btui16 active_slot)
 			if (GetItemType(items[i]) == ITEM_TYPE_CONS)
 			{
 				char textbuffer[8];
-				_itoa(GETITEM_CONS(items[i])->uses, textbuffer, 10);
+				_itoa(GETITEMINST(items[i])->uses, textbuffer, 10);
 				text.ReGen(textbuffer, offset + i * invspace - 16, offset + i * invspace + 32, p1_y_start + 20);
 				text.Draw(&res::GetT(res::t_gui_font));
 			}
@@ -157,11 +157,23 @@ void Inventory::Draw(btui16 active_slot)
 void EntityCheckGrounded(Entity* ent)
 {
 	// check if we're on the ground
-	if (ent->t.height_velocity > 0.f)
+	///*
+	//*
+	btf32 th;
+	env::GetHeight(th, ent->t.csi);
+	
+	if (ent->t.height + ent->t.height_velocity >= th + 1.f)
 	{
 		ent->grounded = false;
 		ent->slideVelocity *= 0.f;
+		if (ent->type == ENTITY_TYPE_CHARA)
+			((Actor*)ent)->jump_state = Actor::eJUMP_JUMP;
 	}
+	else if (ent->t.height_velocity > 0.f)
+	{
+		ent->grounded = false;
+		ent->slideVelocity *= 0.f;
+	}//*///
 	else if (!ent->grounded)
 	{
 		if (ent->type == ENTITY_TYPE_CHARA)
@@ -172,19 +184,52 @@ void EntityCheckGrounded(Entity* ent)
 		{
 			ent->slideVelocity = ent->t.velocity;
 		}
-	}
+	}//*/
+	
+
+	//if (ent->type == ENTITY_TYPE_CHARA)
+	//{
+	//	if (((Actor*)ent)->jump_state == Actor::JumpState::eJUMP_NEITHER)
+	//	{
+	//		ent->grounded = RayEntity(ent->id, ((Actor*)ent)->aniStandHeight);
+	//		if (ent->grounded) // if we did hit the ground
+	//		{
+	//			ent->slideVelocity = ent->t.velocity;
+	//			if (ent->type == ENTITY_TYPE_CHARA)
+	//				((Actor*)ent)->jump_state = Actor::JumpState::eJUMP_NEITHER;
+	//		}
+	//		else // if we're not touching the ground
+	//		{
+	//			ent->slideVelocity *= 0.f;
+	//		}
+	//	}
+	//}
+	//else
+	//{
+	//	ent->grounded = RayEntity(ent->id, 0.f);
+	//	if (ent->grounded) // if we did hit the ground
+	//	{
+	//		ent->slideVelocity = ent->t.velocity;
+	//		if (ent->type == ENTITY_TYPE_CHARA)
+	//			((Actor*)ent)->jump_state = Actor::JumpState::eJUMP_NEITHER;
+	//	}
+	//	else // if we're not touching the ground
+	//	{
+	//		ent->slideVelocity *= 0.f;
+	//	}
+	//}
 }
 void EntityTransformTick(Entity* ent, btID id, btf32 dt)
 {
 	// Regenerate csi
 
 	CellSpace cs_last = ent->t.csi;
-	index::GetCellSpaceInfo(ent->t.position, ent->t.csi);
+	core::GetCellSpaceInfo(ent->t.position, ent->t.csi);
 	// If the new CS is different, remove us from the last cell and add us to the new one
 	if (cs_last.c[eCELL_I].x != ent->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != ent->t.csi.c[eCELL_I].y)
 	{
-		index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
-		index::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
+		core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
+		core::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
 	}
 
 	EntityCheckGrounded(ent);
@@ -229,65 +274,36 @@ void EntityTransformTick(Entity* ent, btID id, btf32 dt)
 	default:
 		if (ent->grounded)
 		{
-			ent->t.height_velocity = 0.f;
 			env::GetHeight(ground_height, ent->t.csi);
-			if (ent->type == ENTITY_TYPE_CHARA)
-				ent->t.height = ground_height + ((Actor*)ent)->aniStandHeight;
+			if (ent->type == ENTITY_TYPE_CHARA) {
+				ent->t.height = m::Lerp(ent->t.height, ground_height + ((Actor*)ent)->aniStandHeight, 6.f * dt);
+			}
 			else {
 				ent->t.height = ground_height;
 				ent->t.velocity *= 0.f; // Remove slide on non actors
 			}
 
 			m::Vector2 slope;
-			slope.x = env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]
-				- env::eCells.terrain_height[ent->t.csi.c[eCELL_X].x][ent->t.csi.c[eCELL_X].y];
-			slope.y = env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]
-				- env::eCells.terrain_height[ent->t.csi.c[eCELL_Y].x][ent->t.csi.c[eCELL_Y].y];
+			env::GetSlope(slope.x, slope.y, ent->t.csi);
 
 			m::Vector2 surfMod(1.f, 1.f);
 
-			// TODO this part is way too long and im sure it can be cut down
-			if (ent->t.csi.c[eCELL_I].x < ent->t.csi.c[eCELL_X].x) {
-				if (ent->slideVelocity.x > 0.f && slope.x < 0.f) {
-					surfMod.x = 0.5f;
-					slope.x = 0.f;
-				}
-				else if (ent->slideVelocity.x < 0.f && slope.x > 0.f) {
-					surfMod.x = 0.5f;
-					slope.x = 0.f;
-				}
+			// Don't slide uphill
+			if (ent->slideVelocity.x > 0.f && slope.x > 0.f) {
+				surfMod.x = 0.5f;
+				slope.x = 0.f;
 			}
-			else
-			{
-				if (ent->slideVelocity.x > 0.f && slope.x > 0.f) {
-					surfMod.x = 0.5f;
-					slope.x = 0.f;
-				}
-				else if (ent->slideVelocity.x < 0.f && slope.x < 0.f) {
-					surfMod.x = 0.5f;
-					slope.x = 0.f;
-				}
+			else if (ent->slideVelocity.x < 0.f && slope.x < 0.f) {
+				surfMod.x = 0.5f;
+				slope.x = 0.f;
 			}
-			if (ent->t.csi.c[eCELL_I].y < ent->t.csi.c[eCELL_Y].y) {
-				if (ent->slideVelocity.y > 0.f && slope.y < 0.f) {
-					surfMod.y = 0.5f;
-					slope.y = 0.f;
-				}
-				else if (ent->slideVelocity.y < 0.f && slope.y > 0.f) {
-					surfMod.y = 0.5f;
-					slope.y = 0.f;
-				}
+			if (ent->slideVelocity.y > 0.f && slope.y > 0.f) {
+				surfMod.y = 0.5f;
+				slope.y = 0.f;
 			}
-			else
-			{
-				if (ent->slideVelocity.y > 0.f && slope.y > 0.f) {
-					surfMod.y = 0.5f;
-					slope.y = 0.f;
-				}
-				else if (ent->slideVelocity.y < 0.f && slope.y < 0.f) {
-					surfMod.y = 0.5f;
-					slope.y = 0.f;
-				}
+			else if (ent->slideVelocity.y < 0.f && slope.y < 0.f) {
+				surfMod.y = 0.5f;
+				slope.y = 0.f;
 			}
 
 			btf32 slide_reduce = 0.18f * dt; // Slide reduction per second multiplied by frame length
@@ -304,23 +320,13 @@ void EntityTransformTick(Entity* ent, btID id, btf32 dt)
 			else slideMag.y = 0.f;
 			ent->slideVelocity = m::Normalize(ent->slideVelocity) * slideMag;
 
-			// Linear slide reduction
-			/*
-			btf32 slideMag = m::Length(ent->slideVelocity);
-			if (slideMag > 0.005f) {
-				slideMag -= 0.005f;
-				ent->slideVelocity = m::Normalize(ent->slideVelocity) * slideMag;
-			}
-			else ent->slideVelocity *= 0.f;
-			*/
-
 			// No height velocity when on the ground!
 			ent->t.height_velocity = 0.f;
 		}
 		else
 		{
 			// Add gravity
-			ent->t.height_velocity -= 0.18f * dt;
+			ent->t.height_velocity -= 0.20f * dt;
 			// Velocity reduction (Air drag)
 			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
 		}
@@ -330,9 +336,7 @@ void EntityTransformTick(Entity* ent, btID id, btf32 dt)
 		break;
 	}
 
-	index::EntDeintersect(ent, ent->t.csi);
-
-	//EntityCheckGrounded(ent);
+	core::EntDeintersect(ent, ent->t.csi);
 }
 
 char* DisplayNameActor(void* ent)
@@ -343,29 +347,29 @@ char* DisplayNameActor(void* ent)
 char* DisplayNameRestingItem(void* ent)
 {
 	//return (char*)acv::items[GETITEM_MISC(((RestingItem*)index::GetEntityPtr(ent))->item_instance)->item_template]->name;
-	return (char*)acv::items[GETITEM_MISC(((RestingItem*)ent)->item_instance)->id_item_template]->name;
+	return (char*)acv::items[GETITEMINST(((RestingItem*)ent)->item_instance)->id_item_template]->name;
 };
 void DrawRestingItem(void* ent)
 {
 	RestingItem* item = (RestingItem*)ent;
 	// Draw the mesh of our item id
 	//DrawMesh(ent, res::GetM(acv::items[index::GetItem(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[index::GetItem(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->t_item.getMatrix());
-	if (item->id == index::viewtarget[index::activePlayer])
+	if (item->id == core::viewtarget[core::activePlayer])
 	{
 		graphics::GetShader(graphics::S_SOLID).Use();
 		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, false);
-		DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+		DrawMesh(item->id, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, true);
 	}
 	else
 	{
-		DrawMesh(item->id, res::GetM(acv::items[GETITEM_MISC(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEM_MISC(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+		DrawMesh(item->id, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 	}
 }
 m::Vector3 SetFootPos(m::Vector2 position)
 {
 	CellSpace cs;
-	index::GetCellSpaceInfo(position, cs);
+	core::GetCellSpaceInfo(position, cs);
 	btf32 height;
 	env::GetHeight(height, cs);
 	return m::Vector3(position.x, height + 0.075f, position.y);
@@ -410,20 +414,6 @@ void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, 
 	effects.Add(effect);
 
 	// TODO: include AI 'notify attack' function call here
-
-	/*char string[64] = "Received ";
-
-	switch (effect.effect_type)
-	{
-	case EFFECT_DAMAGE_HP:
-		strcat_s(string, "Damage HP");
-		break;
-	case EFFECT_RESTORE_HP:
-		strcat(string, "Restore HP");
-		break;
-	}
-
-	index::GUISetMessag(0, string);*/
 }
 void ActiveState::AddSpell(btID caster, btID spell)
 {
@@ -431,17 +421,17 @@ void ActiveState::AddSpell(btID caster, btID spell)
 		acv::spells[spell].target_effect_duration,
 		acv::spells[spell].target_effect_magnitude);
 	// TODO: this only works in the case of cast on self, should deal with this properly but dont know how best to yet
-	if (index::players[0] == caster)
+	if (core::players[0] == caster)
 	{
 		char string[64] = "Got ";
 		strcat(string, (char*)acv::spells[spell].name);
-		index::GUISetMessag(0, string);
+		core::GUISetMessag(0, string);
 	}
-	else if (index::players[1] == caster)
+	else if (core::players[1] == caster)
 	{
 		char string[64] = "Got ";
 		strcat(string, (char*)acv::spells[spell].name);
-		index::GUISetMessag(1, string);
+		core::GUISetMessag(1, string);
 	}
 }
 void ActiveState::TickEffects(btf32 dt)
@@ -458,7 +448,7 @@ void ActiveState::TickEffects(btf32 dt)
 				Damage(effects[i].effect_magnitude, 0.f);
 				break;
 			case EFFECT_RESTORE_HP:
-				damagestate += (btf32)effects[i].effect_magnitude;
+				damagestate += (btui16)effects[i].effect_magnitude;
 				if (damagestate >= STATE_DAMAGE_MAX) damagestate = STATE_DAMAGE_MAX;
 				break;
 			}
@@ -479,7 +469,7 @@ void TickRestingItem(void* ent, btf32 dt)
 	if (chr->state.stateFlags.get(ActiveState::eDIED_REPORT))
 	{
 		//chr->state.stateFlags.unset(ActiveState::eDIED_REPORT);
-		index::DestroyEntity(chr->id);
+		core::DestroyEntity(chr->id);
 	}
 
 	chr->matrix = graphics::Matrix4x4();
@@ -491,20 +481,20 @@ void TickRestingItem(void* ent, btf32 dt)
 void Actor::TakeItem(btID id)
 {
 	RestingItem* item = (RestingItem*)GetEntityPtr(id);
-	HeldItem* item_held = GETITEM_MISC(item->item_instance);
+	HeldItem* item_held = GETITEMINST(item->item_instance);
 	inventory.TransferItemRecv(item->item_instance);
-	index::DestroyEntity(id);
-	if (index::players[0] == this->id)
+	core::DestroyEntity(id);
+	if (core::players[0] == this->id)
 	{
 		char string[64] = "Picked up ";
 		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->id_item_template]->name);
-		index::GUISetMessag(0, string);
+		core::GUISetMessag(0, string);
 	}
-	else if (index::players[1] == this->id)
+	else if (core::players[1] == this->id)
 	{
 		char string[64] = "Picked up ";
 		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->id_item_template]->name);
-		index::GUISetMessag(1, string);
+		core::GUISetMessag(1, string);
 	}
 }
 
@@ -513,7 +503,7 @@ void Actor::DropItem(btID slot)
 	if (slot < inventory.items.Size() && inventory.items.Used(slot))
 	{
 		m::Vector2 throwDir = m::AngToVec2(t.yaw.Rad());
-		btID item_entity = index::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * radius), t.yaw.Deg());
+		btID item_entity = core::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * radius), t.yaw.Deg());
 		//btID item_entity = index::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * (radius + 0.5f)), t.yaw.Deg());
 		ENTITY(item_entity)->t.velocity = throwDir * 0.05f;
 		inventory.TransferItemSendIndex(slot);
@@ -527,7 +517,7 @@ void Actor::DropAllItems()
 	{
 		if (slot < inventory.items.Size() && inventory.items.Used(slot))
 		{
-			index::SpawnEntityItem(inventory.items[slot], m::Vector2(
+			core::SpawnEntityItem(inventory.items[slot], m::Vector2(
 				m::Random(t.position.x - 0.5f, t.position.x + 0.5f),
 				m::Random(t.position.y - 0.5f, t.position.y + 0.5f)),
 				m::Random(0.f, 360.f));
@@ -543,7 +533,7 @@ void Actor::SetEquipSlot(btui32 index)
 	{
 		inv_active_slot = index;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
+			GETITEMINST(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 
@@ -553,7 +543,7 @@ void Actor::IncrEquipSlot()
 	{
 		++inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
+			GETITEMINST(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 
@@ -563,7 +553,7 @@ void Actor::DecrEquipSlot()
 	{
 		--inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEM_MISC(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
+			GETITEMINST(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 
@@ -582,12 +572,21 @@ void Actor::DecrEquipSlot()
 
 #define velocityStepMult (8.f * LEGLEN(chr->actorBase,0)) // How far to place our foot ahead when walking
 
+void CharaAni_ClampLegs(Actor* chr)
+{
+	// duplicate
+	m::Vector3 newpos = chr->t_body.GetPosition();
+	m::Vector3 jointPosR = newpos + chr->t_body.GetRight() * hip_width;
+	m::Vector3 jointPosL = newpos + chr->t_body.GetRight() * -hip_width;
+	// Foot position distance check
+	if (m::Length(chr->fpCurrentL - jointPosL) > LEGLEN(chr->actorBase, 0))
+		chr->fpCurrentL = jointPosL + m::Normalize(chr->fpCurrentL - jointPosL) * LEGLEN(chr->actorBase, 0);
+	if (m::Length(chr->fpCurrentR - jointPosR) > LEGLEN(chr->actorBase, 0))
+		chr->fpCurrentR = jointPosR + m::Normalize(chr->fpCurrentR - jointPosR) * LEGLEN(chr->actorBase, 0);
+}
 void Chara_AnimateLegs(Actor* chr)
 {
-	//btf32 f = acv::actor_templates[chr->actorBase].leng_arm[0];
-
 	bool isInputting = m::Length(chr->input) >= 0.01f;
-
 
 	m::Vector3 newpos = chr->t_body.GetPosition();
 
@@ -600,21 +599,17 @@ void Chara_AnimateLegs(Actor* chr)
 	btf32 velocityAmt = m::Length(chr->t.velocity - chr->slideVelocity);
 	btf32 myspeed = m::Length(chr->t.velocity);
 
-	// !! DUPLICATE
 	btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 6.f, chr->aniStepAmountL * 2.f - 1.f);
 	btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 6.f, chr->aniStepAmountR * 2.f - 1.f);
 
 	chr->fpCurrentL = m::Lerp(chr->footPosL, chr->footPosTargL, chr->aniStepAmountL) + m::Vector3(0.f, fpHeightL, 0.f);
 	chr->fpCurrentR = m::Lerp(chr->footPosR, chr->footPosTargR, chr->aniStepAmountR) + m::Vector3(0.f, fpHeightR, 0.f);
-	// Foot position distance check
-	if (m::Length(chr->fpCurrentL - jointPosL) > LEGLEN(chr->actorBase, 0))
-		chr->fpCurrentL = jointPosL + m::Normalize(chr->fpCurrentL - jointPosL) * LEGLEN(chr->actorBase, 0);
-	if (m::Length(chr->fpCurrentR - jointPosR) > LEGLEN(chr->actorBase, 0))
-		chr->fpCurrentR = jointPosR + m::Normalize(chr->fpCurrentR - jointPosR) * LEGLEN(chr->actorBase, 0);
+	
+	CharaAni_ClampLegs(chr);
 
 	if (chr->grounded)
 	{
-		if (chr->foot_state == eL_DOWN)
+		if (chr->foot_state == Actor::eL_DOWN)
 		{
 			// Step taking
 			if (isInputting)
@@ -624,7 +619,7 @@ void Chara_AnimateLegs(Actor* chr)
 					chr->footPosL = chr->footPosTargL;
 					chr->aniStepAmountL = 0.f;
 					chr->footPosTargL = SetFootPos(chr->t.position + right * -hip_width + chr->t.velocity * velocityStepMult);
-					chr->foot_state = eR_DOWN;
+					chr->foot_state = Actor::eR_DOWN;
 				}
 				else
 				{
@@ -652,7 +647,7 @@ void Chara_AnimateLegs(Actor* chr)
 				}
 			}
 		}
-		else if (chr->foot_state == eR_DOWN)
+		else if (chr->foot_state == Actor::eR_DOWN)
 		{
 			// Step taking
 			if (isInputting)
@@ -662,7 +657,7 @@ void Chara_AnimateLegs(Actor* chr)
 					chr->footPosR = chr->footPosTargR;
 					chr->aniStepAmountR = 0.f;
 					chr->footPosTargR = SetFootPos(chr->t.position + right * hip_width + chr->t.velocity * velocityStepMult);
-					chr->foot_state = eL_DOWN;
+					chr->foot_state = Actor::eL_DOWN;
 				}
 				else
 				{
@@ -691,17 +686,166 @@ void Chara_AnimateLegs(Actor* chr)
 			}
 		}
 
-		// balance keeping
+		// set step positions
 
-		/*
-		m::Vector2 fpoffs1 = t.position - m::Vector2(footPosTargL.x, footPosTargL.z);
-		m::Vector2 fpoffs2 = t.position - m::Vector2(footPosTargR.x, footPosTargR.z);
+		//btf32 anispeed = 0.5f * myspeed;
+		btf32 anispeed = 1.f * myspeed;
+		if (anispeed < 0.086f) anispeed = 0.086f;
 
-		if (m::Length(fpoffs1 + fpoffs2) < 2.f && !isInputting)
+		chr->aniStepAmountL += anispeed;
+		if (chr->aniStepAmountL > 1.f)
+			chr->aniStepAmountL = 1.f;
+		chr->aniStepAmountR += anispeed;
+		if (chr->aniStepAmountR > 1.f)
+			chr->aniStepAmountR = 1.f;
+	}
+	else // If not on the ground
+	{
+		chr->fpCurrentL = jointPosL + m::Vector3(0.f, LEGLEN(chr->actorBase, 0) * -0.5f, 0.f);
+		chr->fpCurrentR = jointPosR + m::Vector3(0.f, LEGLEN(chr->actorBase, 0) * -0.5f, 0.f);
+
+		// Set left foot
+		if (chr->foot_state == Actor::eL_DOWN)
 		{
-		t.velocity -= ((fpoffs1 + fpoffs2) * 0.005f);
+			chr->fpCurrentL = jointPosL + m::Vector3(
+				chr->t.velocity.x * -velocityStepMult * 0.5f,
+				LEGLEN(chr->actorBase, 0) * -0.5f,
+				chr->t.velocity.y * -velocityStepMult * 0.5f);
 		}
-		//*/
+		// Set right foot
+		if (chr->foot_state == Actor::eR_DOWN)
+		{
+			chr->fpCurrentR = jointPosR + m::Vector3(
+				chr->t.velocity.x * -velocityStepMult * 0.5f,
+				LEGLEN(chr->actorBase, 0) * -0.5f,
+				chr->t.velocity.y * -velocityStepMult * 0.5f);
+		}
+
+		chr->footPosL = chr->fpCurrentL;
+		chr->footPosTargL = chr->fpCurrentL;
+		chr->footPosR = chr->fpCurrentR;
+		chr->footPosTargR = chr->fpCurrentR;
+		chr->aniStepAmountL = 0.f;
+		chr->aniStepAmountR = 0.f;
+	}
+
+	chr->footPosL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+	chr->footPosR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+	chr->footPosTargL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+	chr->footPosTargR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+
+	m::Vector2 fpl(chr->fpCurrentL.x, chr->fpCurrentL.z);
+	m::Vector2 fpr(chr->fpCurrentR.x, chr->fpCurrentR.z);
+
+	if (m::Length(chr->input) < 0.001f && chr->grounded)
+	{
+		if (chr->aniStepAmountL == 1.f)
+			chr->fpCurrentL = SetFootPos(fpl);
+		if (chr->aniStepAmountR == 1.f)
+			chr->fpCurrentR = SetFootPos(fpr);
+	}
+}
+void Chara_AnimateLegs2(Actor* chr)
+{
+	bool isInputting = m::Length(chr->input) >= 0.01f;
+
+	m::Vector3 newpos = chr->t_body.GetPosition();
+
+	m::Vector3 jointPosR = newpos + chr->t_body.GetRight() * hip_width;
+	m::Vector3 jointPosL = newpos + chr->t_body.GetRight() * -hip_width;
+
+	m::Vector2 right = m::Vector2(chr->t_body.GetRight().x, chr->t_body.GetRight().z);
+
+	// i'm not sure if these are actually supposed to be different
+	btf32 velocityAmt = m::Length(chr->t.velocity - chr->slideVelocity);
+	btf32 myspeed = m::Length(chr->t.velocity);
+
+	btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 6.f, chr->aniStepAmountL * 2.f - 1.f);
+	btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 6.f, chr->aniStepAmountR * 2.f - 1.f);
+
+	chr->fpCurrentL = m::Lerp(chr->footPosL, chr->footPosTargL, chr->aniStepAmountL) + m::Vector3(0.f, fpHeightL, 0.f);
+	chr->fpCurrentR = m::Lerp(chr->footPosR, chr->footPosTargR, chr->aniStepAmountR) + m::Vector3(0.f, fpHeightR, 0.f);
+
+	CharaAni_ClampLegs(chr);
+
+	if (chr->grounded)
+	{
+		if (chr->foot_state == Actor::eL_DOWN)
+		{
+			// Step taking
+			if (isInputting)
+			{
+				if (m::Length(jointPosL - chr->footPosTargL) > legDClen && chr->aniStepAmountL == 1.f && chr->aniStepAmountR == 1.f)
+				{
+					chr->footPosL = chr->footPosTargL;
+					chr->aniStepAmountL = 0.f;
+					chr->footPosTargL = SetFootPos(chr->t.position + right * -hip_width + chr->t.velocity * velocityStepMult);
+					chr->foot_state = Actor::eR_DOWN;
+				}
+				else
+				{
+					chr->footPosTargR = SetFootPos(chr->t.position + right * hip_width + chr->t.velocity * velocityStepMult);
+				}
+			}
+			// Balance keeping (TODO: add behaviour to prevent standing cross-legged)
+			else
+			{
+				m::Vector2 fpoffs1 = chr->t.position - m::Vector2(chr->footPosTargL.x, chr->footPosTargL.z);
+				m::Vector2 fpoffs2 = chr->t.position - m::Vector2(chr->footPosTargR.x, chr->footPosTargR.z);
+				if (m::Length(fpoffs1 + fpoffs2) > 0.13f)
+				{
+					chr->footPosL = chr->fpCurrentL; // set = foot pos current
+					chr->aniStepAmountL = 0.f;
+					chr->footPosTargL = SetFootPos(chr->t.position + fpoffs2 * 0.5f);
+				}
+				// WIP
+				else if (m::Length(jointPosL - chr->fpCurrentL) > legDClen && chr->aniStepAmountL == 1.f)
+				{
+					chr->footPosL = chr->fpCurrentL;
+					chr->aniStepAmountL = 0.f;
+					chr->footPosTargL = SetFootPos(chr->t.position + right * -hip_width);
+					//chr->foot_state = eR_DOWN;
+				}
+			}
+		}
+		else if (chr->foot_state == Actor::eR_DOWN)
+		{
+			// Step taking
+			if (isInputting)
+			{
+				if (m::Length(jointPosR - chr->footPosTargR) > legDClen && chr->aniStepAmountR == 1.f && chr->aniStepAmountL == 1.f)
+				{
+					chr->footPosR = chr->footPosTargR;
+					chr->aniStepAmountR = 0.f;
+					chr->footPosTargR = SetFootPos(chr->t.position + right * hip_width + chr->t.velocity * velocityStepMult);
+					chr->foot_state = Actor::eL_DOWN;
+				}
+				else
+				{
+					chr->footPosTargL = SetFootPos(chr->t.position + right * -hip_width + chr->t.velocity * velocityStepMult);
+				}
+			}
+			// Balance keeping (TODO: add behaviour to prevent standing cross-legged)
+			else
+			{
+				m::Vector2 fpoffs1 = chr->t.position - m::Vector2(chr->footPosTargL.x, chr->footPosTargL.z);
+				m::Vector2 fpoffs2 = chr->t.position - m::Vector2(chr->footPosTargR.x, chr->footPosTargR.z);
+				if (m::Length(fpoffs1 + fpoffs2) > 0.13f)
+				{
+					chr->footPosR = chr->fpCurrentR; // set = foot pos current
+					chr->aniStepAmountR = 0.f;
+					chr->footPosTargR = SetFootPos(chr->t.position + fpoffs1 * 0.5f);
+				}
+				// WIP
+				else if (m::Length(jointPosR - chr->fpCurrentR) > legDClen && chr->aniStepAmountR == 1.f)
+				{
+					chr->footPosR = chr->fpCurrentR;
+					chr->aniStepAmountR = 0.f;
+					chr->footPosTargR = SetFootPos(chr->t.position + right * hip_width);
+					//chr->foot_state = eL_DOWN;
+				}
+			}
+		}
 
 		// set step positions
 
@@ -716,31 +860,57 @@ void Chara_AnimateLegs(Actor* chr)
 		if (chr->aniStepAmountR > 1.f)
 			chr->aniStepAmountR = 1.f;
 	}
-	else
+	else // If not on the ground
 	{
 		chr->fpCurrentL = jointPosL + m::Vector3(0.f, LEGLEN(chr->actorBase, 0) * -0.5f, 0.f);
 		chr->fpCurrentR = jointPosR + m::Vector3(0.f, LEGLEN(chr->actorBase, 0) * -0.5f, 0.f);
-		if (chr->foot_state == eR_DOWN)
+
+		// Set left foot
+		if (chr->foot_state == Actor::eL_DOWN)
 		{
 			chr->fpCurrentL = jointPosL + m::Vector3(
-				chr->t.velocity.x * velocityStepMult,
+				chr->t.velocity.x * -velocityStepMult * 0.5f,
 				LEGLEN(chr->actorBase, 0) * -0.5f,
-				chr->t.velocity.y * velocityStepMult);
+				chr->t.velocity.y * -velocityStepMult * 0.5f);
 		}
-		if (chr->foot_state == eL_DOWN)
+		// Set right foot
+		if (chr->foot_state == Actor::eR_DOWN)
 		{
 			chr->fpCurrentR = jointPosR + m::Vector3(
-				chr->t.velocity.x * velocityStepMult,
+				chr->t.velocity.x * -velocityStepMult * 0.5f,
 				LEGLEN(chr->actorBase, 0) * -0.5f,
-				chr->t.velocity.y * velocityStepMult);
+				chr->t.velocity.y * -velocityStepMult * 0.5f);
 		}
+
+		chr->footPosL = chr->fpCurrentL;
+		chr->footPosTargL = chr->fpCurrentL;
+		chr->footPosR = chr->fpCurrentR;
+		chr->footPosTargR = chr->fpCurrentR;
+		chr->aniStepAmountL = 0.f;
+		chr->aniStepAmountR = 0.f;
+	}
+
+	chr->footPosL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+	chr->footPosR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+	chr->footPosTargL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+	chr->footPosTargR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+
+	m::Vector2 fpl(chr->fpCurrentL.x, chr->fpCurrentL.z);
+	m::Vector2 fpr(chr->fpCurrentR.x, chr->fpCurrentR.z);
+
+	if (m::Length(chr->input) < 0.001f && chr->grounded)
+	{
+		if (chr->aniStepAmountL == 1.f)
+			chr->fpCurrentL = SetFootPos(fpl);
+		if (chr->aniStepAmountR == 1.f)
+			chr->fpCurrentR = SetFootPos(fpr);
 	}
 }
 void TickChara(void* ent, btf32 dt)
 {
 	Actor* chr = (Actor*)ent;
 
-	chr->input.x = -chr->input.x;
+	chr->input = m::Normalize(chr->input);
 
 	// apply crouch input
 	if (chr->inputBV.get(Actor::IN_CROUCH))
@@ -764,29 +934,35 @@ void TickChara(void* ent, btf32 dt)
 		if (chr->grounded)
 		{
 			chr->t.height_velocity = 0.1f; // enter jump
-			chr->t.velocity = (m::Rotate(chr->input, chr->viewYaw.Rad()) * m::Vector2(-1.f, 1.f)) * dt * (chr->speed * 2.5f);
-			//chr->t.velocity = (m::Rotate(chr->input, chr->viewYaw.Rad()) * m::Vector2(-1.f, 1.f)) * dt * chr->speed + chr->slideVelocity;
-			//chr->t.velocity = (m::Rotate(chr->input, chr->viewYaw.Rad()) * m::Vector2(-1.f, 1.f)) * dt * chr->speed + (chr->slideVelocity * 0.25f);
-			if (chr->foot_state == eL_DOWN) chr->foot_state == eR_DOWN;
-			else if (chr->foot_state == eR_DOWN) chr->foot_state == eL_DOWN;
+			// momentum based jump
+			chr->t.velocity = chr->input * dt * chr->speed + chr->slideVelocity;
+			if (chr->foot_state == Actor::eL_DOWN) chr->foot_state = Actor::eR_DOWN;
+			else if (chr->foot_state == Actor::eR_DOWN) chr->foot_state = Actor::eL_DOWN;
 			chr->aniStepAmountL = 1.f;
 			chr->aniStepAmountR = 1.f;
 			chr->aniCrouch = false;
+			chr->jump_state = Actor::eJUMP_JUMP;
+			//chr->grounded = false;
 		}
-		else if (!chr->aniRun)
+		/* // enable to turn on hover jumping
+		else if (chr->jump_state == Actor::eJUMP_JUMP)
 			chr->t.height_velocity += 0.005f; // hover
+		*/
+		else if (chr->jump_state == Actor::eJUMP_SPRINT)
+			chr->t.height_velocity -= 0.005f; // anti-hover
 	}
 	// sprint
-	else if (chr->grounded && chr->aniRun)
+	else if (chr->grounded && chr->aniRun && m::Length(chr->t.velocity) > 0.5f * dt)
 	{
 		chr->t.height_velocity = 0.03f; // enter jump
-		//chr->t.velocity = (m::Rotate(chr->input, chr->viewYaw.Rad()) * m::Vector2(-1.f, 1.f)) * dt * (chr->speed * 2.5f) + chr->slideVelocity;
-		chr->t.velocity = (m::Rotate(chr->input, chr->viewYaw.Rad()) * m::Vector2(-1.f, 1.f)) * dt * (chr->speed * 2.f) + (chr->slideVelocity * 0.5f);
-		if (chr->foot_state == eL_DOWN) chr->foot_state == eR_DOWN;
-		else if (chr->foot_state == eR_DOWN) chr->foot_state == eL_DOWN;
+		chr->t.velocity = chr->input * dt * (chr->speed * 1.1f) + (chr->slideVelocity * 0.9f);
+		if (chr->foot_state == Actor::eL_DOWN) chr->foot_state = Actor::eR_DOWN;
+		else if (chr->foot_state == Actor::eR_DOWN) chr->foot_state = Actor::eL_DOWN;
 		chr->aniStepAmountL = 1.f;
 		chr->aniStepAmountR = 1.f;
 		chr->aniCrouch = false;
+		chr->jump_state = Actor::eJUMP_SPRINT;
+		//chr->grounded = false;
 	}
 
 	bool can_move = true;
@@ -798,7 +974,6 @@ void TickChara(void* ent, btf32 dt)
 		can_turn = !HELDINSTANCE->fpBlockTurn(chr->inventory.items[chr->inv_active_slot]);
 		#undef HELDINSTANCE
 	}
-	//if (!chr->grounded) can_move = false;
 
 	if (chr->state.stateFlags.get(ActiveState::eDIED_REPORT))
 	{
@@ -811,13 +986,10 @@ void TickChara(void* ent, btf32 dt)
 		{
 			if (can_move)
 			{
-				btf32 runmod_temp = 1.f;
-				//if (chr->aniRun) runmod_temp = 2.5f;
-
 				if (!chr->aniCrouch)
-					chr->t.velocity = m::Lerp(chr->t.velocity, m::Rotate(chr->input, chr->viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * chr->speed * runmod_temp, 0.3f);
+					chr->t.velocity = m::Lerp(chr->t.velocity, chr->input * dt * chr->speed, 0.3f);
 				else
-					chr->t.velocity = m::Lerp(chr->t.velocity, m::Rotate(chr->input, chr->viewYaw.Rad()) * m::Vector2(-1.f, 1.f) * dt * chr->speed * runmod_temp * 0.5f, 0.3f);
+					chr->t.velocity = m::Lerp(chr->t.velocity, chr->input * dt * chr->speed * 0.5f, 0.3f);
 			}
 			else
 			{
@@ -846,9 +1018,9 @@ void TickChara(void* ent, btf32 dt)
 		//-------------------------------- RUN AI FUNCTION
 
 		// if AI controlled run the AI function
-		if (chr->aiControlled) index::ActorRunAI(chr->id);
+		if (chr->aiControlled) NPCTick(chr->id);
 		// if player controlled, just aim at whatever's in front of us
-		else chr->atk_target = index::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
+		else chr->atk_target = core::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
 
 		//-------------------------------- RUN ITEM TICK
 
@@ -895,12 +1067,11 @@ void TickChara(void* ent, btf32 dt)
 
 		//-------------------------------- HANDLE ANIMATION
 
-		chr->footPosL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
-		chr->footPosR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
-		chr->footPosTargL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
-		chr->footPosTargR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
-
+		#ifdef DEF_ANI_SHITTY
 		Chara_AnimateLegs(chr);
+		#else
+		Chara_AnimateLegs2(chr);
+		#endif
 	}
 	else
 	{
@@ -981,9 +1152,6 @@ void DrawChara(void* ent)
 	m::Vector3 jointPosR = newpos2 + graphics::MatrixGetRight(matBodyUp) * shoulder_width;
 	m::Vector3 jointPosL = newpos2 + graphics::MatrixGetRight(matBodyUp) * -shoulder_width;
 
-	btf32 distR;
-	btf32 distL;
-
 	graphics::GetShader(graphics::S_SOLID_DEFORM_CHARA).Use();
 	graphics::GetShader(graphics::S_SOLID_DEFORM_CHARA).setVec3(graphics::Shader::Colour_A, chr->skin_col_a.x, chr->skin_col_a.y, chr->skin_col_a.z);
 	graphics::GetShader(graphics::S_SOLID_DEFORM_CHARA).setVec3(graphics::Shader::Colour_B, chr->skin_col_b.x, chr->skin_col_b.y, chr->skin_col_b.z);
@@ -997,7 +1165,7 @@ void DrawChara(void* ent)
 
 		// Draw held item
 		heldItem->fpDraw(inventory.items[inv_active_slot],
-			GETITEM_MISC(inventory.items[inv_active_slot])->id_item_template,
+			GETITEMINST(inventory.items[inv_active_slot])->id_item_template,
 			chr->t.position, chr->t.height + 0.3f, viewYaw, viewPitch);
 
 		// Get hand positions
@@ -1239,13 +1407,13 @@ void TickEditorPawn(void* ent, btf32 dt)
 		CellSpace cs_last = csi;
 
 		//regenerate csi
-		index::GetCellSpaceInfo(chr->t.position, csi);
+		core::GetCellSpaceInfo(chr->t.position, csi);
 
 		//I don't want this to be here
 		if (cs_last.c[eCELL_I].x != csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != csi.c[eCELL_I].y)
 		{
-			index::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, chr->id);
-			index::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, chr->id);
+			core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, chr->id);
+			core::AddEntityCell(csi.c[eCELL_I].x, csi.c[eCELL_I].y, chr->id);
 		}
 
 		//-------------------------------- SET HEIGHT AND CELL SPACE

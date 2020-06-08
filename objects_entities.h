@@ -1,4 +1,5 @@
-// For inclusion in index_decl.h only
+#ifndef ENTITY_H
+#define ENTITY_H
 
 // Inherited from index.cpp
 #include "archive.hpp"
@@ -121,13 +122,16 @@ char* DisplayNameActor(void* ent);
 char* DisplayNameRestingItem(void* ent);
 
 void TickRestingItem(void* ent, btf32 dt);
-void TickChara(void* ent, btf32 dt);
-void TickEditorPawn(void* ent, btf32 dt);
-
 void DrawRestingItem(void* ent);
-m::Vector3 SetFootPos(m::Vector2 position);
+
+void TickChara(void* ent, btf32 dt);
 void DrawChara(void* ent);
+
+void TickEditorPawn(void* ent, btf32 dt);
 void DrawEditorPawn(void* ent);
+
+// does this need to be here?
+m::Vector3 SetFootPos(m::Vector2 position);
 
 // Base entity class
 struct Entity
@@ -172,11 +176,6 @@ struct RestingItem : public Entity
 	btID item_instance;
 	graphics::Matrix4x4 matrix;
 };
-enum FootState : btui8
-{
-	eL_DOWN,
-	eR_DOWN,
-};
 struct Actor : public Entity
 {
 	enum ActorInput : btui16
@@ -194,17 +193,14 @@ struct Actor : public Entity
 
 		IN_COM_ALERT = IN_USE | IN_USE_HIT | IN_USE_ALT,
 	};
+	mem::bv<btui16, ActorInput> inputBV;
+	m::Vector2 input; // Input vector, might be temporary
+	m::Angle viewYaw;
+	m::Angle viewPitch;
 
 	//-------------------------------- Actor stuff
 
 	btui8 actorBase = 0u;
-
-	m::Vector2 input; // Input vector, might be temporary
-	m::Angle viewYaw;
-	m::Angle viewPitch;
-	// Movement stuff
-	//bool moving = false;
-	mem::bv<btui16, ActorInput> inputBV;
 
 	m::Vector3 skin_col_a;
 	m::Vector3 skin_col_b;
@@ -221,34 +217,46 @@ struct Actor : public Entity
 
 	//-------------------------------- CHARA stuff
 
-	enum equipmode : btui8
-	{
-		spell,
-		weapon,
-	};
-
 	enum CharaStaticProperties : btui8
 	{
 		eLEFT_HANDED = (0x1u << 0x0u),
 	};
 	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
 
-	//enum CharaActiveState : btui8
-	//{
-	//	ani_right_foot = (0x1u << 0x0u),
-	//}; 
-	//mem::bv<btui8, CharaActiveState> charastatebv;
-
-
-
-	//FootState foot_state = eBOTH_DOWN;
+	enum FootState : btui8
+	{
+		eL_DOWN,
+		eR_DOWN,
+	};
 	FootState foot_state = eL_DOWN;
+
+	enum JumpState : btui8
+	{
+		eJUMP_NEITHER,
+		eJUMP_JUMP,
+		eJUMP_SPRINT,
+	};
+
+	JumpState jump_state = eJUMP_NEITHER;
+
+	enum CharaAniFlags : btui8
+	{
+		eANI_TEMP_1 = 1u,
+		eANI_LANDED = 1u << 1u,
+		eANI_TEMP_3 = 1u << 3u,
+		eANI_TEMP_4 = 1u << 2u,
+		eANI_TEMP_5 = 1u << 4u,
+		eANI_TEMP_6 = 1u << 5u,
+		eANI_TEMP_7 = 1u << 6u,
+		eANI_TEMP_8 = 1u << 7u,
+		
+		eANI_CLEAR = 0b11111111u,
+	};
+	mem::bv<btui8, CharaAniFlags> animationBV;
 
 	Transform3D t_body, t_head;
 	m::Vector3 footPosTargR, footPosTargL, footPosR, footPosL, fpCurrentR, fpCurrentL;
 	m::Vector2 ani_body_lean;
-	bool aniSteppingL;
-	bool aniSteppingR;
 	btf32 aniStepAmountL;
 	btf32 aniStepAmountR;
 	btf32 aniStandHeight;
@@ -273,23 +281,7 @@ struct Actor : public Entity
 };
 struct EditorPawn : public Actor
 {
-	enum equipmode : btui8
-	{
-		spell,
-		weapon,
-	};
-
-	enum CharaStaticProperties : btui8
-	{
-		eLEFT_HANDED = (0x1u << 0x0u),
-	};
-	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
-
-	enum CharaActiveState : btui8
-	{
-		ani_right_foot = (0x1u << 0x0u),
-	};
-	mem::bv<btui8, CharaActiveState> charastatebv;
-
 	Transform3D t_body, t_head;
 };
+
+#endif

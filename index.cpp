@@ -184,7 +184,7 @@ void IndexInitItemInstance(btID id, ItemType type)
 	block_item.used[id] = true;
 	block_item_data[id].type = type;
 	//block_item_data[id].type_buffer_index = ItemBufPtr[type]->add();
-	HeldItem* held_item = GETITEM_MISC(id);
+	HeldItem* held_item = GETITEMINST(id);
 	*held_item = HeldItem();
 	switch (type)
 	{

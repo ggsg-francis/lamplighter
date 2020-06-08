@@ -45,122 +45,189 @@ namespace env
 
 	void GetHeight(btf32& out_height, CellSpace& csinf)
 	{
-		// NEAREST
-		//out_height = (btf32)eCells.terrain_height[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION;
-
 		// BILINEAR
-		///*
+		/*
 		out_height = m::Lerp(
 			m::Lerp((btf32)eCells.terrain_height[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
 			(btf32)eCells.terrain_height[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y],
-				abs(csinf.offsetx)),
+				fabs(csinf.offsetx)),
 			m::Lerp((btf32)eCells.terrain_height[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y],
 			(btf32)eCells.terrain_height[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y],
-				abs(csinf.offsetx)),
+				fabs(csinf.offsetx)),
 			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
 		//*/
+
+		// BILINEAR2
+		out_height = m::Lerp(
+			m::Lerp((btf32)eCells.terrain_height_sw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+			(btf32)eCells.terrain_height_se[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+				(csinf.offsetx + 0.5f)),
+			m::Lerp((btf32)eCells.terrain_height_nw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+			(btf32)eCells.terrain_height_ne[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+				(csinf.offsetx + 0.5f)),
+			(csinf.offsety + 0.5f)) / TERRAIN_HEIGHT_DIVISION;
 	}
 
-	bool LineTraceUtil_HeightCheck(int x, int y, int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
+	void GetSlope(btf32& out_slope_x, btf32& out_slope_y, CellSpace& csinf)
 	{
-		// TODO: figure out the relative distance between agents and get an actual height test
-		//btf32 dist_to_a = m;
-		if (((btf32)env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION) > height_a + 0.7f)
-		{
+		out_slope_x = (btf32)(env::eCells.terrain_height_ne[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]
+			- env::eCells.terrain_height_nw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]);
+		out_slope_x += (btf32)(env::eCells.terrain_height_se[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]
+			- env::eCells.terrain_height_sw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]);
+		out_slope_x /= 2.f;
+
+		out_slope_y = (btf32)(env::eCells.terrain_height_ne[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]
+			- env::eCells.terrain_height_se[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]);
+		out_slope_y += (btf32)(env::eCells.terrain_height_nw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]
+			- env::eCells.terrain_height_sw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]);
+		out_slope_y /= 2.f;
+	}
+
+	__forceinline bool LineTraceUtil_CheckCollideEnv(int x, int y, btf32 height_a, btf32 height_b, btf32 lerp)
+	{
+		btf32 mix = m::Lerp(height_a, height_b, lerp);
+		if (((btf32)env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION) > mix + 0.7f)
 			return true;
+		return Get(x, y, eflag::eIMPASSABLE);
+	}
+	__forceinline bool LineTraceUtil_CompareA(int diff) {
+		return diff < 0;
+	}
+	__forceinline bool LineTraceUtil_CompareB(int diff) {
+		return diff <= 0;
+	}
+	__forceinline bool LineTraceUtil_Continue(
+		int& coordX, int& coordY, int& coordA, int& coordB, int& diffX, int& diffY, int& diffA, int& diffB,
+		int& x1, int& y1, int& x2, int& y2, int& a1, int& a2, int& diffAbsA, int& diffAbsB, bool(*compareFunc)(int),
+		btf32 height_a, btf32 height_b)
+	{
+		int coord_end;
+		// ??? (difference also called pk)
+		int difference = 2 * diffAbsB - diffAbsA;
+		// If the line travels positively, start at the beginning and go to the end
+		if (diffA >= 0) {
+			coordX = x1; coordY = y1; coord_end = a2;
 		}
-		if (((btf32)env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION) > height_b + 0.7f)
-		{
-			return true;
+		// If the line travels negatively, take the reverse order
+		else {
+			coordX = x2; coordY = y2; coord_end = a1;
+		}
+		// Normally you would check the first tile here, but this is for checking vision not actual line drawing
+		// and we can just assume we can see the tile we're standing on, lol
+		// get distance between start and end
+		btf32 axisLen = (btf32)(coordA - coord_end);
+		// Loop until we reach the end (along the X or Y axis depending on the reference of coordA)
+		for (int i = 0; coordA < coord_end; i++) {
+			++coordA; // Increment along axis that is being looped
+			if (compareFunc(difference)) // Check if the difference is < or <= zero, depending
+				//???? modify diff somehow
+				difference = difference + 2 * diffAbsB;
+			else { // otherwise...
+				if ((diffX < 0 && diffY < 0) || (diffX > 0 && diffY > 0))
+					++coordB;
+				else
+					--coordB;
+				//???? modify diff somehow
+				difference = difference + 2 * (diffAbsB - diffAbsA);
+			}
+			// expensive calculations for height checking, get 0-1 value between start to end
+			btf32 axisLerp = (btf32)(coordA - coord_end) / axisLen;
+			// Check tile
+			if (diffA < 0) {
+				if (LineTraceUtil_CheckCollideEnv(coordX, coordY, height_a, height_b, axisLerp)) return true;
+			}
+			else {
+				if (LineTraceUtil_CheckCollideEnv(coordX, coordY, height_b, height_a, axisLerp)) return true;
+			}
 		}
 		return false;
 	}
-
-	bool LineTrace_Bresenham(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
+	bool LineTraceBh(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
 	{
-		int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
-		dx = x2 - x1;
-		dy = y2 - y1;
-		dx1 = fabs(dx);
-		dy1 = fabs(dy);
-		px = 2 * dy1 - dx1;
-		py = 2 * dx1 - dy1;
-		if (dy1 <= dx1)
-		{
-			if (dx >= 0)
-			{
-				x = x1;
-				y = y1;
-				xe = x2;
-			}
-			else
-			{
-				x = x2;
-				y = y2;
-				xe = x1;
-			}
-			if (Get(x, y, eflag::eIMPASSABLE) || LineTraceUtil_HeightCheck(x, y, x1, y1, x2, y2, height_a, height_b))
+		int x, y, diff_x, diff_y, diff_abs_x, diff_abs_y;
+		// Calculate the difference between each point
+		diff_x = x2 - x1;
+		diff_y = y2 - y1;
+		// Get absolute differences
+		diff_abs_x = abs(diff_x);
+		diff_abs_y = abs(diff_y);
+		// If X difference is longer
+		if (diff_abs_y <= diff_abs_x) {
+			if (LineTraceUtil_Continue(x, y, x, y, diff_x, diff_y, diff_x, diff_y,
+				x1, y1, x2, y2, x1, x2, diff_abs_x, diff_abs_y, LineTraceUtil_CompareA, height_a, height_b))
 				return false;
-			for (i = 0; x < xe; i++)
-			{
+		}
+		// If Y difference is longer
+		else {
+			if (LineTraceUtil_Continue(x, y, y, x, diff_x, diff_y, diff_y, diff_x,
+				x1, y1, x2, y2, y1, y2, diff_abs_y, diff_abs_x, LineTraceUtil_CompareB, height_a, height_b))
+				return false;
+		}
+		return true;
+	}
+	bool LineTrace_Bresenham_Bak(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
+	{
+		int x, y, diff_x, diff_y, diff_abs_x, diff_abs_y, difference, end;
+		// Calculate the difference between each point
+		diff_x = x2 - x1;
+		diff_y = y2 - y1;
+		// Get absolute differences
+		diff_abs_x = abs(diff_x);
+		diff_abs_y = abs(diff_y);
+		// If X difference is longer
+		if (diff_abs_y <= diff_abs_x) {
+			//
+			difference = 2 * diff_abs_y - diff_abs_x;
+			// If the line travels positively, start at the beginning and go to the end
+			if (diff_x >= 0) {
+				x = x1; y = y1; end = x2;
+			}
+			// If the line travels negatively, take the reverse order
+			else {
+				x = x2; y = y2; end = x1;
+			}
+			// Check start point
+			if (LineTraceUtil_CheckCollideEnv(x, y, height_a, height_b, 0.f)) return false;
+			// Loop until we reach the end (loop along the X axis)
+			for (int i = 0; x < end; i++) {
 				x = x + 1;
-				if (px < 0)
-				{
-					px = px + 2 * dy1;
-				}
-				else
-				{
-					if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0))
-					{
+				if (difference < 0)
+					difference = difference + 2 * diff_abs_y;
+				else {
+					if ((diff_x < 0 && diff_y < 0) || (diff_x > 0 && diff_y > 0))
 						y = y + 1;
-					}
 					else
-					{
 						y = y - 1;
-					}
-					px = px + 2 * (dy1 - dx1);
+					difference = difference + 2 * (diff_abs_y - diff_abs_x);
 				}
-				if (Get(x, y, eflag::eIMPASSABLE) || LineTraceUtil_HeightCheck(x, y, x1, y1, x2, y2, height_a, height_b))
-					return false;
+				if (LineTraceUtil_CheckCollideEnv(x, y, height_a, height_b, 0.f)) return false;
 			}
 		}
-		else
-		{
-			if (dy >= 0)
-			{
-				x = x1;
-				y = y1;
-				ye = y2;
+		// If Y difference is longer
+		else {
+			//
+			difference = 2 * diff_abs_x - diff_abs_y;
+			if (diff_y >= 0) {
+				x = x1; y = y1; end = y2;
 			}
-			else
-			{
-				x = x2;
-				y = y2;
-				ye = y1;
+			else {
+				x = x2; y = y2; end = y1;
 			}
-			if (Get(x, y, eflag::eIMPASSABLE) || LineTraceUtil_HeightCheck(x, y, x1, y1, x2, y2, height_a, height_b))
-				return false;
-			for (i = 0; y < ye; i++)
-			{
+			// Check start point
+			if (LineTraceUtil_CheckCollideEnv(x, y, height_a, height_b, 0.f)) return false;
+			// Loop until we reach the end (loop along the Y axis)
+			for (int i = 0; y < end; i++) {
 				y = y + 1;
-				if (py <= 0)
-				{
-					py = py + 2 * dx1;
-				}
-				else
-				{
-					if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0))
-					{
+				if (difference <= 0)
+					difference = difference + 2 * diff_abs_x;
+				else {
+					if ((diff_x < 0 && diff_y < 0) || (diff_x > 0 && diff_y > 0))
 						x = x + 1;
-					}
 					else
-					{
 						x = x - 1;
-					}
-					py = py + 2 * (dx1 - dy1);
+					difference = difference + 2 * (diff_abs_x - diff_abs_y);
 				}
-				if (Get(x, y, eflag::eIMPASSABLE) || LineTraceUtil_HeightCheck(x, y, x1, y1, x2, y2, height_a, height_b))
-					return false;
+				if (LineTraceUtil_CheckCollideEnv(x, y, height_a, height_b, 0.f)) return false;
 			}
 		}
 		return true;
@@ -249,10 +316,14 @@ namespace env
 		{
 			for (int y = 0; y < WORLD_SIZE; ++y)
 			{
-				eCells.terrain_height_ne[x][y] = eCells.terrain_height[x][y];
+				/*eCells.terrain_height_ne[x][y] = eCells.terrain_height[x][y];
 				eCells.terrain_height_nw[x][y] = eCells.terrain_height[x][y];
 				eCells.terrain_height_se[x][y] = eCells.terrain_height[x][y];
-				eCells.terrain_height_sw[x][y] = eCells.terrain_height[x][y];
+				eCells.terrain_height_sw[x][y] = eCells.terrain_height[x][y];*/
+				eCells.terrain_height[x][y] = eCells.terrain_height_ne[x][y];
+				/*eCells.terrain_height[x][y] = eCells.terrain_height_nw[x][y];
+				eCells.terrain_height[x][y] = eCells.terrain_height_se[x][y];
+				eCells.terrain_height[x][y] = eCells.terrain_height_sw[x][y];*/
 			}
 		}
 	}

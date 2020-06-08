@@ -12,7 +12,7 @@
 #include "maths.hpp"
 #include "graphics.hpp"
 
-class Actor;
+struct Actor;
 
 namespace m
 {
@@ -65,16 +65,6 @@ bool HeldConUse(btID id, Actor* owner);
 void HeldConTick(btID id, btf32 dt, Actor* owner);
 void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
 void HeldConOnEquip(btID id, Actor* owner);
-
-//-------------------------------- HELD ITEM MATCHLOCK
-
-void HeldGunMatchLockTick(btID id, btf32 dt, Actor* owner);
-void HeldGunMatchLockDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2);
-void HeldGunMatchLockOnEquip(btID id, Actor* owner);
-m::Vector3 HeldGunMatchLockGetLeftHandPos(btID id);
-m::Vector3 HeldGunMatchLockGetRightHandPos(btID id);
-bool HeldGunMatchLockBlockTurn(btID id);
-bool HeldGunMatchLockBlockMove(btID id);
 
 // Base item instance
 struct HeldItem
@@ -137,7 +127,7 @@ struct HeldItem
 
 	btf32 ang_aim_offset_temp = 0.f;
 	btf32 ang_aim_pitch = 0.f;
-	btui64 fire_time = 0.f;
+	btui64 fire_time = 0u;
 	btID id_ammoInstance = ID_NULL;
 
 	//-------------------------------- HELD ITEM MAGIC

@@ -86,6 +86,9 @@
     <ClInclude Include="global_project.h">
       <Filter>0global</Filter>
     </ClInclude>
+    <ClInclude Include="nonpc.h">
+      <Filter>gamework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">

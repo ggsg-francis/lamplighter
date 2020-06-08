@@ -1,14 +1,13 @@
-// Included in index.cpp
+// Included in core
 
 #include "core_decl.hpp"
 
-namespace index
+namespace core
 {
 	//________________________________________________________________________________________________________________________________
 	// GENERAL FUNCTIONS -------------------------------------------------------------------------------------------------------------
 
-	#define HEAD_TURN_SPEED 8.f
-
+	/*
 	void ActorRunAI(btID id)
 	{
 		Actor* actor = ACTOR(id);
@@ -199,6 +198,7 @@ namespace index
 		actor->viewYaw.RotateTowards(actor->ai_vy_target, HEAD_TURN_SPEED);
 		actor->viewPitch.RotateTowards(actor->ai_vp_target, HEAD_TURN_SPEED);
 	}
+	*/
 
 	void EntDeintersect(Entity* ent, CellSpace& csi)
 	{
@@ -359,7 +359,7 @@ namespace index
 	{
 		Entity* entity_a = ENTITY(enta);
 		Entity* entity_b = ENTITY(entb);
-		return env::LineTrace_Bresenham(
+		return env::LineTraceBh(
 			entity_a->t.csi.c[eCELL_I].x, entity_a->t.csi.c[eCELL_I].y,
 			entity_b->t.csi.c[eCELL_I].x, entity_b->t.csi.c[eCELL_I].y,
 			entity_a->t.height, entity_b->t.height);
@@ -414,7 +414,7 @@ namespace index
 						Entity* ent = ENTITY(index);
 						Entity* ent_other = ENTITY(index_other);
 						// LINE TRACE
-						if (env::LineTrace_Bresenham(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y,
+						if (env::LineTraceBh(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y,
 							ent_other->t.csi.c[eCELL_I].x, ent_other->t.csi.c[eCELL_I].y,
 							ent->t.height, ent_other->t.height))
 						{
@@ -478,7 +478,7 @@ namespace index
 						// Linetrace environment to see if the character is visible
 						/*if (env::LineTrace(entity_index->t.position.x, entity_index->t.position.y,
 							entity->t.position.x, entity->t.position.y))*/
-						if (env::LineTrace_Bresenham(
+						if (env::LineTraceBh(
 							entity_index->t.csi.c[eCELL_I].x, entity_index->t.csi.c[eCELL_I].y,
 							entity->t.csi.c[eCELL_I].x, entity->t.csi.c[eCELL_I].y,
 							entity_index->t.height, entity->t.height))
@@ -628,15 +628,7 @@ namespace index
 		ACTOR(id)->aiControlled = false;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
-		ACTOR(id)->inventory.AddNew(6u); // long smig
-		ACTOR(id)->inventory.AddNew(4u); // fist
-		ACTOR(id)->inventory.AddNew(7u); // heal
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(10u); // time gun
-		ACTOR(id)->inventory.AddNew(11u); // time mag
-		ACTOR(id)->foot_state = FootState::eL_DOWN;
+		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
@@ -659,7 +651,7 @@ namespace index
 		ACTOR(id)->inventory.AddNew(8u); // magazine
 		ACTOR(id)->inventory.AddNew(8u); // magazine
 		ACTOR(id)->inventory.AddNew(7u); // heal
-		ACTOR(id)->foot_state = FootState::eL_DOWN;
+		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
@@ -681,7 +673,7 @@ namespace index
 		ACTOR(id)->inventory.AddNew(8u); // magazine
 		ACTOR(id)->inventory.AddNew(8u); // magazine
 		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->foot_state = FootState::eL_DOWN;
+		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 		//ACTOR(id)->inventory.items[ACTOR(id)->inv_active_slot];
 		//TODO: clean up this mess
 	}
@@ -697,7 +689,7 @@ namespace index
 		ACTOR(id)->speed = 3.5f;
 		ACTOR(id)->agility = 0.f;
 		ACTOR(id)->inventory.AddNew(4u);
-		ACTOR(id)->foot_state = FootState::eL_DOWN;
+		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 	}
 
 	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)

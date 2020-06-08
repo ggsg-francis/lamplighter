@@ -13,7 +13,7 @@ void HeldItemTick(btID id, btf32 dt, Actor* owner)
 }
 void HeldItemDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch)
 {
-	HeldItem* self = GETITEM_MISC(id);
+	HeldItem* self = GETITEMINST(id);
 	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
 	self->t_item.SetRotation(0.f);
 	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
@@ -26,13 +26,13 @@ void HeldItemOnEquip(btID id, Actor* owner)
 }
 m::Vector3 HeldItemGetLeftHandPos(btID id)
 {
-	HeldItem* self = GETITEM_MISC(id);
+	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * -0.5f;
 	return self->t_item.GetPosition() + self->t_item.GetRight() * -((acv::BaseItem*)acv::items[self->id_item_template])->f_radius;
 }
 m::Vector3 HeldItemGetRightHandPos(btID id)
 {
-	HeldItem* self = GETITEM_MISC(id);
+	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * 0.5f;
 	return self->t_item.GetPosition() + self->t_item.GetRight() * ((acv::BaseItem*)acv::items[self->id_item_template])->f_radius;
 }
@@ -49,7 +49,7 @@ bool HeldItemBlockMove(btID id)
 
 void HeldMelTick(btID id, btf32 dt, Actor* owner)
 {
-	HeldItem* self = GETITEM_MELEE(id);
+	HeldItem* self = GETITEMINST(id);
 
 	if (self->swinging == HeldItem::SWINGSTATE_IDLE)
 	{
@@ -121,7 +121,7 @@ void HeldMelTick(btID id, btf32 dt, Actor* owner)
 }
 void HeldMelDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle _pitch)
 {
-	HeldItem* self = GETITEM_MELEE(id);
+	HeldItem* self = GETITEMINST(id);
 	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
 	self->t_item.SetRotation(0.f);
 	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
@@ -137,7 +137,7 @@ void HeldMelOnEquip(btID id, Actor* owner)
 }
 m::Vector3 HeldMelGetLeftHandPos(btID id)
 {
-	HeldItem* self = GETITEM_MELEE(id);
+	HeldItem* self = GETITEMINST(id);
 	switch ((self->ePose))
 	{
 	case HeldItem::HOLD_POSE_SWING_OVERHEAD:
@@ -151,7 +151,7 @@ m::Vector3 HeldMelGetLeftHandPos(btID id)
 }
 m::Vector3 HeldMelGetRightHandPos(btID id)
 {
-	HeldItem* self = GETITEM_MELEE(id);
+	HeldItem* self = GETITEMINST(id);
 	switch ((self->ePose))
 	{
 	case HeldItem::HOLD_POSE_SWING_OVERHEAD:
@@ -181,7 +181,7 @@ bool HeldMelBlockMove(btID id)
 
 void HeldGunTick(btID id, btf32 dt, Actor* owner)
 {
-	HeldItem* self = GETITEM_GUN(id);
+	HeldItem* self = GETITEMINST(id);
 
 	if (owner->inputBV.get(Actor::IN_USE) && self->ePose == HOLDSTATE_AIM && self->fire_time < tickCount_temp)
 	{
@@ -225,7 +225,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 			{
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
 				if (GetItemType(self->id_ammoInstance) == ITEM_TYPE_CONS)
-					index::SpawnProjectileSpread(owner->faction, // TODO: fucking hell please make this easier to access
+					core::SpawnProjectileSpread(owner->faction, // TODO: fucking hell please make this easier to access
 					((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemPtr(self->id_ammoInstance))->id_item_template])->id_projectile,
 						m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 2.5f);
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
@@ -273,7 +273,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
 {
 
-	HeldItem* self = GETITEM_GUN(id);
+	HeldItem* self = GETITEMINST(id);
 
 	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
 	self->t_item.SetRotation(0.f);
@@ -355,7 +355,7 @@ void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 
 void HeldGunOnEquip(btID id, Actor* owner)
 {
-	HeldItem* self = GETITEM_GUN(id);
+	HeldItem* self = GETITEMINST(id);
 	self->loc = m::Vector3(0.3f, 1.1f, 0.f);
 	self->pitch = 90.f;
 	self->yaw = 0.f;
@@ -364,7 +364,7 @@ void HeldGunOnEquip(btID id, Actor* owner)
 }
 m::Vector3 HeldGunGetLeftHandPos(btID id)
 {
-	HeldItem* self = GETITEM_GUN(id);
+	HeldItem* self = GETITEMINST(id);
 	if (self->ePose != HeldItem::HOLDSTATE_BARREL) // If holding normally
 		//return self->t_item.GetPosition() + self->t_item.GetForward() * 0.4f; // rifle
 		return self->t_item.GetPosition() + self->t_item.GetUp() * -0.1f;
@@ -373,7 +373,7 @@ m::Vector3 HeldGunGetLeftHandPos(btID id)
 }
 m::Vector3 HeldGunGetRightHandPos(btID id)
 {
-	HeldItem* self = GETITEM_GUN(id);
+	HeldItem* self = GETITEMINST(id);
 	if (self->ePose != HeldItem::HOLDSTATE_BARREL) // If holding normally
 		return self->t_item.GetPosition();
 	else
@@ -381,14 +381,14 @@ m::Vector3 HeldGunGetRightHandPos(btID id)
 }
 bool HeldGunBlockTurn(btID id)
 {
-	HeldItem* self = GETITEM_GUN(id);
+	HeldItem* self = GETITEMINST(id);
 	if (self->ePose == HeldItem::HOLDSTATE_BARREL) // If holding barrel
 		return true;
 	else return false;
 }
 bool HeldGunBlockMove(btID id)
 {
-	HeldItem* self = GETITEM_GUN(id);
+	HeldItem* self = GETITEMINST(id);
 	if (self->ePose == HeldItem::HOLDSTATE_BARREL) // If holding barrel
 		return true;
 	else return false;
@@ -402,7 +402,7 @@ void HeldMgcTick(btID id, btf32 dt, Actor * owner)
 }
 void HeldMgcDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch)
 {
-	HeldItem* self = GETITEM_MAGIC(id);
+	HeldItem* self = GETITEMINST(id);
 	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
 	self->t_item.SetRotation(0.f);
 	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
@@ -416,13 +416,13 @@ void HeldMgcOnEquip(btID id, Actor* owner)
 }
 m::Vector3 HeldMgcGetLeftHandPos(btID id)
 {
-	HeldItem* self = GETITEM_MAGIC(id);
+	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * -0.2f;
 	return self->t_item.GetPosition() + m::RotateVector(m::Vector3(-0.25f, 0.f, -0.25f), self->t_item.rot_glm);
 }
 m::Vector3 HeldMgcGetRightHandPos(btID id)
 {
-	HeldItem* self = GETITEM_MAGIC(id);
+	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * 0.2f;
 	return self->t_item.GetPosition() + m::RotateVector(m::Vector3(0.25f, 0.f, -0.25f), self->t_item.rot_glm);
 }
@@ -439,7 +439,7 @@ bool HeldMgcBlockMove(btID id)
 
 bool HeldConUse(btID id, Actor* owner)
 {
-	HeldItem* self = GETITEM_CONS(id);
+	HeldItem* self = GETITEMINST(id);
 	//owner->state.AddSpell(owner->id, ((acv::BaseItemCon*)acv::items[self->item_template])->effect);
 	if (self->uses > 1u)
 	{
@@ -454,7 +454,7 @@ bool HeldConUse(btID id, Actor* owner)
 }
 void HeldConTick(btID id, btf32 dt, Actor* owner)
 {
-	HeldItem* self = GETITEM_CONS(id);
+	HeldItem* self = GETITEMINST(id);
 	if (owner->inputBV.get(Actor::IN_USE_HIT) && self->uses > 0u)
 	{
 		owner->state.AddSpell(owner->id, ((acv::BaseItemCon*)acv::items[self->id_item_template])->id_effect);
@@ -465,7 +465,7 @@ void HeldConTick(btID id, btf32 dt, Actor* owner)
 }
 void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch)
 {
-	HeldItem* self = GETITEM_CONS(id);
+	HeldItem* self = GETITEMINST(id);
 	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
 	self->t_item.SetRotation(0.f);
 	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));

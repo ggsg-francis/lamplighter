@@ -6,7 +6,7 @@
 namespace cfg
 {
 	// Is fullscreen
-	extern bool bFullscreen;
+	extern unsigned int iFullscreen;
 	// In the case that this is the networked mode, take the server role
 	extern bool bHost;
 	// Run as editor

@@ -12,7 +12,7 @@ bool RayEntity(btID ent, btf32 stand_height)
 
 	btf32 th;
 	env::GetHeight(th, entity->t.csi);
-	if (entity->t.height <= th + stand_height)
+	if (entity->t.height + entity->t.height_velocity <= th + stand_height)
 		return true;
 	return false;
 }

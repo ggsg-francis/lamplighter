@@ -11,6 +11,12 @@ extern "C" {
 #include "network.h"
 #endif // DEF_NMP
 
+#define JOY_AXIS_MAX ((bti16)0b0111111111111111)
+#define JOY_AXIS_MIN ((bti16)0b1000000000000000)
+#define JOY_AXIS_THRESH_MAX ((bti16)0b0000011111111111)
+#define JOY_AXIS_THRESH_MIN ((bti16)0b1111100000000000)
+#define JOY_AXIS_MAX_F 32768.f
+
 namespace input
 {
 	namespace ki
@@ -110,7 +116,32 @@ namespace input
 		};
 	}
 
+	enum enumJoyButton : btui8 {
+		JOY_FACE_A,
+		JOY_FACE_B,
+		JOY_FACE_Y,
+		JOY_FACE_X,
+		JOY_BUMPER_L,
+		JOY_BUMPER_R,
+		JOY_BACK,
+		JOY_START,
+		JOY_STICK_L,
+		JOY_STICK_R,
+		JOY_BUTTON_COUNT,
+	};
+	enum enumJoyAxis : btui8 {
+		JOY_AXIS_L_X,
+		JOY_AXIS_L_Y,
+		JOY_AXIS_TRIGGER_L,
+		JOY_AXIS_R_X,
+		JOY_AXIS_R_Y,
+		JOY_AXIS_TRIGGER_R,
+		JOY_AXIS_COUNT,
+	};
+
 	key::Key2 ScancodeTransfer[512]{ key::NONE }; // uses btui8 to save space
+	key::Key2 JoyButtonTransfer[JOY_BUTTON_COUNT]{ key::NONE };
+	//key::Key2 JoyAxisTransfer[9]{ key::NONE };
 
 	void Init()
 	{
@@ -141,15 +172,12 @@ namespace input
 		ScancodeTransfer[SDL_SCANCODE_F10] = key::FUNCTION_10;
 		ScancodeTransfer[SDL_SCANCODE_F11] = key::FUNCTION_11;
 		ScancodeTransfer[SDL_SCANCODE_F12] = key::FUNCTION_12;
-	}
 
-	namespace rawinput
-	{
-		enum e : btui8
-		{
-			joy_bumper_l = 4u,
-			joy_bumper_r = 5u,
-		};
+		JoyButtonTransfer[JOY_BUMPER_L] = key::C_RUN;
+		JoyButtonTransfer[JOY_BUMPER_R] = key::C_JUMP;
+		JoyButtonTransfer[JOY_FACE_A] = key::C_ACTIVATE;
+		JoyButtonTransfer[JOY_FACE_B] = key::C_USE_ALT;
+		JoyButtonTransfer[JOY_STICK_R] = key::C_CROUCH;
 	}
 
 	#ifdef DEF_NMP
@@ -196,24 +224,30 @@ namespace input
 				SetHit(key::INV_CYCLE_L);
 			break;
 		case SDL_JOYAXISMOTION: // Joystick Motion
-			if ((e.jaxis.value < -3200) || (e.jaxis.value > 3200)) {
-				if (e.jaxis.axis == 0) // Left-right left stick
-					BUF_LOCALSET.joy_x_a = (btf32)e.jaxis.value / (btf32)32768.f;
-				else if (e.jaxis.axis == 1) // Up-Down left stick
-					BUF_LOCALSET.joy_y_a = (btf32)e.jaxis.value / (btf32)32768.f;
-				else if (e.jaxis.axis == 3) // Left-right right stick
-					BUF_LOCALSET.joy_x_b = (btf32)e.jaxis.value / (btf32)32768.f;
-				else if (e.jaxis.axis == 4) // Up-Down right stick
-					BUF_LOCALSET.joy_y_b = (btf32)e.jaxis.value / (btf32)32768.f;
+			if (e.jaxis.axis == 2) { // Left Trigger
+				SetTo(key::C_USE, e.jaxis.value > 0);
+			}
+			if (e.jaxis.axis == 5) { // Right Trigger
+				SetTo(key::C_USE, e.jaxis.value > 0);
+			}
+			if ((e.jaxis.value < JOY_AXIS_THRESH_MIN) || (e.jaxis.value > JOY_AXIS_THRESH_MAX)) {
+				if (e.jaxis.axis == JOY_AXIS_L_X) // Left-right left stick
+					BUF_LOCALSET.joy_x_a = (btf32)e.jaxis.value / (btf32)JOY_AXIS_MAX_F;
+				else if (e.jaxis.axis == JOY_AXIS_L_Y) // Up-Down left stick
+					BUF_LOCALSET.joy_y_a = (btf32)e.jaxis.value / (btf32)JOY_AXIS_MAX_F;
+				else if (e.jaxis.axis == JOY_AXIS_R_X) // Left-right right stick
+					BUF_LOCALSET.joy_x_b = (btf32)e.jaxis.value / (btf32)JOY_AXIS_MAX_F;
+				else if (e.jaxis.axis == JOY_AXIS_R_Y) // Up-Down right stick
+					BUF_LOCALSET.joy_y_b = (btf32)e.jaxis.value / (btf32)JOY_AXIS_MAX_F;
 			}
 			else {
-				if (e.jaxis.axis == 0) // Left-right left stick
+				if (e.jaxis.axis == JOY_AXIS_L_X) // Left-right left stick
 					BUF_LOCALSET.joy_x_a = 0.f;
-				else if (e.jaxis.axis == 1) // Up-Down left stick
+				else if (e.jaxis.axis == JOY_AXIS_L_Y) // Up-Down left stick
 					BUF_LOCALSET.joy_y_a = 0.f;
-				else if (e.jaxis.axis == 3) // Left-right right stick
+				else if (e.jaxis.axis == JOY_AXIS_R_X) // Left-right right stick
 					BUF_LOCALSET.joy_x_b = 0.f;
-				else if (e.jaxis.axis == 4) // Up-Down right stick
+				else if (e.jaxis.axis == JOY_AXIS_R_Y) // Up-Down right stick
 					BUF_LOCALSET.joy_y_b = 0.f;
 			}
 			break;
@@ -231,36 +265,12 @@ namespace input
 				Set(key::C_DROP_HELD);
 			break;
 		case SDL_JOYBUTTONDOWN:
-			if (e.jbutton.button == rawinput::joy_bumper_l && !GetHeld(key::C_USE))
-				Set(key::C_USE);
-			else if (e.jbutton.button == rawinput::joy_bumper_r && !GetHeld(key::C_USE_ALT))
-				Set(key::C_USE_ALT);
-			else if (e.jbutton.button == 0 && !GetHeld(key::C_ACTIVATE)) // Face button B
-				Set(key::C_ACTIVATE);
-			else if (e.jbutton.button == 1 && !GetHeld(key::C_ACTION_A)) // Face button B
-				Set(key::C_ACTION_A);
-			else if (e.jbutton.button == 2 && !GetHeld(key::C_ACTION_B)) // Face button B
-				Set(key::C_ACTION_B);
-			else if (e.jbutton.button == 3 && !GetHeld(key::C_ACTION_C)) // Face button B
-				Set(key::C_ACTION_C);
-			else if (e.jbutton.button == 6 && !GetHeld(key::C_JUMP)) // Face button B
-				Set(key::C_JUMP);
+			if (!GetHeld(JoyButtonTransfer[e.jbutton.button]) && JoyButtonTransfer[e.jbutton.button] != key::NONE)
+				Set(JoyButtonTransfer[e.jbutton.button]);
 				break;
 		case SDL_JOYBUTTONUP:
-			if (e.jbutton.button == rawinput::joy_bumper_l)
-				Unset(key::C_USE);
-			else if (e.jbutton.button == rawinput::joy_bumper_r)
-				Unset(key::C_USE_ALT);
-			else if (e.jbutton.button == 0) // Face button B
-				Unset(key::C_ACTIVATE);
-			else if (e.jbutton.button == 1) // Face button B
-				Unset(key::C_ACTION_A);
-			else if (e.jbutton.button == 2) // Face button B
-				Unset(key::C_ACTION_B);
-			else if (e.jbutton.button == 3) // Face button B
-				Unset(key::C_ACTION_C);
-			else if (e.jbutton.button == 6) // Face button B
-				Unset(key::C_JUMP);
+			if (JoyButtonTransfer[e.jbutton.button] != key::NONE)
+				Unset(JoyButtonTransfer[e.jbutton.button]);
 			break;
 		}
 	}
@@ -269,10 +279,6 @@ namespace input
 	{
 		BUF_LOCALSET.mouse_x = 0.f;
 		BUF_LOCALSET.mouse_y = 0.f;
-		//BUF_LOCALSET.joy_x_a = 0.f;
-		//BUF_LOCALSET.joy_y_a = 0.f;
-		//BUF_LOCALSET.joy_x_b = 0.f;
-		//BUF_LOCALSET.joy_y_b = 0.f;
 		BUF_LOCALSET.keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000u;
 	}
 

@@ -322,6 +322,7 @@
     <ClInclude Include="input.h" />
     <ClInclude Include="memory.hpp" />
     <ClInclude Include="maths.hpp" />
+    <ClInclude Include="nonpc.h" />
     <ClInclude Include="objects_entities.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="graphics.hpp" />

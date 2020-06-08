@@ -19,29 +19,22 @@ namespace mem
 	// Bitvector (the safest iteration yet)
 	template <class tcast, class trecv> class bv
 	{
-	//private:
 	public:
 		tcast bits = (tcast)0u; // Always start at zeroed
 	public:
-
-		inline bool get(trecv mask)
-		{
+		inline bool get(trecv mask) {
 			return (bits & (tcast)mask) != (tcast)0u;
 		}
-		inline void setto(trecv mask, bool to)
-		{
+		inline void setto(trecv mask, bool to) {
 			to ? bits |= (tcast)mask : bits &= ~(tcast)mask;
 		}
-		inline void toggle(trecv mask)
-		{
+		inline void toggle(trecv mask) {
 			bits & (tcast)mask ? bits &= ~(tcast)mask : bits |= (tcast)mask;
 		}
-		inline void set(trecv mask)
-		{
+		inline void set(trecv mask) {
 			bits |= (tcast)mask;
 		}
-		inline void unset(trecv mask)
-		{
+		inline void unset(trecv mask) {
 			bits &= ~(tcast)mask;
 		}
 	};

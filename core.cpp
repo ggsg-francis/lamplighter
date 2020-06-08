@@ -10,7 +10,7 @@
 
 btui64 tickCount_temp;
 
-namespace index
+namespace core
 {
 	btui16 GetHP(btID id)
 	{
@@ -34,13 +34,9 @@ namespace index
 		viewpos = ENTITY(players[activePlayer])->t.position * -1.f;
 
 		Actor* chara = ACTOR(players[activePlayer]);
-		#ifdef DEF_3PP
-		graphics::SetMatViewEditor(&chara->t_head);
-		#else
 		cfg::bEditMode ?
 			graphics::SetMatViewEditor(&((EditorPawn*)chara)->t_head) :
 			graphics::SetMatView(&chara->t_head);
-		#endif // DEF_3PP
 	}
 
 	m::Vector2 GetViewOffset()
@@ -190,7 +186,8 @@ namespace index
 				if (env::Get(x, y, env::eflag::EF_SPAWN_ITEM_TEST))
 				{
 					//env::UnSet(x, y, env::eflag::EF_SPAWN_ITEM_TEST);
-					btf32 random = m::Random(0.f, acv::item_index);
+					//btf32 random = m::Random(0.f, acv::item_index);
+					btf32 random = m::Random(0.f, 7.f);
 					btui32 rand_rnd = (btui32)floor(random);
 					SpawnEntityItem(rand_rnd, m::Vector2(x,y), 0.f);
 					/*if (rand_rnd < 2u)
@@ -216,22 +213,9 @@ namespace index
 
 		env::LoadBin();
 
-		/*
-		for (int x = 0; x < WORLD_SIZE; x++)
-		{
-			for (int y = 0; y < WORLD_SIZE; y++)
-			{
-				env::eCells.terrain_height[x][y].height = 128ui8;
-			}
-		}
-		env::GeneratePhysicsSurfaces();
-		env::SaveBin();
-		//*/
-
-		// Lightmap
+		//-------------------------------- Lightmap
 
 		t_EnvLightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(255u, 0u, 0u, 255u));
-
 		for (btui32 x = 0u; x < WORLD_SIZE; ++x)
 		{
 			for (btui32 y = 0u; y < WORLD_SIZE; ++y)
@@ -241,11 +225,9 @@ namespace index
 					flood_fill_temp(x, y, x, y, graphics::colour(0u, 255u, 0u, 0u));
 			}
 		}
-
 		t_EnvLightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
-		//t_EnvLightmap.ReBindGL(graphics::eNEAREST, graphics::eCLAMP);
 
-		// Heightmap
+		//-------------------------------- Heightmap
 
 		t_EnvHeightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(0u, 0u, 0u, 0u));
 
@@ -255,46 +237,27 @@ namespace index
 
 		t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 
-		// Spawnz
+		//-------------------------------- Spawnz
+
 		if (cfg::bEditMode)
-		{
 			players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
-		}
-		else
-		{
-			if (SaveExists())
-			{
-				LoadState();
-				//SpawnNewEntityItem(6ui16, m::Vector2(m::Random(1023.f, 1026.f), m::Random(1023.f, 1026.f)), m::Random(0.f, 365.f));
-			}
-			else
-			{
+		else {
+			if (SaveExists()) LoadState();
+			else {
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
-				//players[0] = SpawnEntity(prefab::prefab_npc, m::Vector2(1023.f, 1022.f), 0.f);
-				//ACTOR(players[0])->faction = fac::faction::playerhunter;
-				//ACTOR(players[1])->faction = fac::faction::playerhunter;
-
-				/*
-				SpawnNewEntityItem(0u, m::Vector2(1025.1f, 1022.6f), 15.f);
-				SpawnNewEntityItem(1u, m::Vector2(1025.5f, 1024.0f), 120.f);
-				SpawnNewEntityItem(2u, m::Vector2(1025.5f, 1023.3f), 15.f);
-				SpawnNewEntityItem(3u, m::Vector2(1025.8f, 1024.f), 15.f);
-				SpawnNewEntityItem(4u, m::Vector2(1026.8f, 1026.f), 15.f);
-				SpawnNewEntityItem(5u, m::Vector2(1023.5f, 1023.3f), 15.f);
-				SpawnNewEntityItem(6u, m::Vector2(1023.8f, 1023.4f), 15.f);
-				SpawnNewEntityItem(7u, m::Vector2(1023.6f, 1023.2f), 15.f);
-				//*/
-
+				SpawnEntity(prefab::prefab_ai_player, m::Vector2(1024.f, 1024.f), 0.f);
 				#ifdef DEF_SPAWN_ON_START
 				DoSpawn();
 				#endif
-
 				#ifdef DEF_AUTOSAVE_ON_START
 				SaveState();
 				#endif
 			}
 		}
+
+		//-------------------------------- factions
+
 		// This is going to blow up extremely fast if I don't automate it somehow
 
 		fac::SetAllegiance(fac::player, fac::player, fac::allied);
@@ -426,6 +389,8 @@ namespace index
 
 			#define GetCellY entity->t.csi.c[0].y
 			#define GetCellX entity->t.csi.c[0].x
+			#define GetOffsX entity->t.csi.offsetx
+			#define GetOffsY entity->t.csi.offsety
 
 			if (input::GetHit(input::key::USE))
 			{
@@ -457,14 +422,20 @@ namespace index
 			{
 				editor_prop_copy = env::eCells.prop[GetCellX][GetCellY];
 				editor_prop_dir_copy = env::eCells.prop_dir[GetCellX][GetCellY];
-				editor_height_copy = env::eCells.terrain_height[GetCellX][GetCellY];
+				editor_height_copy_ne = env::eCells.terrain_height_ne[GetCellX][GetCellY];
+				editor_height_copy_nw = env::eCells.terrain_height_nw[GetCellX][GetCellY];
+				editor_height_copy_se = env::eCells.terrain_height_se[GetCellX][GetCellY];
+				editor_height_copy_sw = env::eCells.terrain_height_sw[GetCellX][GetCellY];
 				editor_material_copy = env::eCells.terrain_material[GetCellX][GetCellY];
 			}
 			else if (input::GetHeld(input::key::FUNCTION_2)) // PASTE
 			{
 				env::eCells.prop[GetCellX][GetCellY] = editor_prop_copy;
 				env::eCells.prop_dir[GetCellX][GetCellY] = editor_prop_dir_copy;
-				env::eCells.terrain_height[GetCellX][GetCellY] = editor_height_copy;
+				env::eCells.terrain_height_ne[GetCellX][GetCellY] = editor_height_copy_ne;
+				env::eCells.terrain_height_nw[GetCellX][GetCellY] = editor_height_copy_nw;
+				env::eCells.terrain_height_se[GetCellX][GetCellY] = editor_height_copy_se;
+				env::eCells.terrain_height_sw[GetCellX][GetCellY] = editor_height_copy_sw;
 				env::eCells.terrain_material[GetCellX][GetCellY] = editor_material_copy;
 				env::GenerateTerrainMesh();
 			}
@@ -507,26 +478,62 @@ namespace index
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_R))
 			{
-				if (!input::GetHeld(input::key::RUN))
+				if (input::GetHeld(input::key::RUN))
 				{
-					if (env::eCells.terrain_height[GetCellX][GetCellY] > 0u)
-						++env::eCells.terrain_height[GetCellX][GetCellY];
+					++env::eCells.terrain_height_ne[GetCellX][GetCellY];
+					++env::eCells.terrain_height_nw[GetCellX][GetCellY];
+					++env::eCells.terrain_height_se[GetCellX][GetCellY];
+					++env::eCells.terrain_height_sw[GetCellX][GetCellY];
+				}
+				else if (input::GetHeld(input::key::CROUCH))
+				{
+					if (GetOffsX > 0.f && GetOffsY > 0.f) { // NE
+						if (env::eCells.terrain_height_nw[GetCellX + 1][GetCellY] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
+							++env::eCells.terrain_height_nw[GetCellX + 1][GetCellY];
+						if (env::eCells.terrain_height_se[GetCellX][GetCellY + 1] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
+							++env::eCells.terrain_height_se[GetCellX][GetCellY + 1];
+						if (env::eCells.terrain_height_sw[GetCellX + 1][GetCellY + 1] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
+							++env::eCells.terrain_height_sw[GetCellX + 1][GetCellY + 1];
+						++env::eCells.terrain_height_ne[GetCellX][GetCellY];
+					}
+					else if (GetOffsY > 0.f) { // NW
+						if (env::eCells.terrain_height_ne[GetCellX - 1][GetCellY] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
+							++env::eCells.terrain_height_ne[GetCellX - 1][GetCellY];
+						if (env::eCells.terrain_height_sw[GetCellX][GetCellY + 1] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
+							++env::eCells.terrain_height_sw[GetCellX][GetCellY + 1];
+						if (env::eCells.terrain_height_se[GetCellX - 1][GetCellY + 1] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
+							++env::eCells.terrain_height_se[GetCellX - 1][GetCellY + 1];
+						++env::eCells.terrain_height_nw[GetCellX][GetCellY];
+					}
+					else if (GetOffsX > 0.f) { // SE
+						if (env::eCells.terrain_height_sw[GetCellX + 1][GetCellY] == env::eCells.terrain_height_se[GetCellX][GetCellY])
+							++env::eCells.terrain_height_sw[GetCellX + 1][GetCellY];
+						if (env::eCells.terrain_height_ne[GetCellX][GetCellY - 1] == env::eCells.terrain_height_se[GetCellX][GetCellY])
+							++env::eCells.terrain_height_ne[GetCellX][GetCellY - 1];
+						if (env::eCells.terrain_height_nw[GetCellX + 1][GetCellY - 1] == env::eCells.terrain_height_se[GetCellX][GetCellY])
+							++env::eCells.terrain_height_nw[GetCellX + 1][GetCellY - 1];
+						++env::eCells.terrain_height_se[GetCellX][GetCellY];
+					}
+					else { // SW
+						if (env::eCells.terrain_height_se[GetCellX - 1][GetCellY] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
+							++env::eCells.terrain_height_se[GetCellX - 1][GetCellY];
+						if (env::eCells.terrain_height_nw[GetCellX][GetCellY - 1] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
+							++env::eCells.terrain_height_nw[GetCellX][GetCellY - 1];
+						if (env::eCells.terrain_height_ne[GetCellX - 1][GetCellY - 1] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
+							++env::eCells.terrain_height_ne[GetCellX - 1][GetCellY - 1];
+						++env::eCells.terrain_height_sw[GetCellX][GetCellY];
+					}
 				}
 				else
 				{
-					env::eCells.terrain_height[GetCellX][GetCellY] += 4;
-					env::eCells.terrain_height[GetCellX + 1][GetCellY] += 3;
-					env::eCells.terrain_height[GetCellX - 1][GetCellY] += 3;
-					env::eCells.terrain_height[GetCellX][GetCellY + 1] += 3;
-					env::eCells.terrain_height[GetCellX][GetCellY - 1] += 3;
-					env::eCells.terrain_height[GetCellX + 1][GetCellY + 1] += 2;
-					env::eCells.terrain_height[GetCellX + 1][GetCellY - 1] += 2;
-					env::eCells.terrain_height[GetCellX - 1][GetCellY + 1] += 2;
-					env::eCells.terrain_height[GetCellX - 1][GetCellY - 1] += 2;
-					env::eCells.terrain_height[GetCellX + 2][GetCellY] += 1;
-					env::eCells.terrain_height[GetCellX - 2][GetCellY] += 1;
-					env::eCells.terrain_height[GetCellX][GetCellY + 2] += 1;
-					env::eCells.terrain_height[GetCellX][GetCellY - 2] += 1;
+					if (GetOffsX > 0.f && GetOffsY > 0.f)
+						++env::eCells.terrain_height_ne[GetCellX][GetCellY];
+					else if (GetOffsY > 0.f)
+						++env::eCells.terrain_height_nw[GetCellX][GetCellY];
+					else if (GetOffsX > 0.f)
+						++env::eCells.terrain_height_se[GetCellX][GetCellY];
+					else
+						++env::eCells.terrain_height_sw[GetCellX][GetCellY];
 				}
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
@@ -534,26 +541,62 @@ namespace index
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_L))
 			{
-				if (!input::GetHeld(input::key::RUN))
+				if (input::GetHeld(input::key::RUN))
 				{
-					if (env::eCells.terrain_height[GetCellX][GetCellY] < 255)
-						--env::eCells.terrain_height[GetCellX][GetCellY];
+					--env::eCells.terrain_height_ne[GetCellX][GetCellY];
+					--env::eCells.terrain_height_nw[GetCellX][GetCellY];
+					--env::eCells.terrain_height_se[GetCellX][GetCellY];
+					--env::eCells.terrain_height_sw[GetCellX][GetCellY];
+				}
+				else if (input::GetHeld(input::key::CROUCH))
+				{
+					if (GetOffsX > 0.f && GetOffsY > 0.f) { // NE
+						if (env::eCells.terrain_height_nw[GetCellX + 1][GetCellY] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
+							--env::eCells.terrain_height_nw[GetCellX + 1][GetCellY];
+						if (env::eCells.terrain_height_se[GetCellX][GetCellY + 1] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
+							--env::eCells.terrain_height_se[GetCellX][GetCellY + 1];
+						if (env::eCells.terrain_height_sw[GetCellX + 1][GetCellY + 1] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
+							--env::eCells.terrain_height_sw[GetCellX + 1][GetCellY + 1];
+						--env::eCells.terrain_height_ne[GetCellX][GetCellY];
+					}
+					else if (GetOffsY > 0.f) { // NW
+						if (env::eCells.terrain_height_ne[GetCellX - 1][GetCellY] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
+							--env::eCells.terrain_height_ne[GetCellX - 1][GetCellY];
+						if (env::eCells.terrain_height_sw[GetCellX][GetCellY + 1] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
+							--env::eCells.terrain_height_sw[GetCellX][GetCellY + 1];
+						if (env::eCells.terrain_height_se[GetCellX - 1][GetCellY + 1] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
+							--env::eCells.terrain_height_se[GetCellX - 1][GetCellY + 1];
+						--env::eCells.terrain_height_nw[GetCellX][GetCellY];
+					}
+					else if (GetOffsX > 0.f) { // SE
+						if (env::eCells.terrain_height_sw[GetCellX + 1][GetCellY] == env::eCells.terrain_height_se[GetCellX][GetCellY])
+							--env::eCells.terrain_height_sw[GetCellX + 1][GetCellY];
+						if (env::eCells.terrain_height_ne[GetCellX][GetCellY - 1] == env::eCells.terrain_height_se[GetCellX][GetCellY])
+							--env::eCells.terrain_height_ne[GetCellX][GetCellY - 1];
+						if (env::eCells.terrain_height_nw[GetCellX + 1][GetCellY - 1] == env::eCells.terrain_height_se[GetCellX][GetCellY])
+							--env::eCells.terrain_height_nw[GetCellX + 1][GetCellY - 1];
+						--env::eCells.terrain_height_se[GetCellX][GetCellY];
+					}
+					else { // SW
+						if (env::eCells.terrain_height_se[GetCellX - 1][GetCellY] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
+							--env::eCells.terrain_height_se[GetCellX - 1][GetCellY];
+						if (env::eCells.terrain_height_nw[GetCellX][GetCellY - 1] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
+							--env::eCells.terrain_height_nw[GetCellX][GetCellY - 1];
+						if (env::eCells.terrain_height_ne[GetCellX - 1][GetCellY - 1] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
+							--env::eCells.terrain_height_ne[GetCellX - 1][GetCellY - 1];
+						--env::eCells.terrain_height_sw[GetCellX][GetCellY];
+					}
 				}
 				else
 				{
-					env::eCells.terrain_height[GetCellX][GetCellY] -= 4;
-					env::eCells.terrain_height[GetCellX + 1][GetCellY] -= 3;
-					env::eCells.terrain_height[GetCellX - 1][GetCellY] -= 3;
-					env::eCells.terrain_height[GetCellX][GetCellY + 1] -= 3;
-					env::eCells.terrain_height[GetCellX][GetCellY - 1] -= 3;
-					env::eCells.terrain_height[GetCellX + 1][GetCellY + 1] -= 2;
-					env::eCells.terrain_height[GetCellX + 1][GetCellY - 1] -= 2;
-					env::eCells.terrain_height[GetCellX - 1][GetCellY + 1] -= 2;
-					env::eCells.terrain_height[GetCellX - 1][GetCellY - 1] -= 2;
-					env::eCells.terrain_height[GetCellX + 2][GetCellY] -= 1;
-					env::eCells.terrain_height[GetCellX - 2][GetCellY] -= 1;
-					env::eCells.terrain_height[GetCellX][GetCellY + 2] -= 1;
-					env::eCells.terrain_height[GetCellX][GetCellY - 2] -= 1;
+					if (GetOffsX > 0.f && GetOffsY > 0.f)
+						--env::eCells.terrain_height_ne[GetCellX][GetCellY];
+					else if (GetOffsY > 0.f)
+						--env::eCells.terrain_height_nw[GetCellX][GetCellY];
+					else if (GetOffsX > 0.f)
+						--env::eCells.terrain_height_se[GetCellX][GetCellY];
+					else
+						--env::eCells.terrain_height_sw[GetCellX][GetCellY];
 				}
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
@@ -562,6 +605,8 @@ namespace index
 
 			#undef GetCellX
 			#undef GetCellY
+			#undef GetOffsX
+			#undef GetOffsY
 		}
 		else
 		{
@@ -947,17 +992,21 @@ namespace index
 		{
 			player_hp[activePlayer] = ENTITY(players[activePlayer])->state.damagestate;
 		}
+		#ifndef DEF_OLDSKOOL
+		#ifndef DEF_3PP
 		// croshair
 		if (cfg::bCrossHairs) graphics::DrawGUITexture(&res::GetT(res::t_gui_crosshair), 0, 0, 32, 32);
+		#endif
+		#endif
 		// hp
-		graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_red), p1_x_start + 32, p1_y_start + 8, (int)(((btf32)index::GetHP(players[activePlayer]) / 1000.f) * (64.f)), 16);
+		graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_red), p1_x_start + 32, p1_y_start + 8, (int)(((btf32)core::GetHP(players[activePlayer]) / 1000.f) * (64.f)), 16);
 		char stuff[32];
 		_itoa(ENTITY(players[activePlayer])->state.damagestate, stuff, 10);
 		text_hp.ReGen(stuff, p1_x_start + 8, p1_x_start + 128, p1_y_start + 16);
 		text_hp.Draw(&res::GetT(res::t_gui_font));
 
 		// enemy hp
-		if (viewtarget[activePlayer] != ID_NULL && viewtarget[activePlayer] != index::players[activePlayer]) // If not null or player
+		if (viewtarget[activePlayer] != ID_NULL && viewtarget[activePlayer] != core::players[activePlayer]) // If not null or player
 		{
 			int textboxX = p1_x_start + 16;
 			int textboxY = p1_y_start + 64;
@@ -969,7 +1018,7 @@ namespace index
 				guibox.ReGen(textboxX, textboxX + text_temp.sizex, textboxY - text_temp.sizey, textboxY, 4, 10);
 			}
 			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
-				graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(((btf32)index::GetHP(viewtarget[activePlayer]) / 1000.f) * (64.f)), 16);
+				graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(((btf32)core::GetHP(viewtarget[activePlayer]) / 1000.f) * (64.f)), 16);
 			guibox.Draw(&res::GetT(res::t_gui_box));
 			text_temp.Draw(&res::GetT(res::t_gui_font));
 			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
@@ -988,24 +1037,25 @@ namespace index
 		text_fps.Draw(&res::GetT(res::t_gui_font));
 	}
 
-	void SetInput(btID playerIndex, m::Vector2 input, btf32 rot_x, btf32 rot_y,
-		bool atk, bool atk_hit, bool atk2,
+	void SetPlayerInput(btID playerIndex, m::Vector2 input, btf32 rot_x, btf32 rot_y,
+		bool use, bool use_hit, bool use_alt,
 		bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C,
 		bool crouch, bool jump)
 	{
-		ACTOR(players[playerIndex])->input = input;
-		ACTOR(players[playerIndex])->viewYaw.Rotate(rot_x);
-		ACTOR(players[playerIndex])->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_USE, atk);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_USE_HIT, atk_hit);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_USE_ALT, atk2);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_RUN, run);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_AIM, aim);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_CROUCH, crouch);
-		ACTOR(players[playerIndex])->inputBV.setto(Actor::IN_JUMP, jump);
+		Actor* actor = ACTOR(players[playerIndex]);
+		actor->input = m::Rotate(input, actor->viewYaw.Rad()) * m::Vector2(-1.f, 1.f);
+		actor->viewYaw.Rotate(rot_x);
+		actor->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
+		actor->inputBV.setto(Actor::IN_USE, use);
+		actor->inputBV.setto(Actor::IN_USE_HIT, use_hit);
+		actor->inputBV.setto(Actor::IN_USE_ALT, use_alt);
+		actor->inputBV.setto(Actor::IN_RUN, run);
+		actor->inputBV.setto(Actor::IN_AIM, aim);
+		actor->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
+		actor->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
+		actor->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
+		actor->inputBV.setto(Actor::IN_CROUCH, crouch);
+		actor->inputBV.setto(Actor::IN_JUMP, jump);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
@@ -1126,7 +1176,7 @@ namespace index
 		if (id != BUF_NULL)
 		{
 			IndexInitItemInstance(id, acv::item_types[item_template]);
-			GETITEM_MISC(id)->id_item_template = item_template;
+			GETITEMINST(id)->id_item_template = item_template;
 			std::cout << "Created item " << id << std::endl;
 		}
 		else

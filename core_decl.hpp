@@ -1,4 +1,4 @@
-// Included in index_fn.cpp
+// Included in core_func
 
 //#define CUTE_C2_IMPLEMENTATION
 //#include "3rdparty/cute_c2.h"
@@ -17,7 +17,7 @@ struct Index
 	cell cells[WORLD_SIZE][WORLD_SIZE];
 };
 
-namespace index
+namespace core
 {
 	// Environment lightmap texture
 	// R: Unused | G: Lightsources | B: Unused | A: Unused
@@ -40,7 +40,10 @@ namespace index
 	//env::EnvNode editor_node_copy;
 	btID editor_prop_copy;
 	env::NodePropDirection editor_prop_dir_copy;
-	btui8 editor_height_copy;
+	btui8 editor_height_copy_ne;
+	btui8 editor_height_copy_nw;
+	btui8 editor_height_copy_se;
+	btui8 editor_height_copy_sw;
 	btui8 editor_material_copy;
 
 	struct ReferenceCell

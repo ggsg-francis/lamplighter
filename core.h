@@ -41,7 +41,7 @@ namespace mem
 
 extern btui64 tickCount_temp;
 
-namespace index
+namespace core
 {
 	void Init();
 	void End();
@@ -101,7 +101,7 @@ namespace index
 	extern btID players[2];
 	extern btID viewtarget[2];
 
-	void SetInput(btID PLAYER_INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH,
+	void SetPlayerInput(btID PLAYER_INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH,
 		bool WantAttack, bool use_hit, bool WantAttack2,
 		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C,
 		bool crouch, bool jump);
@@ -110,7 +110,6 @@ namespace index
 	btID GetViewTargetID(btui32 player);
 
 	void EntDeintersect(Entity* ENT, CellSpace& CSI);
-	void ActorRunAI(btID ID);
 	void ActorCastProj(btID ID);
 
 	// Adds this entity to the local vector of this cell

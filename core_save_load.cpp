@@ -12,7 +12,7 @@
 #define SIZE_32 4
 #define SIZE_64 8
 
-namespace index
+namespace core
 {
 	struct ReferenceCell
 	{
@@ -69,7 +69,7 @@ void SaveState()
 		item_done:
 			if (item_reference_count == 0u)
 			{
-				index::DestroyItem(index_item);
+				core::DestroyItem(index_item);
 				std::cout << "Destroyed Item with no references!" << std::endl;
 			}
 		}
@@ -85,8 +85,8 @@ void SaveState()
 		fwrite(&FILE_VER, SIZE_32, 1, file);
 
 		// Actual game state
-		fwrite(&index::players, SIZE_16, NUM_PLAYERS, file);
-		fwrite(&index::spawnz_time_temp, SIZE_64, 1, file);
+		fwrite(&core::players, SIZE_16, NUM_PLAYERS, file);
+		fwrite(&core::spawnz_time_temp, SIZE_64, 1, file);
 
 		//-------------------------------- ENTITIES
 
@@ -99,20 +99,22 @@ void SaveState()
 		{
 			if (block_entity.used[i])
 			{
-				fwrite(&ENTITY(i)->type, SIZE_8, 1, file);
+				Entity* entptr = ENTITY(i);
 
-				fwrite(&ENTITY(i)->radius, SIZE_32, 1, file);
-				fwrite(&ENTITY(i)->height, SIZE_32, 1, file);
-				fwrite(&ENTITY(i)->properties, SIZE_8, 1, file);
-				fwrite(&ENTITY(i)->faction, SIZE_8, 1, file);
-				fwrite(&ENTITY(i)->state.damagestate, SIZE_16, 1, file); // duplicated due to it used to being a 32 bit number
-				fwrite(&ENTITY(i)->state.damagestate, SIZE_16, 1, file); // duplicated due to it used to being a 32 bit number
-				fwrite(&ENTITY(i)->state.stateFlags, SIZE_64, 1, file);
-				fwrite(&ENTITY(i)->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
-				fwrite(&ENTITY(i)->t.position.x, SIZE_32, 1, file);
-				fwrite(&ENTITY(i)->t.position.y, SIZE_32, 1, file);
-				fwrite(&ENTITY(i)->t.height, SIZE_32, 1, file);
-				fwrite(&ENTITY(i)->t.yaw, SIZE_32, 1, file);
+				fwrite(&entptr->type, SIZE_8, 1, file);
+
+				fwrite(&entptr->radius, SIZE_32, 1, file);
+				fwrite(&entptr->height, SIZE_32, 1, file);
+				fwrite(&entptr->properties, SIZE_8, 1, file);
+				fwrite(&entptr->faction, SIZE_8, 1, file);
+				fwrite(&entptr->state.damagestate, SIZE_16, 1, file); // duplicated due to it used to being a 32 bit number
+				fwrite(&entptr->state.damagestate, SIZE_16, 1, file); // duplicated due to it used to being a 32 bit number
+				fwrite(&entptr->state.stateFlags, SIZE_64, 1, file);
+				fwrite(&entptr->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
+				fwrite(&entptr->t.position.x, SIZE_32, 1, file);
+				fwrite(&entptr->t.position.y, SIZE_32, 1, file);
+				fwrite(&entptr->t.height, SIZE_32, 1, file);
+				fwrite(&entptr->t.yaw, SIZE_32, 1, file);
 
 				switch (ENTITY(i)->type)
 				{
@@ -145,27 +147,29 @@ void SaveState()
 		{
 			if (block_item.used[i])
 			{
-				fwrite(&GETITEM_MISC(i)->id_item_template, SIZE_16, 1, file);
+				HeldItem* itemptr = GETITEMINST(i);
 
-				fwrite(&GETITEM_MISC(i)->ePose, SIZE_8, 1, file);
-				fwrite(&GETITEM_MISC(i)->loc, SIZE_32 * 3, 1, file);
-				fwrite(&GETITEM_MISC(i)->loc_velocity, SIZE_32 * 3, 1, file);
-				fwrite(&GETITEM_MISC(i)->pitch, SIZE_32, 1, file);
-				fwrite(&GETITEM_MISC(i)->pitch_velocity, SIZE_32, 1, file);
-				fwrite(&GETITEM_MISC(i)->yaw, SIZE_32, 1, file);
-				fwrite(&GETITEM_MISC(i)->yaw_velocity, SIZE_32, 1, file);
+				fwrite(&itemptr->id_item_template, SIZE_16, 1, file);
+
+				fwrite(&itemptr->ePose, SIZE_8, 1, file);
+				fwrite(&itemptr->loc, SIZE_32 * 3, 1, file);
+				fwrite(&itemptr->loc_velocity, SIZE_32 * 3, 1, file);
+				fwrite(&itemptr->pitch, SIZE_32, 1, file);
+				fwrite(&itemptr->pitch_velocity, SIZE_32, 1, file);
+				fwrite(&itemptr->yaw, SIZE_32, 1, file);
+				fwrite(&itemptr->yaw_velocity, SIZE_32, 1, file);
 				
-				fwrite(&GETITEM_MISC(i)->swinging, SIZE_8, 1, file);
-				fwrite(&GETITEM_MISC(i)->swingState, SIZE_32, 1, file);
+				fwrite(&itemptr->swinging, SIZE_8, 1, file);
+				fwrite(&itemptr->swingState, SIZE_32, 1, file);
 				
-				fwrite(&GETITEM_MISC(i)->ang_aim_offset_temp, SIZE_32, 1, file);
-				fwrite(&GETITEM_MISC(i)->ang_aim_pitch, SIZE_32, 1, file);
-				fwrite(&GETITEM_MISC(i)->fire_time, SIZE_32, 1, file);
-				fwrite(&GETITEM_MISC(i)->id_ammoInstance, SIZE_16, 1, file);
+				fwrite(&itemptr->ang_aim_offset_temp, SIZE_32, 1, file);
+				fwrite(&itemptr->ang_aim_pitch, SIZE_32, 1, file);
+				fwrite(&itemptr->fire_time, SIZE_64, 1, file);
+				fwrite(&itemptr->id_ammoInstance, SIZE_16, 1, file);
 				
-				fwrite(&GETITEM_MISC(i)->charge, SIZE_32, 1, file);
+				fwrite(&itemptr->charge, SIZE_32, 1, file);
 				
-				fwrite(&GETITEM_MISC(i)->uses, SIZE_32, 1, file);
+				fwrite(&itemptr->uses, SIZE_32, 1, file);
 			}
 		}
 
@@ -202,8 +206,8 @@ void LoadStateFileV001()
 		fread(&FILE_VER, SIZE_32, 1, file);
 
 		// Actual game state
-		fread(&index::players, SIZE_16, NUM_PLAYERS, file);
-		fread(&index::spawnz_time_temp, SIZE_64, 1, file);
+		fread(&core::players, SIZE_16, NUM_PLAYERS, file);
+		fread(&core::spawnz_time_temp, SIZE_64, 1, file);
 
 		//-------------------------------- ENTITIES
 
@@ -275,27 +279,27 @@ void LoadStateFileV001()
 
 				IndexInitItemInstance(i, acv::item_types[template_temp]);
 
-				GETITEM_MISC(i)->id_item_template = template_temp;
+				GETITEMINST(i)->id_item_template = template_temp;
 
-				fread(&GETITEM_MISC(i)->ePose, SIZE_8, 1, file);
-				fread(&GETITEM_MISC(i)->loc, SIZE_32 * 3, 1, file);
-				fread(&GETITEM_MISC(i)->loc_velocity, SIZE_32 * 3, 1, file);
-				fread(&GETITEM_MISC(i)->pitch, SIZE_32, 1, file);
-				fread(&GETITEM_MISC(i)->pitch_velocity, SIZE_32, 1, file);
-				fread(&GETITEM_MISC(i)->yaw, SIZE_32, 1, file);
-				fread(&GETITEM_MISC(i)->yaw_velocity, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->ePose, SIZE_8, 1, file);
+				fread(&GETITEMINST(i)->loc, SIZE_32 * 3, 1, file);
+				fread(&GETITEMINST(i)->loc_velocity, SIZE_32 * 3, 1, file);
+				fread(&GETITEMINST(i)->pitch, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->pitch_velocity, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->yaw, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->yaw_velocity, SIZE_32, 1, file);
 
-				fread(&GETITEM_MISC(i)->swinging, SIZE_8, 1, file);
-				fread(&GETITEM_MISC(i)->swingState, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->swinging, SIZE_8, 1, file);
+				fread(&GETITEMINST(i)->swingState, SIZE_32, 1, file);
 
-				fread(&GETITEM_MISC(i)->ang_aim_offset_temp, SIZE_32, 1, file);
-				fread(&GETITEM_MISC(i)->ang_aim_pitch, SIZE_32, 1, file);
-				fread(&GETITEM_MISC(i)->fire_time, SIZE_32, 1, file);
-				fread(&GETITEM_MISC(i)->id_ammoInstance, SIZE_16, 1, file);
+				fread(&GETITEMINST(i)->ang_aim_offset_temp, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->ang_aim_pitch, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->fire_time, SIZE_64, 1, file);
+				fread(&GETITEMINST(i)->id_ammoInstance, SIZE_16, 1, file);
 
-				fread(&GETITEM_MISC(i)->charge, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->charge, SIZE_32, 1, file);
 
-				fread(&GETITEM_MISC(i)->uses, SIZE_32, 1, file);
+				fread(&GETITEMINST(i)->uses, SIZE_32, 1, file);
 
 				std::cout << "Loaded item ID " << i << std::endl;
 			}
@@ -325,7 +329,7 @@ void LoadState()
 	FILE* file = fopen("save/save.bin", "rb"); // Open file
 	if (file != NULL)
 	{
-		index::ClearBuffers();
+		core::ClearBuffers();
 
 		fseek(file, 0, SEEK_SET); // Seek file beginning
 		fread(&FILE_VER, SIZE_32, 1, file); // Load file version

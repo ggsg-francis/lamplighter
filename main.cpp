@@ -48,12 +48,6 @@ extern "C" {
 }
 #endif
 
-//#ifdef DEF_USE_CS
-//// For getting the window handle
-//#define GLFW_EXPOSE_NATIVE_WIN32
-//#include <GLFW\glfw3native.h>
-//#endif
-
 //engine
 //try not to include so many things!
 #include "graphics.hpp"
@@ -66,6 +60,10 @@ extern "C" {
 #include "core.h"
 #include "weather.h"
 #include "test_zone.h"
+
+//-------------------------------- TEMP
+
+btf32 wipe_time = 0.f;
 
 //-------------------------------- WINDOWING GLOBAL VARIABLES
 
@@ -86,44 +84,13 @@ GLuint framebuffer_2; // Framebuffer
 graphics::Texture rendertexture_2; // Framebuffer render texture, can be sampled
 graphics::Texture depthbuffer_2; // Framebuffer depth buffer, can be sampled
 
-GLuint framebuffer_intermediate; // not really sure what this does actually!!!!!!!!!!!!!!
+GLuint framebuffer_intermediate; // not really sure, 'Second post-processing framebuffer'
+graphics::Texture screenTexture; // used by intermediate
+GLuint framebuffer_intermediate_downsample; // Downsampled framebuffer for post effects
 
 GLuint framebuffer_shadow; // Shadowmap framebuffer
-GLuint rendertexture_shadow; // Shadowmap rendertexture
-
-//________________________________________________________________________________________________________________________________
-// UTIL FUNCTIONS ----------------------------------------------------------------------------------------------------------------
-
-void RegenFramebuffers()
-{
-	// Left screen
-	glGenFramebuffers(1, &framebuffer_1);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
-	rendertexture_1.InitRenderTexture(graphics::FrameSizeX(), graphics::FrameSizeY(), false);
-	depthbuffer_1.InitDepthBuffer(graphics::FrameSizeX(), graphics::FrameSizeY(), false);
-	//depthbuffer_1.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
-
-	// Right screen
-	glGenFramebuffers(1, &framebuffer_2);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
-	rendertexture_2.InitRenderTexture(graphics::FrameSizeX(), graphics::FrameSizeY(), false);
-	depthbuffer_2.InitDepthBuffer(graphics::FrameSizeX(), graphics::FrameSizeY(), false);
-	//depthbuffer_2.InitDepthTexture(cfg::iWinX / 2, cfg::iWinY, false);
-}
-
-//void FocusCallback(GLFWwindow* win, int focus2)
-//{
-//	//focus = focus2 == 1;
-//}
-//void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
-//{
-//	cfg::iWinX = width; cfg::iWinY = height;
-//	if (!cfg::bEditMode)
-//	{
-//		graphics::SetFrameSize(cfg::iWinX, cfg::iWinY);
-//		RegenFramebuffers();
-//	}
-//}
+//GLuint rendertexture_shadow; // Shadowmap rendertexture
+graphics::Texture rendertexture_shadow; // Shadowmap rendertexture
 
 //________________________________________________________________________________________________________________________________
 // TRANSLATE INPUTS --------------------------------------------------------------------------------------------------------------
@@ -133,22 +100,19 @@ bool step_pause = false;
 // Convert device input to chara input
 inline void TranslateInput()
 {
+	#if defined DEF_OLDSKOOL || defined DEF_3PP
+	// test
+	#endif
+
+
 	#ifdef DEF_NMP
 	for (btID i = 0u; i < NUM_PLAYERS; ++i)
 	{
-		// Generate analogue input from directional keys
-		m::Vector2 input_p1(0.f, 0.f);
-		if (input::GetHeld(i, input::key::DIR_F)) // Forward
-			input_p1.y += 1.f;
-		if (input::GetHeld(i, input::key::DIR_B)) // Back
-			input_p1.y -= 1.f;
-		if (input::GetHeld(i, input::key::DIR_R)) // Right
-			input_p1.x += 1.f;
-		if (input::GetHeld(i, input::key::DIR_L)) // Left
-			input_p1.x -= 1.f;
 		// Set input
-		index::SetInput((btID)i,
-			input_p1, input::buf[i][INPUT_BUF_GET].mouse_x * 0.25f, input::buf[i][INPUT_BUF_GET].mouse_y * 0.25f,
+		index::SetPlayerInput((btID)i,
+			m::Vector2((btf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
+			(btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
+			input::buf[i][INPUT_BUF_GET].mouse_x * 0.25f, input::buf[i][INPUT_BUF_GET].mouse_y * 0.25f,
 			input::GetHeld(i, input::key::USE),
 			input::GetHit(i, input::key::USE),
 			input::GetHit(i, input::key::USE_ALT),
@@ -161,19 +125,11 @@ inline void TranslateInput()
 			input::GetHeld(i, input::key::JUMP));
 	}
 	#else
-	// Generate analogue input from directional keys
-	m::Vector2 input_p1(0.f, 0.f);
-	if (input::GetHeld(input::key::DIR_F)) // Forward
-		input_p1.y += 1.f;
-	if (input::GetHeld(input::key::DIR_B)) // Back
-		input_p1.y -= 1.f;
-	if (input::GetHeld(input::key::DIR_R)) // Right
-		input_p1.x += 1.f;
-	if (input::GetHeld(input::key::DIR_L)) // Left
-		input_p1.x -= 1.f;
-	// Set input
-	index::SetInput(0u,
-		input_p1, input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
+	// Set input for player 0
+	core::SetPlayerInput(0u,
+		m::Vector2((btf32)(input::GetHeld(input::key::DIR_L) - input::GetHeld(input::key::DIR_R)),
+		(btf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
+		input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
 		input::GetHeld(input::key::USE),
 		input::GetHit(input::key::USE),
 		input::GetHit(input::key::USE_ALT),
@@ -186,12 +142,10 @@ inline void TranslateInput()
 		input::GetHeld(input::key::JUMP));
 	if (cfg::bSplitScreen)
 	{
-		// Generate analogue input from joystick input
-		m::Vector2 input_p2(0.f, 0.f);
-		input_p2.x = input::BUF_LOCALGET.joy_x_a;
-		input_p2.y = -input::BUF_LOCALGET.joy_y_a;
-		// Set input
-		index::SetInput(1u, input_p2, input::BUF_LOCALGET.joy_x_b * 8.f, input::BUF_LOCALGET.joy_y_b * 8.f,
+		// Set input for player 1
+		core::SetPlayerInput(1u,
+			m::Vector2(-input::BUF_LOCALGET.joy_x_a, -input::BUF_LOCALGET.joy_y_a),
+			input::BUF_LOCALGET.joy_x_b * 8.f, input::BUF_LOCALGET.joy_y_b * 8.f,
 			input::GetHeld(input::key::C_USE),
 			input::GetHit(input::key::C_USE),
 			input::GetHit(input::key::C_USE_ALT),
@@ -230,7 +184,7 @@ inline void TranslateInputEditor()
 		//if (input::GetHeld(input::key::DIR_L)) // Left
 		//	input_p1.x -= 1.f;
 		// Set input
-		index::SetInput(0u, input_p1, input::BUF_LOCALGET.mouse_x * mouserot_mult, input::BUF_LOCALGET.mouse_y * mouserot_mult,
+		core::SetPlayerInput(0u, input_p1, input::BUF_LOCALGET.mouse_x * mouserot_mult, input::BUF_LOCALGET.mouse_y * mouserot_mult,
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE_ALT),
@@ -243,15 +197,154 @@ inline void TranslateInputEditor()
 			input::GetHit(input::key::JUMP));
 
 		//do stuff
-		index::Tick(FRAME_TIME);
+		core::Tick(FRAME_TIME);
 		weather::Tick(FRAME_TIME);
 	}
 }
 
 //________________________________________________________________________________________________________________________________
+// UTIL FUNCTIONS ----------------------------------------------------------------------------------------------------------------
+
+bool MainTick(SDL_Event* e)
+{
+	aud::Update(FRAME_TIME);
+
+	input::ClearHitsAndDelta();
+	while (SDL_PollEvent(e)) input::UpdateInput(e);
+
+	// TODO: think this over, there must be a better way to handle this
+	#ifdef DEF_NMP
+	if (cfg::bHost)
+	{
+		network::RecvTCP();
+		network::SendInputBuffer();
+	}
+	else
+	{
+		network::SendInputBuffer();
+		network::RecvTCP();
+	}
+	#endif
+
+	// If we reach this point, its time to run the tick
+	#ifdef DEF_NMP
+	input::CycleBuffers();
+	// Quit if any player quits
+	for (btui32 i = 0; i < NUM_PLAYERS; ++i)
+		if (input::GetHit(i, input::key::QUIT)) return false;
+	#else
+	if (input::GetHit(input::key::QUIT)) return false;
+	#endif
+	TranslateInput();
+	core::Tick((btf32)(FRAME_TIME));
+	weather::Tick((btf32)(FRAME_TIME));
+	return true;
+}
+
+void MainDraw()
+{
+	// BUFFER 1 (LEFT SCREEN)
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
+
+	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
+	glm::vec3* fogC = (glm::vec3*)weather::FogColour();
+	glClearColor(fogC->r, fogC->g, fogC->b, 1.0f);
+
+	#ifndef DEF_NMP
+	//-------------------------------- BUFFER 1 (LEFT SCREEN)
+	// Set GL properties for solid rendering
+	glEnable(GL_DEPTH_TEST); glDisable(GL_BLEND); glBlendFunc(GL_ONE, GL_ZERO);
+	//-------------------------------- RENDER SHADOWMAP
+	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	core::SetViewFocus(0u); // Set render POV
+	core::Draw(false);
+	//-------------------------------- RENDER VIEW
+	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	core::SetViewFocus(0u); // Set render POV
+	core::Draw(); core::DrawGUI();
+	core::TickGUI(); // causes a crash if before drawgui (does it still?)
+
+	//-------------------------------- BUFFER 2 (RIGHT SCREEN)
+	if (cfg::bSplitScreen) {
+		// Set GL properties for solid rendering (again....)
+		glEnable(GL_DEPTH_TEST); glDisable(GL_BLEND); glBlendFunc(GL_ONE, GL_ZERO);
+		//-------------------------------- RENDER SHADOWMAP
+		glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		core::SetViewFocus(1u); // Set render POV to second player
+		core::Draw(false);
+		//-------------------------------- RENDER VIEW
+		glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		core::SetViewFocus(1u); // Set render POV to second player
+		core::Draw(); core::DrawGUI();
+		core::TickGUI(); // causes a crash if before drawgui (does it still?)
+	}
+	#else
+	// Set GL properties for solid rendering
+	glEnable(GL_DEPTH_TEST); glDisable(GL_BLEND); glBlendFunc(GL_ONE, GL_ZERO);
+	//-------------------------------- RENDER SHADOWMAP
+	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	index::SetViewFocus(network::nid); // Set render POV
+	index::Draw(false);
+	//-------------------------------- RENDER VIEW
+	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	index::SetViewFocus(network::nid); // Set render POV
+	index::Draw(); index::DrawGUI();
+	index::TickGUI(); // causes a crash if before drawgui (does it still?)
+	#endif // MP
+}
+
+void RegenFramebuffers()
+{
+	// Left screen
+	glGenFramebuffers(1, &framebuffer_1);
+	rendertexture_1.InitRenderBuffer(framebuffer_1, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	#ifndef DEF_DEPTH_BUFFER_RW
+	depthbuffer_1.InitDepthBufferW(framebuffer_1, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	#else
+	depthbuffer_1.InitDepthBufferRW(framebuffer_1, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	#endif
+
+	// Right screen
+	glGenFramebuffers(1, &framebuffer_2);
+	rendertexture_2.InitRenderBuffer(framebuffer_2, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	#ifndef DEF_DEPTH_BUFFER_RW
+	depthbuffer_2.InitDepthBufferW(framebuffer_2, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	#else
+	depthbuffer_2.InitDepthBufferRW(framebuffer_2, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
+	#endif
+}
+
+void ScreenWipeIn()
+{
+	// screenwipe stuff (temp)
+	/*wipe_time += FRAME_TIME * 1.6f;
+	if (wipe_time > 1.f) wipe_time = 1.f;
+	mat_fb = glm::rotate(mat_fb, glm::radians(wipe_time * 360.f * 2.f), glm::vec3(0.f, 0.f, 1.f));
+	mat_fb = glm::scale(mat_fb, glm::vec3(wipe_time, wipe_time, wipe_time));*/
+}
+
+void ScreenWipeOut()
+{
+
+}
+
+//________________________________________________________________________________________________________________________________
 // MAIN --------------------------------------------------------------------------------------------------------------------------
 
-int main(int argc, char * argv[]) // SDL Main
+// handle pre-game loop initialization
+bool MainBoiler()
 {
 	// Test stuff
 	InitTest();
@@ -261,13 +354,13 @@ int main(int argc, char * argv[]) // SDL Main
 
 	#ifdef DEF_NMP
 	// Connect to server
-	if (!network::Init()) goto exitnoinit;
+	if (!network::Init()) return false;
 	#endif
 
 	//-------------------------------- INITIALIZE SDL2
 
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK) != 0)
-		return 0;
+		return false;
 
 	SDL_Joystick* gGameController = NULL; // Game Controller 1 handler
 
@@ -285,20 +378,25 @@ int main(int argc, char * argv[]) // SDL Main
 
 	sdl_window = SDL_CreateWindow("TSOA", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		cfg::iWinX, cfg::iWinY, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN); // Create window
-	if (!sdl_window) return -1; // Die if creation failed
+	if (!sdl_window) return false; // Die if creation failed
 
 	sdl_glcontext = SDL_GL_CreateContext(sdl_window); // Create our opengl context and attach it to our window
 
-	SDL_GL_SetSwapInterval(1); // This makes our buffer swap syncronized with the monitor's vertical refresh
+	switch (cfg::iFullscreen) {
+	case 1:
+		SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
+		break;
+	case 2:
+		SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		break;
+	}
 
-	SDL_Event e; // Input event
+	SDL_GL_SetSwapInterval(1); // This makes our buffer swap syncronized with the monitor's vertical refresh
 
 	#if defined DEF_INPUT_MOUSE_HIDDEN
 	SDL_ShowCursor(false); // Set mouse cursor invisible
 	#elif defined DEF_INPUT_MOUSE_1ST_PERSON
 	SDL_SetRelativeMouseMode((SDL_bool)true); // Set mouse input to use raw input
-	#else
-	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	#endif
 
 	//-------------------------------- INITIALIZE GLAD
@@ -306,113 +404,90 @@ int main(int argc, char * argv[]) // SDL Main
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) // Load all OpenGL function pointers
 	{
 		std::cout << "ERROR: gladLoadGLLoader failed!" << std::endl;
-		return -1;
+		return false;
 	}
 	glViewport(0, 0, cfg::iWinX, cfg::iWinY); // Set opengl viewport size to window size X, Y, W, H
+
+	return true;
+}
+
+int main(int argc, char * argv[]) // SDL Main
+{
+	if (!MainBoiler()) goto exitnoinit;
 
 	//-------------------------------- INITIALIZE GRAPHICS
 
 	graphics::Init();
 
-	//-------------------------------- CONFIGURE GLOBAL OPENGL STATE
+	//-------------------------------- WHATEVER THIS IS MY HANDS ARE REALLY COLD RIGHT NOW
 
-	glEnable(GL_CULL_FACE); // Enable face culling
-	glCullFace(GL_FRONT); // Set culling mode
-	glFrontFace(GL_CCW); // Set front face
-
-	//-------------------------------- SCREEN QUAD (SHOULD GO IN GRAPHICS) FOR DRAWING FRAMEBUFFER
-
-	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-		// positions   // texCoords
-		-1.f,	1.f,	0.f,	1.f,
-		-1.f,	-1.f,	0.f,	0.f,
-		1.f,	-1.f,	1.f,	0.f,
-
-		-1.f,	1.f,	0.f,	1.f,
-		1.f,	-1.f,	1.f,	0.f,
-		1.f,	1.f,	1.f,	1.f
-	};
-	// screen quad VAO
-	glGenVertexArrays(1, &quadVAO);
-	glGenBuffers(1, &quadVBO);
-	glBindVertexArray(quadVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	SDL_Event e; // Input event
 
 	//-------------------------------- CREATE EACH SCREEN FRAMEBUFFER
 
 	if (!cfg::bEditMode) RegenFramebuffers();
 
-	//-------------------------------- CREATE SHADOWBUFFER
+	// Create shadowbuffer
 
 	glGenFramebuffers(1, &framebuffer_shadow);
-	glGenTextures(1, &rendertexture_shadow);
-	glBindTexture(GL_TEXTURE_2D, rendertexture_shadow);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rendertexture_shadow, 0);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	rendertexture_shadow.InitShadowBuffer(framebuffer_shadow);
 
-	//-------------------------------- CONFIGURE SECOND POST-PROCESSING FRAMEBUFFER
+	// Create second post-processing framebuffer
 
 	glGenFramebuffers(1, &framebuffer_intermediate);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_intermediate);
-	// create a color attachment texture
-	unsigned int screenTexture;
-	glGenTextures(1, &screenTexture);
-	glBindTexture(GL_TEXTURE_2D, screenTexture);
-	#ifdef DEF_HDR // HDR Texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, GL_RGBA, GL_FLOAT, NULL); //create a blank image
-	#else // Not HDR Texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	#endif
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	#ifdef DEF_LINEAR_FB
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	#else
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	#endif
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);	// we only need a color buffer
-	#ifdef DEF_MULTISAMPLE
-	glEnable(GL_MULTISAMPLE); // Enable multisampling for anti-aliasing
-	glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); // Enable ATOC for texture alpha
-	#endif // DEF_MULTISAMPLE
+	screenTexture.InitIntermediateTest(framebuffer_intermediate);
+
+	//-------------------------------- SCREEN QUAD (SHOULD GO IN GRAPHICS) FOR DRAWING FRAMEBUFFER
+
+	{
+		float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+			// positions    // texCoords
+			-1.f,	1.f,	0.f,	1.f,
+			-1.f,	-1.f,	0.f,	0.f,
+			1.f,	-1.f,	1.f,	0.f,
+
+			-1.f,	1.f,	0.f,	1.f,
+			1.f,	-1.f,	1.f,	0.f,
+			1.f,	1.f,	1.f,	1.f
+		};
+		// screen quad VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	}
 
 	//-------------------------------- INITIALIZATION
 
 	#ifndef DEF_NMP
-	srand(time(NULL)); //initialize the random seed
+	srand(time(NULL)); // Initialize the random seed
 	#endif
-
 
 	res::Init();
 	#ifdef DEF_USE_CS
-	SDL_SysWMinfo wmInfo;
-	SDL_VERSION(&wmInfo.version);
-	SDL_GetWindowWMInfo(sdl_window, &wmInfo);
-	HWND hwnd = wmInfo.info.win.window;
-	aud::Init(hwnd);
+	#ifdef WIN32
+	{ // (these variables not needed elsewhere)
+		SDL_SysWMinfo wmInfo;
+		SDL_VERSION(&wmInfo.version);
+		SDL_GetWindowWMInfo(sdl_window, &wmInfo);
+		HWND hwnd = wmInfo.info.win.window;
+		aud::Init(hwnd);
+	}
 	#else
 	aud::Init(nullptr);
 	#endif
-	index::Init();
+	#else
+	aud::Init(nullptr);
+	#endif
+	core::Init();
 	input::Init();
 
-	index::SetShadowTexture(rendertexture_shadow);
+	core::SetShadowTexture(rendertexture_shadow.glID);
 
 	//________________________________________________________________________________________________________________________________
 	// ENTER GAME LOOP ---------------------------------------------------------------------------------------------------------------
@@ -421,7 +496,6 @@ int main(int argc, char * argv[]) // SDL Main
 	btf64 next_frame_time = 0.f;
 
 	// Variable declarations (so that they are not crossed by the label jumps)
-	glm::vec3* fogC = nullptr;
 	glm::mat4 mat_fb;
 	btf64 test2;
 
@@ -441,14 +515,8 @@ updtime:
 		#ifdef DEF_SMOOTH_FRAMERATE
 		// Wait until the exact right time to run a new frame
 		while (current_frame_time <= next_frame_time)
-		{
 			current_frame_time = (btf64)SDL_GetTicks() / 1000.;
-		}
 		next_frame_time = current_frame_time + FRAME_TIME;
-
-		//aud::Update(Time::deltaTime);
-		aud::Update(FRAME_TIME);
-
 		#else
 		// Just run the new frame now
 		current_frame_time = (btf64)SDL_GetTicks() / 1000.;
@@ -456,35 +524,8 @@ updtime:
 		Time::Update(current_frame_time);
 		#endif
 
-		input::ClearHitsAndDelta();
-		while (SDL_PollEvent(&e)) input::UpdateInput(&e);
-
-		// TODO: think this over, there must be a better way to handle this
-		#ifdef DEF_NMP
-		if (cfg::bHost)
-		{
-			network::RecvTCP();
-			network::SendInputBuffer();
-		}
-		else
-		{
-			network::SendInputBuffer();
-			network::RecvTCP();
-		}
-		#endif
-
-		// If we reach this point, its time to run the tick
-		#ifdef DEF_NMP
-		input::CycleBuffers();
-		// Quit if any player quits
-		for (btui32 i = 0; i < NUM_PLAYERS; ++i)
-			if (input::GetHit(i, input::key::QUIT)) goto exit;
-		#else
-		if (input::GetHit(input::key::QUIT)) goto exit;
-		#endif
-		TranslateInput();
-		index::Tick((btf32)(FRAME_TIME));
-		weather::Tick((btf32)(FRAME_TIME));
+		// Run the frame
+		if (!MainTick(&e)) goto exit;
 	}
 	// If the program is out of focus, or paused
 	else
@@ -498,74 +539,7 @@ updtime:
 	// RENDER ------------------------------------------------------------------------------------------------------------------------
 
 render:
-
-	// BUFFER 1 (LEFT SCREEN)
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
-
-	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-	fogC = (glm::vec3*)weather::FogColour();
-	glClearColor(fogC->r, fogC->g, fogC->b, 1.0f);
-	//glClearColor(2.f, 2.f, 2.f, 1.0f);
-
-	#ifndef DEF_NMP
-	//-------------------------------- BUFFER 1 (LEFT SCREEN)
-	// Set GL properties for solid rendering
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ZERO);
-	//-------------------------------- RENDER SHADOWMAP
-	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(0u); // Set render POV
-	index::Draw(false);
-	//-------------------------------- RENDER VIEW
-	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(0u); // Set render POV
-	index::Draw(); index::DrawGUI();
-	index::TickGUI(); // causes a crash if before drawgui (does it still?)
-
-	//-------------------------------- BUFFER 2 (RIGHT SCREEN)
-	if (cfg::bSplitScreen) {
-		// Set GL properties for solid rendering (again....)
-		glEnable(GL_DEPTH_TEST);
-		glDisable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ZERO);
-		//-------------------------------- RENDER SHADOWMAP
-		glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		index::SetViewFocus(1u); // Set render POV to second player
-		index::Draw(false);
-		//-------------------------------- RENDER VIEW
-		glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_2);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		index::SetViewFocus(1u); // Set render POV to second player
-		index::Draw(); index::DrawGUI();
-		index::TickGUI(); // causes a crash if before drawgui (does it still?)
-	}
-	#else
-	// Set GL properties for solid rendering
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ZERO);
-	//-------------------------------- RENDER SHADOWMAP
-	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(network::nid); // Set render POV
-	index::Draw(false);
-	//-------------------------------- RENDER VIEW
-	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(network::nid); // Set render POV
-	index::Draw(); index::DrawGUI();
-	index::TickGUI(); // causes a crash if before drawgui (does it still?)
-	#endif // MP
+	MainDraw();
 
 	//-------------------------------- DRAW FRAMEBUFFER (TODO: try and clean this up a bit!)
 
@@ -581,6 +555,11 @@ render:
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, cfg::iWinX, cfg::iWinY);
 
+	// WIPE TEST
+	glClearColor(0.f, 0.f, 0.f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	// END TEST
+
 	graphics::GetShader(graphics::S_POST).Use();
 
 	glDisable(GL_DEPTH_TEST);
@@ -589,6 +568,7 @@ render:
 	glFrontFace(GL_CW);
 
 	mat_fb = glm::mat4(1.0f);
+
 	#ifndef DEF_NMP
 	// Set frame matrix to half-screen
 	if (cfg::bSplitScreen)
@@ -597,13 +577,25 @@ render:
 		mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
 	}
 	#endif // MP
+
+	// screenwipe stuff (temp)
+	wipe_time += FRAME_TIME * 1.6f;
+	if (wipe_time > 1.f) wipe_time = 1.f;
+	mat_fb = glm::rotate(mat_fb, glm::radians(wipe_time * 360.f * 2.f), glm::vec3(0.f, 0.f, 1.f));
+	mat_fb = glm::scale(mat_fb, glm::vec3(wipe_time, wipe_time, wipe_time));
+
 	// get matrix's uniform location and set matrix
 	graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
 
 	glBindVertexArray(quadVAO);
 	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
 	glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
-	glBindTexture(GL_TEXTURE_2D, screenTexture);
+	glBindTexture(GL_TEXTURE_2D, screenTexture.glID);
+	#ifdef DEF_DEPTH_BUFFER_RW
+	glActiveTexture(GL_TEXTURE7); // activate the texture unit first before binding texture
+	glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "depthTexture"), 7);
+	glBindTexture(GL_TEXTURE_2D, depthbuffer_1.glID);
+	#endif
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	// BUFFER 2
@@ -627,7 +619,12 @@ render:
 		glBindVertexArray(quadVAO);
 		glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
 		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
-		glBindTexture(GL_TEXTURE_2D, screenTexture);
+		glBindTexture(GL_TEXTURE_2D, screenTexture.glID);
+		#ifdef DEF_DEPTH_BUFFER_RW
+		glActiveTexture(GL_TEXTURE7); // activate the texture unit first before binding texture
+		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "depthTexture"), 7);
+		glBindTexture(GL_TEXTURE_2D, depthbuffer_1.glID);
+		#endif
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
 	#endif // MP
@@ -637,7 +634,7 @@ render:
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
-	index::DrawPostDraw(FRAME_TIME);
+	core::DrawPostDraw(FRAME_TIME);
 
 	glFrontFace(GL_CCW);
 
@@ -666,8 +663,6 @@ loop_editor:
 	printf("Entered Editor Loop\n");
 	while (true)
 	{
-		//Time::Update((btf64)SDL_GetTicks() / 1000.);
-
 		input::ClearHitsAndDelta();
 		while (SDL_PollEvent(&e)) input::UpdateInput(&e);
 
@@ -684,28 +679,16 @@ loop_editor:
 		glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		index::SetViewFocus(0u);
-		index::Draw(false);
-		index::SetShadowTexture(rendertexture_shadow);
+		core::SetViewFocus(0u);
+		core::Draw(false);
+		core::SetShadowTexture(rendertexture_shadow.glID);
 
 		glViewport(0, 0, cfg::iWinX, cfg::iWinY);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(0.5f, 0.f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		index::SetViewFocus(0u);
-		index::Draw();
-		//// Read pixel
-		//unsigned char pixel[4];
-		//glReadPixels(320, 240, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
-
-		//if (pixel[2] == 0u)
-		//	//index::SetViewTargetID((btID)pixel[0]);
-		//	index::SetViewTargetID((btID)pixel[0] + ((btID)pixel[1] << 8u));
-		//else
-		//	index::SetViewTargetID(ID_NULL);
-
-		//index::DrawGUI();
-		//index::TickGUI(); // causes a crash if before drawgui
+		core::SetViewFocus(0u);
+		core::Draw();
 
 		glFrontFace(GL_CCW);
 
@@ -713,14 +696,12 @@ loop_editor:
 
 		SDL_GL_SwapWindow(sdl_window);
 		input::ClearHitsAndDelta();
-		//glfwPollEvents();
-		//#error
 	}
 
 	//-------------------------------- END PROGRAM
 
 exit:
-	index::End();
+	core::End();
 	aud::End();
 	res::End();
 	graphics::End();

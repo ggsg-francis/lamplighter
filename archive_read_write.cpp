@@ -77,7 +77,7 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "PROPS" << std::endl;
-		for (int i = 0; i < acv::prop_index; i++)
+		for (btui32 i = 0; i < acv::prop_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
 			std::cout << "MESH ID              " << acv::props[i].idMesh << std::endl;
@@ -85,7 +85,7 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "SPELLS" << std::endl;
-		for (int i = 0; i < acv::spell_index; i++)
+		for (btui32 i = 0; i < acv::spell_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
 			std::cout << "HANDLE               ";
@@ -100,7 +100,7 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "PROJECTILES" << std::endl;
-		for (int i = 0; i < acv::projectiles_index; i++)
+		for (btui32 i = 0; i < acv::projectiles_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
 			std::cout << "HANDLE               ";
@@ -115,7 +115,7 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "ITEMS" << std::endl;
-		for (int i = 0; i < acv::item_index; i++)
+		for (btui32 i = 0; i < acv::item_index; i++)
 		{
 			#define ITEMI ((acv::BaseItem*)acv::items[i])
 			#define WMELI ((acv::BaseItemMel*)acv::items[i])
@@ -149,7 +149,7 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "ACTOR BASES" << std::endl;
-		for (int i = 0; i < acv::actor_template_index; i++)
+		for (btui32 i = 0; i < acv::actor_template_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
 			std::cout << "HANDLE               ";
@@ -685,7 +685,7 @@ namespace serializer
 			///*
 		getEntTElemName:
 			//fgets(&elem[0], 5, file); // Get element name
-		skipEntTElemName:
+		//skipEntTElemName:
 			while (strcmp(elem, "ACTT") == 0) // is it a new item?
 			{
 				// GET TYPE
@@ -875,7 +875,7 @@ namespace serializer
 			//-------------------------------- Item part
 
 			fread(&acv::item_index, sizeof(btui32), 1, file); // Read item count
-			for (int i = 0; i < acv::item_index; i++)
+			for (btui32 i = 0; i < acv::item_index; i++)
 			{
 				fread(&acv::item_types[i], sizeof(btui8), 1, file);
 
@@ -962,7 +962,7 @@ namespace serializer
 
 			count = acv::item_index;
 			fwrite(&count, sizeof(btui32), 1, file);
-			for (int i = 0; i < acv::item_index; i++)
+			for (btui32 i = 0; i < acv::item_index; i++)
 			{
 				switch (acv::item_types[i])
 				{

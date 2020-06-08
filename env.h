@@ -125,13 +125,31 @@ namespace env
 
 	extern EnvNode eCells;
 
+	// New structure is much easier to add new properties to saved versions
+	/*struct EnvNode2
+	{
+		eflag::flag flags[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		btui16 prop[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		NodePropDirection prop_dir[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		btui8 terrain_height[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		btui8 terrain_material[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		btui8 water_height[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		btui8 terrain_height_ne[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		btui8 terrain_height_nw[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		btui8 terrain_height_se[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+		btui8 terrain_height_sw[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
+	};
+
+	extern EnvNode2 eCells2;*/
+
 	bool Get(btui32 x, btui32 y, eflag::flag bit);
 	void Set(btui32 x, btui32 y, eflag::flag bit);
 	void UnSet(btui32 x, btui32 y, eflag::flag bit);
 
 	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
+	void GetSlope(btf32& OUT_SLOPE_X, btf32& OUT_SLOPE_Y, CellSpace& CELL_SPACE);
 
-	bool LineTrace_Bresenham(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b);
+	bool LineTraceBh(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b);
 
 	void Tick();
 	void DrawProps();

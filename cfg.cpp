@@ -14,7 +14,7 @@
 
 namespace cfg
 {
-	bool bFullscreen = false;
+	unsigned int iFullscreen = 0u;
 	bool bHost = false;
 	bool bEditMode = false;
 	bool bSplitScreen = false;
@@ -92,9 +92,7 @@ namespace cfg
 				{
 				case 'b':
 					//convert to bool
-					if (strcmp(variable.c_str(), "FullScreen") == 0)
-						bFullscreen = (bool)atoi(value.c_str());
-					else if (strcmp(variable.c_str(), "Host") == 0)
+					if (strcmp(variable.c_str(), "Host") == 0)
 						bHost = (bool)atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "EditMode") == 0)
 						bEditMode = (bool)atoi(value.c_str());
@@ -106,7 +104,9 @@ namespace cfg
 					break;
 				case 'i':
 					//convert to int
-					if (strcmp(variable.c_str(), "WinX") == 0)
+					if (strcmp(variable.c_str(), "FullScreen") == 0)
+						iFullscreen = atoi(value.c_str());
+					else if (strcmp(variable.c_str(), "WinX") == 0)
 						iWinX = atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "WinY") == 0)
 						iWinY = atoi(value.c_str());

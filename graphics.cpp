@@ -239,8 +239,11 @@ namespace graphics
 		gPtr->shaders[S_MEAT].Init("shaders/vert_3d.glsl", "shaders/_frag_meat.glsl");
 
 		gPtr->shaders[S_GUI].Init("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
+		#ifndef DEF_DEPTH_BUFFER_RW
 		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
-
+		#else
+		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag_db.glsl");
+		#endif
 
 		gPtr->bEditMode = cfg::bEditMode;
 		gPtr->bSplitScreen = cfg::bSplitScreen;
@@ -477,19 +480,51 @@ namespace graphics
 	}
 
 	m::Vector3 view;
+	m::Vector3 focus;
 	m::Vector3 GetViewPos()
 	{
 		return view;
 	}
+	m::Vector3 GetFocalCenter()
+	{
+		return focus;
+	}
 	void SetMatProj(btf32 fovMult)
 	{
-		gPtr->bEditMode ?
-			mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult) :
-			mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
+		#ifdef DEF_OLDSKOOL
+		glm::mat4 mdlproj = glm::mat4(1.0f);
+		mdlproj = glm::scale(mdlproj, glm::vec3(.25, .25, .0125)); // pitch
+		mdlproj = glm::rotate(mdlproj, glm::radians(-90.f), glm::vec3(1, 0, 0)); // pitch
+
+		//glm::scale(mdlproj, glm::vec3(0.1f, 0.1f, 0.1f));
+
+		mat_proj = mdlproj;
+		#else
+		#ifdef DEF_3PP
+		mat_proj = glm::perspective(glm::radians(30.f), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
+		#else
+		mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
+		#endif
+		#endif // DEF_OLDSKOOL
 	}
 	void SetMatView(void* t)
 	{
+		#ifdef DEF_OLDSKOOL
+
+		view = m::Vector3(((Transform3D*)t)->pos_glm * glm::vec3(1.f, 1.f, -1.f));
+
+		// do nothing?
+		glm::mat4 mdlproj = glm::mat4(1.0f);
+		mdlproj = glm::translate(mdlproj, glm::vec3(-view.x, 0, -view.z - (view.y * 0.5f)));
+		mat_view = mdlproj;
+		#else // !DEF_OLDSKOOL
+		view = m::Vector3(((Transform3D*)t)->pos_glm * glm::vec3(1.f, 1.f, -1.f));
 		// this is not.... good.....
+		#ifdef DEF_3PP
+		view = m::Vector3(((Transform3D*)t)->pos_glm * glm::vec3(1.f, 1.f, -1.f));
+		mat_view = glm::lookAt((glm::vec3)view + glm::vec3(-10.f, 10.f, 10.f), (glm::vec3)view, glm::vec3(0.f, 1.f, 0.f));
+		view = view + m::Vector3(-10.f, 10.f, 10.f);
+		#else // !DEF_3PP
 		#define T ((Transform3D*)t)
 		view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
 		mat_view = glm::lookAt((glm::vec3)view, (glm::vec3)view + (T->GetForward()) * glm::vec3(1.f, 1.f, -1.f), (glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
@@ -497,6 +532,8 @@ namespace graphics
 		//view = m::Vector3((T->pos_glm * glm::vec3(1.f, 1.f, -1.f)));
 		//mat_view = glm::lookAt((glm::vec3)view + (T->GetForward() * -15.f * glm::vec3(1.f, 1.f, -1.f)), (glm::vec3)view, glm::vec3(0.f, 1.f, 0.f));
 		#undef T
+		#endif // !DEF_3PP
+		#endif // !DEF_OLDSKOOL
 	}
 	// Lightsource
 	void SetMatProjLight()
@@ -1048,8 +1085,11 @@ namespace graphics
 			delete[] buffer;
 		}
 	}
-	void Texture::InitRenderTexture(int x, int y, bool linear)
+	void Texture::InitRenderBuffer(GLuint fbuf, int x, int y, bool linear)
 	{
+		// Bind the framebuffer so we can set this texture to belong to it
+		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
+
 		width = x;
 		height = y;
 
@@ -1081,8 +1121,38 @@ namespace graphics
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glID, 0);
 		#endif
 	}
-	void Texture::InitDepthTexture(int x, int y, bool linear)
+	void Texture::InitIntermediateTest(GLuint fbuf)
 	{
+		// Bind the framebuffer so we can set this texture to belong to it
+		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
+		// create a color attachment texture
+		glGenTextures(1, &glID);
+		glBindTexture(GL_TEXTURE_2D, glID);
+		#ifdef DEF_HDR // HDR Texture
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, GL_RGBA, GL_FLOAT, NULL); //create a blank image
+		#else // Not HDR Texture
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		#endif
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		#ifdef DEF_LINEAR_FB
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		#else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		#endif
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glID, 0);	// we only need a color buffer
+		#ifdef DEF_MULTISAMPLE
+		glEnable(GL_MULTISAMPLE); // Enable multisampling for anti-aliasing
+		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); // Enable ATOC for texture alpha
+		#endif // DEF_MULTISAMPLE
+	}
+	void Texture::InitDepthBufferRW(GLuint fbuf, int x, int y, bool linear)
+	{
+		// Bind the framebuffer so we can set this texture to belong to it
+		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
+
 		width = x;
 		height = y;
 
@@ -1106,50 +1176,15 @@ namespace graphics
 		//attach this texture to the framebuffer
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glID, 0);
 	}
-	void Texture::InitShadowTexture(int x, int y, bool linear)
+	void Texture::InitDepthBufferW(GLuint fbuf, int x, int y, bool linear)
 	{
-		width = x;
-		height = y;
+		// Bind the framebuffer so we can set this texture to belong to it
+		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
 
-		glGenTextures(1, &glID);
-		glBindTexture(GL_TEXTURE_2D, glID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, x, y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
-
-		if (linear)
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		}
-		else
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		}
-
-		//attach this texture to the framebuffer
-		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, id, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glID, 0);
-
-		//We only need the depth information when rendering the scene from the light's perspective
-		//so there is no need for a color buffer. A framebuffer object however is not complete without
-		//a color buffer so we need to explicitly tell OpenGL we're not going to render any color data.
-		//We do this by setting both the read and draw buffer to GL_NONE with glDrawBuffer and glReadbuffer.
-
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
-	}
-	void Texture::InitDepthBuffer(int x, int y, bool linear)
-	{
 		width = x;
 		height = y;
 
 		//render buffer object (depth)
-		//unsigned int depthbuffer;
 		glGenRenderbuffers(1, &glID);
 		glBindRenderbuffer(GL_RENDERBUFFER, glID);
 		#ifdef DEF_MULTISAMPLE
@@ -1163,6 +1198,25 @@ namespace graphics
 
 		//bind rbo to framebuffer
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, glID);
+	}
+	void Texture::InitShadowBuffer(GLuint fbuf)
+	{
+		// Bind the framebuffer so we can set this texture to belong to it
+		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
+
+		//glGenFramebuffers(1, &framebuffer_shadow);
+		glGenTextures(1, &glID);
+		glBindTexture(GL_TEXTURE_2D, glID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glID, 0);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	//________________________________________________________________________________________________________________________________
@@ -1982,8 +2036,6 @@ namespace graphics
 		vces = (VertexTerrain*)malloc(sizeof(VertexTerrain) * vces_size);
 		ices = (btui32*)malloc(sizeof(btui32) * ices_size);
 
-		btf32 uvscale = 0.125f;
-		//btf32 uvscale = 0.25f;
 		int v = 0;
 		int i = 0;
 		int datax = 0;
@@ -2012,9 +2064,9 @@ namespace graphics
 
 				for (btui32 i = 0; i < 4; ++i)
 				{
-					vces[v + i].uvc.x = vces[v + i].pos.x * uvscale;
-					vces[v + i].uvc.y = vces[v + i].pos.z * uvscale;
-					vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+					vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
+					vces[v + i].uvc.y = vces[v + i].pos.z * TERRAIN_UV_SCALE;
+					vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
 					//vces[v + i].nor.x += (btf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
 					//vces[v + i].nor.x -= (btf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
 					//vces[v + i].nor.z += (btf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
@@ -2035,8 +2087,11 @@ namespace graphics
 					vces[v+i].txtr[2] = 0.f; vces[v+i].txtr[3] = 0.f;
 					vces[v+i].txtr[4] = 0.f; vces[v+i].txtr[5] = 0.f;
 					vces[v+i].txtr[6] = 0.f; vces[v+i].txtr[7] = 0.f;
-					vces[v+i].txtr[MATMAP[x][y]] = 1.f;
 				}
+				vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
+				vces[v + 1].txtr[MATMAP[x - 1][y]] = 1.f; //nw
+				vces[v + 2].txtr[MATMAP[x][y - 1]] = 1.f; //se
+				vces[v + 3].txtr[MATMAP[x - 1][y - 1]] = 1.f; //sw
 
 				// 1--0
 				// | /|
@@ -2092,16 +2147,19 @@ namespace graphics
 
 					for (int i = 0; i < 4; ++i)
 					{
-						vces[v + i].uvc.x = vces[v + i].pos.x * uvscale;
-						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
-						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
+						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
+						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
 
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
 						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
 						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
-						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
 					}
+					vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 1].txtr[MATMAP[x - 1][y]] = 1.f; //nw
+					vces[v + 2].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 3].txtr[MATMAP[x - 1][y]] = 1.f; //nw
 
 					ices[i + 0u] = v + 0u;
 					ices[i + 1u] = v + 2u;
@@ -2127,16 +2185,18 @@ namespace graphics
 					
 					for (int i = 0; i < 3; ++i)
 					{
-						vces[v + i].uvc.x = vces[v + i].pos.x * uvscale;
-						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
-						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
+						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
+						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
 
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
 						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
 						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
-						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
 					}
+					vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 1].txtr[MATMAP[x - 1][y]] = 1.f; //nw
+					vces[v + 2].txtr[MATMAP[x][y]] = 1.f; //ne
 
 					ices[i + 0u] = v + 0u;
 					ices[i + 1u] = v + 2u;
@@ -2158,16 +2218,18 @@ namespace graphics
 					
 					for (int i = 0; i < 3; ++i)
 					{
-						vces[v + i].uvc.x = vces[v + i].pos.x * uvscale;
-						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
-						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
+						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
+						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
 
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
 						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
 						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
-						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
 					}
+					vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 1].txtr[MATMAP[x - 1][y]] = 1.f; //nw
+					vces[v + 2].txtr[MATMAP[x - 1][y]] = 1.f; //nw
 
 					ices[i + 0u] = v + 0u;
 					ices[i + 1u] = v + 2u;
@@ -2195,16 +2257,19 @@ namespace graphics
 
 					for (int i = 0; i < 4; ++i)
 					{
-						vces[v + i].uvc.x = vces[v + i].pos.z * uvscale;
-						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
+						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
+						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
 						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
 
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
 						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
 						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
-						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
 					}
+					vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 1].txtr[MATMAP[x][y - 1]] = 1.f; //se
+					vces[v + 2].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 3].txtr[MATMAP[x][y - 1]] = 1.f; //se
 
 					ices[i + 0u] = v + 2u;
 					ices[i + 1u] = v + 0u;
@@ -2230,16 +2295,18 @@ namespace graphics
 
 					for (int i = 0; i < 3; ++i)
 					{
-						vces[v + i].uvc.x = vces[v + i].pos.z * uvscale;
-						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
-						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
+						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
+						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
 
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
 						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
 						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
-						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
 					}
+					vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 1].txtr[MATMAP[x][y - 1]] = 1.f; //se
+					vces[v + 2].txtr[MATMAP[x][y]] = 1.f; //ne
 
 					ices[i + 0u] = v + 0u;
 					ices[i + 1u] = v + 1u;
@@ -2261,16 +2328,18 @@ namespace graphics
 					
 					for (int i = 0; i < 3; ++i)
 					{
-						vces[v + i].uvc.x = vces[v + i].pos.z * uvscale;
-						vces[v + i].uvc.y = vces[v + i].pos.y * uvscale;
-						vces[v + i].nor.y = -1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
+						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
+						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
 
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
 						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
 						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
-						vces[v + i].txtr[MATMAP[x][y]] = 1.f;
 					}
+					vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 1].txtr[MATMAP[x][y - 1]] = 1.f; //se
+					vces[v + 2].txtr[MATMAP[x][y]] = 1.f; //ne
 
 					ices[i + 0u] = v + 0u;
 					ices[i + 1u] = v + 1u;

@@ -13,47 +13,6 @@
 #define DEF_USE_CS // Use cute sound
 #endif
 
-//-------------------------------- Misc
-
-//#define DEF_AUTO_RELOAD_ON_DEATH
-//#define DEF_AUTOAIM
-
-//-------------------------------- Spawning
-
-//#define DEF_SPAWN_ON_START
-//#define DEF_PERIODIC_SPAWN // temporary definition that enables random enemy spawning
-//#define DEF_SPAWN_NPC
-//#define DEF_SPAWN_ONLY_ENEMIES
-
-//-------------------------------- Graphics
-
-//#define DEF_AUTOSAVE_ON_START // temporary definition that enables autosave
-//#define DEF_TERRAIN_USE_EROSION_TRIANGULATION
-//#define DEF_OLDSKOOL // Use old rendering settings (nearest neighbor filtering, etc.)
-//#define DEF_CUSTOM_MIPMAP
-//#define DEF_CUSTOM_MIPMAP_FOLIAGE_MIN
-//#define DEF_SHADOW_ALL_OBJECTS
-//#define DEF_MULTISAMPLE // TODO: chara shader doesnt work with multisampling for, er, some reason?
-//#define DEF_MULTISAMPLE_DEPTH 4
-//#define DEF_HDR
-//#define DEF_LINEAR_FB // Use linear filtering on the framebuffer
-//#define DEF_DRAW_WIREFRAME
-
-//-------------------------------- Framerate
-
-//#define DEF_SMOOTH_FRAMERATE // Run the CPU a little hotter to make sure the framerate is as smooth as possible
-//#define DEF_TB_MODE
-
-//-------------------------------- Camera
-
-//#define DEF_3PP // Use third person perspective (for the purpose of testing the entity animation quality)
-//#define DEF_FPP_INVISIBLE // Do not render the player character from first-person
-
-//-------------------------------- Input
-
-//#define DEF_INPUT_MOUSE_1ST_PERSON
-//#define DEF_INPUT_MOUSE_HIDDEN
-
 #ifdef DEF_NMP
 #define NUM_PLAYERS 2
 #else
@@ -76,10 +35,15 @@
 // World width and height in tiles
 #define WORLD_SIZE 2048
 #define WORLD_SIZE_MAXINT 2047
+//#define WORLD_SIZE 128
+//#define WORLD_SIZE_MAXINT 127
+#define WORLD_SIZE_OLD 2048
+#define WORLD_SIZE_MAXINT_OLD 2047
 #define WORLD_SIZE_SQUARED (WORLD_SIZE * WORLD_SIZE)
 
-//#define SCREEN_UPSCALE_THRESHOLD 2048u
+//#define SCREEN_UPSCALE_THRESHOLD 1024u
 #define SCREEN_UPSCALE_THRESHOLD 1664u
+#define SCREEN_POSTPROCESS_DOWNSAMPLE_DIVISION 4
 
 // Release version
 #define VERSION_MAJOR 16u
@@ -100,6 +64,8 @@
 #define INV_SIZE 64
 #define INV_NULL 256 // inventory null value (is this even used?)
 
+#define HEAD_TURN_SPEED 8.f
+
 // Time to pass in seconds before one single tick
 #ifdef DEF_TB_MODE
 #define FRAME_TIME (1. / 60.)
@@ -111,6 +77,7 @@
 
 // Terrain vertical precision per 1 unit
 #define TERRAIN_HEIGHT_DIVISION 4.f
+#define TERRAIN_UV_SCALE 0.125f
 
 #define CEILING(x,y) (((x) + (y) - 1) / (y))
 
@@ -171,6 +138,7 @@ extern "C" {
 	#define ITEM_TYPE_WPN_MATCHGUN 3u
 	#define ITEM_TYPE_WPN_MAGIC 4u
 	#define ITEM_TYPE_CONS 5u
+	#define ITEM_TYPE_COUNT 6u
 	///*
 	typedef btui8 AssetType;
 	#define ASSET_NONE 0u

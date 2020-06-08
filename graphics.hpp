@@ -172,6 +172,7 @@ namespace graphics
 	void End();
 
 	m::Vector3 GetViewPos();
+	m::Vector3 GetFocalCenter();
 	void SetMatProj(btf32 FOV_MULT = 1.f);
 	void SetMatView(void* t);
 	void SetMatProjLight();
@@ -426,7 +427,6 @@ namespace graphics
 	struct ModifiableTexture : TextureBase
 	{
 		colour* buffer;
-
 		~ModifiableTexture();
 		void Init(btui16 SIZE_X, btui16 SIZE_Y, colour COLOUR);
 		void LoadFile(char* FILENAME);
@@ -441,12 +441,18 @@ namespace graphics
 
 	struct Texture : TextureBase
 	{
+		// Load this texture from a file
 		void LoadFile(char* FILENAME);
-		// these were a quick hack at the time and honestly i don't know!
-		void InitRenderTexture(int WIDTH, int HEIGHT, bool LINEAR);
-		void InitDepthTexture(int WIDTH, int HEIGHT, bool LINEAR);
-		void InitShadowTexture(int WIDTH, int HEIGHT, bool LINEAR);
-		void InitDepthBuffer(int WIDTH, int HEIGHT, bool LINEAR);
+		// Generate as a read-write capable RGBA render texture
+		void InitRenderBuffer(GLuint FRAMEBUFFER, int WIDTH, int HEIGHT, bool LINEAR);
+		// Function that creates the mysterious 'intermediate' buffer
+		void InitIntermediateTest(GLuint FRAMEBUFFER);
+		// Generate as a read-write capable depth texture which can be used in a shader
+		void InitDepthBufferRW(GLuint FRAMEBUFFER, int WIDTH, int HEIGHT, bool LINEAR);
+		// Generate as a write-only depth texture
+		void InitDepthBufferW(GLuint FRAMEBUFFER, int WIDTH, int HEIGHT, bool LINEAR);
+		// Generate as a shadowmap render texture
+		void InitShadowBuffer(GLuint FRAMEBUFFER);
 	};
 
 	class Mesh

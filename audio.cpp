@@ -100,8 +100,8 @@ namespace aud
 		#else
 		// TODO: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
-		btf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[0])->t.position);
-		btf32 distance_1 = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[1])->t.position);
+		btf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[0])->t.position);
+		btf32 distance_1 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[1])->t.position);
 		// get closest distance (temp until using panning)
 		btf32 distance = distance_1;
 		if (distance_0 <= distance_1) { distance = distance_0; }
