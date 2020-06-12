@@ -124,10 +124,15 @@ extern "C" {
 	#error Using different c++ compiler than written for, please review! (global.h)
 	#endif
 
+	typedef struct WCoord {
+		btui32 x;
+		btui32 y;
+	} WCoord;
+
 	typedef btui8 EntityType;
 	#define ENTITY_TYPE_EDITOR_PAWN 0u
 	#define ENTITY_TYPE_RESTING_ITEM 1u
-	#define ENTITY_TYPE_CHARA 2u
+	#define ENTITY_TYPE_ACTOR 2u
 	// Count the above
 	#define ENTITY_TYPE_COUNT 3u
 
@@ -146,36 +151,6 @@ extern "C" {
 	#define ASSET_MESH_FILE 2u
 	#define ASSET_MESHBLEND_FILE 3u
 	#define ASSET_MESHDEFORM_FILE 4u
-	//*/
-
-	/*
-	enum EntityType : btui8
-	{
-	// whatever else
-	ENTITY_EDITOR_PAWN = 7ui8,
-	// game use
-	ENTITY_RESTING_ITEM = 8ui8,
-	ENTITY_CHARA = 9ui8,
-	};
-	*/
-	/*
-	enum ItemType : btui8
-	{
-		ITEM_ROOT,
-		ITEM_EQUIP,
-		ITEM_WPN_MELEE,
-		ITEM_WPN_MATCHGUN,
-		ITEM_WPN_MAGIC,
-		ITEM_CONS,
-	};
-	enum AssetType : btui8
-	{
-		ASSET_NONE,
-		ASSET_TEXTURE_FILE,
-		ASSET_MESH_FILE,
-		ASSET_MESHBLEND_FILE,
-		ASSET_MESHDEFORM_FILE,
-	};
 	//*/
 
 	#ifdef __cplusplus

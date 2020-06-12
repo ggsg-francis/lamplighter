@@ -31,17 +31,17 @@ namespace core
 	void SetViewFocus(btID index)
 	{
 		activePlayer = index;
-		viewpos = ENTITY(players[activePlayer])->t.position * -1.f;
-
+		#ifdef DEF_3PP
 		Actor* chara = ACTOR(players[activePlayer]);
 		cfg::bEditMode ?
 			graphics::SetMatViewEditor(&((EditorPawn*)chara)->t_head) :
-			graphics::SetMatView(&chara->t_head);
-	}
-
-	m::Vector2 GetViewOffset()
-	{
-		return viewpos;
+			graphics::SetMatView(&viewTarget[activePlayer], &viewPosition[activePlayer], &chara->t_head);
+		#else
+		Actor* chara = ACTOR(players[activePlayer]);
+		cfg::bEditMode ?
+			graphics::SetMatViewEditor(&((EditorPawn*)chara)->t_head) :
+			graphics::SetMatView(&chara->t_head, nullptr, nullptr);
+		#endif
 	}
 
 	enum flood_fill_type
@@ -246,7 +246,7 @@ namespace core
 			else {
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
-				SpawnEntity(prefab::prefab_ai_player, m::Vector2(1024.f, 1024.f), 0.f);
+				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(1024.f, 1024.f), 0.f);
 				#ifdef DEF_SPAWN_ON_START
 				DoSpawn();
 				#endif
@@ -286,12 +286,12 @@ namespace core
 		for (int i = 0; i < BUF_SIZE; i++)
 			//for (int i = 0; i <= block_entity.index_end; i++)
 		{
-			if (block_entity.used[i])
+			if (GetEntityExists(i))
 			{
 				IndexFreeEntity(i);
 				//block_entity.remove(i);
 			}
-			if (block_item.used[i])
+			if (GetItemExists(i))
 			{
 				IndexFreeItem(i);
 				//ObjBuf_remove(&block_item, i);
@@ -339,8 +339,8 @@ namespace core
 
 		//temporary destroy dead entities
 		///*
-		for (int i = 0; i <= block_entity.index_end; i++)
-			if (block_entity.used[i])
+		for (int i = 0; i <= GetLastEntity(); i++)
+			if (GetEntityExists(i))
 				if (!ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE)
 					&& !ENTITY(i)->state.stateFlags.get(ActiveState::eDIED_REPORT))
 				{
@@ -354,12 +354,12 @@ namespace core
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
 		// slow fast version
-		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
+		for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
 		{
-			if (block_entity.used[i])
+			if (GetEntityExists(i))
 			{
 				ENTITY(i)->state.TickEffects(dt);
-				fpTick[block_entity_data[i].type](ENTITY(i), dt); // Call tick on entity
+				fpTick[GetEntityType(i)](ENTITY(i), dt); // Call tick on entity
 			}
 		}
 		/*
@@ -638,6 +638,26 @@ namespace core
 			#endif
 		}
 
+
+		//-------------------------------- Modify camera
+
+		m::Vector3 p0 = m::Vector3(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.height + 0.8f, ENTITY(players[0])->t.position.y);
+		m::Vector3 p1 = m::Vector3(ENTITY(players[1])->t.position.x, ENTITY(players[1])->t.height + 0.8f, ENTITY(players[1])->t.position.y);
+
+		m::Vector2 vd0 = (m::AngToVec2(ENTITY(players[0])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[0])->viewYaw.Rad())) * 0.5f;
+		m::Vector2 vd1 = (m::AngToVec2(ENTITY(players[1])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[1])->viewYaw.Rad())) * 0.5f;
+
+		m::Vector3 o0 = p0 - (m::Vector3(vd0.x, -0.4f, vd0.y)) * 3.f;
+		m::Vector3 o1 = p1 - (m::Vector3(vd1.x, -0.4f, vd1.y)) * 3.f;
+
+		// Move cameras
+		viewTarget[0] = m::Lerp(viewTarget[0], p0, 0.15f);
+		viewTarget[1] = m::Lerp(viewTarget[1], p1, 0.15f);
+		viewPosition[0] = m::Lerp(viewPosition[0], o0, 0.05f);
+		viewPosition[1] = m::Lerp(viewPosition[1], o1, 0.05f);
+
+		//-------------------------------- Stuff
+
 		++tickCount_temp;
 	}
 
@@ -798,15 +818,15 @@ namespace core
 		}
 		else
 		{
-			for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
+			for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
 			{
 				#ifdef DEF_FPP_INVISIBLE
 				if (i != players[activePlayer] && block_entity.used[i])
 				#else
-				if (block_entity.used[i])
+				if (GetEntityExists(i))
 				#endif
 				{
-					fpDraw[block_entity_data[i].type](ENTITY(i)); // Call draw on entity
+					fpDraw[GetEntityType(i)](ENTITY(i)); // Call draw on entity
 				}
 			}
 
@@ -899,7 +919,7 @@ namespace core
 			if (input::GetHit(input::key::ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
 					ACTOR(players[activePlayer])->TakeItem(viewtarget[activePlayer]);
-				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
+				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_ACTOR)
 				{
 					// if we are allied
 					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget[activePlayer])->faction) == fac::allied)
@@ -927,7 +947,7 @@ namespace core
 			if (input::GetHit(input::key::C_ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_RESTING_ITEM)
 					ACTOR(players[activePlayer])->TakeItem(viewtarget[activePlayer]);
-				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
+				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_ACTOR)
 				{
 					// SOUL TRANSFER
 					// Possession, actually
@@ -1014,10 +1034,10 @@ namespace core
 			{
 				//text_temp.ReGen(ENTITY(viewtarget[activePlayer])->GetDisplayName(), textboxX, textboxX + 512, textboxY);
 				//text_temp.ReGen(ENTITY(viewtarget[activePlayer])->fpName(ENT_VOID(viewtarget[activePlayer])), textboxX, textboxX + 512, textboxY);
-				text_temp.ReGen(fpName[block_entity_data[viewtarget[activePlayer]].type](ENT_VOID(viewtarget[activePlayer])), textboxX, textboxX + 512, textboxY);
+				text_temp.ReGen(fpName[GetEntityType(viewtarget[activePlayer])](ENT_VOID(viewtarget[activePlayer])), textboxX, textboxX + 512, textboxY);
 				guibox.ReGen(textboxX, textboxX + text_temp.sizex, textboxY - text_temp.sizey, textboxY, 4, 10);
 			}
-			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_CHARA)
+			if (ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_ACTOR)
 				graphics::DrawGUITexture(&res::GetT(res::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(((btf32)core::GetHP(viewtarget[activePlayer]) / 1000.f) * (64.f)), 16);
 			guibox.Draw(&res::GetT(res::t_gui_box));
 			text_temp.Draw(&res::GetT(res::t_gui_font));
@@ -1107,7 +1127,7 @@ namespace core
 
 	btID SpawnNewEntityItem(btID item_template, m::Vector2 pos, btf32 dir)
 	{
-		btID id = block_entity.add();
+		btID id = AssignEntityID();
 		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
@@ -1120,7 +1140,7 @@ namespace core
 	}
 	btID SpawnEntityItem(btID itemid, m::Vector2 pos, btf32 dir)
 	{
-		btID id = block_entity.add();
+		btID id = AssignEntityID();
 		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		
 		//spawn_setup_t(id, pos, dir);
@@ -1148,7 +1168,7 @@ namespace core
 
 	btID SpawnEntity(btui8 type, m::Vector2 pos, float dir)
 	{
-		btID id = block_entity.add();
+		btID id = AssignEntityID();
 		if (id != ID_NULL)
 		{
 			PrefabEntity[type](id, pos, dir);
@@ -1172,7 +1192,7 @@ namespace core
 
 	btID SpawnItem(btID item_template)
 	{
-		btID id = block_item.add();
+		btID id = AssignItemID();
 		if (id != BUF_NULL)
 		{
 			IndexInitItemInstance(id, acv::item_types[item_template]);
@@ -1341,9 +1361,9 @@ namespace core
 				{
 					// LOOP THROUGH ALL ENTITIES METHOD, SHIT BUT ONLY WAY THAT WORKS ATM
 					///*
-					for (int i = 0; i <= block_entity.index_end; i++)
+					for (int i = 0; i <= GetLastEntity(); i++)
 					{
-						if (block_entity.used[i] && ENTITY(i)->properties.get(Entity::eCOLLIDE_PRJ))
+						if (GetEntityExists(i) && ENTITY(i)->properties.get(Entity::eCOLLIDE_PRJ))
 						{
 							if (fac::GetAllegiance(ENTITY(i)->faction, (fac::faction)proj[index].faction) != fac::allied)
 							{

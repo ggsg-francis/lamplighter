@@ -101,10 +101,59 @@ bool step_pause = false;
 inline void TranslateInput()
 {
 	#if defined DEF_OLDSKOOL || defined DEF_3PP
-	// test
+	#ifdef DEF_NMP
+	for (btID i = 0u; i < NUM_PLAYERS; ++i)
+	{
+		// Set input
+		index::SetPlayerInput((btID)i,
+			m::Vector2((btf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
+			(btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
+			input::buf[i][INPUT_BUF_GET].mouse_x * 0.25f, input::buf[i][INPUT_BUF_GET].mouse_y * 0.25f,
+			input::GetHeld(i, input::key::USE),
+			input::GetHit(i, input::key::USE),
+			input::GetHit(i, input::key::USE_ALT),
+			input::GetHeld(i, input::key::RUN),
+			false,
+			input::GetHit(i, input::key::ACTION_A),
+			input::GetHit(i, input::key::ACTION_B),
+			input::GetHit(i, input::key::ACTION_C),
+			input::GetHit(i, input::key::CROUCH),
+			input::GetHeld(i, input::key::JUMP));
+	}
+	#else
+	// Set input for player 0
+	core::SetPlayerInput(0u,
+		m::Vector2(0.f, (btf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
+		(btf32)(input::GetHeld(input::key::DIR_R) - input::GetHeld(input::key::DIR_L)) * 5.f, 0.f,
+		input::GetHeld(input::key::USE),
+		input::GetHit(input::key::USE),
+		input::GetHit(input::key::USE_ALT),
+		input::GetHeld(input::key::RUN),
+		false,
+		input::GetHit(input::key::ACTION_A),
+		input::GetHit(input::key::ACTION_B),
+		input::GetHit(input::key::ACTION_C),
+		input::GetHit(input::key::CROUCH),
+		input::GetHeld(input::key::JUMP));
+	if (cfg::bSplitScreen)
+	{
+		// Set input for player 1
+		core::SetPlayerInput(1u,
+			m::Vector2(-input::BUF_LOCALGET.joy_x_a, -input::BUF_LOCALGET.joy_y_a),
+			input::BUF_LOCALGET.joy_x_b * 8.f, input::BUF_LOCALGET.joy_y_b * 8.f,
+			input::GetHeld(input::key::C_USE),
+			input::GetHit(input::key::C_USE),
+			input::GetHit(input::key::C_USE_ALT),
+			input::GetHeld(input::key::C_RUN),
+			false,
+			input::GetHit(input::key::C_ACTION_A),
+			input::GetHit(input::key::C_ACTION_B),
+			input::GetHit(input::key::C_ACTION_C),
+			input::GetHit(input::key::C_CROUCH),
+			input::GetHeld(input::key::C_JUMP));
+	}
 	#endif
-
-
+	#else
 	#ifdef DEF_NMP
 	for (btID i = 0u; i < NUM_PLAYERS; ++i)
 	{
@@ -158,6 +207,7 @@ inline void TranslateInput()
 			input::GetHeld(input::key::C_JUMP));
 	}
 	#endif
+	#endif
 }
 
 // Fixed timestep editor tick function
@@ -170,19 +220,10 @@ inline void TranslateInputEditor()
 		btf32 mouserot_mult = 0.25f;
 		if (!input::GetHeld(input::key::RUN))
 		{
-			input_p1.x = input::BUF_LOCALGET.mouse_x * 0.125f;
+			input_p1.x = input::BUF_LOCALGET.mouse_x * -0.125f;
 			input_p1.y = input::BUF_LOCALGET.mouse_y * -0.125f;
-			//m::RotateVector();
 			mouserot_mult = 0.f;
 		}
-		//if (input::GetHeld(input::key::DIR_F)) // Forward
-		//	input_p1.y = 1.f;
-		//if (input::GetHeld(input::key::DIR_B)) // Back
-		//	input_p1.y = -1.f;
-		//if (input::GetHeld(input::key::DIR_R)) // Right
-		//	input_p1.x += 1.f;
-		//if (input::GetHeld(input::key::DIR_L)) // Left
-		//	input_p1.x -= 1.f;
 		// Set input
 		core::SetPlayerInput(0u, input_p1, input::BUF_LOCALGET.mouse_x * mouserot_mult, input::BUF_LOCALGET.mouse_y * mouserot_mult,
 			input::GetHit(input::key::USE),
@@ -406,7 +447,9 @@ bool MainBoiler()
 		std::cout << "ERROR: gladLoadGLLoader failed!" << std::endl;
 		return false;
 	}
-	glViewport(0, 0, cfg::iWinX, cfg::iWinY); // Set opengl viewport size to window size X, Y, W, H
+
+	glEnable(GL_CULL_FACE); // Enable face culling
+	glCullFace(GL_FRONT); // Set culling mode
 
 	return true;
 }

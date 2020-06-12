@@ -58,7 +58,6 @@ namespace core
 	void DrawPostDraw(btf64 delta);
 
 	void SetViewFocus(btID i);
-	m::Vector2 GetViewOffset();
 
 	// Creates an Entity instance, adds it to the index and allocates it an ID
 	btID SpawnEntity(btui8 TYPE_PREFAB_TEMP, m::Vector2 pos, float dir);
@@ -101,6 +100,9 @@ namespace core
 	extern btID players[2];
 	extern btID viewtarget[2];
 
+	int CellEntityCount(int x, int y);
+	btID CellEntity(int x, int y, int e);
+
 	void SetPlayerInput(btID PLAYER_INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH,
 		bool WantAttack, bool use_hit, bool WantAttack2,
 		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C,
@@ -109,7 +111,7 @@ namespace core
 	void SetViewTargetID(btID ID, btui32 player);
 	btID GetViewTargetID(btui32 player);
 
-	void EntDeintersect(Entity* ENT, CellSpace& CSI);
+	//void EntDeintersect(Entity* ENT, CellSpace& CSI);
 	void ActorCastProj(btID ID);
 
 	// Adds this entity to the local vector of this cell

@@ -501,13 +501,13 @@ namespace graphics
 		mat_proj = mdlproj;
 		#else
 		#ifdef DEF_3PP
-		mat_proj = glm::perspective(glm::radians(30.f), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
+		mat_proj = glm::perspective(glm::radians(60.f), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
 		#else
 		mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
 		#endif
 		#endif // DEF_OLDSKOOL
 	}
-	void SetMatView(void* t)
+	void SetMatView(void* t, void* p, void* t2)
 	{
 		#ifdef DEF_OLDSKOOL
 
@@ -518,13 +518,12 @@ namespace graphics
 		mdlproj = glm::translate(mdlproj, glm::vec3(-view.x, 0, -view.z - (view.y * 0.5f)));
 		mat_view = mdlproj;
 		#else // !DEF_OLDSKOOL
-		view = m::Vector3(((Transform3D*)t)->pos_glm * glm::vec3(1.f, 1.f, -1.f));
 		// this is not.... good.....
 		#ifdef DEF_3PP
-		view = m::Vector3(((Transform3D*)t)->pos_glm * glm::vec3(1.f, 1.f, -1.f));
-		mat_view = glm::lookAt((glm::vec3)view + glm::vec3(-10.f, 10.f, 10.f), (glm::vec3)view, glm::vec3(0.f, 1.f, 0.f));
-		view = view + m::Vector3(-10.f, 10.f, 10.f);
+		view = *(m::Vector3*)p * m::Vector3(1.f, 1.f, -1.f);
+		mat_view = glm::lookAt(*(glm::vec3*)p * m::Vector3(1.f, 1.f, -1.f), *(glm::vec3*)t * m::Vector3(1.f, 1.f, -1.f), glm::vec3(0.f, 1.f, 0.f));
 		#else // !DEF_3PP
+		view = m::Vector3(((Transform3D*)t)->pos_glm * glm::vec3(1.f, 1.f, -1.f));
 		#define T ((Transform3D*)t)
 		view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
 		mat_view = glm::lookAt((glm::vec3)view, (glm::vec3)view + (T->GetForward()) * glm::vec3(1.f, 1.f, -1.f), (glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));

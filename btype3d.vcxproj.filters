@@ -89,6 +89,9 @@
     <ClInclude Include="nonpc.h">
       <Filter>gamework</Filter>
     </ClInclude>
+    <ClInclude Include="objects_statics.h">
+      <Filter>gamework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
@@ -143,6 +146,9 @@
       <Filter>gamework</Filter>
     </ClCompile>
     <ClCompile Include="index.cpp">
+      <Filter>gamework</Filter>
+    </ClCompile>
+    <ClCompile Include="objects_statics.cpp">
       <Filter>gamework</Filter>
     </ClCompile>
   </ItemGroup>

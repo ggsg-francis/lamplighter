@@ -6,19 +6,17 @@
 
 #include "objects_entities.h"
 #include "objects_items.h"
+#include "objects_statics.h"
 
-//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-//--------------------------- ENTITY BUFFERS -------------------------------------------------------------------------------------
-//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+//________________________________________________________________________________________________________________________________
+// OBJECT BUFFERS ----------------------------------------------------------------------------------------------------------------
 
 //-------------------------------- ENTITIES
 
 //block of IDs in memory, tracks the numbers and IDs of any type of object
 mem::objbuf block_entity; // Entity buffer
 EntAddr block_entity_data[BUF_SIZE];
-// TODO: using fixed size arrays is a big memory hog, and the amount of space allocated here can never be filled
-// unless everything shares the same type
-//mem::CkBuffer2<Chara> buf_entities;
+
 mem::objbuf buf_resting_item;
 RestingItem buf_resting_item_data[BUF_SIZE];
 mem::objbuf buf_chara;
@@ -60,45 +58,51 @@ void*(*GetEntArray[ENTITY_TYPE_COUNT])(btID) = {
 	getEntActor,
 };
 // Array lookup function
-void* GetEntityPtr(btID id)
-{
+btID AssignEntityID() {
+	return block_entity.add();
+}
+bool GetEntityExists(btID id) {
+	return block_entity.used[id];
+}
+btID GetLastEntity() {
+	return block_entity.index_end;
+}
+void* GetEntityPtr(btID id) {
 	return GetEntArray[block_entity_data[id].type](block_entity_data[id].type_buffer_index);
+}
+EntityType GetEntityType(btID id) {
+	return block_entity_data[id].type;
 }
 
 //-------------------------------- ITEMS
 
+// (idk which is which and at this point i'm too afraid to ask)
 mem::objbuf block_item; // Item buffer
 EntAddr block_item_data[BUF_SIZE];
-
-mem::objbuf buf_item_misc; // Item buffer
-HeldItem buf_item_misc_data[BUF_SIZE];
-
-/*
-void* getItemMis(btID id) { return &buf_item_misc_data[id]; }
-void* getItemEqp(btID id) { return &buf_item_misc_data[id]; }
-void* getItemMel(btID id) { return &buf_item_melee_data[id]; }
-void* getItemGun(btID id) { return &buf_item_gun_data[id]; }
-void* getItemMgc(btID id) { return &buf_item_mgc_data[id]; }
-void* getItemCon(btID id) { return &buf_item_con_data[id]; }
-void*(*GetItemArray[])(btID) = { getItemMis, getItemEqp, getItemMel, getItemGun, getItemMgc, getItemCon };
-mem::objbuf* ItemBufPtr[] = { &buf_item_misc, &buf_item_misc, &buf_item_melee, &buf_item_gun, &buf_item_mgc, &buf_item_con };*/
-void* GetItemPtr(btID id)
-{
-	//return GetItemArray[block_item_data[id].type](block_item_data[id].type_buffer_index);
-	return &buf_item_misc_data[id];
+mem::objbuf buf_iteminst; // Item buffer
+HeldItem buf_iteminst_data[BUF_SIZE];
+btID AssignItemID() {
+	return block_item.add();
 }
-ItemType GetItemType(btID id)
-{
+bool GetItemExists(btID id) {
+	return block_item.used[id];
+}
+void* GetItemPtr(btID id) {
+	return &buf_iteminst_data[id];
+}
+ItemType GetItemType(btID id) {
 	return block_item_data[id].type;
 }
 
-// TODO: doesnt really belong here
-char Capitalize(char c)
-{
-	if (c >= 'a' && c <= 'z')
-		return c + ('A' - 'a');
-	return c;
-}
+//-------------------------------- STATICS
+
+mem::objbuf block_static;
+EntAddr block_static_data[BUF_SIZE];
+mem::objbuf buf_static;
+HeldItem buf_static_data[BUF_SIZE];
+
+//________________________________________________________________________________________________________________________________
+// INITIALIZATION ----------------------------------------------------------------------------------------------------------------
 
 void IndexInitEntity(btID id, EntityType type)
 {
@@ -113,44 +117,9 @@ void IndexInitEntity(btID id, EntityType type)
 		block_entity_data[id].type_buffer_index = buf_resting_item.add();
 		memset(ENT_VOID(id), 0, sizeof(RestingItem));
 		break;
-	case ENTITY_TYPE_CHARA:
+	case ENTITY_TYPE_ACTOR:
 		block_entity_data[id].type_buffer_index = buf_chara.add();
 		memset(ENT_VOID(id), 0, sizeof(Actor));
-		((Actor)*(ACTOR(id))) = Actor();
-		{
-			// generate name
-			FILE* file = fopen("n.txt", "rb"); // Open file
-			if (file != NULL)
-			{
-				fseek(file, 0L, SEEK_END);
-				long sz = ftell(file);
-				long random = (long)m::Random(0, sz);
-				// TODO: quick fix, this system has no answer for reaching the end of the file
-				random = 0;
-				fseek(file, random, SEEK_SET); // Seek file beginning
-
-				int name_index = 0;
-				char c;
-				bool has_advanced_word = false;
-			getchar:
-				fread(&c, 1, 1, file);
-				if (c == CHARCODE_ASCII::space || c == CHARCODE_ASCII::CR || c == CHARCODE_ASCII::LF)
-				{
-					// if we reach the first 'empty character' we've hit the end of the current word
-					has_advanced_word = true;
-					goto getchar;
-				}
-				else
-				{
-					if (!has_advanced_word)
-						goto getchar;
-					ACTOR(id)->name[0] = Capitalize(c);
-					// else we can read from here assuming this is the start of a new word
-					fgets((char*)(&ACTOR(id)->name[1]), 31, file);
-				}
-			}
-			fclose(file);
-		}
 		break;
 	default:
 		std::cout << "Tried to initialize entity of no valid type" << std::endl;
@@ -167,12 +136,11 @@ void IndexFreeEntity(btID id)
 		switch (ENTITY(id)->type)
 		{
 		case ENTITY_TYPE_EDITOR_PAWN:
-			//delete _entities[id];
 			break;
 		case ENTITY_TYPE_RESTING_ITEM:
 			buf_resting_item.remove(block_entity_data[id].type_buffer_index);
 			break;
-		case ENTITY_TYPE_CHARA:
+		case ENTITY_TYPE_ACTOR:
 			buf_chara.remove(block_entity_data[id].type_buffer_index);
 			break;
 		}
@@ -183,15 +151,12 @@ void IndexInitItemInstance(btID id, ItemType type)
 {
 	block_item.used[id] = true;
 	block_item_data[id].type = type;
-	//block_item_data[id].type_buffer_index = ItemBufPtr[type]->add();
-	HeldItem* held_item = GETITEMINST(id);
-	*held_item = HeldItem();
 }
 void IndexFreeItem(btID id)
 {
 	if (block_item.used[id])
 	{
-		buf_item_misc.remove(block_item_data[id].type_buffer_index);
+		buf_iteminst.remove(block_item_data[id].type_buffer_index);
 	}
 	block_item.remove(id);
 }

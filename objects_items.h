@@ -20,9 +20,9 @@ namespace m
 };
 
 // Tick this item
-void ItemTick2(btID item, btf32 DT, Actor* OWNER);
+void ItemTick(btID item, btf32 DT, Actor* OWNER);
 // Render graphics of this item
-void ItemDraw2(btID item, btID ITEMID, m::Vector2 OWNER_POSITION, btf32 OWNER_HEIGHT, m::Angle OWNER_YAW, m::Angle OWNER_PITCH);
+void ItemDraw(btID item, btID ITEMID, m::Vector2 OWNER_POSITION, btf32 OWNER_HEIGHT, m::Angle OWNER_YAW, m::Angle OWNER_PITCH);
 // Tell this item that it's just been equipped
 void ItemOnEquip(btID item, Actor* b);
 // Get left hand position

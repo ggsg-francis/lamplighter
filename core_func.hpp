@@ -7,342 +7,16 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// GENERAL FUNCTIONS -------------------------------------------------------------------------------------------------------------
 
-	/*
-	void ActorRunAI(btID id)
-	{
-		Actor* actor = ACTOR(id);
-
-		actor->input.y = 1.f;
-		actor->input.x = -1.f;
-
-	updatetarg:
-		// If is null OR deleted OR dead OR no LOS
-		if (actor->ai_target_ent == BUF_NULL 
-			|| !block_entity.used[actor->ai_target_ent]
-			|| !ENTITY(actor->ai_target_ent)->state.stateFlags.get(ActiveState::eALIVE)
-			|| !LOSCheck(id, actor->ai_target_ent))
-		{
-			actor->ai_target_ent = GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
-			actor->atk_target = actor->ai_target_ent;
-		}
-	updateally:
-		// If is null OR deleted OR dead
-		if (actor->ai_ally_ent == BUF_NULL
-			|| !block_entity.used[actor->ai_ally_ent]
-			|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE)
-			|| !LOSCheck(id, actor->ai_ally_ent))
-			actor->ai_ally_ent = GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
-
-		// bad and temporary :P
-		// makes npc not point the gun at allies
-		if (GetItemType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
-		{
-			actor->inputBV.setto(Actor::ActorInput::IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
-			actor->inputBV.setto(Actor::ActorInput::IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
-		}
-		
-		if (actor->ai_target_ent == BUF_NULL)
-		{
-			if (actor->ai_ally_ent == BUF_NULL)
-			{
-				actor->input.y = 0.f;
-				actor->input.x = 0.f;
-				actor->inputBV.unset(Actor::IN_USE);
-			}
-			else // if we have an ally, follow it
-			{
-				// ALLY FOLLOW!!!!!!!!!!!!!!!!!!
-
-				m::Vector2 TargetVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
-				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-				float distance_to_target = m::Length(TargetVector);
-
-				//actor->viewYaw.Set(angle2);
-				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-				actor->ai_vy_target = angle2;
-
-				if (distance_to_target > 1.5f) // if ally is far away
-					actor->input.y = 1.f;
-				else
-					actor->input.y = 0.f;
-				actor->input.x = 0.f;
-				actor->inputBV.unset(Actor::IN_USE);
-			}
-		}
-		// if we have a target
-		else
-		{
-			m::Vector2 TargetVector = ENTITY(actor->ai_target_ent)->t.position - actor->t.position;
-			m::Vector2 TargetVectorVertical = m::Vector2(m::Length(TargetVector), ENTITY(actor->ai_target_ent)->t.height - actor->t.height);
-			float distance_to_target = m::Length(TargetVector);
-
-			actor->inputBV.unset(Actor::IN_USE);
-
-			btf32 attack_dist = 1.5f;
-			// if its a ranged weapon, set the attack range higher
-			if (GetItemType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
-			{
-				attack_dist = 30.f;
-			}
-
-			if (distance_to_target < attack_dist) // if enemy is close enough to swing at
-			{
-				//compute rotation
-				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
-				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
-
-				actor->input.y = 0.f;
-
-				if (actor->ai_ally_ent != BUF_NULL)
-				{
-					m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
-					float distance_to_ally = m::Length(AllyVector);
-					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
-
-					if (distance_to_ally < 10.f) // if ally is close, spread
-						if (offsetLR_ally > 0.5f) actor->input.x = -1.f;
-						else if (offsetLR_ally < -0.5f) actor->input.x = 1.f;
-						else actor->input.x = 0.f;
-					else if (actor->state.damagestate > 600u) // if ally is far and hitpoints high, move in
-						if (offsetLR_ally > 0.5f) { actor->input.x = -0.5f; actor->input.y = 1.f; }
-						else if (offsetLR_ally < -0.5f) { actor->input.x = 0.5f; actor->input.y = 1.f; }
-						else actor->input.x = 1.f;
-					else // if low on hp, retreat
-						if (offsetLR_ally > 0.5f) { actor->input.x = 1.f; actor->input.y = -1.f; }
-						else if (offsetLR_ally < -0.5f) { actor->input.x = -1.f; actor->input.y = -1.f; }
-						else actor->input.x = -1.f;
-				}
-				else
-				{
-					actor->input.x = 0.f;
-				}
-
-				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-				btf32 angle22 = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(TargetVectorVertical)));
-
-				//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
-
-				//actor->viewYaw.Set(angle2);
-				//actor->viewPitch.Set(angle22);
-				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-				//actor->viewPitch.RotateTowards(angle22, HEAD_TURN_SPEED);
-				actor->ai_vy_target = angle2;
-				if (angle22 < -80.f) angle22 = -80.f;
-				if (angle22 > 70.f) angle22 = 70.f;
-				actor->ai_vp_target = angle22;
-
-				//actor->input.y = 0.f; actor->input.x = 1.f;
-
-				actor->inputBV.set(Actor::IN_USE);
-			}
-			else
-			{
-				//compute rotation
-				//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
-				//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
-
-				if (actor->ai_ally_ent != BUF_NULL)
-				{
-					m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
-					float distance_to_ally = m::Length(AllyVector);
-					float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
-
-					const btf32 ally_follow_dist = 2.f;
-
-					// if ally is farther than enemy
-					if (distance_to_ally > distance_to_target || distance_to_ally < 4.f)
-					{
-						if (distance_to_ally > ally_follow_dist)
-							if (offsetLR_ally > 0.5f) actor->input.x = 1.f;
-							else if (offsetLR_ally < -0.5f) actor->input.x = -1.f;
-							else actor->input.x = 0.f;
-						else actor->input.x = 0.f;
-
-						btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-						//actor->viewYaw.Set(angle2);
-						//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-						actor->ai_vy_target = angle2;
-
-						actor->input.y = 1.f;
-					}
-					else
-					{
-						if (distance_to_ally > ally_follow_dist) actor->input.y = 1.f;
-						else actor->input.y = 0.f;
-						actor->input.x = 0.f;
-
-						btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(AllyVector)));
-
-						//actor->viewYaw.Set(angle2);
-						//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-						actor->ai_vy_target = angle2;
-
-					}
-				}
-				else
-				{
-					btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-					//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
-
-					//actor->viewYaw.Set(angle2);
-					//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-					actor->ai_vy_target = angle2;
-
-					actor->input.y = 1.f;// actor->input.x = 0.f;
-
-					actor->input.x = 0.f;
-				}
-			}
-		}
-
-		actor->viewYaw.RotateTowards(actor->ai_vy_target, HEAD_TURN_SPEED);
-		actor->viewPitch.RotateTowards(actor->ai_vp_target, HEAD_TURN_SPEED);
-	}
-	*/
-
-	void EntDeintersect(Entity* ent, CellSpace& csi)
-	{
-		btf32 offsetx, offsety;
-		bool overlapN, overlapS, overlapE, overlapW, touchNS = false, touchEW = false;
-
-		//-------------------------------- ACTOR COLLISION CHECK
-
-		if (ent->properties.get(Entity::eCOLLIDE_ENT))
-		{
-			for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x)
-			{
-				for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y)
-				{
-					//de-intersect entities
-					for (int e = 0; e <= refCells[x][y].ref_ents.end(); e++)
-					{
-						if (refCells[x][y].ref_ents[e] != ID_NULL)
-						{
-							if (block_entity.used[refCells[x][y].ref_ents[e]] && ENTITY(refCells[x][y].ref_ents[e])->properties.get(Entity::eCOLLIDE_ENT))
-							{
-								m::Vector2 vec = ent->t.position - ENTITY(refCells[x][y].ref_ents[e])->t.position;
-								float dist = m::Length(vec);
-								btf32 combined_radius = ent->radius + ENTITY(refCells[x][y].ref_ents[e])->radius;
-								if (dist < combined_radius && dist > 0.f)
-								{
-									// TEMP! if same type
-									if (ent->type == ENTITY(refCells[x][y].ref_ents[e])->type)
-									{
-										ent->t.position += m::Normalize(vec) * (combined_radius - dist) * 0.5f;
-										ENTITY(refCells[x][y].ref_ents[e])->t.position -= m::Normalize(vec) * (combined_radius - dist) * 0.5f;
-									}
-
-									// consider using some kind of collision callback
-
-									/*
-									// knockback effect
-									m::Vector2 surface = m::Normalize(vec * -1.f);
-									if (ent->type == ENTITY_TYPE_CHARA && m::Length(ent->t.velocity) > 0.02f)
-									{
-										// if other is also a character
-										if (ENTITY(cells[x][y].ents[e])->type == ENTITY_TYPE_CHARA)
-										{
-											ent->t.velocity = surface * -0.1f; // set my velocity
-											ENTITY(cells[x][y].ents[e])->t.velocity = surface * 0.3f; // set their velocity
-										}
-									}
-									*/
-								}
-							}
-						} // End for each entity in cell
-					} // End if entity count of this cell is bigger than zero
-				} // End for each cell group Y
-			} // End for each cell group X
-		} // end does collide entities check
-
-		///*
-		//-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
-
-		offsetx = ent->t.position.x - ent->t.csi.c[eCELL_I].x;
-		offsety = ent->t.position.y - ent->t.csi.c[eCELL_I].y;
-
-		overlapN = offsety > 0;
-		overlapS = offsety < 0;
-		overlapE = offsetx > 0;
-		overlapW = offsetx < 0;
-
-		//-------------------------------- STRAIGHT EDGE COLLISION CHECK
-		// North
-		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
-		>(ent->t.height + 0.5f) && overlapN)
-		{
-			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
-			ent->t.velocity.y = 0.f;
-			touchNS = true;
-		}
-		// South
-		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
-			> (ent->t.height + 0.5f) && overlapS)
-		{
-			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
-			ent->t.velocity.y = 0.f;
-			touchNS = true;
-		}
-		// East
-		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION)
-			> (ent->t.height + 0.5f) && overlapE)
-		{
-			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
-			ent->t.velocity.x = 0.f;
-			touchEW = true;
-		}
-		// West
-		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION)
-			> (ent->t.height + 0.5f) && overlapW)
-		{
-			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
-			ent->t.velocity.x = 0.f;
-			touchEW = true;
-		}
-
-		//-------------------------------- CORNER COLLISION CHECK
-
-		// North-east
-		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
-			> (ent->t.height + 0.5f) && overlapN && overlapE) {
-			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, 0.5f);
-			if (m::Length(offset) < 0.5f)
-				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
-		}
-		// North-west
-		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
-			> (ent->t.height + 0.5f) && overlapN && overlapW) {
-			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, 0.5f);
-			if (m::Length(offset) < 0.5f)
-				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
-		}
-		// South-east
-		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
-			> (ent->t.height + 0.5f) && overlapS && overlapE) {
-			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, -0.5f);
-			if (m::Length(offset) < 0.5f)
-				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
-		}
-		// South-west
-		if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
-			> (ent->t.height + 0.5f) && overlapS && overlapW) {
-			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, -0.5f);
-			if (m::Length(offset) < 0.5f)
-				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
-		}
-		//*/
-	}
-
 	void RemoveAllReferences(btID index)
 	{
 		// Remove us from the cell we're on
 		refCells[ENTITY(index)->t.csi.c[eCELL_I].x][ENTITY(index)->t.csi.c[eCELL_I].y].ref_ents.remove(index);
 		// Remove all references to us by other entities
-		for (int i = 0; i <= block_entity.index_end; i++)
+		for (int i = 0; i <= GetLastEntity(); i++)
 		{
-			if (block_entity.used[i] && i != index) // If entity exists and is not me
+			if (GetEntityExists(i) && i != index) // If entity exists and is not me
 			{
-				if (ENTITY(i)->type == ENTITY_TYPE_CHARA) // and is actor
+				if (ENTITY(i)->type == ENTITY_TYPE_ACTOR) // and is actor
 				{
 					if (ACTOR(i)->atk_target == index)
 						ACTOR(i)->atk_target = BUF_NULL;
@@ -379,10 +53,10 @@ namespace core
 	{
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
-		for (int i = 0; i <= block_entity.index_end; i++)
+		for (int i = 0; i <= GetLastEntity(); i++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != index && ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE))
+			if (GetEntityExists(i) && i != index && ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE))
 			{
 				btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
 				if (check_distance < closest_distance)
@@ -400,10 +74,10 @@ namespace core
 	{
 		btID current_closest = BUF_NULL;
 		btf32 closest_angle = 15.f;
-		for (int index_other = 0; index_other <= block_entity.index_end; index_other++)
+		for (int index_other = 0; index_other <= GetLastEntity(); index_other++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[index_other] && index_other != index && ENTITY(index_other)->state.stateFlags.get(ActiveState::eALIVE))
+			if (GetEntityExists(index_other) && index_other != index && ENTITY(index_other)->state.stateFlags.get(ActiveState::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(index_other)->faction) == allegiance)
@@ -438,10 +112,10 @@ namespace core
 	{
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
-		for (int i = 0; i <= block_entity.index_end; i++)
+		for (int i = 0; i <= GetLastEntity(); i++)
 		{
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != index && ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE))
+			if (GetEntityExists(i) && i != index && ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == allegiance)
@@ -463,11 +137,11 @@ namespace core
 		Entity* entity_index = ENTITY(index);
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
-		for (int i = 0; i <= block_entity.index_end; i++)
+		for (int i = 0; i <= GetLastEntity(); i++)
 		{
 			Entity* entity = ENTITY(i);
 			// If used, not me, and is alive
-			if (block_entity.used[i] && i != index && entity->state.stateFlags.get(ActiveState::eALIVE))
+			if (GetEntityExists(i) && i != index && entity->state.stateFlags.get(ActiveState::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(entity_index->faction, entity->faction) == allegiance)
@@ -509,7 +183,7 @@ namespace core
 				for (int e = 0; e <= refCells[x][y].ref_ents.end(); e++)
 				{
 					//if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->Type() == Entity::eITEM)
-					if (refCells[x][y].ref_ents[e] != ID_NULL && refCells[x][y].ref_ents[e] != index && block_entity.used[refCells[x][y].ref_ents[e]])
+					if (refCells[x][y].ref_ents[e] != ID_NULL && refCells[x][y].ref_ents[e] != index && GetEntityExists(refCells[x][y].ref_ents[e]))
 					{
 						btf32 check_distance = m::Length(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
 						if (check_distance < closestDist)
@@ -548,7 +222,7 @@ namespace core
 		ENTITY(index)->state.damagestate = STATE_DAMAGE_MAX;
 		ENTITY(index)->radius = 0.15f;
 		ENTITY(index)->height = 0.7f;
-		if (ENTITY(index)->type == ENTITY_TYPE_CHARA)
+		if (ENTITY(index)->type == ENTITY_TYPE_ACTOR)
 		{
 			ACTOR(index)->atk_target = BUF_NULL;
 			ACTOR(index)->ai_target_ent = BUF_NULL;
@@ -606,6 +280,48 @@ namespace core
 		}
 	}
 
+	char Capitalize(char c)
+	{
+		if (c >= 'a' && c <= 'z')
+			return c + ('A' - 'a');
+		return c;
+	}
+	void NameEntity(btID id)
+	{
+		// generate name
+		FILE* file = fopen("n.txt", "rb"); // Open file
+		if (file != NULL)
+		{
+			fseek(file, 0L, SEEK_END);
+			long sz = ftell(file);
+			long random = (long)m::Random(0, sz);
+			// TODO: quick fix, this system has no answer for reaching the end of the file
+			random = 0;
+			fseek(file, random, SEEK_SET); // Seek file beginning
+
+			int name_index = 0;
+			char c;
+			bool has_advanced_word = false;
+		getchar:
+			fread(&c, 1, 1, file);
+			if (c == CHARCODE_ASCII::space || c == CHARCODE_ASCII::CR || c == CHARCODE_ASCII::LF)
+			{
+				// if we reach the first 'empty character' we've hit the end of the current word
+				has_advanced_word = true;
+				goto getchar;
+			}
+			else
+			{
+				if (!has_advanced_word)
+					goto getchar;
+				ACTOR(id)->name[0] = Capitalize(c);
+				// else we can read from here assuming this is the start of a new word
+				fgets((char*)(&ACTOR(id)->name[1]), 31, file);
+			}
+		}
+		fclose(file);
+	}
+
 	namespace prefab
 	{
 		enum prefabtype : btui8
@@ -620,21 +336,28 @@ namespace core
 
 	void prefab_pc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_CHARA);
+		IndexInitEntity(id, ENTITY_TYPE_ACTOR);
 		spawn_setup_t(id, pos, dir);
+		NameEntity(id);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
 		ACTOR(id)->aiControlled = false;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->inventory.AddNew(6u);
+		ACTOR(id)->inventory.AddNew(4u);
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(7u); // heal
 		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_CHARA);
+		IndexInitEntity(id, ENTITY_TYPE_ACTOR);
 		spawn_setup_t(id, pos, dir);
+		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
@@ -656,8 +379,9 @@ namespace core
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_CHARA);
+		IndexInitEntity(id, ENTITY_TYPE_ACTOR);
 		spawn_setup_t(id, pos, dir);
+		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
@@ -680,8 +404,9 @@ namespace core
 
 	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_CHARA);
+		IndexInitEntity(id, ENTITY_TYPE_ACTOR);
 		spawn_setup_t(id, pos, dir);
+		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::undead;
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
@@ -696,6 +421,7 @@ namespace core
 	{
 		IndexInitEntity(id, ENTITY_TYPE_EDITOR_PAWN);
 		spawn_setup_t(id, pos, dir);
+		NameEntity(id);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;

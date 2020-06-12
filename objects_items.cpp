@@ -362,7 +362,7 @@ void HeldGunOnEquip(btID id, Actor* owner)
 	self->pitch = 90.f;
 	self->yaw = 0.f;
 	self->ePose = HeldItem::HOLDSTATE_AIM;
-	//self->ammoInstance = owner->inventory.GetItemOfTemplate(8);
+	self->fire_time = 0.f;
 }
 m::Vector3 HeldGunGetLHPos(btID id)
 {
@@ -508,10 +508,10 @@ bool(*fpItemBlockMove[ITEM_TYPE_COUNT])(btID) {
 
 //-------------------------------- REMOTE FUNCTIONS
 
-void ItemTick2(btID item, btf32 b, Actor* c) {
+void ItemTick(btID item, btf32 b, Actor* c) {
 	fpItemTick[GetItemType(item)](item, b, c);
 }
-void ItemDraw2(btID item, btID b, m::Vector2 c, btf32 d, m::Angle e, m::Angle f) {
+void ItemDraw(btID item, btID b, m::Vector2 c, btf32 d, m::Angle e, m::Angle f) {
 	fpItemDraw[GetItemType(item)](item, b, c, d, e, f);
 }
 void ItemOnEquip(btID item, Actor* b) {

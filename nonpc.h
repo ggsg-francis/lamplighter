@@ -168,7 +168,7 @@ void NPCTick(btID id)
 	//updatetarg:
 	// If is null OR deleted OR dead OR no LOS
 	if (actor->ai_target_ent == BUF_NULL
-		|| !block_entity.used[actor->ai_target_ent]
+		|| !GetEntityExists(actor->ai_target_ent)
 		|| !ENTITY(actor->ai_target_ent)->state.stateFlags.get(ActiveState::eALIVE)
 		|| !core::LOSCheck(id, actor->ai_target_ent))
 	{
@@ -178,7 +178,7 @@ void NPCTick(btID id)
 	//updateally:
 	// If is null OR deleted OR dead
 	if (actor->ai_ally_ent == BUF_NULL
-		|| !block_entity.used[actor->ai_ally_ent]
+		|| !GetEntityExists(actor->ai_ally_ent)
 		|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE)
 		|| !core::LOSCheck(id, actor->ai_ally_ent))
 		actor->ai_ally_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally

@@ -27,7 +27,7 @@ public:
 	void DestroyIndex(btui32 INDEX);
 	void DestroyID(btID ITEM_ID);
 	void Destroy(btID ITEM_TEMPLATE);
-	void TransferItemRecv(btID ITEM_ID);
+	btui32 TransferItemRecv(btID ITEM_ID);
 	void TransferItemSendIndex(btui32 INDEX);
 	void TransferItemSend(btID ITEM_ID);
 	//btID GetItemOfType(ItemType TYPE);
@@ -116,7 +116,7 @@ struct ActiveState
 };
 
 // Handle this entitiy's position, receives desired motion
-void EntityTransformTick(Entity* ENTITY, btID ID, btf32 DELTA_TIME);
+void Entity_PhysicsTick(Entity* ENTITY, btID ID, btf32 DELTA_TIME);
 
 char* DisplayNameActor(void* ent);
 char* DisplayNameRestingItem(void* ent);
@@ -131,7 +131,7 @@ void TickEditorPawn(void* ent, btf32 dt);
 void DrawEditorPawn(void* ent);
 
 // does this need to be here?
-m::Vector3 SetFootPos(m::Vector2 position);
+m::Vector3 Actor_SetFootPos(m::Vector2 position);
 
 // Base entity class
 struct Entity

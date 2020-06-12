@@ -3,26 +3,37 @@
 
 #include "memory.hpp"
 
-//-------------------------------- ENTITIES
-
 typedef struct EntAddr
 {
 	EntityType type;
 	btID type_buffer_index;
 } EntAddr;
 
-// Block of IDs in memory, tracks the numbers and types of entities
-extern mem::objbuf block_entity;
-extern EntAddr block_entity_data[BUF_SIZE];
+//-------------------------------- ENTITIES
+
+// Make an entity, return ID
+btID AssignEntityID();
+// Get whether an entity with this ID exists
+bool GetEntityExists(btID ID);
+// Get the ID of the last entity
+btID GetLastEntity();
 // Get the pointer address of the entity at X ID
 void* GetEntityPtr(btID ID);
+// Get the type of the entity at ID
+EntityType GetEntityType(btID ID);
 
-// Block of IDs in memory, tracks the numbers and types of items
-extern mem::objbuf block_item;
+//-------------------------------- ITEMS
+
+// Make an item, return ID
+btID AssignItemID();
+// Get whether an item with this ID exists
+bool GetItemExists(btID ID);
 // Get the pointer address of the item at ID
 void* GetItemPtr(btID ID);
 // Get the type of the item at ID
 ItemType GetItemType(btID ID);
+
+//-------------------------------- OTHER STUFF
 
 // Return a string which will be printed to the screen when this entity is looked at
 extern char*(*fpName[ENTITY_TYPE_COUNT])(void* self);

@@ -174,7 +174,7 @@ namespace graphics
 	m::Vector3 GetViewPos();
 	m::Vector3 GetFocalCenter();
 	void SetMatProj(btf32 FOV_MULT = 1.f);
-	void SetMatView(void* t);
+	void SetMatView(void* t, void* p, void* t2);
 	void SetMatProjLight();
 	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz);
 	void SetMatViewEditor(void* t);
@@ -497,7 +497,6 @@ namespace graphics
 		GLuint vao; // Vertex Array Object
 		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void LoadFile(char* FILENAME);
-		// add void unload?
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
@@ -520,7 +519,6 @@ namespace graphics
 		// TODO: remove me
 		void AddTerrainTile(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE]);
 		void ReBindGL();
-		// add void unload?
 		void Unload();
 	private:
 		GLuint vbo; // Vertex Buffer Object
@@ -531,8 +529,7 @@ namespace graphics
 		size_t ices_size;
 	};
 
-	// Like a composite mesh but uses a different vertex type
-	// (TODO: This is the first class to be completely memory safe -- follow this example with the others!)
+	// Like a composite mesh but uses a different vertex type, specifically represents terrain
 	class TerrainMesh
 	{
 	public:
@@ -559,18 +556,6 @@ namespace graphics
 	public:
 		size_t GetVertexCount() { return vces_size; };
 		size_t GetIndexCount() { return ices_size; };
-		/*btui32* GetIndices() { return ices; };
-		btf32* GenVertexPositionBuffer()
-		{
-			btf32* buf = (btf32*)malloc(vces_size * 3 * sizeof(btf32));
-			for (btui32 i = 0; i < vces_size; ++i)
-			{
-				buf[i * 3] = vces[i].pos.x;
-				buf[i * 3 + 1] = vces[i].pos.y;
-				buf[i * 3 + 2] = vces[i].pos.z;
-			}
-			return buf;
-		};*/
 	};
 
 	class GUIBitmap
@@ -583,7 +568,7 @@ namespace graphics
 		void Init();
 		void SetTexture(GLuint TEXTURE);
 		void SetShader(Shader* SHADER);
-		//missing parameters obviously
+		//missing parameters obviously (it's obvious??)
 		void Draw(int posx, int posy, int WIDTH, int HEIGHT);
 	};
 

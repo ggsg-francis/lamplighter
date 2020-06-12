@@ -4,12 +4,17 @@
 
 GIT HOWTO:
 
+Git GUI -> git bash
+
 Untrack file (remove with cached keyword so it doesn't delete it):
 	File:   git rm --cached filename
 	Folder: git rm --cached -r foldername
 
 List all tracked files:
 	git ls-tree --full-tree -r --name-only HEAD
+	
+Show history with insertions and deletions:
+	git log --oneline --shortstat
 
 --------------------------------------------------------------------
 

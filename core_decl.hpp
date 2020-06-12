@@ -5,6 +5,8 @@
 
 #include "objects_entities.h"
 #include "objects_items.h"
+#include "objects_statics.h"
+
 #include "index.h"
 #include "network.h"
 
@@ -31,7 +33,8 @@ namespace core
 
 	unsigned int activePlayer = 0u;
 	btID players[2];
-	m::Vector2 viewpos;
+	m::Vector3 viewTarget[2];
+	m::Vector3 viewPosition[2];
 	btID viewtarget[2]{ ID_NULL, ID_NULL };
 	btID viewtarget_last_tick[2]{ ID_NULL, ID_NULL };
 	// for measuring HP changes for gui display
@@ -49,9 +52,17 @@ namespace core
 	struct ReferenceCell
 	{
 		mem::idbuf ref_ents; // Entity references
-		btID ref_avr; // Activator reference
 	};
 	ReferenceCell refCells[WORLD_SIZE][WORLD_SIZE];
+
+	int CellEntityCount(int x, int y)
+	{
+		return core::refCells[x][y].ref_ents.end() + 1;
+	}
+	btID CellEntity(int x, int y, int e)
+	{
+		return core::refCells[x][y].ref_ents[e];
+	}
 
 	// inventory stuff
 	graphics::GUIBox guibox;

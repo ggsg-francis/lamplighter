@@ -298,6 +298,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="archive.cpp" />
     <ClCompile Include="objects_items.cpp" />
+    <ClCompile Include="objects_statics.cpp" />
     <ClCompile Include="test_zone.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="weather.cpp" />
@@ -328,6 +329,7 @@
     <ClInclude Include="graphics.hpp" />
     <ClInclude Include="objects_items.h" />
     <ClInclude Include="archive.hpp" />
+    <ClInclude Include="objects_statics.h" />
     <ClInclude Include="test_zone.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="weather.h" />

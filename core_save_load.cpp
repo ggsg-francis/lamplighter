@@ -12,6 +12,9 @@
 #define SIZE_32 4
 #define SIZE_64 8
 
+extern mem::objbuf block_entity;
+extern mem::objbuf block_item;
+
 namespace core
 {
 	struct ReferenceCell
@@ -42,7 +45,7 @@ void SaveState()
 				if (block_entity.used[index_ent])
 				{
 					// if this entity has an inventory
-					if (ENTITY(index_ent)->type == ENTITY_TYPE_CHARA)
+					if (ENTITY(index_ent)->type == ENTITY_TYPE_ACTOR)
 					{
 						// for every invntory slot
 						for (btui32 inv_slot = 0; inv_slot < ACTOR(index_ent)->inventory.items.Size(); ++inv_slot)
@@ -93,7 +96,7 @@ void SaveState()
 		fwrite(&block_entity.index_end, SIZE_16, 1, file);
 		fwrite(&block_entity.used, SIZE_8, (size_t)(block_entity.index_end + 1u), file);
 		//unneeded...
-		//fwrite(&block_entity_data, 4ui64, (size_t)(block_entity.index_end + 1u), file);
+		//fwrite(&block_entity_data, SIZE_32, (size_t)(block_entity.index_end + 1u), file);
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 		{
@@ -121,7 +124,7 @@ void SaveState()
 				case ENTITY_TYPE_RESTING_ITEM:
 					fwrite(&ITEM(i)->item_instance, SIZE_16, 1, file);
 					break;
-				case ENTITY_TYPE_CHARA:
+				case ENTITY_TYPE_ACTOR:
 					fwrite(&ACTOR(i)->name, 32, 1, file);
 					fwrite(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
 					fwrite(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
@@ -244,7 +247,7 @@ void LoadStateFileV001()
 				case ENTITY_TYPE_RESTING_ITEM:
 					fread(&ITEM(i)->item_instance, SIZE_16, 1, file);
 					break;
-				case ENTITY_TYPE_CHARA:
+				case ENTITY_TYPE_ACTOR:
 					fread(&ACTOR(i)->name, 32, 1, file);
 					fread(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
 					fread(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
