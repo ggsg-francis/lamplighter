@@ -5,6 +5,8 @@
 #include "core.h"
 #include "index.h"
 
+bool HeldConUse(btID id, Actor* owner);
+
 //-------------------------------- HELD ITEM MISC
 
 void HeldItemTick(btID id, btf32 dt, Actor* owner)
@@ -24,13 +26,13 @@ void HeldItemOnEquip(btID id, Actor* owner)
 {
 	//
 }
-m::Vector3 HeldItemGetLeftHandPos(btID id)
+m::Vector3 HeldItemGetLHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * -0.5f;
 	return self->t_item.GetPosition() + self->t_item.GetRight() * -((acv::BaseItem*)acv::items[self->id_item_template])->f_radius;
 }
-m::Vector3 HeldItemGetRightHandPos(btID id)
+m::Vector3 HeldItemGetRHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * 0.5f;
@@ -135,7 +137,7 @@ void HeldMelDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 void HeldMelOnEquip(btID id, Actor* owner)
 {
 }
-m::Vector3 HeldMelGetLeftHandPos(btID id)
+m::Vector3 HeldMelGetLHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	switch ((self->ePose))
@@ -149,7 +151,7 @@ m::Vector3 HeldMelGetLeftHandPos(btID id)
 	}
 	return m::Vector3(0.f, 0.f, 0.f);
 }
-m::Vector3 HeldMelGetRightHandPos(btID id)
+m::Vector3 HeldMelGetRHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	switch ((self->ePose))
@@ -362,7 +364,7 @@ void HeldGunOnEquip(btID id, Actor* owner)
 	self->ePose = HeldItem::HOLDSTATE_AIM;
 	//self->ammoInstance = owner->inventory.GetItemOfTemplate(8);
 }
-m::Vector3 HeldGunGetLeftHandPos(btID id)
+m::Vector3 HeldGunGetLHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	if (self->ePose != HeldItem::HOLDSTATE_BARREL) // If holding normally
@@ -371,7 +373,7 @@ m::Vector3 HeldGunGetLeftHandPos(btID id)
 	else
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 1.f;
 }
-m::Vector3 HeldGunGetRightHandPos(btID id)
+m::Vector3 HeldGunGetRHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	if (self->ePose != HeldItem::HOLDSTATE_BARREL) // If holding normally
@@ -414,13 +416,13 @@ void HeldMgcOnEquip(btID id, Actor* owner)
 {
 	//
 }
-m::Vector3 HeldMgcGetLeftHandPos(btID id)
+m::Vector3 HeldMgcGetLHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * -0.2f;
 	return self->t_item.GetPosition() + m::RotateVector(m::Vector3(-0.25f, 0.f, -0.25f), self->t_item.rot_glm);
 }
-m::Vector3 HeldMgcGetRightHandPos(btID id)
+m::Vector3 HeldMgcGetRHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * 0.2f;
@@ -477,4 +479,53 @@ void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 void HeldConOnEquip(btID id, Actor* owner)
 {
 	//
+}
+
+//________________________________________________________________________________________________________________________________
+// FUNCTION POINTER ARRAYS FOR REMOTE CALLING ------------------------------------------------------------------------------------
+
+void(*fpItemTick[ITEM_TYPE_COUNT])(btID, btf32, Actor*) {
+	HeldItemTick, HeldItemTick, HeldMelTick, HeldGunTick, HeldMgcTick, HeldConTick
+};
+void(*fpItemDraw[ITEM_TYPE_COUNT])(btID, btID, m::Vector2, btf32, m::Angle, m::Angle) {
+	HeldItemDraw, HeldItemDraw, HeldMelDraw, HeldGunDraw, HeldMgcDraw, HeldConDraw
+};
+void(*fpItemOnEquip[ITEM_TYPE_COUNT])(btID, Actor*) {
+	HeldItemOnEquip, HeldItemOnEquip, HeldMelOnEquip, HeldGunOnEquip, HeldMgcOnEquip, HeldConOnEquip
+};
+m::Vector3(*fpItemGetLeftHandPos[ITEM_TYPE_COUNT])(btID) {
+	HeldItemGetLHPos, HeldItemGetLHPos, HeldMelGetLHPos, HeldGunGetLHPos, HeldMgcGetLHPos, HeldItemGetLHPos
+};
+m::Vector3(*fpItemGetRightHandPos[ITEM_TYPE_COUNT])(btID) {
+	HeldItemGetRHPos, HeldItemGetRHPos, HeldMelGetRHPos, HeldGunGetRHPos, HeldMgcGetRHPos, HeldItemGetRHPos
+};
+bool(*fpItemBlockTurn[ITEM_TYPE_COUNT])(btID) {
+	HeldItemBlockTurn, HeldItemBlockTurn, HeldItemBlockTurn, HeldItemBlockTurn, HeldItemBlockTurn, HeldItemBlockTurn
+};
+bool(*fpItemBlockMove[ITEM_TYPE_COUNT])(btID) {
+	HeldItemBlockMove, HeldItemBlockMove, HeldItemBlockMove, HeldItemBlockMove, HeldItemBlockMove, HeldItemBlockMove
+};
+
+//-------------------------------- REMOTE FUNCTIONS
+
+void ItemTick2(btID item, btf32 b, Actor* c) {
+	fpItemTick[GetItemType(item)](item, b, c);
+}
+void ItemDraw2(btID item, btID b, m::Vector2 c, btf32 d, m::Angle e, m::Angle f) {
+	fpItemDraw[GetItemType(item)](item, b, c, d, e, f);
+}
+void ItemOnEquip(btID item, Actor* b) {
+	fpItemOnEquip[GetItemType(item)](item, b);
+}
+m::Vector3 ItemLHPos(btID item) {
+	return fpItemGetLeftHandPos[GetItemType(item)](item);
+}
+m::Vector3 ItemRHPos(btID item) {
+	return fpItemGetRightHandPos[GetItemType(item)](item);
+}
+bool ItemBlockTurn(btID item) {
+	return fpItemBlockTurn[GetItemType(item)](item);
+}
+bool ItemBlockMove(btID item) {
+	return fpItemBlockMove[GetItemType(item)](item);
 }

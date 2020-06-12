@@ -533,7 +533,7 @@ void Actor::SetEquipSlot(btui32 index)
 	{
 		inv_active_slot = index;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEMINST(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
+			ItemOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 
@@ -543,7 +543,7 @@ void Actor::IncrEquipSlot()
 	{
 		++inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEMINST(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
+			ItemOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 
@@ -553,7 +553,7 @@ void Actor::DecrEquipSlot()
 	{
 		--inv_active_slot;
 		if (inventory.items.Used(inv_active_slot))
-			GETITEMINST(inventory.items[inv_active_slot])->fpOnEquip(inventory.items[inv_active_slot], this);
+			ItemOnEquip(inventory.items[inv_active_slot], this);
 	}
 }
 
@@ -969,10 +969,8 @@ void TickChara(void* ent, btf32 dt)
 	bool can_turn = true;
 	if (chr->inventory.items.Used(chr->inv_active_slot))
 	{
-		#define HELDINSTANCE ((HeldItem*)GetItemPtr(chr->inventory.items[chr->inv_active_slot]))
-		can_move = !HELDINSTANCE->fpBlockMove(chr->inventory.items[chr->inv_active_slot]);
-		can_turn = !HELDINSTANCE->fpBlockTurn(chr->inventory.items[chr->inv_active_slot]);
-		#undef HELDINSTANCE
+		can_move = !ItemBlockMove(chr->inventory.items[chr->inv_active_slot]);
+		can_turn = !ItemBlockMove(chr->inventory.items[chr->inv_active_slot]);
 	}
 
 	if (chr->state.stateFlags.get(ActiveState::eDIED_REPORT))
@@ -1025,11 +1023,7 @@ void TickChara(void* ent, btf32 dt)
 		//-------------------------------- RUN ITEM TICK
 
 		if (chr->inventory.items.Used(chr->inv_active_slot))
-		{
-			#define HELDINSTANCE ((HeldItem*)GetItemPtr(chr->inventory.items[chr->inv_active_slot]))
-			if (HELDINSTANCE != nullptr) HELDINSTANCE->fpTick(chr->inventory.items[chr->inv_active_slot], dt, chr);
-			#undef HELDINSTANCE
-		}
+			ItemTick2(chr->inventory.items[chr->inv_active_slot], dt, chr);
 	} // End if alive
 
 	//________________________________________________________________
@@ -1164,13 +1158,13 @@ void DrawChara(void* ent)
 		HeldItem* heldItem = ((HeldItem*)GetItemPtr(inventory.items[inv_active_slot]));
 
 		// Draw held item
-		heldItem->fpDraw(inventory.items[inv_active_slot],
+		ItemDraw2(inventory.items[inv_active_slot],
 			GETITEMINST(inventory.items[inv_active_slot])->id_item_template,
 			chr->t.position, chr->t.height + 0.3f, viewYaw, viewPitch);
 
 		// Get hand positions
-		m::Vector3 handPosR = heldItem->fpGetRightHandPos(inventory.items[inv_active_slot]);
-		m::Vector3 handPosL = heldItem->fpGetLeftHandPos(inventory.items[inv_active_slot]);
+		m::Vector3 handPosR = ItemRHPos(inventory.items[inv_active_slot]);
+		m::Vector3 handPosL = ItemLHPos(inventory.items[inv_active_slot]);
 
 		// Arm orientation vectors
 		#define bodyForwardR m::Normalize((t_upperbody.GetRight() * -1.f) + t_upperbody.GetUp() * 0.75f + t_upperbody.GetForward() * 0.5f)
@@ -1366,13 +1360,6 @@ void TickEditorPawn(void* ent, btf32 dt)
 
 	bool can_move = true;
 	bool can_turn = true;
-	if (inventory.items.Used(inv_active_slot))
-	{
-		#define HELDINSTANCE ((HeldItem*)GetItemPtr(inventory.items[inv_active_slot]))
-		can_move = !HELDINSTANCE->fpBlockMove(inventory.items[inv_active_slot]);
-		can_turn = !HELDINSTANCE->fpBlockTurn(inventory.items[inv_active_slot]);
-		#undef HELDINSTANCE
-	}
 
 	if (state.stateFlags.get(ActiveState::eALIVE))
 	{
@@ -1425,13 +1412,6 @@ void TickEditorPawn(void* ent, btf32 dt)
 		//-------------------------------- RUN COLLISION & AI
 
 	} // End if alive
-
-	if (inventory.items.Used(inv_active_slot))
-	{
-		#define HELDINSTANCE ((HeldItem*)GetItemPtr(inventory.items[inv_active_slot]))
-		if (HELDINSTANCE != nullptr) HELDINSTANCE->fpTick(inventory.items[inv_active_slot], dt, chr);
-		#undef HELDINSTANCE
-	}
 
 	//________________________________________________________________
 	//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------

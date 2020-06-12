@@ -186,63 +186,6 @@ void IndexInitItemInstance(btID id, ItemType type)
 	//block_item_data[id].type_buffer_index = ItemBufPtr[type]->add();
 	HeldItem* held_item = GETITEMINST(id);
 	*held_item = HeldItem();
-	switch (type)
-	{
-	case ITEM_TYPE_MISC:
-		held_item->fpTick = HeldItemTick;
-		held_item->fpDraw = HeldItemDraw;
-		held_item->fpOnEquip = HeldItemOnEquip;
-		held_item->fpGetLeftHandPos = HeldItemGetLeftHandPos;
-		held_item->fpGetRightHandPos = HeldItemGetRightHandPos;
-		held_item->fpBlockTurn = HeldItemBlockTurn;
-		held_item->fpBlockMove = HeldItemBlockMove;
-		break;
-	case ITEM_TYPE_EQUIP:
-		held_item->fpTick = HeldItemTick;
-		held_item->fpDraw = HeldItemDraw;
-		held_item->fpOnEquip = HeldItemOnEquip;
-		held_item->fpGetLeftHandPos = HeldItemGetLeftHandPos;
-		held_item->fpGetRightHandPos = HeldItemGetRightHandPos;
-		held_item->fpBlockTurn = HeldItemBlockTurn;
-		held_item->fpBlockMove = HeldItemBlockMove;
-		break;
-	case ITEM_TYPE_WPN_MELEE:
-		held_item->fpTick = HeldMelTick;
-		held_item->fpDraw = HeldMelDraw;
-		held_item->fpOnEquip = HeldMelOnEquip;
-		held_item->fpGetLeftHandPos = HeldMelGetLeftHandPos;
-		held_item->fpGetRightHandPos = HeldMelGetRightHandPos;
-		held_item->fpBlockTurn = HeldMelBlockTurn;
-		held_item->fpBlockMove = HeldMelBlockMove;
-		break;
-	case ITEM_TYPE_WPN_MATCHGUN:
-		held_item->fpTick = HeldGunTick;
-		held_item->fpDraw = HeldGunDraw;
-		held_item->fpOnEquip = HeldGunOnEquip;
-		held_item->fpGetLeftHandPos = HeldGunGetLeftHandPos;
-		held_item->fpGetRightHandPos = HeldGunGetRightHandPos;
-		held_item->fpBlockTurn = HeldGunBlockTurn;
-		held_item->fpBlockMove = HeldGunBlockMove;
-		break;
-	case ITEM_TYPE_WPN_MAGIC:
-		held_item->fpTick = HeldMgcTick;
-		held_item->fpDraw = HeldMgcDraw;
-		held_item->fpOnEquip = HeldMgcOnEquip;
-		held_item->fpGetLeftHandPos = HeldMgcGetLeftHandPos;
-		held_item->fpGetRightHandPos = HeldMgcGetRightHandPos;
-		held_item->fpBlockTurn = HeldMgcBlockTurn;
-		held_item->fpBlockMove = HeldMgcBlockMove;
-		break;
-	case ITEM_TYPE_CONS:
-		held_item->fpTick = HeldConTick;
-		held_item->fpDraw = HeldConDraw;
-		held_item->fpOnEquip = HeldConOnEquip;
-		held_item->fpGetLeftHandPos = HeldItemGetLeftHandPos;
-		held_item->fpGetRightHandPos = HeldItemGetRightHandPos;
-		held_item->fpBlockTurn = HeldItemBlockTurn;
-		held_item->fpBlockMove = HeldItemBlockMove;
-		break;
-	}
 }
 void IndexFreeItem(btID id)
 {

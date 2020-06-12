@@ -19,52 +19,18 @@ namespace m
 	class Vector3;
 };
 
-//-------------------------------- HELD ITEM
-
-void HeldItemTick(btID id, btf32 dt, Actor* owner);
-void HeldItemDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-void HeldItemOnEquip(btID id, Actor* owner);
-m::Vector3 HeldItemGetLeftHandPos(btID id);
-m::Vector3 HeldItemGetRightHandPos(btID id);
-bool HeldItemBlockTurn(btID id);
-bool HeldItemBlockMove(btID id);
-
-//-------------------------------- HELD ITEM MELEE
-
-void HeldMelTick(btID id, btf32 dt, Actor * owner);
-void HeldMelDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle _pitch);
-void HeldMelOnEquip(btID id, Actor* owner);
-m::Vector3 HeldMelGetLeftHandPos(btID id);
-m::Vector3 HeldMelGetRightHandPos(btID id);
-bool HeldMelBlockTurn(btID id);
-bool HeldMelBlockMove(btID id);
-
-//-------------------------------- HELD ITEM GUN
-
-void HeldGunTick(btID id, btf32 dt, Actor* owner);
-void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2);
-void HeldGunOnEquip(btID id, Actor* owner);
-m::Vector3 HeldGunGetLeftHandPos(btID id);
-m::Vector3 HeldGunGetRightHandPos(btID id);
-bool HeldGunBlockTurn(btID id);
-bool HeldGunBlockMove(btID id);
-
-//-------------------------------- HELD ITEM MAGIC
-
-void HeldMgcTick(btID id, btf32 dt, Actor* owner);
-void HeldMgcDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-void HeldMgcOnEquip(btID id, Actor* owner);
-m::Vector3 HeldMgcGetLeftHandPos(btID id);
-m::Vector3 HeldMgcGetRightHandPos(btID id);
-bool HeldMgcBlockTurn(btID id);
-bool HeldMgcBlockMove(btID id);
-
-//-------------------------------- HELD ITEM CONSUME
-
-bool HeldConUse(btID id, Actor* owner);
-void HeldConTick(btID id, btf32 dt, Actor* owner);
-void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-void HeldConOnEquip(btID id, Actor* owner);
+// Tick this item
+void ItemTick2(btID item, btf32 DT, Actor* OWNER);
+// Render graphics of this item
+void ItemDraw2(btID item, btID ITEMID, m::Vector2 OWNER_POSITION, btf32 OWNER_HEIGHT, m::Angle OWNER_YAW, m::Angle OWNER_PITCH);
+// Tell this item that it's just been equipped
+void ItemOnEquip(btID item, Actor* b);
+// Get left hand position
+m::Vector3 ItemLHPos(btID item);
+// Get right hand position
+m::Vector3 ItemRHPos(btID item);
+bool ItemBlockTurn(btID item);
+bool ItemBlockMove(btID item);
 
 // Base item instance
 struct HeldItem
@@ -73,21 +39,6 @@ struct HeldItem
 
 	btID id_item_template = ID_NULL;
 	Transform3D t_item;
-
-	// Tick this item
-	void(*fpTick)(btID self, btf32 dt, Actor* owner);
-	// Render graphics of this item
-	void(*fpDraw)(btID self, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch);
-	//
-	void(*fpOnEquip)(btID self, Actor* owner);
-	//
-	m::Vector3(*fpGetLeftHandPos)(btID self);
-	//
-	m::Vector3(*fpGetRightHandPos)(btID self);
-	//
-	bool(*fpBlockTurn)(btID self);
-	//
-	bool(*fpBlockMove)(btID self);
 
 	//-------------------------------- SHARED THINGS
 
