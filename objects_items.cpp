@@ -185,7 +185,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 
-	if (owner->inputBV.get(Actor::IN_USE) && self->ePose == HOLDSTATE_AIM && self->fire_time < tickCount_temp)
+	if (owner->inputBV.get(Actor::IN_USE) && self->ePose == HOLDSTATE_AIM && self->fire_time < tickCount)
 	{
 		// if we try to fire, see if we can load the weapon
 		if (self->id_ammoInstance == ID_NULL)
@@ -196,7 +196,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 			if (!HeldConUse(self->id_ammoInstance, owner))
 				self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::BaseItemGun*)acv::items[self->id_item_template])->ammunition_type);
 
-			self->fire_time = tickCount_temp + 3u;
+			self->fire_time = tickCount + 3u;
 
 			aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
 			//loc_velocity.z -= 0.12f;

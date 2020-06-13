@@ -83,20 +83,20 @@ namespace env
 		out_slope_y /= 2.f;
 	}
 
-	__forceinline bool LineTraceUtil_CheckCollideEnv(int x, int y, btf32 height_a, btf32 height_b, btf32 lerp)
+	forceinline bool LineTraceUtil_CheckCollideEnv(int x, int y, btf32 height_a, btf32 height_b, btf32 lerp)
 	{
 		btf32 mix = m::Lerp(height_a, height_b, lerp);
 		if (((btf32)env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION) > mix + 0.7f)
 			return true;
 		return Get(x, y, eflag::eIMPASSABLE);
 	}
-	__forceinline bool LineTraceUtil_CompareA(int diff) {
+	forceinline bool LineTraceUtil_CompareA(int diff) {
 		return diff < 0;
 	}
-	__forceinline bool LineTraceUtil_CompareB(int diff) {
+	forceinline bool LineTraceUtil_CompareB(int diff) {
 		return diff <= 0;
 	}
-	__forceinline bool LineTraceUtil_Continue(
+	forceinline bool LineTraceUtil_Continue(
 		int& coordX, int& coordY, int& coordA, int& coordB, int& diffX, int& diffY, int& diffA, int& diffB,
 		int& x1, int& y1, int& x2, int& y2, int& a1, int& a2, int& diffAbsA, int& diffAbsB, bool(*compareFunc)(int),
 		btf32 height_a, btf32 height_b)
@@ -286,7 +286,7 @@ namespace env
 	void SaveBin()
 	{
 		Clean();
-		printf("Saving [world.ltrwld]");
+		printf("Saving World\n");
 		FILE *out = fopen("save/world.ltrwld", "wb");
 		if (out != NULL)
 		{
@@ -298,7 +298,7 @@ namespace env
 
 	void LoadBin()
 	{
-		printf("Loading [world.ltrwld]");
+		printf("Loading World\n");
 		FILE *in = fopen("save/world.ltrwld", "rb");
 		if (in != NULL)
 		{
@@ -316,14 +316,9 @@ namespace env
 		{
 			for (int y = 0; y < WORLD_SIZE; ++y)
 			{
-				/*eCells.terrain_height_ne[x][y] = eCells.terrain_height[x][y];
-				eCells.terrain_height_nw[x][y] = eCells.terrain_height[x][y];
-				eCells.terrain_height_se[x][y] = eCells.terrain_height[x][y];
-				eCells.terrain_height_sw[x][y] = eCells.terrain_height[x][y];*/
-				eCells.terrain_height[x][y] = eCells.terrain_height_ne[x][y];
-				/*eCells.terrain_height[x][y] = eCells.terrain_height_nw[x][y];
-				eCells.terrain_height[x][y] = eCells.terrain_height_se[x][y];
-				eCells.terrain_height[x][y] = eCells.terrain_height_sw[x][y];*/
+				eCells.terrain_height[x][y] = m::Max<btui8>(4,
+					eCells.terrain_height_ne[x][y], eCells.terrain_height_nw[x][y],
+					eCells.terrain_height_se[x][y], eCells.terrain_height_sw[x][y]);
 			}
 		}
 	}
@@ -416,80 +411,103 @@ enum NodeFromDir : btui8
 };
 NodeFromDir node_cache[WORLD_SIZE][WORLD_SIZE];
 
-void path::PathFind(void* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest)
+bool path::PathFind(Path* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest)
 {
-	std::queue<PathNode> openSet;
-	PathNode node; node.x = x; node.y = y;
+	std::queue<WCoord> openSet;
+	WCoord node; node.x = x; node.y = y;
 	openSet.push(node);
-	std::vector<PathNode> usedSet;
+	std::vector<WCoord> usedSet;
 	usedSet.push_back(node);
 	while(!openSet.empty())
 	{
-		PathNode current = openSet.front();
+		WCoord current = openSet.front();
 		openSet.pop();
 		if (current.x == xDest && current.y == yDest)
 			break;
 		// N
 		if (current.y < WORLD_SIZE_MAXINT && node_cache[current.x][current.y + 1] == ND_UNSET)
 		{
-			PathNode next; next.x = current.x; next.y = current.y + 1;
-			openSet.push(next);
-			node_cache[current.x][current.y + 1] = ND_FROM_SOUTH;
-			usedSet.push_back(next);
+			// if next tile is not too high compared to this one
+			if (env::eCells.terrain_height[current.x][current.y + 1] < env::eCells.terrain_height[current.x][current.y] + 4u)
+			{
+				WCoord next; next.x = current.x; next.y = current.y + 1;
+				openSet.push(next);
+				node_cache[current.x][current.y + 1] = ND_FROM_SOUTH;
+				usedSet.push_back(next);
+			}
 		}
 		// S
 		if (current.y > 0 && node_cache[current.x][current.y - 1] == ND_UNSET)
 		{
-			PathNode next; next.x = current.x; next.y = current.y - 1;
-			openSet.push(next);
-			node_cache[current.x][current.y - 1] = ND_FROM_NORTH;
-			usedSet.push_back(next);
+			// if next tile is not too high compared to this one
+			if (env::eCells.terrain_height[current.x][current.y - 1] < env::eCells.terrain_height[current.x][current.y] + 4u)
+			{
+				WCoord next; next.x = current.x; next.y = current.y - 1;
+				openSet.push(next);
+				node_cache[current.x][current.y - 1] = ND_FROM_NORTH;
+				usedSet.push_back(next);
+			}
 		}
 		// E
 		if (current.x < WORLD_SIZE_MAXINT && node_cache[current.x + 1][current.y] == ND_UNSET)
 		{
-			PathNode next; next.x = current.x + 1; next.y = current.y;
-			openSet.push(next);
-			node_cache[current.x + 1][current.y] = ND_FROM_WEST;
-			usedSet.push_back(next);
+			// if next tile is not too high compared to this one
+			if (env::eCells.terrain_height[current.x + 1][current.y] < env::eCells.terrain_height[current.x][current.y] + 4u)
+			{
+				WCoord next; next.x = current.x + 1; next.y = current.y;
+				openSet.push(next);
+				node_cache[current.x + 1][current.y] = ND_FROM_WEST;
+				usedSet.push_back(next);
+			}
 		}
 		// W
 		if (current.x > 0 && node_cache[current.x - 1][current.y] == ND_UNSET)
 		{
-			PathNode next; next.x = current.x - 1; next.y = current.y;
-			openSet.push(next);
-			node_cache[current.x - 1][current.y] = ND_FROM_EAST;
-			usedSet.push_back(next);
+			// if next tile is not too high compared to this one
+			if (env::eCells.terrain_height[current.x - 1][current.y] < env::eCells.terrain_height[current.x][current.y] + 4u)
+			{
+				WCoord next; next.x = current.x - 1; next.y = current.y;
+				openSet.push(next);
+				node_cache[current.x - 1][current.y] = ND_FROM_EAST;
+				usedSet.push_back(next);
+			}
 		}
 	}
 
+	path->len = 0u; // reset the path
 
-	std::vector<PathNode>* path2 = ((std::vector<PathNode>*)path);
-
-	// set path vector
-	path2->clear();
-	PathNode current; current.x = xDest; current.y = yDest;
-	while (current.x != x && current.y != y)
+	// construct path vector
+	WCoord current; current.x = xDest; current.y = yDest;
+	while (current.x != x || current.y != y)
 	{
-		path2->push_back(current);
-		switch (node_cache[current.x][current.y])
+		if (path->len < PATH_NUM_NODES)
 		{
-		case ND_FROM_NORTH:
-			++current.y;
-			break;
-		case ND_FROM_SOUTH:
-			--current.y;
-			break;
-		case ND_FROM_EAST:
-			++current.x;
-			break;
-		case ND_FROM_WEST:
-			--current.x;
-			break;
+			path->nodes[path->len] = current;
+			++path->len;
+			switch (node_cache[current.x][current.y])
+			{
+			case ND_FROM_NORTH:
+				++current.y;
+				break;
+			case ND_FROM_SOUTH:
+				--current.y;
+				break;
+			case ND_FROM_EAST:
+				++current.x;
+				break;
+			case ND_FROM_WEST:
+				--current.x;
+				break;
+			}
 		}
+		else return false; // return if we maxed out the path
 	}
+	path->nodes[path->len] = current;
+	++path->len;
 
 	// clear modified cache
 	for (int i = 0; i < usedSet.size(); ++i)
 		node_cache[usedSet[i].x][usedSet[i].y] = ND_UNSET;
+
+	return true;
 }

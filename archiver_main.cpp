@@ -1,15 +1,8 @@
-#include "archive_read_write.h"
-#include "archive.hpp"
-
-// OpenGL
-#include "glad/glad.h"
-// SDL
-#define SDL_MAIN_HANDLED
-#include "SDL2\SDL.h"
+#include "archiver_loop.h"
 
 //-------------------------------- WINDOWING GLOBAL VARIABLES
 
-SDL_Window* sdl_window;
+//SDL_Window* sdl_window;
 SDL_GLContext sdl_glcontext;
 bool focus = true;
 
@@ -34,7 +27,7 @@ int main(int argc, char * argv[])
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // Turn on double buffering
 
 	sdl_window = SDL_CreateWindow("TSOA ARCHIVE EDITOR", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN); // Create window
+		ARCHIVER_WINDOW_W, ARCHIVER_WINDOW_H, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN); // Create window
 	if (!sdl_window) return -1; // Die if creation failed
 
 	sdl_glcontext = SDL_GL_CreateContext(sdl_window); // Create our opengl context and attach it to our window
@@ -48,11 +41,31 @@ int main(int argc, char * argv[])
 		std::cout << "ERROR: gladLoadGLLoader failed!" << std::endl;
 		return -1;
 	}
-	glViewport(0, 0, 800, 600); // Set opengl viewport size to window size X, Y, W, H
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, ARCHIVER_WINDOW_W, ARCHIVER_WINDOW_H); // Set opengl viewport size to window size X, Y, W, H
+
+	//-------------------------------- MAIN LOOP
+
+	//*
+
+	graphics::Init();
+	res::Init();
+
+	while (true)
+	{
+		if (!ArchiverGUITick())
+			break;
+		//ArchiverGUITick();
+	}
+
+	res::End();
+	graphics::End();
+
+	//*/
 
 	//-------------------------------- OTHER SHIT
 
-	RunSerializer();
+	//RunSerializer();
 
 	//-------------------------------- END PROGRAM
 

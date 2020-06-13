@@ -12,7 +12,7 @@ typedef struct EntAddr
 //-------------------------------- ENTITIES
 
 // Make an entity, return ID
-btID AssignEntityID();
+btID AssignEntityID(EntityType TYPE);
 // Get whether an entity with this ID exists
 bool GetEntityExists(btID ID);
 // Get the ID of the last entity
@@ -25,7 +25,7 @@ EntityType GetEntityType(btID ID);
 //-------------------------------- ITEMS
 
 // Make an item, return ID
-btID AssignItemID();
+btID AssignItemID(ItemType TYPE);
 // Get whether an item with this ID exists
 bool GetItemExists(btID ID);
 // Get the pointer address of the item at ID

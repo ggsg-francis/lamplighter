@@ -9,30 +9,6 @@ namespace mem
 	//--------------------------- FIXED SIZE OBJECT ID BUFFER ------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-	btID objbuf::add()
-	{
-		for (btID i = 0; i < BUF_SIZE; i++) // For every space in the buffer
-		{
-			if (!used[i]) // If this space is free
-			{
-				used[i] = true;
-				if (i > index_end) index_end = i; // If we hit new ground expand the end index
-				return i; // End the loop
-			}
-		}
-		return BUF_NULL;
-	}
-
-	void objbuf::remove(btID i)
-	{
-		used[i] = false;
-		if (i == index_end)
-		{
-			--index_end; // Go back one step
-			while (!used[index_end]) --index_end; // Continue rolling back until we reach the next last full space
-		}
-	}
-
 	btID objbuf_caterpillar::add()
 	{
 		used[index_last] = true; // Index is taken
@@ -43,7 +19,6 @@ namespace mem
 		return index; // Return added ID
 	}
 
-	// i was focused on when 0 was removed, when really i should have noticed how 511 was the last removed
 	void objbuf_caterpillar::remove(btID i)
 	{
 		used[i] = false;

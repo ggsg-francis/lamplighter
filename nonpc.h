@@ -136,18 +136,45 @@ void NPCFollowAlly(Actor* actor)
 	btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 	float distance_to_target = m::Length(TargetVector);
 
-	//actor->viewYaw.Set(angle2);
-	//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-	actor->ai_vy_target = angle2;
-
-	actor->inputBV.setto(Actor::ActorInput::IN_RUN, distance_to_target > 5.f);
-
-	if (distance_to_target > 1.5f) // if ally is far away
-		actor->input = TargetVector;
+	/*bool canSeeAlly = core::LOSCheck(actor->id, actor->ai_ally_ent);
+	if (canSeeAlly) {
+		actor->inputBV.setto(Actor::ActorInput::IN_RUN, distance_to_target > 5.f);
+	}
 	else {
+		actor->inputBV.unset(Actor::ActorInput::IN_RUN);
+	}*/
+
+	if (!actor->ai_pathing) { // if not pathing, see if we need to path
 		actor->input.x = 0.f;
 		actor->input.y = 0.f;
+		if (distance_to_target > 2.5f) { // if far enough away from the target, make a path
+			if (path::PathFind(&actor->ai_path, actor->t.position.x, actor->t.position.y, ENTITY(actor->ai_ally_ent)->t.position.x, ENTITY(actor->ai_ally_ent)->t.position.y))
+			{
+				actor->ai_pathing = true;
+				actor->ai_path_current_index = actor->ai_path.len - 1;
+			}
+			else actor->ai_ally_ent = ID_NULL;
+		}
 	}
+	else { // follow path
+		// have we reached the end of the path?
+		if (actor->ai_path_current_index == 0u)
+		{
+			// stop pathing
+			actor->ai_pathing = false;
+		}
+		// otherwise follow the path
+		else {
+			TargetVector = m::Vector2(actor->ai_path.nodes[actor->ai_path_current_index]) - actor->t.position;
+			angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+			distance_to_target = m::Length(TargetVector);
+			if (distance_to_target < 0.25f)
+				--actor->ai_path_current_index;
+		}
+		actor->input = TargetVector; // go to target, whatever it is
+	}
+	actor->ai_vy_target = angle2; // look at thing
+
 	actor->inputBV.unset(Actor::IN_USE);
 }
 
@@ -165,7 +192,7 @@ void NPCTick(btID id)
 	actor->input.y = 1.f;
 	actor->input.x = -1.f;
 
-	//updatetarg:
+	// update targ:
 	// If is null OR deleted OR dead OR no LOS
 	if (actor->ai_target_ent == BUF_NULL
 		|| !GetEntityExists(actor->ai_target_ent)
@@ -175,12 +202,17 @@ void NPCTick(btID id)
 		actor->ai_target_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
 		actor->atk_target = actor->ai_target_ent;
 	}
-	//updateally:
+	// update ally:
 	// If is null OR deleted OR dead
+	//if (actor->ai_ally_ent == BUF_NULL
+	//	|| !GetEntityExists(actor->ai_ally_ent)
+	//	|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE)
+	//	|| !core::LOSCheck(id, actor->ai_ally_ent))
+	//	actor->ai_ally_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
+	// dont forget about ally when they go out of sightline
 	if (actor->ai_ally_ent == BUF_NULL
 		|| !GetEntityExists(actor->ai_ally_ent)
-		|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE)
-		|| !core::LOSCheck(id, actor->ai_ally_ent))
+		|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE))
 		actor->ai_ally_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
 
 	// bad and temporary :P

@@ -106,6 +106,7 @@ namespace m
 		float x, y;
 		//-------------------------------- CONSTRUCTOR
 		Vector2(float X = 0.f, float Y = 0.f) : x{ X }, y{ Y } {};
+		Vector2(WCoord WC) : x{ (float)WC.x }, y{ (float)WC.y } {};
 		//-------------------------------- OPERATORS
 		Vector2 operator+(Vector2);
 		Vector2 operator-(Vector2);

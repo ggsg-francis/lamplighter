@@ -453,8 +453,12 @@ namespace graphics
 		void InitDepthBufferW(GLuint FRAMEBUFFER, int WIDTH, int HEIGHT, bool LINEAR);
 		// Generate as a shadowmap render texture
 		void InitShadowBuffer(GLuint FRAMEBUFFER);
+		//
+		void Unload();
 	};
 
+	// Vertices and indices are kept in RAM so it can be used to compose a compositemesh
+	// this isn't ideal
 	class Mesh
 	{
 	public:
@@ -484,7 +488,7 @@ namespace graphics
 		GLuint vao; // Vertex Array Object
 		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void LoadFile(char* FILENAME);
-		// add void unload?
+		void Unload();
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
@@ -497,6 +501,7 @@ namespace graphics
 		GLuint vao; // Vertex Array Object
 		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void LoadFile(char* FILENAME);
+		void Unload();
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
@@ -572,37 +577,6 @@ namespace graphics
 		void Draw(int posx, int posy, int WIDTH, int HEIGHT);
 	};
 
-
-
-
-
-
-
-	void DrawGUITexture(Texture* TEXTURE, bti32 X, bti32 Y, bti32 W, bti32 H, btf32 OPACITY = 1.f);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// -----------------------------------------------------------------------------------------
-	// -----------------------------------------------------------------------------------------
-	// -----------------------------------------------------------------------------------------
-	// -----------------------------------------------------------------------------------------
-	// -----------------------------------------------------------------------------------------
-	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-	// (copied from ltr, yet to be optimized, integrated or fixed)
-
 	#define INPUT_LEN_TEMP 256
 
 	class GUIBox
@@ -642,6 +616,10 @@ namespace graphics
 		//number of lines
 		int lines = 1;
 	};
+
+	void DrawGUITexture(Texture* TEXTURE, bti32 X, bti32 Y, bti32 W, bti32 H, btf32 OPACITY = 1.f);
+	void DrawGUIBox(Texture* TEXTURE, bti16 XA, bti16 XB, bti16 YA, bti16 YB, btui16 MARGIN_SIZE, btui16 BLEED_SIZE = 0u);
+	void DrawGUIText(char* STRING, Texture* TEXTURE, bti32 XA, bti32 XB, bti32 Y);
 }
 
 enum ShaderStyle

@@ -81,7 +81,11 @@
 
 #define CEILING(x,y) (((x) + (y) - 1) / (y))
 
+// Maximum IPv4 size: 576 bytes
+
 #define HOSTNAME_MAX_LEN 22
+
+#define forceinline __forceinline
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,9 +129,11 @@ extern "C" {
 	#endif
 
 	typedef struct WCoord {
-		btui32 x;
-		btui32 y;
+		btui16 x;
+		btui16 y;
 	} WCoord;
+
+	#define ENTITY_TYPE_NULL 255u
 
 	typedef btui8 EntityType;
 	#define ENTITY_TYPE_EDITOR_PAWN 0u
@@ -144,6 +150,9 @@ extern "C" {
 	#define ITEM_TYPE_WPN_MAGIC 4u
 	#define ITEM_TYPE_CONS 5u
 	#define ITEM_TYPE_COUNT 6u
+
+	typedef btui8 ActivatorType2;
+
 	///*
 	typedef btui8 AssetType;
 	#define ASSET_NONE 0u

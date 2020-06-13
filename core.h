@@ -28,18 +28,9 @@ struct CellSpace;
 struct Entity;
 struct Actor;
 struct RestingItem;
-
-//extern enum EntityType;
-
 struct HeldItem;
 
-namespace mem
-{
-	struct objbuf;
-	struct idbuf;
-}
-
-extern btui64 tickCount_temp;
+extern btui64 tickCount;
 
 namespace core
 {
@@ -74,10 +65,10 @@ namespace core
 	// Destroy the item at ID
 	void DestroyItem(btID ID);
 
-	//	Creates a projectile instance, allocates an ID and sends a network message
+	// Creates a projectile instance, allocates an ID
 	void SpawnProjectile(fac::faction FACTION, btID TEMPLATE_TYPE, m::Vector2 POSITION, btf32 HEIGHT,
 		float YAW, float PITCH);
-	//	Creates a projectile instance, allocates an ID and sends a network message
+	// Creates a projectile instance, allocates an ID, includes a random spread amount
 	void SpawnProjectileSpread(fac::faction FACTION, btID TEMPLATE_TYPE, m::Vector2 POSITION, btf32 HEIGHT,
 		float YAW, float PITCH, float SPREAD);
 	// Removes a given projectile from the index

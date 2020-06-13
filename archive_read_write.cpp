@@ -9,6 +9,12 @@
 #include <vector>
 #include <iostream>
 
+namespace acv
+{
+	extern archive_asset assets[FN_COUNT];
+	extern btui32 assetCount;
+}
+
 namespace serializer
 {
 	btID GetAssetIDFromHandle(char* handle, AssetType type)
@@ -846,7 +852,7 @@ namespace serializer
 			//-------------------------------- Asset part
 
 			fread(&acv::assetCount, sizeof(btui32), 1, file); // Read filename count
-			for (btui32 i = 0u; i < acv::assetCount; i++) // Write file types
+			for (btui32 i = 0u; i < acv::assetCount; i++) // Read file types
 			{
 				fread(&acv::assets[i].type, sizeof(btui8), 1, file);
 			}

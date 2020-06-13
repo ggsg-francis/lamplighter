@@ -186,9 +186,8 @@ namespace input
 	InputBuffer buf;
 	#endif
 
-	void UpdateInput(void * input)
+	void UpdateInput(void* input)
 	{
-		// rename later so we can make it a pointer
 		SDL_Event& e = *(SDL_Event*)input;
 
 		switch (e.type)
@@ -267,10 +266,15 @@ namespace input
 		case SDL_JOYBUTTONDOWN:
 			if (!GetHeld(JoyButtonTransfer[e.jbutton.button]) && JoyButtonTransfer[e.jbutton.button] != key::NONE)
 				Set(JoyButtonTransfer[e.jbutton.button]);
-				break;
+			break;
 		case SDL_JOYBUTTONUP:
 			if (JoyButtonTransfer[e.jbutton.button] != key::NONE)
 				Unset(JoyButtonTransfer[e.jbutton.button]);
+			break;
+		case SDL_QUIT:
+		case SDL_APP_LOWMEMORY:
+		case SDL_APP_TERMINATING:
+			Set(key::QUIT);
 			break;
 		}
 	}

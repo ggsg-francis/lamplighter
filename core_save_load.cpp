@@ -4,6 +4,7 @@
 #include "index.h"
 #include "objects_entities.h"
 #include "weather.h"
+//#include "memory.hpp"
 
 #include <stdio.h>
 
@@ -12,8 +13,8 @@
 #define SIZE_32 4
 #define SIZE_64 8
 
-extern mem::objbuf block_entity;
-extern mem::objbuf block_item;
+extern mem::ObjBuf<EntAddr, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> block_entity;
+extern mem::ObjBuf<EntAddr, ItemType, ENTITY_TYPE_NULL, BUF_SIZE> block_item;
 
 namespace core
 {
@@ -32,17 +33,17 @@ bool SaveExists()
 
 void SaveState()
 {
-	printf("SAVE FUNCTION CALLED ON TICK %i\n", tickCount_temp);
+	printf("SAVE FUNCTION CALLED ON TICK %i\n", tickCount);
 
 	// clean all unused item instances
 	for (btID index_item = 0; index_item <= block_item.index_end; index_item++) // For every item
 	{
-		if (block_item.used[index_item])
+		if (block_item.Used(index_item))
 		{
 			btui32 item_reference_count = 0u;
 			for (btID index_ent = 0; index_ent <= block_entity.index_end; index_ent++) // For every entity
 			{
-				if (block_entity.used[index_ent])
+				if (block_entity.Used(index_ent))
 				{
 					// if this entity has an inventory
 					if (ENTITY(index_ent)->type == ENTITY_TYPE_ACTOR)
@@ -94,13 +95,11 @@ void SaveState()
 		//-------------------------------- ENTITIES
 
 		fwrite(&block_entity.index_end, SIZE_16, 1, file);
-		fwrite(&block_entity.used, SIZE_8, (size_t)(block_entity.index_end + 1u), file);
-		//unneeded...
-		//fwrite(&block_entity_data, SIZE_32, (size_t)(block_entity.index_end + 1u), file);
+		fwrite(block_entity.TypeRW(), SIZE_8, (size_t)(block_entity.index_end + 1u), file);
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 		{
-			if (block_entity.used[i])
+			if (block_entity.Used(i))
 			{
 				Entity* entptr = ENTITY(i);
 
@@ -144,11 +143,11 @@ void SaveState()
 		//-------------------------------- ITEMS
 
 		fwrite(&block_item.index_end, SIZE_16, 1, file);
-		fwrite(&block_item.used, SIZE_8, (size_t)(block_item.index_end + 1u), file);
+		fwrite(block_item.TypeRW(), SIZE_8, (size_t)(block_item.index_end + 1u), file);
 
 		for (btID i = 0; i <= block_item.index_end; i++) // For every item
 		{
-			if (block_item.used[i])
+			if (block_item.Used(i))
 			{
 				HeldItem* itemptr = GETITEMINST(i);
 
@@ -215,12 +214,11 @@ void LoadStateFileV001()
 		//-------------------------------- ENTITIES
 
 		fread(&block_entity.index_end, SIZE_16, 1, file);
-		fread(&block_entity.used, SIZE_8, (size_t)(block_entity.index_end + 1u), file);
-		//fread(&block_entity_data, 4ui64, (size_t)(block_entity.index_end + 1u), file);
+		fread(block_entity.TypeRW(), SIZE_8, (size_t)(block_entity.index_end + 1u), file);
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 		{
-			if (block_entity.used[i])
+			if (block_entity.Used(i))
 			{
 				EntityType type_temp;
 				fread(&type_temp, SIZE_8, 1, file);
@@ -271,11 +269,11 @@ void LoadStateFileV001()
 		//-------------------------------- ITEMS
 
 		fread(&block_item.index_end, SIZE_16, 1, file);
-		fread(&block_item.used, SIZE_8, (size_t)(block_item.index_end + 1u), file);
+		fread(block_item.TypeRW(), SIZE_8, (size_t)(block_item.index_end + 1u), file);
 
 		for (btID i = 0; i <= block_item.index_end; i++) // For every entity
 		{
-			if (block_item.used[i])
+			if (block_item.Used(i))
 			{
 				btID template_temp;
 				fread(&template_temp, SIZE_16, 1, file);

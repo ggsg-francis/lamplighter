@@ -212,7 +212,10 @@ namespace graphics
 	glm::mat4 mat_view;
 
 	// TEMP TEMP TEMP TEMP
+	// (narrator voice) it wasn't temporary
 	GUIBitmap guibmp;
+	GUIBox guibox;
+	GUIText guitxt;
 
 	//________________________________________________________________________________________________________________________________
 	// INITIALIZATION ----------------------------------------------------------------------------------------------------------------
@@ -222,6 +225,8 @@ namespace graphics
 		gPtr = new Graphics();
 
 		guibmp.Init();
+		guibox.Init();
+		guitxt.Init();
 
 		gPtr->shaders[S_SOLID].Init("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
 		//gPtr->shaders[S_SOLID_CHARA].Init("shaders/vert_3d.glsl", "shaders/frag_solid_chara.glsl");
@@ -245,12 +250,16 @@ namespace graphics
 		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag_db.glsl");
 		#endif
 
+		#ifndef DEF_ARCHIVER
 		gPtr->bEditMode = cfg::bEditMode;
 		gPtr->bSplitScreen = cfg::bSplitScreen;
 		gPtr->fCameraFOV = cfg::fCameraFOV;
 		gPtr->fCameraNearClip = cfg::fCameraNearClip;
 		gPtr->fCameraFarClip = cfg::fCameraFarClip;
 		SetFrameSize(cfg::iWinX, cfg::iWinY);
+		#else
+		SetFrameSize(ARCHIVER_WINDOW_W, ARCHIVER_WINDOW_H);
+		#endif
 	}
 
 	void End()
@@ -602,17 +611,6 @@ namespace graphics
 		glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
 		glEnableVertexAttribArray(VI_COL); // Set Vertex colour
 		glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
-	}
-
-	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h, btf32 opacity)
-	{
-		Shader* shader = &gPtr->shaders[S_GUI];
-
-		// TEEEEMMP TEMP TEMP TEMP
-		guibmp.SetShader(shader);
-		shader->SetFloat(Shader::Opacity, opacity);
-		guibmp.SetTexture(texture->glID);
-		guibmp.Draw(x, y, w, h);
 	}
 
 	//________________________________________________________________________________________________________________________________
@@ -1217,6 +1215,10 @@ namespace graphics
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+	void Texture::Unload()
+	{
+		glDeleteTextures(1, &glID);
+	}
 
 	//________________________________________________________________________________________________________________________________
 	// MESH --------------------------------------------------------------------------------------------------------------------------
@@ -1233,6 +1235,9 @@ namespace graphics
 	void Mesh::LoadFile(char* fn, bool clearmem)
 	{
 		std::cout << "Loading " << fn << "... ";
+
+		//Vertex* vces; // Vertices
+		//btui32* ices; // Indices
 
 		//-------------------------------- OPEN FILE
 
@@ -1288,7 +1293,9 @@ namespace graphics
 			if (clearmem)
 			{
 				free(vces);
+				vces = nullptr;
 				free(ices);
+				ices = nullptr;
 			}
 
 			std::cout << "Generated Mesh!" << std::endl;
@@ -1296,8 +1303,11 @@ namespace graphics
 	}
 	void Mesh::Unload()
 	{
-		free(vces);
-		free(ices);
+		glDeleteVertexArrays(1, &vao);
+		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &ebo);
+		if (vces != nullptr) free(vces);
+		if (ices != nullptr) free(ices);
 	}
 
 	//________________________________________________________________________________________________________________________________
@@ -1385,6 +1395,12 @@ namespace graphics
 			std::cout << "Generated Mesh Blend!" << std::endl;
 		}
 	}
+	void MeshBlend::Unload()
+	{
+		glDeleteVertexArrays(1, &vao);
+		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &ebo);
+	}
 
 	//________________________________________________________________________________________________________________________________
 	// MESH DEFORM -------------------------------------------------------------------------------------------------------------------
@@ -1470,6 +1486,12 @@ namespace graphics
 
 			std::cout << "Generated Mesh Deform!" << std::endl;
 		}
+	}
+	void MeshDeform::Unload()
+	{
+		glDeleteVertexArrays(1, &vao);
+		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &ebo);
 	}
 	
 	//________________________________________________________________________________________________________________________________
@@ -2804,11 +2826,32 @@ namespace graphics
 		unsigned int offsetLoc = glGetUniformLocation(s->ID, "offset");
 		glUniformMatrix4fv(offsetLoc, 1, GL_FALSE, glm::value_ptr(offset));
 
-		//....................................... DRAW
+		// Draw
 
 		glBindTexture(GL_TEXTURE_2D, t->glID);
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, cnum * 6, GL_UNSIGNED_INT, 0);
+	}
+
+	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h, btf32 opacity)
+	{
+		Shader* shader = &gPtr->shaders[S_GUI];
+
+		// TEEEEMMP TEMP TEMP TEMP
+		guibmp.SetShader(shader);
+		shader->SetFloat(Shader::Opacity, opacity);
+		guibmp.SetTexture(texture->glID);
+		guibmp.Draw(x, y, w, h);
+	}
+	void DrawGUIBox(Texture* texture, bti16 xa, bti16 xb, bti16 ya, bti16 yb, btui16 margin_size, btui16 bleed_size)
+	{
+		guibox.ReGen(xa, xb, ya, yb, margin_size, bleed_size);
+		guibox.Draw(texture);
+	}
+	void DrawGUIText(char* string, Texture* texture, bti32 xa, bti32 xb, bti32 y)
+	{
+		guitxt.ReGen(string, xa, xb, y);
+		guitxt.Draw(texture);
 	}
 }
 

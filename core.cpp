@@ -8,7 +8,7 @@
 
 #include "collision.h"
 
-btui64 tickCount_temp;
+btui64 tickCount;
 
 namespace core
 {
@@ -246,7 +246,7 @@ namespace core
 			else {
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
-				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(1024.f, 1024.f), 0.f);
+				SpawnEntity(prefab::prefab_ai_player, m::Vector2(1024.f, 1024.f), 0.f);
 				#ifdef DEF_SPAWN_ON_START
 				DoSpawn();
 				#endif
@@ -353,7 +353,6 @@ namespace core
 
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
-		// slow fast version
 		for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
 		{
 			if (GetEntityExists(i))
@@ -362,21 +361,8 @@ namespace core
 				fpTick[GetEntityType(i)](ENTITY(i), dt); // Call tick on entity
 			}
 		}
-		/*
-		btui32 index_buf, index_ent;
-		// fast slow version
-		// start at one to skip the editor pawn buffer pointer, which points to the chara buffer
-		for (index_buf = 1; index_buf < ENTITY_TYPE_COUNT; ++index_buf)
-		{
-			for (index_ent = 0; index_ent <= BufPtr[index_buf]->index_end; ++index_ent)
-			{
-				if (BufPtr[index_buf]->used[index_ent])
-				{
-					fpTick[index_buf]((Entity*)(((btui8*)(BufDataPtr[index_buf]) + index_ent * BufDataSize[index_buf])), dt);
-				}
-			}
-		}
-		*/
+
+		//-------------------------------- SOME OTHER SHIT
 
 		SetViewTargetID(GetClosestActivator(players[0u]), 0u);
 		SetViewTargetID(GetClosestActivator(players[1u]), 1u);
@@ -638,7 +624,6 @@ namespace core
 			#endif
 		}
 
-
 		//-------------------------------- Modify camera
 
 		m::Vector3 p0 = m::Vector3(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.height + 0.8f, ENTITY(players[0])->t.position.y);
@@ -650,20 +635,35 @@ namespace core
 		m::Vector3 o0 = p0 - (m::Vector3(vd0.x, -0.4f, vd0.y)) * 3.f;
 		m::Vector3 o1 = p1 - (m::Vector3(vd1.x, -0.4f, vd1.y)) * 3.f;
 
-		// Move cameras
-		viewTarget[0] = m::Lerp(viewTarget[0], p0, 0.15f);
-		viewTarget[1] = m::Lerp(viewTarget[1], p1, 0.15f);
-		viewPosition[0] = m::Lerp(viewPosition[0], o0, 0.05f);
-		viewPosition[1] = m::Lerp(viewPosition[1], o1, 0.05f);
+		// Snap if the difference between now and the target is too great
+		if (m::Length(viewTarget[0] - p0) > 10.f || m::Length(viewPosition[0] - o0) > 10.f) {
+			viewTarget[0] = p0;
+			viewPosition[0] = o0;
+		}
+		// Move camera gradually
+		else {
+			viewTarget[0] = m::Lerp(viewTarget[0], p0, 0.15f);
+			viewPosition[0] = m::Lerp(viewPosition[0], o0, 0.05f);
+		}
+		// Snap if the difference between now and the target is too great
+		if (m::Length(viewTarget[1] - p1) > 10.f || m::Length(viewPosition[1] - o1) > 10.f) {
+			viewTarget[1] = p1;
+			viewPosition[1] = o1;
+		}
+		// Move camera gradually
+		else {
+			viewTarget[1] = m::Lerp(viewTarget[1], p1, 0.15f);
+			viewPosition[1] = m::Lerp(viewPosition[1], o1, 0.05f);
+		}
 
 		//-------------------------------- Stuff
 
-		++tickCount_temp;
+		++tickCount;
 	}
 
 	void Draw(bool oob)
 	{
-		btf32 time2 = ((btf32)tickCount_temp / 30.f) * 0.02f + 0.2f;
+		btf32 time2 = ((btf32)tickCount / 30.f) * 0.02f + 0.2f;
 		//btf32 time2 = 0.27f;
 		//btf32 time2 = 0.22f;
 
@@ -976,7 +976,7 @@ namespace core
 		int p1_x_start = -(int)graphics::FrameSizeX() / 2;
 		int p1_y_start = -(int)graphics::FrameSizeY() / 2;
 		text_message[player].ReGen(string, -52, 52, -32);
-		message_time[player] = tickCount_temp + 90u;
+		message_time[player] = tickCount + 90u;
 	}
 
 	void DrawGUI()
@@ -997,7 +997,7 @@ namespace core
 		Actor* chara = ACTOR(players[activePlayer]);
 
 		//text_message[activePlayer].ReGen("teststr", 0, -p1_x_start, 0);
-		if (message_time[activePlayer] > tickCount_temp)
+		if (message_time[activePlayer] > tickCount)
 			text_message[activePlayer].Draw(&res::GetT(res::t_gui_font));
 
 		// hurt effect
@@ -1100,7 +1100,7 @@ namespace core
 		proj->t.velocity_h = -sin(pitch);
 		proj->t.velocity_x = (m::AngToVec2(yaw) * cos(pitch)).x; // '* cos(pitch)' makes it move less horizontally if shot upwards
 		proj->t.velocity_y = (m::AngToVec2(yaw) * cos(pitch)).y; // '* cos(pitch)' makes it move less horizontally if shot upwards
-		proj->ttd = tickCount_temp + 60u;
+		proj->ttd = tickCount + 60u;
 		proj->faction = faction;
 		proj->type = type;
 
@@ -1127,7 +1127,7 @@ namespace core
 
 	btID SpawnNewEntityItem(btID item_template, m::Vector2 pos, btf32 dir)
 	{
-		btID id = AssignEntityID();
+		btID id = AssignEntityID(ENTITY_TYPE_RESTING_ITEM);
 		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
@@ -1140,7 +1140,7 @@ namespace core
 	}
 	btID SpawnEntityItem(btID itemid, m::Vector2 pos, btf32 dir)
 	{
-		btID id = AssignEntityID();
+		btID id = AssignEntityID(ENTITY_TYPE_RESTING_ITEM);
 		IndexInitEntity(id, ENTITY_TYPE_RESTING_ITEM);
 		
 		//spawn_setup_t(id, pos, dir);
@@ -1168,7 +1168,7 @@ namespace core
 
 	btID SpawnEntity(btui8 type, m::Vector2 pos, float dir)
 	{
-		btID id = AssignEntityID();
+		btID id = AssignEntityID(ENTITY_TYPE_ACTOR);
 		if (id != ID_NULL)
 		{
 			PrefabEntity[type](id, pos, dir);
@@ -1192,7 +1192,7 @@ namespace core
 
 	btID SpawnItem(btID item_template)
 	{
-		btID id = AssignItemID();
+		btID id = AssignItemID(ITEM_TYPE_MISC);
 		if (id != BUF_NULL)
 		{
 			IndexInitItemInstance(id, acv::item_types[item_template]);
@@ -1263,7 +1263,7 @@ namespace core
 					proj[index].t.position_y <= 1.f || proj[index].t.position_y >= WORLD_SIZE_MAXINT)
 					DestroyProjectile(index);
 				// If it's time to die, or collided
-				if (tickCount_temp >= proj[index].ttd || ProjectileCollideEnv(index))
+				if (tickCount >= proj[index].ttd || ProjectileCollideEnv(index))
 					DestroyProjectile(index);
 				else // Otherwise
 				{

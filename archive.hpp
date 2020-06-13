@@ -3,28 +3,12 @@
 
 #include "graphics.hpp"
 
-#ifndef DEF_ARCHIVER
+//#ifndef DEF_ARCHIVER
 
 #define DEFAULT_TEXTURE 0u
 #define DEFAULT_MESH 1u
 #define DEFAULT_MESHBLEND 2u
 #define DEFAULT_MESHDEFORM 3u
-
-// test definitions (this is still really not necessary for C, enums still work)
-/*
-#define ITEM_TYPE_ROOT         0u
-#define ITEM_TYPE_EQUIP        1u
-#define ITEM_TYPE_WPN_MELEE    2u
-#define ITEM_TYPE_WPN_MATCHGUN 3u
-#define ITEM_TYPE_WPN_MAGIC    4u
-#define ITEM_TYPE_CONS         5u
-
-#define ASSET_TYPE_NONE            0u
-#define ASSET_TYPE_TEXTURE_FILE    1u
-#define ASSET_TYPE_MESH_FILE       2u
-#define ASSET_TYPE_MESHBLEND_FILE  3u
-#define ASSET_TYPE_MESHDEFORM_FILE 4u
-*/
 
 typedef btui16 assetID;
 
@@ -120,7 +104,7 @@ namespace res
 	void Init();
 	void End();
 }
-#endif
+//#endif
 
 // Number of characters in a filename
 #define FN_SIZE 64
@@ -288,7 +272,8 @@ namespace acv
 		char handle[8];
 		char filename[FN_SIZE];
 		AssetType type = ASSET_NONE;
-		bool loaded;
+		bool loaded = false;
+		btui64 tickLastAccessed = 0u;
 		void* asset = nullptr;
 	};
 
@@ -308,10 +293,6 @@ namespace acv
 
 	extern ActorBase actor_templates[ACTORBASE_COUNT];
 	extern btui32 actor_template_index;
-
-	// make inaccessable
-	extern archive_asset assets[FN_COUNT];
-	extern btui32 assetCount;
 
 	#ifndef DEF_ARCHIVER
 

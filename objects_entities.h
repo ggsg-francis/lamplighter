@@ -7,34 +7,17 @@
 #include "factions.h"
 #include "env.h"
 #include "input.h"
-#include "memory.h"
 #include "Transform.h"
 #include "maths.hpp"
 #include "graphics.hpp"
+
+#include "objects_inventory.h"
 
 // these entire 2 includes only for one line...
 #include "objects_items.h"
 #include "core.h"
 
 struct HeldItem;
-
-class Inventory
-{
-public:
-	mem::Buffer64<btID> items;
-public:
-	void AddNew(btID ITEM_TEMPLATE);
-	void DestroyIndex(btui32 INDEX);
-	void DestroyID(btID ITEM_ID);
-	void Destroy(btID ITEM_TEMPLATE);
-	btui32 TransferItemRecv(btID ITEM_ID);
-	void TransferItemSendIndex(btui32 INDEX);
-	void TransferItemSend(btID ITEM_ID);
-	//btID GetItemOfType(ItemType TYPE);
-	btID GetItemOfTemplate(btID ITEM_TEMPLATE);
-	btID GetItemOfAmmunitionType(btui8 AMMO_TYPE);
-	void Draw(btui16 ACTIVE_SLOT);
-};
 
 //transform
 class Transform2D
@@ -271,6 +254,9 @@ struct Actor : public Entity
 	btID ai_target_ent = BUF_NULL;
 	btID ai_ally_ent = BUF_NULL;
 	bool aiControlled = false;
+	path::Path ai_path;
+	btui8 ai_path_current_index = 0u;
+	bool ai_pathing = false;
 
 	void TakeItem(btID ID);
 	void DropItem(btID SLOT);

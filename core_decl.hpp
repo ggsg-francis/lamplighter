@@ -5,7 +5,7 @@
 
 #include "objects_entities.h"
 #include "objects_items.h"
-#include "objects_statics.h"
+#include "objects_activators.h"
 
 #include "index.h"
 #include "network.h"

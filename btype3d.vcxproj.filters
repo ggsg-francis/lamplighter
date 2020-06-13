@@ -89,7 +89,10 @@
     <ClInclude Include="nonpc.h">
       <Filter>gamework</Filter>
     </ClInclude>
-    <ClInclude Include="objects_statics.h">
+    <ClInclude Include="objects_activators.h">
+      <Filter>gamework</Filter>
+    </ClInclude>
+    <ClInclude Include="objects_inventory.h">
       <Filter>gamework</Filter>
     </ClInclude>
   </ItemGroup>
@@ -148,7 +151,10 @@
     <ClCompile Include="index.cpp">
       <Filter>gamework</Filter>
     </ClCompile>
-    <ClCompile Include="objects_statics.cpp">
+    <ClCompile Include="objects_activators.cpp">
+      <Filter>gamework</Filter>
+    </ClCompile>
+    <ClCompile Include="objects_inventory.cpp">
       <Filter>gamework</Filter>
     </ClCompile>
   </ItemGroup>

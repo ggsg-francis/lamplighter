@@ -13,6 +13,9 @@
     <ClCompile Include="archiver_graphics_convert.cpp" />
     <ClCompile Include="archiver_main.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="graphics.cpp" />
+    <ClCompile Include="maths.cpp" />
+    <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h" />
@@ -21,5 +24,10 @@
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="archive_read_write.h" />
     <ClInclude Include="archiver_graphics_convert.h" />
+    <ClInclude Include="graphics.hpp" />
+    <ClInclude Include="graphics_structures.h" />
+    <ClInclude Include="maths.hpp" />
+    <ClInclude Include="Transform.h" />
+    <ClInclude Include="archiver_loop.h" />
   </ItemGroup>
 </Project>

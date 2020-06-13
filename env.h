@@ -32,13 +32,16 @@ struct CellSpace
 	btf32 offsety;
 };
 
+#define PATH_NUM_NODES 32
+
 namespace path
 {
-	struct PathNode
+	struct Path
 	{
-		btcoord x, y;
+		WCoord nodes[PATH_NUM_NODES];
+		btui8 len;
 	};
-	void PathFind(void* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest);
+	bool PathFind(Path* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest);
 }
 
 namespace env

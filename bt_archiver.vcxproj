@@ -252,15 +252,23 @@
     <ClCompile Include="archiver_graphics_convert.cpp" />
     <ClCompile Include="archive_read_write.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="graphics.cpp" />
+    <ClCompile Include="maths.cpp" />
     <ClCompile Include="tga_reader.cpp" />
+    <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="archive.hpp" />
+    <ClInclude Include="archiver_loop.h" />
     <ClInclude Include="global-archiver.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="archiver_graphics_convert.h" />
     <ClInclude Include="archive_read_write.h" />
+    <ClInclude Include="graphics.hpp" />
+    <ClInclude Include="graphics_structures.h" />
+    <ClInclude Include="maths.hpp" />
     <ClInclude Include="tga_reader.h" />
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
