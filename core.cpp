@@ -887,7 +887,7 @@ namespace core
 				{
 					ACTOR(players[i])->TakeItem(viewtarget[i]);
 				}
-				else if (viewtarget[i] != ID_NULL && ENTITY(viewtarget[i])->type == ENTITY_TYPE_CHARA)
+				else if (viewtarget[i] != ID_NULL && ENTITY(viewtarget[i])->type == ENTITY_TYPE_ACTOR)
 				{
 					// if we are allied
 					if (fac::GetAllegiance(ENTITY(players[i])->faction, ENTITY(viewtarget[i])->faction) == fac::allied)

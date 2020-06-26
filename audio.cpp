@@ -84,7 +84,7 @@ namespace aud
 		#ifdef DEF_NMP
 		// TODO: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
-		btf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(index::players[network::nid])->t.position);
+		btf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[network::nid])->t.position);
 		// get closest distance (temp until using panning)
 		// stop this function if the distance is too large
 		if (distance > 15.f) return;

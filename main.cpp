@@ -105,7 +105,7 @@ inline void TranslateInput()
 	for (btID i = 0u; i < NUM_PLAYERS; ++i)
 	{
 		// Set input
-		index::SetPlayerInput((btID)i,
+		core::SetPlayerInput((btID)i,
 			m::Vector2((btf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
 			(btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
 			input::buf[i][INPUT_BUF_GET].mouse_x * 0.25f, input::buf[i][INPUT_BUF_GET].mouse_y * 0.25f,
@@ -158,7 +158,7 @@ inline void TranslateInput()
 	for (btID i = 0u; i < NUM_PLAYERS; ++i)
 	{
 		// Set input
-		index::SetPlayerInput((btID)i,
+		core::SetPlayerInput((btID)i,
 			m::Vector2((btf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
 			(btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
 			input::buf[i][INPUT_BUF_GET].mouse_x * 0.25f, input::buf[i][INPUT_BUF_GET].mouse_y * 0.25f,
@@ -334,15 +334,15 @@ void MainDraw()
 	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(network::nid); // Set render POV
-	index::Draw(false);
+	core::SetViewFocus(network::nid); // Set render POV
+	core::Draw(false);
 	//-------------------------------- RENDER VIEW
 	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	index::SetViewFocus(network::nid); // Set render POV
-	index::Draw(); index::DrawGUI();
-	index::TickGUI(); // causes a crash if before drawgui (does it still?)
+	core::SetViewFocus(network::nid); // Set render POV
+	core::Draw(); core::DrawGUI();
+	core::TickGUI(); // causes a crash if before drawgui (does it still?)
 	#endif // MP
 }
 
