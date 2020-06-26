@@ -19,8 +19,8 @@
 
 void Actor_OnHitGround(Actor* chr)
 {
-	if (chr->foot_state == Actor::eL_DOWN) aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, chr->footPosL);
-	else aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_B, chr->footPosR);
+	if (chr->foot_state == Actor::eL_DOWN) aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, chr->fpCurrentL);
+	else aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_B, chr->fpCurrentR);
 	// Swap feet
 	if (chr->foot_state == Actor::eL_DOWN) chr->foot_state = Actor::eR_DOWN;
 	else if (chr->foot_state == Actor::eR_DOWN) chr->foot_state = Actor::eL_DOWN;
@@ -558,164 +558,95 @@ void Actor_ClampLegs(Actor* chr)
 }
 void Actor_AnimateLegs(Actor* chr)
 {
+	m::Vector2 vecfw = m::AngToVec2(chr->t.yaw.Rad());
+	m::Vector2 vecrt = m::Vector2(-vecfw.y, vecfw.x);
+
 	bool isInputting = m::Length(chr->input) >= 0.01f;
 
-	m::Vector3 newpos = chr->t_body.GetPosition();
+	m::Vector3 tempFPL(0.f);
+	m::Vector3 tempFPR(0.f);
 
-	m::Vector3 jointPosR = newpos + chr->t_body.GetRight() * hip_width;
-	m::Vector3 jointPosL = newpos + chr->t_body.GetRight() * -hip_width;
+	m::Vector2 velocityOffset = chr->t.velocity - chr->slideVelocity;
+	m::Vector2 voNorm = m::Normalize(velocityOffset);
 
-	m::Vector2 right = m::Vector2(chr->t_body.GetRight().x, chr->t_body.GetRight().z);
-
-	// i'm not sure if these are actually supposed to be different
-	btf32 velocityAmt = m::Length(chr->t.velocity - chr->slideVelocity);
-	btf32 myspeed = m::Length(chr->t.velocity);
-
-	btf32 fpHeightL = m::QuadraticFootstep(velocityAmt * 6.f, chr->aniStepAmountL * 2.f - 1.f);
-	btf32 fpHeightR = m::QuadraticFootstep(velocityAmt * 6.f, chr->aniStepAmountR * 2.f - 1.f);
-
-	chr->fpCurrentL = m::Lerp(chr->footPosL, chr->footPosTargL, chr->aniStepAmountL) + m::Vector3(0.f, fpHeightL, 0.f);
-	chr->fpCurrentR = m::Lerp(chr->footPosR, chr->footPosTargR, chr->aniStepAmountR) + m::Vector3(0.f, fpHeightR, 0.f);
-	
-	Actor_ClampLegs(chr);
-
-	if (chr->grounded)
-	{
-		if (chr->foot_state == Actor::eL_DOWN)
-		{
-			// Step taking
-			if (isInputting)
-			{
-				if (m::Length(jointPosL - chr->footPosTargL) > legDClen && chr->aniStepAmountL == 1.f && chr->aniStepAmountR == 1.f)
-				{
-					chr->footPosL = chr->footPosTargL;
-					chr->aniStepAmountL = 0.f;
-					chr->footPosTargL = Actor_SetFootPos(chr->t.position + right * -hip_width + chr->t.velocity * velocityStepMult);
-					chr->foot_state = Actor::eR_DOWN;
-				}
-				else
-				{
-					chr->footPosTargR = Actor_SetFootPos(chr->t.position + right * hip_width + chr->t.velocity * velocityStepMult);
-				}
+	// If on the ground
+	if (chr->grounded) {
+		chr->lastGroundFootPos = Actor_SetFootPos(chr->t.position);
+		// If we're standing still, play idle anim
+		if (!isInputting) {
+			if (chr->foot_state == Actor::eL_DOWN) {
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * -0.15f));
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * 0.15f));
+				chr->aniTimer = 0.5f;
 			}
-			// Balance keeping (TODO: add behaviour to prevent standing cross-legged)
-			else
-			{
-				m::Vector2 fpoffs1 = chr->t.position - m::Vector2(chr->footPosTargL.x, chr->footPosTargL.z);
-				m::Vector2 fpoffs2 = chr->t.position - m::Vector2(chr->footPosTargR.x, chr->footPosTargR.z);
-				if (m::Length(fpoffs1 + fpoffs2) > 0.13f)
-				{
-					chr->footPosL = chr->fpCurrentL; // set = foot pos current
-					chr->aniStepAmountL = 0.f;
-					chr->footPosTargL = Actor_SetFootPos(chr->t.position + fpoffs2 * 0.5f);
-				}
-				// WIP
-				else if (m::Length(jointPosL - chr->fpCurrentL) > legDClen && chr->aniStepAmountL == 1.f)
-				{
-					chr->footPosL = chr->fpCurrentL;
-					chr->aniStepAmountL = 0.f;
-					chr->footPosTargL = Actor_SetFootPos(chr->t.position + right * -hip_width);
-					//chr->foot_state = eR_DOWN;
-				}
+			if (chr->foot_state == Actor::eR_DOWN) {
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * 0.15f));
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * -0.15f));
+				chr->aniTimer = 1.5f;
 			}
 		}
-		else if (chr->foot_state == Actor::eR_DOWN)
-		{
-			// Step taking
-			if (isInputting)
-			{
-				if (m::Length(jointPosR - chr->footPosTargR) > legDClen && chr->aniStepAmountR == 1.f && chr->aniStepAmountL == 1.f)
-				{
-					chr->footPosR = chr->footPosTargR;
-					chr->aniStepAmountR = 0.f;
-					chr->footPosTargR = Actor_SetFootPos(chr->t.position + right * hip_width + chr->t.velocity * velocityStepMult);
-					chr->foot_state = Actor::eL_DOWN;
-				}
-				else
-				{
-					chr->footPosTargL = Actor_SetFootPos(chr->t.position + right * -hip_width + chr->t.velocity * velocityStepMult);
-				}
+		// If walking
+		else {
+			#define STEP_LEN 0.35f
+			// Tick animation timer
+			chr->aniTimer += (0.5f / STEP_LEN) * m::Length(velocityOffset);
+			if (chr->aniTimer > 2.f) chr->aniTimer -= 2.f;
+			// Create foot target positions
+			if (chr->aniTimer < 1.f) {
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer)));
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer)));
+				tempFPL.y += m::QuadraticFootstep(0.3f, chr->aniTimer);
+				chr->foot_state = Actor::eR_DOWN;
 			}
-			// Balance keeping (TODO: add behaviour to prevent standing cross-legged)
-			else
-			{
-				m::Vector2 fpoffs1 = chr->t.position - m::Vector2(chr->footPosTargL.x, chr->footPosTargL.z);
-				m::Vector2 fpoffs2 = chr->t.position - m::Vector2(chr->footPosTargR.x, chr->footPosTargR.z);
-				if (m::Length(fpoffs1 + fpoffs2) > 0.13f)
-				{
-					chr->footPosR = chr->fpCurrentR; // set = foot pos current
-					chr->aniStepAmountR = 0.f;
-					chr->footPosTargR = Actor_SetFootPos(chr->t.position + fpoffs1 * 0.5f);
-				}
-				// WIP
-				else if (m::Length(jointPosR - chr->fpCurrentR) > legDClen && chr->aniStepAmountR == 1.f)
-				{
-					chr->footPosR = chr->fpCurrentR;
-					chr->aniStepAmountR = 0.f;
-					chr->footPosTargR = Actor_SetFootPos(chr->t.position + right * hip_width);
-					//chr->foot_state = eL_DOWN;
-				}
+			else {
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer - 1.f)));
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer - 1.f)));
+				tempFPR.y += m::QuadraticFootstep(0.3f, chr->aniTimer - 1.f);
+				chr->foot_state = Actor::eL_DOWN;
 			}
+			#undef STEP_LEN
 		}
-
-		// set step positions
-
-		//btf32 anispeed = 0.5f * myspeed;
-		btf32 anispeed = 1.f * myspeed;
-		if (anispeed < 0.086f) anispeed = 0.086f;
-
-		chr->aniStepAmountL += anispeed;
-		if (chr->aniStepAmountL > 1.f)
-			chr->aniStepAmountL = 1.f;
-		chr->aniStepAmountR += anispeed;
-		if (chr->aniStepAmountR > 1.f)
-			chr->aniStepAmountR = 1.f;
 	}
-	else // If not on the ground
-	{
-		chr->fpCurrentL = jointPosL + m::Vector3(0.f, LEGLEN(chr->actorBase, 0) * -0.5f, 0.f);
-		chr->fpCurrentR = jointPosR + m::Vector3(0.f, LEGLEN(chr->actorBase, 0) * -0.5f, 0.f);
-
+	// If in the air (can be due to jumping, falling, or running)
+	else {
 		// Set left foot
-		if (chr->foot_state == Actor::eL_DOWN)
-		{
-			chr->fpCurrentL = jointPosL + m::Vector3(
-				chr->t.velocity.x * -velocityStepMult * 0.5f,
-				LEGLEN(chr->actorBase, 0) * -0.5f,
-				chr->t.velocity.y * -velocityStepMult * 0.5f);
+		if (chr->foot_state == Actor::eL_DOWN) {
+			if (chr->t.height_velocity > 0.f)
+				tempFPR = chr->lastGroundFootPos;
+			else
+				tempFPR = chr->t_body.GetPosition() + m::Vector3(
+					chr->t.velocity.x * -velocityStepMult * 0.5f,
+					LEGLEN(chr->actorBase, 0) * -0.4f,
+					chr->t.velocity.y * -velocityStepMult * 0.5f);
+			tempFPL = chr->t_body.GetPosition() + m::Vector3(
+				chr->t.velocity.x * -velocityStepMult * -0.5f,
+				LEGLEN(chr->actorBase, 0) * -0.65f,
+				chr->t.velocity.y * -velocityStepMult * -0.5f);
+			chr->aniTimer = 0.f;
 		}
 		// Set right foot
-		if (chr->foot_state == Actor::eR_DOWN)
-		{
-			chr->fpCurrentR = jointPosR + m::Vector3(
-				chr->t.velocity.x * -velocityStepMult * 0.5f,
-				LEGLEN(chr->actorBase, 0) * -0.5f,
-				chr->t.velocity.y * -velocityStepMult * 0.5f);
+		else {
+			if (chr->t.height_velocity > 0.f)
+				tempFPL = chr->lastGroundFootPos;
+			else
+				tempFPL = chr->t_body.GetPosition() + m::Vector3(
+					chr->t.velocity.x * -velocityStepMult * 0.5f,
+					LEGLEN(chr->actorBase, 0) * -0.4f,
+					chr->t.velocity.y * -velocityStepMult * 0.5f);
+			tempFPR = chr->t_body.GetPosition() + m::Vector3(
+				chr->t.velocity.x * -velocityStepMult * -0.5f,
+				LEGLEN(chr->actorBase, 0) * -0.65f,
+				chr->t.velocity.y * -velocityStepMult * -0.5f);
+			chr->aniTimer = 1.f;
 		}
-
-		chr->footPosL = chr->fpCurrentL;
-		chr->footPosTargL = chr->fpCurrentL;
-		chr->footPosR = chr->fpCurrentR;
-		chr->footPosTargR = chr->fpCurrentR;
-		chr->aniStepAmountL = 0.f;
-		chr->aniStepAmountR = 0.f;
 	}
 
-	chr->footPosL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
-	chr->footPosR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
-	chr->footPosTargL += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
-	chr->footPosTargR += m::Vector3(chr->slideVelocity.x, 0.f, chr->slideVelocity.y);
+	// Apply new positions (interpolated)
+	chr->fpCurrentL = m::Lerp(chr->fpCurrentL, tempFPL, 0.5f);
+	chr->fpCurrentR = m::Lerp(chr->fpCurrentR, tempFPR, 0.5f);
 
-	m::Vector2 fpl(chr->fpCurrentL.x, chr->fpCurrentL.z);
-	m::Vector2 fpr(chr->fpCurrentR.x, chr->fpCurrentR.z);
-
-	if (m::Length(chr->input) < 0.001f && chr->grounded)
-	{
-		if (chr->aniStepAmountL == 1.f)
-			chr->fpCurrentL = Actor_SetFootPos(fpl);
-		if (chr->aniStepAmountR == 1.f)
-			chr->fpCurrentR = Actor_SetFootPos(fpr);
-	}
+	// Clamp positions so they never exceed the length of a leg in distance
+	Actor_ClampLegs(chr);
 }
 void TickChara(void* ent, btf32 dt)
 {
@@ -726,8 +657,6 @@ void TickChara(void* ent, btf32 dt)
 	// apply crouch input
 	if (chr->inputBV.get(Actor::IN_CROUCH))
 		chr->aniCrouch = !chr->aniCrouch;
-	//if (chr->inputBV.get(Actor::IN_RUN))
-	//	chr->aniRun = !chr->aniRun;
 	chr->aniRun = chr->inputBV.get(Actor::IN_RUN);
 
 	if (chr->aniCrouch)
@@ -739,41 +668,29 @@ void TickChara(void* ent, btf32 dt)
 	if (slide > 1.f) chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, 1.f, 0.3f);
 	else chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, slide, 0.3f);
 
-	//jump
-	if (chr->inputBV.get(Actor::IN_JUMP))
-	{
-		if (chr->grounded)
-		{
-			chr->t.height_velocity = 0.1f; // enter jump
-			// momentum based jump
+	// Jump
+	if (chr->inputBV.get(Actor::IN_JUMP)) {
+		if (chr->grounded) {
+			// Enter jump
+			chr->t.height_velocity = 0.1f;
 			chr->t.velocity = chr->input * dt * chr->speed + chr->slideVelocity;
-			//if (chr->foot_state == Actor::eL_DOWN) chr->foot_state = Actor::eR_DOWN;
-			//else if (chr->foot_state == Actor::eR_DOWN) chr->foot_state = Actor::eL_DOWN;
-			chr->aniStepAmountL = 1.f;
-			chr->aniStepAmountR = 1.f;
 			chr->aniCrouch = false;
 			chr->jump_state = Actor::eJUMP_JUMP;
-			//chr->grounded = false;
 		}
 		/* // enable to turn on hover jumping
 		else if (chr->jump_state == Actor::eJUMP_JUMP)
 			chr->t.height_velocity += 0.005f; // hover
 		*/
 		else if (chr->jump_state == Actor::eJUMP_SPRINT)
-			chr->t.height_velocity -= 0.005f; // anti-hover
+			chr->t.height_velocity -= 0.01f; // anti-hover
 	}
-	// sprint
-	else if (chr->grounded && chr->aniRun && m::Length(chr->t.velocity) > 0.5f * dt)
-	{
-		chr->t.height_velocity = 0.03f; // enter jump
+	// Sprint
+	else if (chr->grounded && chr->aniRun && m::Length(chr->t.velocity) > 0.5f * dt) {
+		// Enter sprint jump
+		chr->t.height_velocity = 0.038f; // enter jump
 		chr->t.velocity = chr->input * dt * (chr->speed * 1.1f) + (chr->slideVelocity * 0.9f);
-		//if (chr->foot_state == Actor::eL_DOWN) chr->foot_state = Actor::eR_DOWN;
-		//else if (chr->foot_state == Actor::eR_DOWN) chr->foot_state = Actor::eL_DOWN;
-		chr->aniStepAmountL = 1.f;
-		chr->aniStepAmountR = 1.f;
 		chr->aniCrouch = false;
 		chr->jump_state = Actor::eJUMP_SPRINT;
-		//chr->grounded = false;
 	}
 
 	bool can_move = true;

@@ -238,14 +238,15 @@ struct Actor : public Entity
 	mem::bv<btui8, CharaAniFlags> animationBV;
 
 	Transform3D t_body, t_head;
-	m::Vector3 footPosTargR, footPosTargL, footPosR, footPosL, fpCurrentR, fpCurrentL;
+	m::Vector3 fpCurrentR, fpCurrentL;
 	m::Vector2 ani_body_lean;
-	btf32 aniStepAmountL;
-	btf32 aniStepAmountR;
 	btf32 aniStandHeight;
 	bool aniCrouch = false;
 	btf32 aniSlideResponse = 0.f;
 	bool aniRun = true;
+
+	btf32 aniTimer = 0.f;
+	m::Vector3 lastGroundFootPos;
 
 	//-------------------------------- AI stuff
 

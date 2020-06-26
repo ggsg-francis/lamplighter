@@ -227,10 +227,6 @@ namespace core
 			ACTOR(index)->atk_target = BUF_NULL;
 			ACTOR(index)->ai_target_ent = BUF_NULL;
 			ACTOR(index)->ai_ally_ent = BUF_NULL;
-			ACTOR(index)->footPosL = m::Vector3(pos.x, 0, pos.y);
-			ACTOR(index)->footPosTargL = m::Vector3(pos.x, 0, pos.y);
-			ACTOR(index)->footPosR = m::Vector3(pos.x, 0, pos.y);
-			ACTOR(index)->footPosTargR = m::Vector3(pos.x, 0, pos.y);
 
 			const m::Vector3 colEyes[]{
 				m::Vector3(232.f / 256.f, 17.f / 256.f, 17.f / 256.f), // red
