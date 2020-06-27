@@ -1,5 +1,8 @@
 #include "archiver_loop.h"
 
+
+#define DEF_ONLY_CONVERT
+
 //-------------------------------- WINDOWING GLOBAL VARIABLES
 
 //SDL_Window* sdl_window;
@@ -16,6 +19,8 @@ void RunSerializer()
 
 int main(int argc, char * argv[])
 {
+	#ifndef DEF_ONLY_CONVERT
+
 	//-------------------------------- INITIALIZE SDL2
 
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK) != 0)
@@ -63,16 +68,24 @@ int main(int argc, char * argv[])
 
 	//*/
 
+	#else
+
 	//-------------------------------- OTHER SHIT
 
-	//RunSerializer();
+	RunSerializer();
+
+	#endif
 
 	//-------------------------------- END PROGRAM
+
+	#ifndef DEF_ONLY_CONVERT
 
 exit:
 	SDL_GL_DeleteContext(sdl_glcontext);
 	SDL_DestroyWindow(sdl_window);
 	SDL_Quit();
+
+	#endif
 
 	return 0; // Goodbye
 }

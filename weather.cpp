@@ -37,7 +37,7 @@ namespace weather
 			float r3 = lo_hue + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (hi_hue - lo_hue)));
 
 			w.stat_overcast_level = m::Random(0.f, 1.f);
-			if (cfg::bEditMode) w.stat_overcast_level = 0.f; // temp overcast override
+			if (cfg::bEditMode) w.stat_overcast_level = 0.f; // Overcast override
 			std::cout << "Recalculated weather, overcast level " << w.stat_overcast_level << std::endl;
 
 			if (w.stat_overcast_level > 0.5f)

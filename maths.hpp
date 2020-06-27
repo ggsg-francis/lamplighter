@@ -152,6 +152,7 @@ namespace m
 		Vector3 operator+=(const Vector3& VECTOR);
 		Vector3 operator-=(const Vector3& VECTOR);
 		Vector3 operator=(const glm::vec3& VECTOR); // GLM to Me
+		Vector3 operator=(const glm::vec4& VECTOR); // GLM to Me
 
 		explicit operator glm::vec3() const { return glm::vec3(x, y, z); } // GLM Cast
 	};
@@ -177,7 +178,7 @@ namespace m
 		//-------------------------------- VARIABLES
 		float x, y, z, w;
 		//-------------------------------- CONSTRUCTORS
-		Quaternion(float X = 0.f, float Y = 0.f, float Z = 0.f, float W = 0.f) : x{ X }, y{ Y }, z{ Z }, w{ W } {};
+		Quaternion(float X = 0.f, float Y = 0.f, float Z = 0.f, float W = 1.f) : x{ X }, y{ Y }, z{ Z }, w{ W } {};
 		Quaternion(glm::quat Q) : x{ Q.x }, y{ Q.y }, z{ Q.z }, w{ Q.w } {};
 		//-------------------------------- OPERATORS
 		Quaternion operator*(const Quaternion& QUATERNION);

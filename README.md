@@ -2,6 +2,9 @@
 
 --------------------------------------------------------------------
 
+Remote location 'origin':
+	ssh://bnf_btype@ssh.phx.nearlyfreespeech.net/home/protected/git1.git
+
 GIT HOWTO:
 
 Git GUI -> git bash
@@ -15,6 +18,8 @@ List all tracked files:
 	
 Show history with insertions and deletions:
 	git log --oneline --shortstat
+Show history with insertions and deletions (detailed):
+	git log --stat
 
 --------------------------------------------------------------------
 

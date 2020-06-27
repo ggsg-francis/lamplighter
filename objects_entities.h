@@ -36,6 +36,16 @@ public:
 //------------- ENTITY STRUCTS -----------------------------------
 //||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
+#define STATE_DAMAGE_MAX 1000u
+
+struct MaxedStat
+{
+private:
+	btui16 state = STATE_DAMAGE_MAX;
+public:
+	//void GetState();
+};
+
 enum StatusEffectType : btui16 {
 	EFFECT_DAMAGE_HP,
 	EFFECT_RESTORE_HP,
@@ -71,7 +81,6 @@ typedef struct StatusEffect {
 	btui32 reserved;
 } StatusEffect;
 
-#define STATE_DAMAGE_MAX 1000u
 // TODO: merge with entity?? should be able to produce sfx
 struct ActiveState
 {
@@ -173,8 +182,6 @@ struct Actor : public Entity
 		IN_ACTN_C = 0x1u << 0x7u,
 		IN_CROUCH = 0x1u << 0x8u,
 		IN_JUMP = 0x1u << 0x9u,
-
-		IN_COM_ALERT = IN_USE | IN_USE_HIT | IN_USE_ALT,
 	};
 	mem::bv<btui16, ActorInput> inputBV;
 	m::Vector2 input; // Input vector, might be temporary
@@ -191,6 +198,8 @@ struct Actor : public Entity
 
 	btf32 speed = 2.3f;
 	btf32 agility = 0.f; // 0?? use agility to determine turning speed?
+
+	MaxedStat stamina;
 
 	Inventory inventory;
 	btui32 inv_active_slot = 0u;
@@ -248,6 +257,8 @@ struct Actor : public Entity
 	btf32 aniTimer = 0.f;
 	m::Vector3 lastGroundFootPos;
 
+	btID aniHandHoldTarget = ID_NULL;
+
 	//-------------------------------- AI stuff
 
 	btf32 ai_vy_target = 0.f;
@@ -259,6 +270,7 @@ struct Actor : public Entity
 	btui8 ai_path_current_index = 0u;
 	bool ai_pathing = false;
 
+	void TryHoldHand(btID ID);
 	void TakeItem(btID ID);
 	void DropItem(btID SLOT);
 	void DropAllItems();

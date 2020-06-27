@@ -2170,7 +2170,13 @@ namespace graphics
 					{
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
-						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+
+						if (vces[v + 0u].pos.y < vces[v + 2u].pos.y) {
+							vces[v + i].nor.y = 0.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = -1.f;
+						}
+						else {
+							vces[v + i].nor.y = 0.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 1.f;
+						}
 
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
@@ -2280,7 +2286,14 @@ namespace graphics
 					{
 						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
-						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+						//vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+
+						if (vces[v + 0u].pos.y < vces[v + 2u].pos.y) {
+							vces[v + i].nor.y = 0.f; vces[v + i].nor.x = -1.f; vces[v + i].nor.z = 0.f;
+						}
+						else {
+							vces[v + i].nor.y = 0.f; vces[v + i].nor.x = 1.f; vces[v + i].nor.z = 0.f;
+						}
 
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;

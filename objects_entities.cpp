@@ -440,6 +440,27 @@ void TickRestingItem(void* ent, btf32 dt)
 	Entity_PhysicsTick(chr, chr->id, dt);
 }
 
+void Actor::TryHoldHand(btID id)
+{
+	Actor* actr = (Actor*)GetEntityPtr(id);
+
+	// check our inventory if we're not holding anything
+	if (!inventory.items.Used(inv_active_slot)) {
+		// check other actor's inventory
+		if (!actr->inventory.items.Used(inv_active_slot)) {
+			if (aniHandHoldTarget == id)
+				aniHandHoldTarget = ID_NULL;
+			else
+				aniHandHoldTarget = id;
+			if (actr->aniHandHoldTarget == this->id)
+				actr->aniHandHoldTarget = ID_NULL;
+			else
+				actr->aniHandHoldTarget = this->id;
+		}
+	}
+
+}
+
 void Actor::TakeItem(btID id)
 {
 	RestingItem* item = (RestingItem*)GetEntityPtr(id);
@@ -466,9 +487,8 @@ void Actor::DropItem(btID slot)
 {
 	if (slot < inventory.items.Size() && inventory.items.Used(slot))
 	{
-		m::Vector2 throwDir = m::AngToVec2(t.yaw.Rad());
-		btID item_entity = core::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * radius), t.yaw.Deg());
-		//btID item_entity = index::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * (radius + 0.5f)), t.yaw.Deg());
+		m::Vector2 throwDir = m::AngToVec2(viewYaw.Rad());
+		btID item_entity = core::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * radius), viewYaw.Deg());
 		ENTITY(item_entity)->t.velocity = throwDir * 0.05f;
 		inventory.TransferItemSendIndex(slot);
 		DecrEquipSlot();
@@ -546,7 +566,7 @@ m::Vector3 Actor_SetFootPos(m::Vector2 position)
 }
 void Actor_ClampLegs(Actor* chr)
 {
-	// duplicate
+	// Duplicated code
 	m::Vector3 newpos = chr->t_body.GetPosition();
 	m::Vector3 jointPosR = newpos + chr->t_body.GetRight() * hip_width;
 	m::Vector3 jointPosL = newpos + chr->t_body.GetRight() * -hip_width;
@@ -561,19 +581,16 @@ void Actor_AnimateLegs(Actor* chr)
 	m::Vector2 vecfw = m::AngToVec2(chr->t.yaw.Rad());
 	m::Vector2 vecrt = m::Vector2(-vecfw.y, vecfw.x);
 
-	bool isInputting = m::Length(chr->input) >= 0.01f;
-
 	m::Vector3 tempFPL(0.f);
 	m::Vector3 tempFPR(0.f);
 
 	m::Vector2 velocityOffset = chr->t.velocity - chr->slideVelocity;
-	m::Vector2 voNorm = m::Normalize(velocityOffset);
 
 	// If on the ground
 	if (chr->grounded) {
 		chr->lastGroundFootPos = Actor_SetFootPos(chr->t.position);
 		// If we're standing still, play idle anim
-		if (!isInputting) {
+		if (m::Length(chr->input) < 0.01f) {
 			if (chr->foot_state == Actor::eL_DOWN) {
 				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * -0.15f));
 				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * 0.15f));
@@ -585,23 +602,34 @@ void Actor_AnimateLegs(Actor* chr)
 				chr->aniTimer = 1.5f;
 			}
 		}
-		// If walking
+		// If walking, play walking anim (crazy I know)
 		else {
 			#define STEP_LEN 0.35f
-			// Tick animation timer
-			chr->aniTimer += (0.5f / STEP_LEN) * m::Length(velocityOffset);
+			// Generate offset timer
+			btf32 aniTimerNew = chr->aniTimer + (0.5f / STEP_LEN) * m::Length(velocityOffset);
+			// Check for footsound time (only if not sneaking)
+			if (!chr->aniCrouch) {
+				if (chr->aniTimer < 1.f && aniTimerNew > 1.f)
+					aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, chr->fpCurrentL);
+				else if (chr->aniTimer < 2.f && aniTimerNew > 2.f)
+					aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_B, chr->fpCurrentR);
+			}
+			// Apply change to timer
+			chr->aniTimer = aniTimerNew;
+			// Timer rollover
 			if (chr->aniTimer > 2.f) chr->aniTimer -= 2.f;
 			// Create foot target positions
+			m::Vector2 voNorm = m::Normalize(velocityOffset);
 			if (chr->aniTimer < 1.f) {
 				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer)));
 				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer)));
-				tempFPL.y += m::QuadraticFootstep(0.3f, chr->aniTimer);
+				tempFPL.y += m::QuadraticFootstep(0.3f, (chr->aniTimer - 0.5f) * 2.f);
 				chr->foot_state = Actor::eR_DOWN;
 			}
 			else {
 				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer - 1.f)));
 				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer - 1.f)));
-				tempFPR.y += m::QuadraticFootstep(0.3f, chr->aniTimer - 1.f);
+				tempFPR.y += m::QuadraticFootstep(0.3f, (chr->aniTimer - 1.5f) * 2.f);
 				chr->foot_state = Actor::eL_DOWN;
 			}
 			#undef STEP_LEN
@@ -668,6 +696,21 @@ void TickChara(void* ent, btf32 dt)
 	if (slide > 1.f) chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, 1.f, 0.3f);
 	else chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, slide, 0.3f);
 
+	// hold hands check if our target is bullshit
+	if (chr->aniHandHoldTarget != ID_NULL)
+			if (!GetEntityExists(chr->aniHandHoldTarget) || m::Length(ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position) > 1.4f)
+				chr->aniHandHoldTarget = ID_NULL;
+	// or if our target is ourself somehow
+	if (chr->aniHandHoldTarget == chr->id)
+		chr->aniHandHoldTarget = ID_NULL;
+	// modify input to keep holding characters together
+	if (chr->aniHandHoldTarget != ID_NULL)
+		if (m::Length(ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position) > 0.85f)
+		{
+			chr->input += (ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position);
+		}
+
+
 	// Jump
 	if (chr->inputBV.get(Actor::IN_JUMP)) {
 		if (chr->grounded) {
@@ -677,10 +720,10 @@ void TickChara(void* ent, btf32 dt)
 			chr->aniCrouch = false;
 			chr->jump_state = Actor::eJUMP_JUMP;
 		}
-		/* // enable to turn on hover jumping
+		#ifdef DEF_LONGJUMP // enable to turn on hover jumping
 		else if (chr->jump_state == Actor::eJUMP_JUMP)
 			chr->t.height_velocity += 0.005f; // hover
-		*/
+		#endif
 		else if (chr->jump_state == Actor::eJUMP_SPRINT)
 			chr->t.height_velocity -= 0.01f; // anti-hover
 	}
@@ -741,6 +784,9 @@ void TickChara(void* ent, btf32 dt)
 
 		Entity_PhysicsTick(chr, chr->id, dt);
 
+		// set height for collision
+		chr->height = chr->t_head.GetPosition().y - chr->t_body.GetPosition().y;
+
 		//-------------------------------- RUN AI FUNCTION
 
 		// if AI controlled run the AI function
@@ -763,11 +809,19 @@ void TickChara(void* ent, btf32 dt)
 		chr->t_body = Transform3D();
 		chr->t_head = Transform3D();
 
+		#define WALK_HEIGHT_OFFSET_MULT 0.2f
+
+		btf32 walk_height_offset;
+		if (chr->aniTimer <= 1.f)
+			walk_height_offset = m::QuadraticFootstep(WALK_HEIGHT_OFFSET_MULT, (chr->aniTimer - 0.5f) * 2.f);
+		else
+			walk_height_offset = m::QuadraticFootstep(WALK_HEIGHT_OFFSET_MULT, (chr->aniTimer - 1.5f) * 2.f);
+
 		// Set head transform
 		if (!chr->aniCrouch)
-			chr->t_head.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height - (chr->aniSlideResponse * 0.25f) + BODYLEN * 0.99f, chr->t.position.y));
+			chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.height - (chr->aniSlideResponse * 0.25f) + BODYLEN * 0.985f + walk_height_offset, chr->t.position.y));
 		else
-			chr->t_head.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height - (chr->aniSlideResponse * 0.25f) + BODYLEN * 0.85f, chr->t.position.y));
+			chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.height - (chr->aniSlideResponse * 0.25f) + BODYLEN * 0.85f + walk_height_offset, chr->t.position.y));
 		
 		chr->t_head.Rotate(chr->viewYaw.Rad(), m::Vector3(0, 1, 0));
 		chr->t_head.Rotate(chr->viewPitch.Rad(), m::Vector3(1, 0, 0));
@@ -777,7 +831,7 @@ void TickChara(void* ent, btf32 dt)
 
 		// Set body transform
 		//t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.6f - (m::Length(chr->slideVelocity) * 0.5f), chr->t.position.y));
-		chr->t_body.SetPosition(m::Vector3(chr->ani_body_lean.x, 0.1f + chr->t.height - (chr->aniSlideResponse * 0.125f), chr->ani_body_lean.y));
+		chr->t_body.SetPosition(m::Vector3(chr->ani_body_lean.x, chr->t.height - (chr->aniSlideResponse * 0.125f) + walk_height_offset, chr->ani_body_lean.y));
 		chr->t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 
 
@@ -951,12 +1005,23 @@ void DrawChara(void* ent)
 		m::Vector3 handPosR = jointPosR + armoffsR;
 		m::Vector3 handPosL = jointPosL + armoffsL;
 
+		// hold hands check
+		if (chr->aniHandHoldTarget != ID_NULL)
+		{
+			if (m::Dot(chr->t.position - ACTOR(chr->aniHandHoldTarget)->t.position, m::AngToVec2(chr->t.yaw.Rad() - glm::degrees(90.f))) > 0.f)
+				handPosL = (ACTOR(chr->aniHandHoldTarget)->t_body.GetPosition() + chr->t_body.GetPosition()) * 0.5f;
+			else
+				handPosR = (ACTOR(chr->aniHandHoldTarget)->t_body.GetPosition() + chr->t_body.GetPosition()) * 0.5f;
+		}
+
 		// Arm orientation vectors
 		#define bodyForwardR m::Normalize(graphics::MatrixGetRight(matBodyUp) * -0.25f + graphics::MatrixGetUp(matBodyUp) * 0.75f + graphics::MatrixGetForward(matBodyUp)* 0.5f)
 		#define bodyForwardL m::Normalize(graphics::MatrixGetRight(matBodyUp) *  0.25f + graphics::MatrixGetUp(matBodyUp) * 0.75f + graphics::MatrixGetForward(matBodyUp)* 0.5f)
 
+		#define handlentemp 0.1f
+
 		// Arm right
-		len = m::Length(jointPosR - handPosR);
+		len = m::Length(jointPosR - handPosR) - handlentemp;
 		if (len > ARMLEN(chr->actorBase,0)) len = ARMLEN(chr->actorBase,0);
 		lenUp = sqrtf(ARMLEN(chr->actorBase,0) * ARMLEN(chr->actorBase,0) - len * len); // Pythagorean theorem
 		m::Vector3 vecfw = m::Normalize(handPosR - jointPosR);
@@ -971,7 +1036,7 @@ void DrawChara(void* ent)
 		graphics::SetFrontFace();
 
 		// Arm left
-		len = m::Length(jointPosL - handPosL);
+		len = m::Length(jointPosL - handPosL) - handlentemp;
 		if (len > ARMLEN(chr->actorBase,0)) len = ARMLEN(chr->actorBase,0);
 		lenUp = sqrtf(ARMLEN(chr->actorBase,0) * ARMLEN(chr->actorBase,0) - len * len); // Pythagorean theorem
 		vecfw = m::Normalize(handPosL - jointPosL);

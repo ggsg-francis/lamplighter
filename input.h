@@ -123,7 +123,7 @@ namespace input
 	}
 
 	#ifdef DEF_NMP
-	#define INPUT_BUF_SIZE 2
+	#define INPUT_BUF_SIZE 2 // Number of input buffers to hold
 	#define INPUT_BUF_GET 0 // First element
 	#define INPUT_BUF_SET 1 // Last element
 	extern InputBuffer buf[NUM_PLAYERS][INPUT_BUF_SIZE];

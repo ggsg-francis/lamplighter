@@ -92,13 +92,12 @@ namespace core
 
 	void UpdateOtherShaderParams(btf32 time2, m::Vector3 sunVec)
 	{
-		#define PCAM (glm::vec3)graphics::GetViewPos()
 		for (int i = graphics::S_UTIL_FIRST_LIT; i <= graphics::S_UTIL_LAST_LIT; ++i)
 		{
 			graphics::GetShader((graphics::eShader)i).Use();
 			graphics::GetShader((graphics::eShader)i).setMat4(graphics::Shader::matLightProj, *(graphics::Matrix4x4*)&shadowmat_temp);
 			graphics::GetShader((graphics::eShader)i).SetFloat(graphics::Shader::fTime, (float)time2);
-			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::vecPCam, PCAM);
+			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::vecPCam, (glm::vec3)graphics::GetViewPos());
 			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::vecVSun, (glm::vec3)sunVec);
 			graphics::GetShader((graphics::eShader)i).SetTexture(graphics::Shader::texShadowMap, shadowtex, graphics::Shader::TXTR_SHADOWMAP);
 			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::Colour_Ambient, *(glm::vec3*)weather::AmbientColour());
@@ -106,7 +105,6 @@ namespace core
 			graphics::GetShader((graphics::eShader)i).setVec3(graphics::Shader::Colour_Fog, *(glm::vec3*)weather::FogColour());
 			graphics::GetShader((graphics::eShader)i).SetFloat(graphics::Shader::Fog_Density, *(float*)weather::FogDensity());
 		}
-		#undef PCAM
 	}
 
 	void DoSpawn()
@@ -186,10 +184,10 @@ namespace core
 				if (env::Get(x, y, env::eflag::EF_SPAWN_ITEM_TEST))
 				{
 					//env::UnSet(x, y, env::eflag::EF_SPAWN_ITEM_TEST);
-					//btf32 random = m::Random(0.f, acv::item_index);
-					btf32 random = m::Random(0.f, 7.f);
+					btf32 random = m::Random(0.f, acv::item_index);
+					//btf32 random = m::Random(0.f, 7.f);
 					btui32 rand_rnd = (btui32)floor(random);
-					SpawnEntityItem(rand_rnd, m::Vector2(x,y), 0.f);
+					SpawnNewEntityItem(rand_rnd, m::Vector2(x,y), 0.f);
 					/*if (rand_rnd < 2u)
 						SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
 					else if (rand_rnd < 9u)
@@ -246,7 +244,9 @@ namespace core
 			else {
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
-				SpawnEntity(prefab::prefab_ai_player, m::Vector2(1024.f, 1024.f), 0.f);
+				// PVP - align p2 with player hunter faction
+				ENTITY(players[1])->faction = fac::playerhunter;
+				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(1024.f, 1024.f), 0.f);
 				#ifdef DEF_SPAWN_ON_START
 				DoSpawn();
 				#endif
@@ -921,7 +921,12 @@ namespace core
 					ACTOR(players[activePlayer])->TakeItem(viewtarget[activePlayer]);
 				else if (viewtarget[activePlayer] != ID_NULL && ENTITY(viewtarget[activePlayer])->type == ENTITY_TYPE_ACTOR)
 				{
+					// hold hand
+					ACTOR(players[activePlayer])->TryHoldHand(viewtarget[activePlayer]);
+
+					// SOUL TRANSFER
 					// if we are allied
+					/*
 					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget[activePlayer])->faction) == fac::allied)
 					{
 						// SOUL TRANSFER
@@ -934,6 +939,7 @@ namespace core
 						players[activePlayer] = viewtarget[activePlayer]; // Set player to control player's view target
 						ACTOR(players[activePlayer])->aiControlled = false;
 					}
+					*/
 				}
 			if (input::GetHit(input::key::DROP_HELD))
 				ACTOR(players[activePlayer])->DropItem(ACTOR(players[activePlayer])->inv_active_slot);

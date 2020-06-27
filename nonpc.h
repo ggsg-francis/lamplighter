@@ -144,6 +144,9 @@ void NPCFollowAlly(Actor* actor)
 		actor->inputBV.unset(Actor::ActorInput::IN_RUN);
 	}*/
 
+	// crouch if targ is
+	actor->aniCrouch = ACTOR(actor->ai_ally_ent)->aniCrouch;
+
 	if (!actor->ai_pathing) { // if not pathing, see if we need to path
 		actor->input.x = 0.f;
 		actor->input.y = 0.f;

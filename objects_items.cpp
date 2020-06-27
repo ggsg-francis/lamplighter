@@ -19,7 +19,7 @@ void HeldItemDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle a
 	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
 	self->t_item.SetRotation(0.f);
 	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
-	self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.1f + acv::items[itemid]->f_radius)); // set pose
+	self->t_item.TranslateLocal(m::Vector3(0.f, 0.f, 0.1f + acv::items[itemid]->f_radius)); // set pose
 	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
 void HeldItemOnEquip(btID id, Actor* owner)
@@ -73,22 +73,23 @@ void HeldMelTick(btID id, btf32 dt, Actor* owner)
 	{
 		self->swingState += 0.075f;
 		// if in the middle of the swing, try damage
-		if (self->swingState > 0.4f && self->swingState < 0.75f)
-		{
+		if (self->swingState > 0.4f && self->swingState < 0.75f) {
 			// if has enemy target, damage it
-			if (owner->atk_target != BUF_NULL)
-			{
+			if (owner->atk_target != BUF_NULL) {
 				Entity* ent = (Entity*)GetEntityPtr(owner->atk_target);
-				ent->state.Damage(300u, self->yaw);
-				aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
-				ent->slideVelocity += m::AngToVec2(owner->t.yaw.Rad()) * 0.05f;
-				// exit swing early
-				self->swinging = HeldItem::SWINGSTATE_RESET;
+				// if me and my enemy are close enough in height and distance
+				// TODO: distance check should be based on weapon hit range
+				if (m::Length(owner->t.position - ent->t.position) < 1.f && fabs(owner->t.height - ent->t.height) < 1.f) {
+					ent->state.Damage(300u, self->yaw);
+					aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
+					ent->slideVelocity += m::AngToVec2(owner->t.yaw.Rad()) * 0.05f;
+					// exit swing early
+					self->swinging = HeldItem::SWINGSTATE_RESET;
+				}
 			}
 		}
 		// if completed swing
-		if (self->swingState > 1.f)
-		{
+		if (self->swingState > 1.f) {
 			self->swinging = HeldItem::SWINGSTATE_RESET;
 		}
 	}
@@ -217,7 +218,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
 
 				if (GetItemType(self->id_ammoInstance) == ITEM_TYPE_CONS)
-					index::SpawnProjectileSpread(owner->faction, // TODO: fucking hell please make this easier to access
+					core::SpawnProjectileSpread(owner->faction, // TODO: fucking hell please make this easier to access
 					((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemPtr(self->id_ammoInstance))->id_item_template])->id_projectile,
 						m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 2.5f);
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
@@ -248,12 +249,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 	else if (owner->inputBV.get(Actor::IN_ACTN_C))
 		self->ePose = HOLDSTATE_INSPECT;
 
-	if (self->ePose == HOLDSTATE_IDLE) // IF AIMING
-	{
-		if (owner->inputBV.get(Actor::IN_COM_ALERT))
-			self->ePose = HOLDSTATE_AIM;
-	}
-
+	#ifdef DEF_AUTOAIM
 	if (owner->atk_target != BUF_NULL)
 	{
 		Entity* target = (Entity*)GetEntityPtr(owner->atk_target);
@@ -265,6 +261,7 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 		self->ang_aim_pitch = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(targetoffsetVertical)));
 	}
 	else
+	#endif
 	{
 		self->ang_aim_offset_temp = 0.f;
 		self->ang_aim_pitch = owner->viewPitch.Deg();

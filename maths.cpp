@@ -49,6 +49,7 @@ namespace m
 	Vector3 Vector3::operator+=(const Vector3& v) { x += v.x; y += v.y; z += v.z; return Vector3(x + v.x, y + v.y, z + z); }
 	Vector3 Vector3::operator-=(const Vector3& v) { return Vector3(x -= v.x, y -= v.y, z -= v.z); }
 	Vector3 Vector3::operator=(const glm::vec3& v) { return Vector3(v.x, v.y, v.z); }
+	Vector3 Vector3::operator=(const glm::vec4& v) { return Vector3(v.x, v.y, v.z); }
 
 	Vector3 operator+(const Vector3 & va, const Vector3 & vb) { return Vector3(va.x + vb.x, va.y + vb.y, va.z + vb.z); }
 	Vector3 operator-(const Vector3 & va, const Vector3 & vb) { return Vector3(va.x - vb.x, va.y - vb.y, va.z - vb.z); }

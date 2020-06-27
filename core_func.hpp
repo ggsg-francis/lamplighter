@@ -341,11 +341,13 @@ namespace core
 		ACTOR(id)->aiControlled = false;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
+		/*
 		ACTOR(id)->inventory.AddNew(6u);
 		ACTOR(id)->inventory.AddNew(4u);
 		ACTOR(id)->inventory.AddNew(8u); // magazine
 		ACTOR(id)->inventory.AddNew(8u); // magazine
 		ACTOR(id)->inventory.AddNew(7u); // heal
+		*/
 		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 	}
 
