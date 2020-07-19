@@ -79,7 +79,7 @@ namespace serializer
 		std::cout << "FILENAMES" << std::endl;
 		for (btui32 i = 0u; i < acv::assetCount; i++)
 		{
-			std::cout << "FILE " << i << " | TYPE " << acv::assets[i].type << " | ADDR " << acv::assets[i].filename << std::endl;
+			std::cout << "FILE " << i << " | TYPE " << (int)acv::assets[i].type << " | ADDR " << acv::assets[i].filename << std::endl;
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "PROPS" << std::endl;
@@ -88,6 +88,9 @@ namespace serializer
 			std::cout << "---------------------" << std::endl;
 			std::cout << "MESH ID              " << acv::props[i].idMesh << std::endl;
 			std::cout << "TEXTURE ID           " << acv::props[i].idTxtr << std::endl;
+			std::cout << "FLOOR TYPE           " << acv::props[i].floorType << std::endl;
+			std::cout << "PHYS SHAPE           " << acv::props[i].physShape << std::endl;
+			std::cout << "FLAGS                " << acv::props[i].flags << std::endl;
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "SPELLS" << std::endl;
@@ -125,11 +128,11 @@ namespace serializer
 		{
 			#define ITEMI ((acv::BaseItem*)acv::items[i])
 			#define WMELI ((acv::BaseItemMel*)acv::items[i])
+			#define WGUNI ((acv::BaseItemGun*)acv::items[i])
 			#define CONSI ((acv::BaseItemCon*)acv::items[i])
 
 			std::cout << "---------------------" << std::endl;
-			std::cout << "ID                   " << ITEMI->id << std::endl;
-			std::cout << "TYPE                 " << acv::item_types[i] << std::endl;
+			std::cout << "TYPE                 " << (int)acv::item_types[i] << std::endl;
 			std::cout << "ICON                 " << ITEMI->id_icon << std::endl;
 			std::cout << "NAME                 " << ITEMI->name << std::endl;
 			std::cout << "WEIGHT               " << ITEMI->f_weight << std::endl;
@@ -138,6 +141,11 @@ namespace serializer
 			std::cout << "MESH ID              " << ITEMI->id_mesh << std::endl;
 			std::cout << "TEXTURE ID           " << ITEMI->id_tex << std::endl;
 
+			if (acv::item_types[i] == ITEM_TYPE_WPN_MATCHGUN)
+			{
+				std::cout << "GUN AUTOMATIC        " << WGUNI->b_automatic << std::endl;
+				std::cout << "GUN AMMOTYPE         " << WGUNI->ammunition_type << std::endl;
+			}
 			if (acv::item_types[i] == ITEM_TYPE_WPN_MELEE)
 			{
 				std::cout << "DAMAGE PIERCE        " << WMELI->f_dam_pierce << std::endl;
@@ -149,9 +157,6 @@ namespace serializer
 				std::cout << "EFFECT               " << CONSI->id_effect << std::endl;
 				std::cout << "PROJECTILE           " << CONSI->id_projectile << std::endl;
 			}
-			#undef ITEMI
-			#undef WPNI
-			#undef PTNI
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "ACTOR BASES" << std::endl;
@@ -170,15 +175,15 @@ namespace serializer
 			std::cout << "TXTR ID BODY         " << acv::actor_templates[i].t_body << std::endl;
 			std::cout << "TXTR ID ARM          " << acv::actor_templates[i].t_arm << std::endl;
 			std::cout << "TXTR ID LEG          " << acv::actor_templates[i].t_leg << std::endl;
-			std::cout << "JPOS ARM FORWARD     " << acv::actor_templates[i].jpos_arm_fw[0] << std::endl;
-			std::cout << "JPOS ARM RIGHT       " << acv::actor_templates[i].jpos_arm_rt[0] << std::endl;
-			std::cout << "JPOS ARM UP          " << acv::actor_templates[i].jpos_arm_up[0] << std::endl;
-			std::cout << "JPOS LEG FORWARD     " << acv::actor_templates[i].jpos_leg_fw[0] << std::endl;
-			std::cout << "JPOS LEG RIGHT       " << acv::actor_templates[i].jpos_leg_rt[0] << std::endl;
-			std::cout << "JPOS LEG UP          " << acv::actor_templates[i].jpos_leg_up[0] << std::endl;
-			std::cout << "ARM LENGTH           " << acv::actor_templates[i].leng_arm[0] << std::endl;
-			std::cout << "LEG LENGTH           " << acv::actor_templates[i].leng_leg[0] << std::endl;
-			std::cout << "BODY LENGTH          " << acv::actor_templates[i].leng_body[0] << std::endl;
+			std::cout << "JPOS ARM FORWARD     " << acv::actor_templates[i].jpos_arm_fw << std::endl;
+			std::cout << "JPOS ARM RIGHT       " << acv::actor_templates[i].jpos_arm_rt << std::endl;
+			std::cout << "JPOS ARM UP          " << acv::actor_templates[i].jpos_arm_up << std::endl;
+			std::cout << "JPOS LEG FORWARD     " << acv::actor_templates[i].jpos_leg_fw << std::endl;
+			std::cout << "JPOS LEG RIGHT       " << acv::actor_templates[i].jpos_leg_rt << std::endl;
+			std::cout << "JPOS LEG UP          " << acv::actor_templates[i].jpos_leg_up << std::endl;
+			std::cout << "ARM LENGTH           " << acv::actor_templates[i].leng_arm << std::endl;
+			std::cout << "LEG LENGTH           " << acv::actor_templates[i].leng_leg << std::endl;
+			std::cout << "BODY LENGTH          " << acv::actor_templates[i].leng_body << std::endl;
 		}
 	}
 
@@ -204,10 +209,8 @@ namespace serializer
 			while (strcmp(elem, "item") == 0 || strcmp(elem, "****") == 0) // is it a new item?
 			{
 				comment = strcmp(elem, "****") == 0;
-				if (comment)
-				{
-					while (true)
-					{
+				if (comment) {
+					while (true) {
 						oper = fgetc(file); // Get character
 						if (oper == '\n') break;
 					}
@@ -394,9 +397,106 @@ namespace serializer
 		fgetc(file); //  Advance past space
 	}
 
+	void InterpretValue(char* elem, char* value, int value_size, void* pTARGET, int* pOFFSET)
+	{
+		// If we're already going hard we may as well go full butt clench
+		// so here is weird casting and macro use at the same time
+		
+		#define ELEMEQUALS(s) *(btui32*)elem == *(btui32*)&s
+
+		#define INTERPRET_INT(TYPE) { \
+			*(TYPE*)(((char*)pTARGET) + *pOFFSET) = (TYPE)atoi(value); \
+			*pOFFSET += sizeof(TYPE); }
+
+		#define INTERPRET_FLOAT(TYPE) { \
+			*(TYPE*)(((char*)pTARGET) + *pOFFSET) = (TYPE)atof(value); \
+			*pOFFSET += sizeof(TYPE); }
+
+		#define INTERPRET_STRING(dSIZE) { \
+			if (value_size < dSIZE) memcpy((((char*)pTARGET) + *pOFFSET), value, value_size); \
+			else memcpy((((char*)pTARGET) + *pOFFSET), value, 32); \
+			*pOFFSET += dSIZE; }
+
+		#define INTERPRET_BITVEC(TYPE) { \
+			for (btui32 i = 0; i < sizeof(TYPE); ++i) if (value[i] == 'x') \
+				*(TYPE*)(((char*)pTARGET) + *pOFFSET) |= (((TYPE)1u << (TYPE)(sizeof(TYPE) - 1u)) >> (TYPE)i); \
+			*pOFFSET += sizeof(TYPE); }
+
+		// Handle declaration
+		if (ELEMEQUALS("HDEC")) {
+			memcpy((((char*)pTARGET) + *pOFFSET), value, 8u);
+			*pOFFSET += 8u;
+		}
+		// Texture handle
+		else if (ELEMEQUALS("H_TX")) {
+			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
+			*pOFFSET += sizeof(btID);
+		}
+		// Mesh handle
+		else if (ELEMEQUALS("H_MH")) {
+			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
+			*pOFFSET += sizeof(btID);
+		}
+		// Spell handle
+		else if (ELEMEQUALS("H_SP")) {
+			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetSpellIDFromHandle(value);
+			*pOFFSET += sizeof(btID);
+		}
+		// Projectile handle
+		else if (ELEMEQUALS("H_PJ")) {
+			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetProjIDFromHandle(value);
+			*pOFFSET += sizeof(btID);
+		}
+		// Item handle
+		else if (ELEMEQUALS("H_IT")) {
+			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetItemIDFromHandle(value);
+			*pOFFSET += sizeof(btID);
+		}
+		// Boolean
+		else if (ELEMEQUALS("BOO8")) {
+			*(bool*)(((char*)pTARGET) + *pOFFSET) = (bool)atoi(value);
+			*pOFFSET += sizeof(bool);
+		}
+		// Boolean
+		else if (ELEMEQUALS("CHAR")) {
+			*(char*)(((char*)pTARGET) + *pOFFSET) = (char)(value[0]);
+			*pOFFSET += sizeof(bool);
+		}
+		// 8 bit ints
+		else if (ELEMEQUALS("SI08")) INTERPRET_INT(bti8)
+		else if (ELEMEQUALS("UI08")) INTERPRET_INT(btui8)
+		// 16 bit ints
+		else if (ELEMEQUALS("SI16")) INTERPRET_INT(bti16)
+		else if (ELEMEQUALS("UI16")) INTERPRET_INT(btui16)
+		// 32 bit ints
+		else if (ELEMEQUALS("SI32")) INTERPRET_INT(bti32)
+		else if (ELEMEQUALS("UI32")) INTERPRET_INT(btui32)
+		// 64 bit ints
+		else if (ELEMEQUALS("SI64")) INTERPRET_INT(bti64)
+		else if (ELEMEQUALS("UI64")) INTERPRET_INT(btui64)
+		// Floats
+		else if (ELEMEQUALS("FP32")) INTERPRET_FLOAT(btf32)
+		else if (ELEMEQUALS("FP64")) INTERPRET_FLOAT(btf64)
+		// Strings
+		else if (ELEMEQUALS("CS32")) INTERPRET_STRING(32u)
+		else if (ELEMEQUALS("CS64")) INTERPRET_STRING(64u)
+		// Bitvectors
+		else if (ELEMEQUALS("BV08")) INTERPRET_BITVEC(btui8)
+		else if (ELEMEQUALS("BV16")) INTERPRET_BITVEC(btui16)
+		else if (ELEMEQUALS("BV32")) INTERPRET_BITVEC(btui32)
+		else if (ELEMEQUALS("BV64")) INTERPRET_BITVEC(btui64)
+
+		#undef ELEMEQUALS
+		#undef INTERPRET_INT
+		#undef INTERPRET_FLOAT
+		#undef INTERPRET_STRING
+		#undef INTERPRET_BITVEC
+	}
 	void InterpretArchiveContents(char* fn)
 	{
 		void* item;
+
+		bool comment = false;
 
 		#define GET2_ITEM_ITEM ((acv::BaseItem*)item)
 		#define GET2_ITEM_APR ((acv::BaseItemEqp*)item)
@@ -416,48 +516,46 @@ namespace serializer
 
 		getPropElemName:
 			fgets(&elem[0], 5, file); // Get element name
-			if (strcmp(elem, "PROP") == 0) // is it a new item?
+			if (strcmp(elem, "PROP") == 0 || strcmp(elem, "****") == 0) // is it a new item?
 			{
-				// GET TYPE
-
-				AdvanceSpace(file);
-				InterpretCommand(file, elem);
-
-				// SET TYPE
-
-				// If it's an environment prop
-				if (strcmp(elem, "prop") != 0) goto nextPropElem;
-
-				// READ PROPERTIES
-
-				AdvanceSpace(file);
-				InterpretCommand(file, elem);
-				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
-				{
-					oper = fgetc(file); // Advance past equals sign
-
-					char value[256]; int value_size = 0;
-					InterpretWord(file, value, &value_size);
-
-					if (strcmp(elem, "srct") == 0) // Texture
-						acv::props[acv::prop_index].idTxtr = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-					else if (strcmp(elem, "srcm") == 0) // Mesh
-						acv::props[acv::prop_index].idMesh = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
-					else if (strcmp(elem, "flor") == 0)
-						acv::props[acv::prop_index].floorType = (acv::EnvProp::EnvPropFloorMat)atoi(value);
-					else if (strcmp(elem, "phys") == 0)
-						acv::props[acv::prop_index].physShape = (acv::EnvProp::EnvPropPhysShape)atoi(value);
-					else if (strcmp(elem, "flag") == 0)
-						acv::props[acv::prop_index].flags = (acv::EnvProp::EnvPropFlags)atoi(value);
-
-					//get name of next operator
-					oper = fgetc(file); //  Advance past line break
-					InterpretCommand(file, elem);
+				comment = strcmp(elem, "****") == 0;
+				if (comment) {
+					while (true) {
+						oper = fgetc(file); // Get character
+						if (oper == '\n') break;
+					}
 				}
-				++acv::prop_index;
-			nextPropElem:
-				oper = fgetc(file); //  Advance past line break
-				goto getPropElemName;
+				else {
+					AdvanceSpace(file);
+					InterpretCommand(file, elem);
+
+					if (strcmp(elem, "prop") != 0) goto nextPropElem;
+
+					// READ PROPERTIES
+
+					void* pTARGET = &(acv::props[acv::prop_index]);
+					int pOFFSET = 0;
+
+					AdvanceSpace(file);
+					InterpretCommand(file, elem);
+					while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
+					{
+						oper = fgetc(file); // Advance past equals sign
+
+						char value[256]; int value_size = 0;
+						InterpretWord(file, value, &value_size);
+
+						InterpretValue(elem, value, value_size, pTARGET, &pOFFSET);
+
+						//get name of next operator
+						oper = fgetc(file); //  Advance past line break
+						InterpretCommand(file, elem);
+					}
+					++acv::prop_index;
+				nextPropElem:
+					oper = fgetc(file); //  Advance past line break
+					goto getPropElemName;
+				}
 			}
 			else goto skipSpelElemName;
 
@@ -466,360 +564,205 @@ namespace serializer
 		getSpelElemName:
 			fgets(&elem[0], 5, file); // Get element name
 		skipSpelElemName:
-			while (strcmp(elem, "SPEL") == 0) // is it a new item?
+			while (strcmp(elem, "SPEL") == 0 || strcmp(elem, "****") == 0) // is it a new item?
 			{
-				// GET TYPE
-
-				AdvanceSpace(file);
-				InterpretCommand(file, elem);
-
-				// SET TYPE
-
-				// If it's an environment prop
-				if (strcmp(elem, "spel") != 0) goto nextSpelElem;
-
-				// READ PROPERTIES
-
-				AdvanceSpace(file);
-				InterpretCommand(file, elem);
-				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
-				{
-					AdvanceSpace(file);
-					char value[256]; int value_size = 0;
-					InterpretWord(file, value, &value_size);
-
-					if (strcmp(elem, "hndl") == 0) // Handle
-						memcpy(acv::spells[acv::spell_index].handle, value, 8u);
-					else if (strcmp(elem, "name") == 0) // Name
-						memcpy(acv::spells[acv::spell_index].name, value, value_size);
-					else if (strcmp(elem, "eidt") == 0) // Effect on Target
-						acv::spells[acv::spell_index].target_effect_type = (btui16)atoi(value);
-					else if (strcmp(elem, "edrt") == 0) // Duration on Target
-						acv::spells[acv::spell_index].target_effect_duration = (btf32)atof(value);
-					else if (strcmp(elem, "emgt") == 0) // Magnitude on Target
-						acv::spells[acv::spell_index].target_effect_magnitude = (btui32)atoi(value);
-
-					//#define NEXT_OPERATOR oper=fgetc(file);fgets(&elem[0], 5, file); // Get element name
-
-					//get name of next operator
-					oper = fgetc(file); //  Advance past line break
-					InterpretCommand(file, elem);
+				comment = strcmp(elem, "****") == 0;
+				if (comment) {
+					while (true) {
+						oper = fgetc(file); // Get character
+						if (oper == '\n') break;
+					}
 				}
-				++acv::spell_index;
-			nextSpelElem:
-				AdvanceSpace(file);
-				goto getSpelElemName;
+				else {
+					AdvanceSpace(file);
+					InterpretCommand(file, elem);
+
+					if (strcmp(elem, "spel") != 0) goto nextSpelElem;
+
+					// READ PROPERTIES
+
+					void* pTARGET = &(acv::spells[acv::spell_index]);
+					int pOFFSET = 0;
+
+					AdvanceSpace(file);
+					InterpretCommand(file, elem);
+					while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
+					{
+						AdvanceSpace(file);
+						char value[256]; int value_size = 0;
+						InterpretWord(file, value, &value_size);
+
+						InterpretValue(elem, value, value_size, pTARGET, &pOFFSET);
+
+						//get name of next operator
+						oper = fgetc(file); //  Advance past line break
+						InterpretCommand(file, elem);
+					}
+					++acv::spell_index;
+				nextSpelElem:
+					AdvanceSpace(file);
+					goto getSpelElemName;
+				}
 			}
 
 		getProjElemName:
-			while (strcmp(elem, "PROJ") == 0) // is it a new item?
+			while (strcmp(elem, "PROJ") == 0 || strcmp(elem, "****") == 0) // is it a new item?
 			{
-				// GET TYPE
-
-				AdvanceSpace(file);
-				InterpretCommand(file, elem);
-
-				// SET TYPE
-
-				// If it's an environment prop
-				if (strcmp(elem, "proj") != 0) goto nextProjElem;
-
-				// READ PROPERTIES
-
-				AdvanceSpace(file);
-				InterpretCommand(file, elem);
-				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
-				{
-					AdvanceSpace(file);
-					char value[256]; int value_size = 0;
-					InterpretWord(file, value, &value_size);
-
-					if (strcmp(elem, "hndl") == 0) // Handle
-						memcpy(acv::projectiles[acv::projectiles_index].handle, value, 8u);
-					else if (strcmp(elem, "pdam") == 0) // Damage amount
-						acv::projectiles[acv::projectiles_index].damage = (btui32)atoi(value);
-					else if (strcmp(elem, "psav") == 0) // Bool save on fire
-						acv::projectiles[acv::projectiles_index].saveOnHit = (bool)atoi(value);
-					else if (strcmp(elem, "atyp") == 0) // Type
-						acv::projectiles[acv::projectiles_index].ammunition_type = value[0];
-					else if (strcmp(elem, "srcm") == 0) // Source Mesh
-						acv::projectiles[acv::projectiles_index].mesh = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
-					else if (strcmp(elem, "srct") == 0) // Source Texture
-						acv::projectiles[acv::projectiles_index].texture = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-
-					//#define NEXT_OPERATOR oper=fgetc(file);fgets(&elem[0], 5, file); // Get element name
-
-					//get name of next operator
-					oper = fgetc(file); //  Advance past line break
-					InterpretCommand(file, elem);
+				comment = strcmp(elem, "****") == 0;
+				if (comment) {
+					while (true) {
+						oper = fgetc(file); // Get character
+						if (oper == '\n') break;
+					}
 				}
-				++acv::projectiles_index;
-			nextProjElem:
-				AdvanceSpace(file);
-				InterpretCommand(file, elem);
-				goto getProjElemName;
+				else {
+					AdvanceSpace(file);
+					InterpretCommand(file, elem);
+
+					if (strcmp(elem, "proj") != 0) goto nextProjElem;
+
+					// READ PROPERTIES
+
+					void* pTARGET = &(acv::projectiles[acv::projectiles_index]);
+					int pOFFSET = 0;
+
+					AdvanceSpace(file);
+					InterpretCommand(file, elem);
+					while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
+					{
+						AdvanceSpace(file);
+						char value[256]; int value_size = 0;
+						InterpretWord(file, value, &value_size);
+
+						InterpretValue(elem, value, value_size, pTARGET, &pOFFSET);
+
+						//get name of next operator
+						oper = fgetc(file); //  Advance past line break
+						InterpretCommand(file, elem);
+					}
+					++acv::projectiles_index;
+				nextProjElem:
+					AdvanceSpace(file);
+					InterpretCommand(file, elem);
+					goto getProjElemName;
+				}
 			}
 
 			//-------------------------------- ITEMS
 
 			//InterpretCommand(file, elem);
 
-			while (strcmp(elem, "ITEM") == 0) // is it a new item?
+			while (strcmp(elem, "ITEM") == 0 || strcmp(elem, "****") == 0) // is it a new item?
 			{
-				// GET ITEM TYPE
-
-				oper = fgetc(file); // Advance past equals sign
-				fgets(&elem[0], 5, file); // Get element name
-
-				// SET ITEM TYPE
-
-				if (elem[0] == 'w') // If it's a weapon
-				{
-					if (strcmp(elem, "wmel") == 0) {
-						acv::items[acv::item_index] = new acv::BaseItemMel();
-						acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MELEE;
-					}
-					else if (strcmp(elem, "wgun") == 0) {
-						acv::items[acv::item_index] = new acv::BaseItemGun();
-						acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MATCHGUN;
-					}
-					else if (strcmp(elem, "wmgc") == 0) {
-						acv::items[acv::item_index] = new acv::BaseItemMgc();
-						acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MAGIC;
+				comment = strcmp(elem, "****") == 0;
+				if (comment) {
+					while (true) {
+						oper = fgetc(file); // Get character
+						if (oper == '\n') break;
 					}
 				}
-				else
-				{
-					if (strcmp(elem, "misc") == 0) {
-						acv::items[acv::item_index] = new acv::BaseItem();
-						acv::item_types[acv::item_index] = ITEM_TYPE_MISC;
-					}
-					else if (strcmp(elem, "aprl") == 0) {
-						acv::items[acv::item_index] = new acv::BaseItemEqp();
-						acv::item_types[acv::item_index] = ITEM_TYPE_EQUIP;
-					}
-					else if (strcmp(elem, "cons") == 0) {
-						acv::items[acv::item_index] = new acv::BaseItemCon();
-						acv::item_types[acv::item_index] = ITEM_TYPE_CONS;
-					}
-				}
+				else {
+					// GET ITEM TYPE
 
-				// ASSIGN ITEM ID
-
-				item = acv::items[acv::item_index];
-				GET2_ITEM_ITEM->id = acv::item_index;
-				acv::item_index++;
-
-				// READ ITEM PROPERTIES
-
-				oper = fgetc(file); //  Advance past line break
-				fgets(&elem[0], 5, file); // Get element name
-				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
-				{
 					oper = fgetc(file); // Advance past equals sign
-					
-					char value[256]; int value_size = 0;
-					InterpretWord(file, value, &value_size);
+					fgets(&elem[0], 5, file); // Get element name
 
-					// Any item stats
-					if (strcmp(elem, "hndl") == 0) // Handle
-						memcpy(GET2_ITEM_ITEM->handle, value, 8u);
-					else if (strcmp(elem, "type") == 0) // What type of item is it?
+					// SET ITEM TYPE
+
+					if (elem[0] == 'w') // If it's a weapon
 					{
-						if (strcmp(value, "weapon") == 0)
-						{
-							int hello = 0;
+						if (strcmp(elem, "wmel") == 0) {
+							acv::items[acv::item_index] = new acv::BaseItemMel();
+							acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MELEE;
 						}
-						//ITEM_ITEM->id_icon = (id_t)atoi(value);
+						else if (strcmp(elem, "wgun") == 0) {
+							acv::items[acv::item_index] = new acv::BaseItemGun();
+							acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MATCHGUN;
+						}
+						else if (strcmp(elem, "wmgc") == 0) {
+							acv::items[acv::item_index] = new acv::BaseItemMgc();
+							acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MAGIC;
+						}
 					}
-					else if (strcmp(elem, "icon") == 0) // Icon (change to string?)
-						//ITEM_ITEM->id_icon = (btID)atoi(value);
-						GET2_ITEM_ITEM->id_icon = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-					else if (strcmp(elem, "name") == 0) // Name
-						memcpy(GET2_ITEM_ITEM->name, value, value_size);
-					else if (strcmp(elem, "wght") == 0) // Carry weight
-						GET2_ITEM_ITEM->f_weight = (btf32)atof(value);
-					else if (strcmp(elem, "muns") == 0) // Money base value
-						GET2_ITEM_ITEM->f_value_base = (btui32)atoi(value);
-					else if (strcmp(elem, "radi") == 0) // Radius when placed
-						GET2_ITEM_ITEM->f_radius = (btf32)atof(value);
-					else if (strcmp(elem, "mdlh") == 0) // Model height when placed
-						GET2_ITEM_ITEM->f_model_height = (btf32)atof(value);
-					else if (strcmp(elem, "srct") == 0) // Texture
-						GET2_ITEM_ITEM->id_tex = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-					else if (strcmp(elem, "srcm") == 0) // Mesh
-						GET2_ITEM_ITEM->id_mesh = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
-					else if (strcmp(elem, "scmb") == 0) // Mesh
-						GET2_ITEM_ITEM->id_mesh = GetAssetIDFromHandle(value, ASSET_MESHBLEND_FILE);
-					// Weapon value
-					else if (strcmp(elem, "held") == 0) // Damage pierce
+					else
 					{
-						//ITEM_WPN->damage_pierce = atof(value);
+						if (strcmp(elem, "misc") == 0) {
+							acv::items[acv::item_index] = new acv::BaseItem();
+							acv::item_types[acv::item_index] = ITEM_TYPE_MISC;
+						}
+						else if (strcmp(elem, "aprl") == 0) {
+							acv::items[acv::item_index] = new acv::BaseItemEqp();
+							acv::item_types[acv::item_index] = ITEM_TYPE_EQUIP;
+						}
+						else if (strcmp(elem, "cons") == 0) {
+							acv::items[acv::item_index] = new acv::BaseItemCon();
+							acv::item_types[acv::item_index] = ITEM_TYPE_CONS;
+						}
 					}
-					else if (strcmp(elem, "dmg1") == 0) // Damage pierce
-						GET2_ITEM_W_MELEE->f_dam_pierce = (float)atof(value);
-					else if (strcmp(elem, "dmg2") == 0) // Damage slash
-						GET2_ITEM_W_MELEE->f_dam_slash = (float)atof(value);
-					else if (strcmp(elem, "dmg3") == 0) // Damage slam
-						GET2_ITEM_W_MELEE->f_dam_slam = (float)atof(value);
-					// Apparel value
-					else if (strcmp(elem, "def1") == 0) // Defend pierce damage
-						GET2_ITEM_APR->block_pierce = (float)atof(value);
-					else if (strcmp(elem, "def2") == 0) // Defend slash damage
-						GET2_ITEM_APR->block_slice = (float)atof(value);
-					else if (strcmp(elem, "def3") == 0) // Defend slam damage
-						GET2_ITEM_APR->block_slam = (float)atof(value);
-					// Con Value
-					else if (strcmp(elem, "cspl") == 0) // Spell
-						GET2_ITEM_PTN->id_effect = GetSpellIDFromHandle(value);
-					else if (strcmp(elem, "cprj") == 0) // Spell
-						GET2_ITEM_PTN->id_projectile = GetProjIDFromHandle(value);
 
-					else if (strcmp(elem, "atyp") == 0) // Spell
-						GET2_ITEM_GUN->ammunition_type = value[0];
+					// ASSIGN ITEM ID
 
-					//get name of next operator
+					item = acv::items[acv::item_index];
+					//GET2_ITEM_ITEM->id = acv::item_index;
+					acv::item_index++;
+
+					// READ ITEM PROPERTIES
+
+					//void* pTARGET = &(acv::items[acv::item_index]);
+					void* pTARGET = item;
+					int pOFFSET = 0;
+
+					oper = fgetc(file); //  Advance past line break
+					fgets(&elem[0], 5, file); // Get element name
+					while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
+					{
+						oper = fgetc(file); // Advance past equals sign
+
+						char value[256]; int value_size = 0;
+						InterpretWord(file, value, &value_size);
+
+						InterpretValue(elem, value, value_size, pTARGET, &pOFFSET);
+
+						//get name of next operator
+						oper = fgetc(file); //  Advance past line break
+						fgets(&elem[0], 5, file); // Get element name
+					}
 					oper = fgetc(file); //  Advance past line break
 					fgets(&elem[0], 5, file); // Get element name
 				}
-				oper = fgetc(file); //  Advance past line break
-				fgets(&elem[0], 5, file); // Get element name
 			}
 
 			//-------------------------------- ENTITY TEMPLATES
-			
+
 			///*
 		getEntTElemName:
 			//fgets(&elem[0], 5, file); // Get element name
 		//skipEntTElemName:
 			while (strcmp(elem, "ACTT") == 0) // is it a new item?
 			{
-				// GET TYPE
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
 
-				oper = fgetc(file); // Advance past equals sign
-				fgets(&elem[0], 5, file); // Get element name
-
-				// SET TYPE
-
-				// If it's an environment prop
 				if (strcmp(elem, "actt") != 0) goto nextEntTElem;
 
 				// READ PROPERTIES
+
+				void* pTARGET = &(acv::actor_templates[acv::actor_template_index]);
+				int pOFFSET = 0;
 
 				AdvanceSpace(file);
 				InterpretCommand(file, elem);
 				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
 				{
 					AdvanceSpace(file);
-					if (strcmp(elem, "hndl") == 0) // Handle
-					{
-						char value[256]; int value_size = 0;
-						InterpretWord(file, value, &value_size);
-						memcpy(acv::actor_templates[acv::actor_template_index].handle, value, 8u);
+					char value[256]; int value_size = 0;
+					InterpretWord(file, value, &value_size);
 
-						// Get name of next operator
-						AdvanceSpace(file);
-						InterpretCommand(file, elem);
-					}
-					else if (strcmp(elem, "srcm") == 0) // Source Mesh
-					{
-						InterpretCommand(file, elem);
-						AdvanceSpace(file);
-						char value[256]; int value_size = 0;
-						InterpretWord(file, value, &value_size);
+					InterpretValue(elem, value, value_size, pTARGET, &pOFFSET);
 
-						if (strcmp(elem, "head") == 0) // Head
-							acv::actor_templates[acv::actor_template_index].m_head = (btui16)GetAssetIDFromHandle(value, ASSET_MESHDEFORM_FILE);
-						if (strcmp(elem, "body") == 0) // Body
-							acv::actor_templates[acv::actor_template_index].m_body = (btui16)GetAssetIDFromHandle(value, ASSET_MESHDEFORM_FILE);
-						if (strcmp(elem, "larm") == 0) // Arm
-							acv::actor_templates[acv::actor_template_index].m_arm = (btui16)GetAssetIDFromHandle(value, ASSET_MESHDEFORM_FILE);
-						if (strcmp(elem, "lleg") == 0) // Leg
-							acv::actor_templates[acv::actor_template_index].m_leg = (btui16)GetAssetIDFromHandle(value, ASSET_MESHDEFORM_FILE);
-
-						// Get name of next operator
-						AdvanceSpace(file);
-						InterpretCommand(file, elem);
-					}
-					else if (strcmp(elem, "srct") == 0) // Source Texture
-					{
-						InterpretCommand(file, elem);
-						AdvanceSpace(file);
-						char value[256]; int value_size = 0;
-						InterpretWord(file, value, &value_size);
-
-						if (strcmp(elem, "head") == 0) // Head
-							acv::actor_templates[acv::actor_template_index].t_head = (btui16)GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-						if (strcmp(elem, "body") == 0) // Body
-							acv::actor_templates[acv::actor_template_index].t_body = (btui16)GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-						if (strcmp(elem, "larm") == 0) // Arm
-							acv::actor_templates[acv::actor_template_index].t_arm = (btui16)GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-						if (strcmp(elem, "lleg") == 0) // Leg
-							acv::actor_templates[acv::actor_template_index].t_leg = (btui16)GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-
-						// Get name of next operator
-						AdvanceSpace(file);
-						InterpretCommand(file, elem);
-					}
-					else if (strcmp(elem, "jpos") == 0) // Limb Position
-					{
-						InterpretCommand(file, elem);
-						AdvanceSpace(file);
-						if (strcmp(elem, "larm") == 0) // Arm
-						{
-							InterpretCommand(file, elem);
-							AdvanceSpace(file);
-							char value[256]; int value_size = 0;
-							InterpretWord(file, value, &value_size); 
-							
-							if (strcmp(elem, "fw__") == 0) // Arm
-								acv::actor_templates[acv::actor_template_index].jpos_arm_fw[0] = (btf32)atof(value);
-							else if (strcmp(elem, "rt__") == 0) // Arm
-								acv::actor_templates[acv::actor_template_index].jpos_arm_rt[0] = (btf32)atof(value);
-							else if (strcmp(elem, "up__") == 0) // Arm
-								acv::actor_templates[acv::actor_template_index].jpos_arm_up[0] = (btf32)atof(value);
-
-							// Get name of next operator
-							AdvanceSpace(file);
-							InterpretCommand(file, elem);
-						}
-						if (strcmp(elem, "lleg") == 0) // Leg
-						{
-							InterpretCommand(file, elem);
-							AdvanceSpace(file);
-							char value[256]; int value_size = 0;
-							InterpretWord(file, value, &value_size); 
-							
-							if (strcmp(elem, "fw__") == 0) // Arm
-								acv::actor_templates[acv::actor_template_index].jpos_leg_fw[0] = (btf32)atof(value);
-							else if (strcmp(elem, "rt__") == 0) // Arm
-								acv::actor_templates[acv::actor_template_index].jpos_leg_rt[0] = (btf32)atof(value);
-							else if (strcmp(elem, "up__") == 0) // Arm
-								acv::actor_templates[acv::actor_template_index].jpos_leg_up[0] = (btf32)atof(value);
-
-							// Get name of next operator
-							AdvanceSpace(file);
-							InterpretCommand(file, elem);
-						}
-					}
-					else if (strcmp(elem, "leng") == 0) // Limb Length
-					{
-						InterpretCommand(file, elem);
-						AdvanceSpace(file);
-						char value[256]; int value_size = 0;
-						InterpretWord(file, value, &value_size); 
-						
-						if (strcmp(elem, "larm") == 0) // Arm
-							acv::actor_templates[acv::actor_template_index].leng_arm[0] = (btf32)atof(value);
-						else if (strcmp(elem, "lleg") == 0) // Leg
-							acv::actor_templates[acv::actor_template_index].leng_leg[0] = (btf32)atof(value);
-						else if (strcmp(elem, "body") == 0) // Leg
-							acv::actor_templates[acv::actor_template_index].leng_body[0] = (btf32)atof(value);
-
-						// Get name of next operator
-						AdvanceSpace(file);
-						InterpretCommand(file, elem);
-					}
+					//get name of next operator
+					oper = fgetc(file); //  Advance past line break
+					InterpretCommand(file, elem);
 				}
 				++acv::actor_template_index;
 			nextEntTElem:

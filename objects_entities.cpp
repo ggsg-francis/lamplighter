@@ -543,16 +543,16 @@ void Actor::DecrEquipSlot()
 
 //#define LEGLEN(a,x) 0.75f
 //#define ARMLEN(a,x) 0.75f
-#define ARMLEN(a,x) acv::actor_templates[a].leng_arm[x]
-#define LEGLEN(a,x) acv::actor_templates[a].leng_leg[x]
+#define ARMLEN(a,x) acv::actor_templates[a].leng_arm
+#define LEGLEN(a,x) acv::actor_templates[a].leng_leg
 // leg disconnect length? not sure
 #define legDClen ARMLEN(0,0)
 
 //#define bodylen 0.65
-#define BODYLEN acv::actor_templates[0].leng_body[0]
+#define BODYLEN acv::actor_templates[0].leng_body
 
 //#define hip_width 0.125f
-#define hip_width acv::actor_templates[0].jpos_arm_rt[0]
+#define hip_width acv::actor_templates[0].jpos_arm_rt
 
 #define velocityStepMult (8.f * LEGLEN(chr->actorBase,0)) // How far to place our foot ahead when walking
 

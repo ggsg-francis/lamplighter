@@ -178,6 +178,7 @@ namespace acv
 		char handle[8];
 		bti8 name[32];
 		SpellCastType cast_type = ON_TARGET;
+		btui8 filler;
 		btui16 target_effect_type;
 		btf32 target_effect_duration;
 		btui32 target_effect_magnitude;
@@ -205,24 +206,24 @@ namespace acv
 		btID t_body;
 		btID t_arm;
 		btID t_leg;
-		btf32 jpos_arm_fw[ENTITY_MAX_LIMB_NUM];
-		btf32 jpos_arm_rt[ENTITY_MAX_LIMB_NUM];
-		btf32 jpos_arm_up[ENTITY_MAX_LIMB_NUM];
-		btf32 leng_arm[ENTITY_MAX_LIMB_NUM];
-		btf32 jpos_leg_fw[ENTITY_MAX_LIMB_NUM];
-		btf32 jpos_leg_rt[ENTITY_MAX_LIMB_NUM];
-		btf32 jpos_leg_up[ENTITY_MAX_LIMB_NUM];
-		btf32 leng_leg[ENTITY_MAX_LIMB_NUM];
-		btf32 leng_body[ENTITY_MAX_LIMB_NUM];
+		btf32 jpos_arm_fw;
+		btf32 jpos_arm_rt;
+		btf32 jpos_arm_up;
+		btf32 leng_arm;
+		btf32 jpos_leg_fw;
+		btf32 jpos_leg_rt;
+		btf32 jpos_leg_up;
+		btf32 leng_leg;
+		btf32 leng_body;
 	} EntityTemplate;
 
 	struct BaseItem
 	{
 		// Root
 		char handle[8];
-		btID id = 0u;
-		btID id_icon = 0u;
 		bti8 name[64];
+		btID id_icon = 0u;
+		btID filler = 0u;
 		btf32 f_weight = 0.f;
 		btui32 f_value_base = 0u;
 		btf32 f_radius = 0.f;
@@ -249,8 +250,7 @@ namespace acv
 
 	struct BaseItemGun : public BaseItem
 	{
-		float f_temp;
-		bool b_automatic;
+		btui8 b_automatic;
 		btui8 ammunition_type;
 	};
 
