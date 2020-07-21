@@ -1223,15 +1223,6 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// MESH --------------------------------------------------------------------------------------------------------------------------
 
-	void Mesh::Draw(unsigned int tex, unsigned int shd)
-	{
-		glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(shd, "texture_diffuse1"), 0);
-		glBindTexture(GL_TEXTURE_2D, tex); // Bind the texture
-		glBindVertexArray(vao); // Bind vertex array
-		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
-		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
-	}
 	void Mesh::LoadFile(char* fn, bool clearmem)
 	{
 		std::cout << "Loading " << fn << "... ";
@@ -1313,22 +1304,6 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// MESH BLEND --------------------------------------------------------------------------------------------------------------------
 
-	void MeshBlend::Draw(unsigned int tex, unsigned int shd)
-	{
-		glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(shd, "texture_diffuse1"), 0);
-		// and finally bind the texture
-		glBindTexture(GL_TEXTURE_2D, tex);
-
-		// draw mesh
-		glBindVertexArray(vao);
-		//glDrawElements(GL_TRIANGLES, ices.size(), GL_UNSIGNED_INT, 0);
-		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		// always good practice to set everything back to defaults once configured.
-		glActiveTexture(GL_TEXTURE0);
-	}
 	void MeshBlend::LoadFile(char* fn)
 	{
 		std::cout << "Loading " << fn << "... ";
@@ -1404,23 +1379,6 @@ namespace graphics
 
 	//________________________________________________________________________________________________________________________________
 	// MESH DEFORM -------------------------------------------------------------------------------------------------------------------
-
-	void MeshDeform::Draw(unsigned int tex, unsigned int shd)
-	{
-		glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
-		glUniform1i(glGetUniformLocation(shd, "texture_diffuse1"), 0);
-		// and finally bind the texture
-		glBindTexture(GL_TEXTURE_2D, tex);
-
-		// draw mesh
-		glBindVertexArray(vao);
-		//glDrawElements(GL_TRIANGLES, ices.size(), GL_UNSIGNED_INT, 0);
-		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		// always good practice to set everything back to defaults once configured.
-		glActiveTexture(GL_TEXTURE0);
-	}
 
 	void MeshDeform::LoadFile(char* fn)
 	{
@@ -2497,19 +2455,7 @@ namespace graphics
 		transform = glm::translate(transform, glm::vec3(posx, posy, 0));
 		transform = glm::scale(transform, glm::vec3(w / 2, h / 2, 1.0f));
 
-		//scale 0.5 height for orthographic
-		//transform = glm::scale(transform, glm::vec3(1.f, 0.5f, 1.0f));
-		//rotate for ortho (clipping range problem but has depth buffer)
-		//transform = glm::rotate(transform, 45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-
-		//spin rotate
-		//transform = glm::rotate(transform, (float)time, glm::vec3(0.0f, 0.0f, 1.0f));
-
-		//transform = glm::perspective(glm::radians(45.0f), (float)winx / (float)winy, 1.0f, 10.0f);
-
-		// get matrix's uniform location and set matrix
-		unsigned int transformLoc = glGetUniformLocation(s->ID, "transform");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+		s->setMat4(Shader::GUITransform, *(graphics::Matrix4x4*)&transform);
 
 		//....................................... DRAW
 
@@ -2636,15 +2582,11 @@ namespace graphics
 		glBindTexture(GL_TEXTURE_2D, t->glID);
 		s->Use();
 
-		// get matrix's uniform location and set matrix
-		unsigned int transformLoc = glGetUniformLocation(s->ID, "transform");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+		s->setMat4(Shader::GUITransform, *(graphics::Matrix4x4*)&transform);
 
 		glm::mat4 mattemp = glm::mat4(1);
 
-		// get matrix's uniform location and set matrix
-		unsigned int offsetLoc = glGetUniformLocation(s->ID, "offset");
-		glUniformMatrix4fv(offsetLoc, 1, GL_FALSE, glm::value_ptr(mattemp));
+		s->setMat4(Shader::GUIOffset, *(graphics::Matrix4x4*)&mattemp);
 
 		// Draw
 
@@ -2831,13 +2773,9 @@ namespace graphics
 
 		s->Use();
 
-		// get matrix's uniform location and set matrix
-		unsigned int transformLoc = glGetUniformLocation(s->ID, "transform");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+		s->setMat4(Shader::GUITransform, *(graphics::Matrix4x4*)&transform);
 
-		// get matrix's uniform location and set matrix
-		unsigned int offsetLoc = glGetUniformLocation(s->ID, "offset");
-		glUniformMatrix4fv(offsetLoc, 1, GL_FALSE, glm::value_ptr(offset));
+		s->setMat4(Shader::GUIOffset, *(graphics::Matrix4x4*)&offset);
 
 		// Draw
 
@@ -2868,7 +2806,17 @@ namespace graphics
 	}
 }
 
-void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
+__forceinline void DrawMeshGL(btui32 mdl, btui32 ices_size, btui32 tex)
+{
+	glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
+	glBindTexture(GL_TEXTURE_2D, tex); // Bind the texture
+	glBindVertexArray(mdl); // Bind vertex array
+	glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
+	glBindVertexArray(0); // Return to default
+}
+
+void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex,
+	ShaderStyle charashader, graphics::Matrix4x4 matrix)
 {
 	graphics::Shader* shd = nullptr;
 	switch (charashader)
@@ -2885,8 +2833,6 @@ void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex, ShaderSty
 	shd->Use();
 
 	// Set matrices on shader
-	/*shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&graphics::GetMatProj());
-	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&graphics::GetMatView());*/
 	glm::mat4 gmatp = graphics::GetMatProj();
 	glm::mat4 gmatv = graphics::GetMatView();
 	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&gmatp);
@@ -2894,7 +2840,26 @@ void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex, ShaderSty
 	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
 
 	// Render the mesh
-	mdl.Draw(tex.glID, shd->ID);
+	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
+}
+
+void DrawParticles(graphics::Mesh& mdl, graphics::TextureBase tex,
+	graphics::Matrix4x4* matrix, btui32 count)
+{
+	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID);
+
+	// Enable the shader
+	shd->Use();
+
+	// Set matrices on shader
+	glm::mat4 gmatp = graphics::GetMatProj();
+	glm::mat4 gmatv = graphics::GetMatView();
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&gmatp);
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&gmatv);
+	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
+
+	// Render the mesh
+	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
 void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
@@ -2923,7 +2888,7 @@ void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::Textur
 	shd->SetFloat(shd->fBlendState, bs);
 
 	// Render the mesh
-	mdl.Draw(tex.glID, shd->ID);
+	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
 void DrawMeshDeform(
@@ -2961,7 +2926,7 @@ void DrawMeshDeform(
 	if (matrix_count == 4u) shd->setMat4(shd->matModelD, transform_d);
 
 	// Render the mesh
-	mdl.Draw(tex.glID, shd->ID);
+	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
 void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)

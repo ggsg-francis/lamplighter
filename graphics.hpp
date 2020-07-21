@@ -238,6 +238,8 @@ namespace graphics
 			Colour_Fog,
 			Colour_Lightmap,
 			Fog_Density,
+			GUITransform,
+			GUIOffset,
 			LOCATION_COUNT,
 		};
 	private:
@@ -282,6 +284,8 @@ namespace graphics
 			"cFog",
 			"cLit",
 			"fFogDens",
+			"transform",
+			"offset",
 		};
 	public:
 		// To ensure that there is no conflic with texture locations
@@ -463,7 +467,6 @@ namespace graphics
 	{
 	public:
 		GLuint vao; // Vertex Array Object
-		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void LoadFile(char* FILENAME, bool CLEARMEM);
 		void Unload();
 	private:
@@ -483,12 +486,13 @@ namespace graphics
 
 	class MeshBlend
 	{
-	public:
+	private:
 		size_t ices_size;
+	public:
 		GLuint vao; // Vertex Array Object
-		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void LoadFile(char* FILENAME);
 		void Unload();
+		size_t IcesSize() { return ices_size; };
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
@@ -496,12 +500,13 @@ namespace graphics
 
 	class MeshDeform
 	{
-	public:
+	private:
 		size_t ices_size;
+	public:
 		GLuint vao; // Vertex Array Object
-		void Draw(unsigned int TEXTURE, unsigned int SHADER);
 		void LoadFile(char* FILENAME);
 		void Unload();
+		size_t IcesSize() { return ices_size; };
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
@@ -628,8 +633,11 @@ enum ShaderStyle
 	SS_CHARA,
 };
 
-void DrawMesh(btID ID, graphics::Mesh& MESH,
-	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+void DrawMesh(btID ID, graphics::Mesh& MESH, graphics::TextureBase TEXTURE,
+	ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+
+void DrawParticles(graphics::Mesh& MESH, graphics::TextureBase TEXTURE,
+	graphics::Matrix4x4* MATRIX, btui32 COUNT);
 
 void DrawBlendMesh(btID ID, graphics::MeshBlend& MODEL, btf32 BLENDSTATE,
 	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
