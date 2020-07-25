@@ -627,7 +627,6 @@ render:
 	mat_fb = glm::rotate(mat_fb, glm::radians(wipe_time * 360.f * 2.f), glm::vec3(0.f, 0.f, 1.f));
 	mat_fb = glm::scale(mat_fb, glm::vec3(wipe_time, wipe_time, wipe_time));
 
-	// get matrix's uniform location and set matrix
 	graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
 
 	glBindVertexArray(quadVAO);
@@ -656,7 +655,11 @@ render:
 		mat_fb = glm::mat4(1.0f);
 		mat_fb = glm::translate(mat_fb, glm::vec3(0.5f, 0.f, 0.f));
 		mat_fb = glm::scale(mat_fb, glm::vec3(0.5f, 1.f, 1.f));
-		// get matrix's uniform location and set matrix
+
+		// screenwipe stuff (temp)
+		mat_fb = glm::rotate(mat_fb, glm::radians(wipe_time * 360.f * 2.f), glm::vec3(0.f, 0.f, 1.f));
+		mat_fb = glm::scale(mat_fb, glm::vec3(wipe_time, wipe_time, wipe_time));
+
 		graphics::GetShader(graphics::S_POST).setMat4(graphics::Shader::matTransform, *(graphics::Matrix4x4*)&mat_fb);
 
 		glBindVertexArray(quadVAO);
