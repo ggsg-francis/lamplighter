@@ -261,9 +261,10 @@ namespace acv
 
 	struct BaseItemCon : public BaseItem
 	{
+		btui32 use_count;
 		// Spell effects
-		btID id_effect = ID_NULL;
-		btID id_projectile = ID_NULL;
+		btID id_effect;
+		btID id_projectile;
 	};
 
 	// art assets archive

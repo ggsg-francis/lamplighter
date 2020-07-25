@@ -1203,6 +1203,7 @@ namespace core
 		{
 			IndexInitItemInstance(id, acv::item_types[item_template]);
 			GETITEMINST(id)->id_item_template = item_template;
+			ItemInit(id);
 			std::cout << "Created item " << id << std::endl;
 		}
 		else

@@ -19,11 +19,13 @@ namespace m
 	class Vector3;
 };
 
-// Tick this item
+// Initialize this item instance
+void ItemInit(btID item);
+// Tick this item instance
 void ItemTick(btID item, btf32 DT, Actor* OWNER);
-// Render graphics of this item
+// Render graphics of this item instance
 void ItemDraw(btID item, btID ITEMID, m::Vector2 OWNER_POSITION, btf32 OWNER_HEIGHT, m::Angle OWNER_YAW, m::Angle OWNER_PITCH);
-// Tell this item that it's just been equipped
+// Tell this item instance that it's just been equipped
 void ItemOnEquip(btID item, Actor* b);
 // Get left hand position
 m::Vector3 ItemLHPos(btID item);

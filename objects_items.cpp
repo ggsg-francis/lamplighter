@@ -478,9 +478,27 @@ void HeldConOnEquip(btID id, Actor* owner)
 	//
 }
 
+
+
+
+// sort these later
+
+void HeldNothingInit(btID id)
+{
+
+}
+void HeldConInit(btID id)
+{
+	HeldItem* self = GETITEMINST(id);
+	self->uses = ((acv::BaseItemCon*)acv::items[self->id_item_template])->use_count;
+}
+
 //________________________________________________________________________________________________________________________________
 // FUNCTION POINTER ARRAYS FOR REMOTE CALLING ------------------------------------------------------------------------------------
 
+void(*fpItemInit[ITEM_TYPE_COUNT])(btID) {
+	HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldConInit
+};
 void(*fpItemTick[ITEM_TYPE_COUNT])(btID, btf32, Actor*) {
 	HeldItemTick, HeldItemTick, HeldMelTick, HeldGunTick, HeldMgcTick, HeldConTick
 };
@@ -505,6 +523,9 @@ bool(*fpItemBlockMove[ITEM_TYPE_COUNT])(btID) {
 
 //-------------------------------- REMOTE FUNCTIONS
 
+void ItemInit(btID item) {
+	fpItemInit[GetItemType(item)](item);
+}
 void ItemTick(btID item, btf32 b, Actor* c) {
 	fpItemTick[GetItemType(item)](item, b, c);
 }
