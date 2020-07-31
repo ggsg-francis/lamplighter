@@ -92,4 +92,9 @@ struct HeldItem
 	btui32 uses = 32u;
 };
 
+union ItemInstance
+{
+	HeldItem item;
+};
+
 #endif

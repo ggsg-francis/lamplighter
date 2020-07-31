@@ -28,7 +28,12 @@ namespace core
 bool SaveExists()
 {
 	FILE* file = fopen("save/save.bin", "rb"); // Open file
-	return file != NULL;
+	if (file != NULL) {
+		fclose(file); // Close file
+		return true;
+	}
+	else
+		return false;
 }
 
 void SaveState()

@@ -219,17 +219,25 @@ namespace acv
 
 	struct BaseItem
 	{
+		enum BVBase { // 16 of these
+			eDETONATEABLE = 1u,
+			eUNUSED1 = 1u << 1u,
+			eUNUSED2 = 1u << 2u,
+			eUNUSED3 = 1u << 3u,
+		};
 		// Root
 		char handle[8];
 		bti8 name[64];
 		btID id_icon = 0u;
-		btID filler = 0u;
+		btui16 bv_base = 0u;
 		btf32 f_weight = 0.f;
 		btui32 f_value_base = 0u;
 		btf32 f_radius = 0.f;
 		btf32 f_model_height = 0.f;
 		btID id_mesh = 0u;
+		btID id_mesh_lod = 0u;
 		btID id_tex = 0u;
+		bti16 FILLER2 = 0u;
 	};
 
 	struct BaseItemEqp : public BaseItem
@@ -265,6 +273,16 @@ namespace acv
 		// Spell effects
 		btID id_effect;
 		btID id_projectile;
+	};
+
+	union ItemTemplate
+	{
+		BaseItem item;
+		BaseItemEqp itemeqp;
+		BaseItemMel itemmel;
+		BaseItemGun itemgun;
+		BaseItemMgc itemmgc;
+		BaseItemCon itemcon;
 	};
 
 	// art assets archive

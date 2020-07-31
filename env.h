@@ -124,26 +124,10 @@ namespace env
 		btui8 terrain_height_nw[WORLD_SIZE][WORLD_SIZE];
 		btui8 terrain_height_se[WORLD_SIZE][WORLD_SIZE];
 		btui8 terrain_height_sw[WORLD_SIZE][WORLD_SIZE];
+		btID spawn_id[WORLD_SIZE][WORLD_SIZE];
 	};
 
 	extern EnvNode eCells;
-
-	// New structure is much easier to add new properties to saved versions
-	/*struct EnvNode2
-	{
-		eflag::flag flags[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		btui16 prop[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		NodePropDirection prop_dir[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		btui8 terrain_height[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		btui8 terrain_material[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		btui8 water_height[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		btui8 terrain_height_ne[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		btui8 terrain_height_nw[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		btui8 terrain_height_se[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-		btui8 terrain_height_sw[WORLD_SIZE_OLD][WORLD_SIZE_OLD];
-	};
-
-	extern EnvNode2 eCells2;*/
 
 	bool Get(btui32 x, btui32 y, eflag::flag bit);
 	void Set(btui32 x, btui32 y, eflag::flag bit);

@@ -175,25 +175,12 @@ namespace core
 
 		#endif
 
-		// spawn items
+		// Spawn items
 		#ifndef DEF_SPAWN_ONLY_ENEMIES
-		for (int x = 0; x < WORLD_SIZE; ++x)
-		{
-			for (int y = 0; y < WORLD_SIZE; ++y)
-			{
-				if (env::Get(x, y, env::eflag::EF_SPAWN_ITEM_TEST))
-				{
-					//env::UnSet(x, y, env::eflag::EF_SPAWN_ITEM_TEST);
-					btf32 random = m::Random(0.f, acv::item_index);
-					//btf32 random = m::Random(0.f, 7.f);
-					btui32 rand_rnd = (btui32)floor(random);
-					SpawnNewEntityItem(rand_rnd, m::Vector2(x,y), 0.f);
-					/*if (rand_rnd < 2u)
-						SpawnEntity(prefab::prefab_ai_player, m::Vector2(x, y), 0.f);
-					else if (rand_rnd < 9u)
-						SpawnEntity(prefab::prefab_npc, m::Vector2(x, y), 0.f);
-					else
-						SpawnEntity(prefab::prefab_zombie, m::Vector2(x, y), 0.f);*/
+		for (int x = 0; x < WORLD_SIZE; ++x) {
+			for (int y = 0; y < WORLD_SIZE; ++y) {
+				if (env::Get(x, y, env::eflag::EF_SPAWN_ITEM_TEST)) {
+					SpawnNewEntityItem(env::eCells.spawn_id[x][y], m::Vector2(x,y), 0.f);
 				}
 			}
 		}
@@ -447,6 +434,20 @@ namespace core
 			else if (input::GetHit(input::key::FUNCTION_5)) // SAVE
 			{
 				env::SaveBin();
+			}
+			else if (input::GetHit(input::key::FUNCTION_6)) // TOGGLE SPAWN INDEX
+			{
+				if (env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST)) {
+					++env::eCells.spawn_id[GetCellX][GetCellY];
+					// inactive because we don't have a proper archive setup for entity templates
+					//if (env::eCells.spawn_id[GetCellX][GetCellY] >= acv::actor_template_index)
+					//	env::eCells.spawn_id[GetCellX][GetCellY] = 0u;
+				}
+				else if (env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_ITEM_TEST)) {
+					++env::eCells.spawn_id[GetCellX][GetCellY];
+					if (env::eCells.spawn_id[GetCellX][GetCellY] >= acv::item_index)
+						env::eCells.spawn_id[GetCellX][GetCellY] = 0u;
+				}
 			}
 			else if (input::GetHit(input::key::ACTION_A))
 			{
@@ -790,7 +791,8 @@ namespace core
 					if (env::Get(x, y, env::eflag::EF_SPAWN_ITEM_TEST))
 					{
 						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
-						DrawMesh(ID_NULL, res::GetM(res::m_equip_head_pickers), res::GetT(res::t_col_red), SS_NORMAL, matrix);
+						DrawMesh(ID_NULL, res::GetM(acv::items[env::eCells.spawn_id[x][y]]->id_mesh),
+							res::GetT(acv::items[env::eCells.spawn_id[x][y]]->id_tex), SS_NORMAL, matrix);
 					}
 					if (env::eCells.prop[x][y] == ID_NULL) env::eCells.prop[x][y] = 0u;
 					//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL

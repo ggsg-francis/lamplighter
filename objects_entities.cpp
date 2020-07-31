@@ -333,7 +333,13 @@ void DrawRestingItem(void* ent)
 	}
 	else
 	{
-		DrawMesh(item->id, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+		if (m::Length(graphics::GetViewPos() - m::Vector3(item->t.position.x, item->t.height, -item->t.position.y)) > 5.f)
+			DrawMesh(ID_NULL, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh_lod), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+		else
+			DrawMesh(ID_NULL, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+
+
+		//DrawMesh(item->id, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 	}
 }
 void DrawEditorPawn(void* ent)

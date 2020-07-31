@@ -186,7 +186,12 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 
-	if (owner->inputBV.get(Actor::IN_USE) && self->ePose == HOLDSTATE_AIM && self->fire_time < tickCount)
+	bool bauto = (bool)((acv::BaseItemGun*)acv::items[self->id_item_template])->b_automatic;
+	bool bgetfire;
+	if (bauto) bgetfire = owner->inputBV.get(Actor::IN_USE);
+	else bgetfire = owner->inputBV.get(Actor::IN_USE_HIT);
+
+	if (bgetfire && self->ePose == HOLDSTATE_AIM && self->fire_time < tickCount)
 	{
 		// if we try to fire, see if we can load the weapon
 		if (self->id_ammoInstance == ID_NULL)
@@ -201,10 +206,12 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 
 			aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
 			//loc_velocity.z -= 0.12f;
-			self->loc_velocity.z -= m::Random(0.03f, 0.06f);
+			self->loc_velocity.z -= m::Random(0.3f, 0.6f);
 			//pitch_velocity -= 19.f;
-			self->pitch = owner->viewPitch.Deg();
-			self->pitch_velocity -= m::Random(5.f, 7.5f);
+			//self->pitch_velocity -= m::Random(5.f, 7.5f);
+			self->pitch_velocity -= m::Random(30.f, 45.f);
+
+			self->pitch = owner->viewPitch.Deg() - self->pitch_velocity * 0.125f;
 
 			#ifdef DEF_AUTOAIM
 			if (owner->atk_target != BUF_NULL)
@@ -268,32 +275,15 @@ void HeldGunTick(btID id, btf32 dt, Actor* owner)
 		self->ang_aim_pitch += owner->aniSlideResponse * 30.f;
 		if (owner->aniRun) self->ang_aim_pitch += 15.f;
 	}
-}
-void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
-{
 
-	HeldItem* self = GETITEMINST(id);
-
-	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
-	self->t_item.SetRotation(0.f);
-
-	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
-
-	const btf32 mass = 15.f;
-	const btf32 spring_rot = 2.6f;
-	const btf32 spring_mov = 1.8f;
-	const btf32 damping = 8.f;
+	const btf32 mass = 4.f;
+	const btf32 spring_rot = 2.6f * 4.f;
+	const btf32 spring_mov = 1.8f * 4.f;
+	const btf32 damping = 7.f;
 
 	switch ((self->ePose))
 	{
 	case HOLDSTATE_IDLE:
-		/*m::SpringDamper(self->loc.x, self->loc_velocity.x, 0.13f, mass, spring_mov, damping);
-		m::SpringDamper(self->loc.y, self->loc_velocity.y, 0.9f, mass, spring_mov, damping);
-		m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.2f, mass, spring_mov, damping);
-
-		m::SpringDamper(self->yaw, self->yaw_velocity, -80.f, mass, spring_rot, damping);
-		m::SpringDamper(self->pitch, self->pitch_velocity, -33.f, mass, spring_rot, damping);*/
-
 		m::SpringDamper(self->loc.x, self->loc_velocity.x, 0.2f, mass, spring_mov, damping);
 		m::SpringDamper(self->loc.y, self->loc_velocity.y, 0.1f, mass, spring_mov, damping);
 		m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.2f, mass, spring_mov, damping);
@@ -303,16 +293,17 @@ void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 		break;
 	case HOLDSTATE_AIM:
 		//loc = m::Lerp(loc, m::Vector3(0.08f, 1.3f, 0.4f), 0.1f);
-		m::SpringDamper(self->loc.y, self->loc_velocity.y, 0.2f + self->ang_aim_pitch * -0.005f, mass, spring_mov, damping);
+		m::SpringDamper(self->loc.y, self->loc_velocity.y, 0.2f + self->ang_aim_pitch * -0.007f, mass, spring_mov, damping);
 		if (self->ang_aim_pitch > 0.f) // if looking down
 		{
 			m::SpringDamper(self->loc.x, self->loc_velocity.x, 0.08f + self->ang_aim_pitch * 0.001f, mass, spring_mov, damping);
-			m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.45f + self->ang_aim_pitch * -0.006f, mass, spring_mov, damping);
+			//m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.45f + self->ang_aim_pitch * -0.006f, mass, spring_mov, damping);
+			m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.6f + self->ang_aim_pitch * -0.006f, mass, spring_mov, damping);
 		}
 		else
 		{
 			m::SpringDamper(self->loc.x, self->loc_velocity.x, 0.08f, mass, spring_mov, damping);
-			m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.45f + self->ang_aim_pitch * 0.002f, mass, spring_mov, damping);
+			m::SpringDamper(self->loc.z, self->loc_velocity.z, 0.6f + self->ang_aim_pitch * 0.006f, mass, spring_mov, damping);
 		}
 		//yaw = m::Lerp(yaw, 0.f, 0.1f);
 		m::SpringDamper(self->yaw, self->yaw_velocity, self->ang_aim_offset_temp, mass, spring_rot, damping);
@@ -339,12 +330,25 @@ void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 		m::SpringDamper(self->pitch, self->pitch_velocity, -70.f, mass, spring_rot, damping);
 		break;
 	}
+}
+void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle ang, m::Angle pitch2)
+{
+
+	HeldItem* self = GETITEMINST(id);
+
+	self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
+	self->t_item.SetRotation(0.f);
+
+	self->t_item.Rotate(ang.Rad(), m::Vector3(0, 1, 0));
 
 	self->t_item.TranslateLocal(self->loc); // set pose
 	self->t_item.Rotate(glm::radians(self->yaw), m::Vector3(0.f, 1.f, 0.f));
 	self->t_item.Rotate(glm::radians(self->pitch), m::Vector3(1.f, 0.f, 0.f));
 
-	DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
+	if (m::Length(graphics::GetViewPos() - (self->t_item.GetPosition() * m::Vector3(1.f, 1.f, -1.f))) > 5.f)
+		DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh_lod), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
+	else
+		DrawMesh(ID_NULL, res::GetM(acv::items[itemid]->id_mesh), res::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
 
 #undef HOLDSTATE_AIM

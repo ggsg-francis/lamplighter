@@ -139,6 +139,7 @@ namespace serializer
 			std::cout << "BASE VALUE           " << ITEMI->f_value_base << std::endl;
 			std::cout << "RADIUS               " << ITEMI->f_radius << std::endl;
 			std::cout << "MESH ID              " << ITEMI->id_mesh << std::endl;
+			std::cout << "LOD MESH ID          " << ITEMI->id_mesh_lod << std::endl;
 			std::cout << "TEXTURE ID           " << ITEMI->id_tex << std::endl;
 
 			if (acv::item_types[i] == ITEM_TYPE_WPN_MATCHGUN)
@@ -154,6 +155,7 @@ namespace serializer
 			}
 			if (acv::item_types[i] == ITEM_TYPE_CONS)
 			{
+				std::cout << "BASE USE COUNT       " << CONSI->use_count << std::endl;
 				std::cout << "EFFECT               " << CONSI->id_effect << std::endl;
 				std::cout << "PROJECTILE           " << CONSI->id_projectile << std::endl;
 			}
