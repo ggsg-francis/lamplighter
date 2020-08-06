@@ -417,7 +417,7 @@ bool MainBoiler()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE); // I don't know what this does
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // Turn on double buffering
 
-	sdl_window = SDL_CreateWindow("TSOA", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	sdl_window = SDL_CreateWindow(DEF_PROJECTNAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		cfg::iWinX, cfg::iWinY, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN); // Create window
 	if (!sdl_window) return false; // Die if creation failed
 
@@ -511,7 +511,7 @@ int main(int argc, char * argv[]) // SDL Main
 	srand(time(NULL)); // Initialize the random seed
 	#endif
 
-	res::Init();
+	acv::Init();
 	#ifdef DEF_USE_CS
 	#ifdef WIN32
 	{ // (these variables not needed elsewhere)
@@ -749,7 +749,7 @@ loop_editor:
 exit:
 	core::End();
 	aud::End();
-	res::End();
+	acv::End();
 	graphics::End();
 	#ifdef DEF_NMP
 	network::End();

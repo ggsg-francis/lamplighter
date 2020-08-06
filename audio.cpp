@@ -23,13 +23,10 @@ namespace aud
 	{
 		"snd/fire_smg.wav",
 		"snd/swing.wav",
-		//"snd/swing_connect.wav",
-		"snd/hitMW.wav",
-		"snd/hey.wav",
-		/*"snd/footstep_snow_a.wav",
-		"snd/footstep_snow_b.wav",*/
+		"snd/hit.wav",
 		"snd/footstep_01.wav",
 		"snd/footstep_02.wav",
+		"snd/effect.wav",
 	};
 
 	cs_context_t* ctx;
@@ -46,9 +43,6 @@ namespace aud
 
 	void Init(void* handle)
 	{
-		//ctx = cs_make_context(handle, 44100, 8192, 0, 32);
-		//ctx = cs_make_context(handle, 100, 1, 1000, 32); 
-		//ctx = cs_make_context(handle, 44100, 8192, 1, 32);
 		ctx = cs_make_context(handle, 44100, 10, 1, 32);
 		if (ctx)
 		{
@@ -56,6 +50,7 @@ namespace aud
 			//do things
 			for (int i = 0; i < FILE_COUNT; ++i)
 			{
+				//cs_read_mem_wav
 				loaded[i] = cs_load_wav(fileNames[i]);
 				def[i] = cs_make_def(&loaded[i]);
 			}

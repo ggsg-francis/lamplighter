@@ -45,8 +45,8 @@ void ArchiverGUIRedraw()
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	graphics::DrawGUIBox(&res::GetT(res::t_gui_box), -64, 64, -32, 32, 4, 0);
-	//graphics::DrawGUIText("hewwo world", &res::GetT(res::t_gui_font), -64, 64, 32);
+	graphics::DrawGUIBox(&acv::GetT(acv::t_gui_box), -64, 64, -32, 32, 4, 0);
+	//graphics::DrawGUIText("hewwo world", &acv::GetT(acv::t_gui_font), -64, 64, 32);
 
 	char string[64];
 
@@ -54,7 +54,7 @@ void ArchiverGUIRedraw()
 	{
 		//itoa(acv::props[i].idMesh, string);
 		snprintf(string, 64, "ID mesh: %i\nID txtr: %i", acv::props[i].idMesh, acv::props[i].idTxtr);
-		graphics::DrawGUIText(string, &res::GetT(res::t_gui_font), -64, 64, (ARCHIVER_WINDOW_H / 2) - (i * 24));
+		graphics::DrawGUIText(string, &acv::GetT(acv::t_gui_font), -64, 64, (ARCHIVER_WINDOW_H / 2) - (i * 24));
 	}
 
 	SDL_GL_SwapWindow(sdl_window);

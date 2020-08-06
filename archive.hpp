@@ -5,6 +5,21 @@
 
 //#ifndef DEF_ARCHIVER
 
+// Number of characters in a filename
+#define FN_SIZE 64
+// Number of filenames (number of assets, in other words)
+#define FN_COUNT 128
+// -
+#define ITEMS_COUNT 64
+// -
+#define PROPS_COUNT 32
+// -
+#define SPELL_COUNT 8
+// -
+#define PROJECTILE_TEMPLATE_COUNT 8
+// -
+#define ACTORBASE_COUNT 8
+
 #define DEFAULT_TEXTURE 0u
 #define DEFAULT_MESH 1u
 #define DEFAULT_MESHBLEND 2u
@@ -12,12 +27,10 @@
 
 typedef btui16 assetID;
 
-namespace res
+namespace acv
 {
-	//extern graphics::ModifiableTexture skin_t[4];
-
-	// This is designed as a head start towards using an indexed asset system
-	// I'd like to say it won't make it into the final game, but I'm probably much too lazy to replace it.
+	// Indices of all the constant assets
+	// That means anything that needs to be referenced by the engine directly
 	// ONLY CONTAINS ASSET IDS DIRECTLY REFERENCED IN THE CODE, THIS LIST SHOULD GET SMALLER OVER TIME
 	// AND REQUIRE LESS MAINTENANCE AS THE ARCHIVE IS IMPROVED UPON
 	enum AssetConstantID : assetID // Maintain with 0000gameassets
@@ -32,13 +45,12 @@ namespace res
 		m_debugcell,
 		m_debug_sphere,
 		m_debug_monkey,
-		t_meat_test,
+		t_guide,
 		// Debug Colours
 		t_col_black,
 		t_col_red,
 		// Shadow
-		m_shadow,
-		t_shadow,
+		t_cursor,
 		// sky
 		m_skydome,
 		m_skystars,
@@ -51,26 +63,8 @@ namespace res
 		t_skin3,
 		t_skin4,
 		// Err....
-		m_ex1e_air_carrier,
-		// Equipment
-		m_equip_head_pickers,
-		md_equip_body_robe_01,
-		t_equip_body_robe_01,
-		t_equip_legs_robe_01,
-		// Matchlock gun
-		m_item_matchlock_01,
-		mb_item_matchlock_01_lever,
-		m_item_matchlock_01_rod,
-		mb_item_matchlock_01_rod_anim,
-		m_item_matchlock_01_pan,
-		m_item_matchlock_01_pan_open,
-		m_item_matchlock_01_pan_open_full,
-		t_item_matchlock_01,
+		t_watermark,
 		// Other shit
-		m_proj,
-		t_proj,
-		m_proj_2,
-		t_proj_2,
 		mb_smoke_trail_segment,
 		t_smoke_trail,
 		t_terrain_01,
@@ -92,6 +86,18 @@ namespace res
 		t_gui_hurt,
 	};
 
+	// art assets archive
+	struct archive_asset
+	{
+		char handle[8];
+		btui64 file_pos = 0u;
+		btui64 file_size = 0u;
+		AssetType type = ASSET_NONE;
+		bool loaded = false;
+		btui64 tickLastAccessed = 0u;
+		void* asset = nullptr;
+	};
+
 	graphics::Texture& GetT(btui32 index);
 	graphics::Mesh& GetM(btui32 index);
 	graphics::MeshBlend& GetMB(btui32 index);
@@ -103,26 +109,20 @@ namespace res
 
 	void Init();
 	void End();
-}
-//#endif
 
-// Number of characters in a filename
-#define FN_SIZE 64
-// Number of filenames (number of assets, in other words)
-#define FN_COUNT 128
-// -
-#define ITEMS_COUNT 64
-// -
-#define PROPS_COUNT 32
-// -
-#define SPELL_COUNT 8
-// -
-#define PROJECTILE_TEMPLATE_COUNT 8
-// -
-#define ACTORBASE_COUNT 8
+	#ifndef DEF_ARCHIVER
 
-namespace acv
-{	
+	void LoadAsset(btui32 INDEX);
+	void UnloadAsset(btui32 INDEX);
+	bool IsLoaded(btui32 INDEX);
+	btui32 AssetCount();
+
+	#endif // DEF_ARCHIVER
+
+	void ClearMemory();
+
+	//#endif
+
 	struct EnvProp
 	{
 		enum EnvPropFloorMat : btui8
@@ -131,6 +131,9 @@ namespace acv
 			FLOOR_WATER,
 			FLOOR_TAR,
 			FLOOR_QUICKSAND,
+			FLOOR_LAVA,
+			FLOOR_ICE,
+			FLOOR_ACID,
 		};
 		// well.... maybe this should be directly in the tiles
 		enum EnvPropPhysShape : btui8
@@ -285,17 +288,6 @@ namespace acv
 		BaseItemCon itemcon;
 	};
 
-	// art assets archive
-	struct archive_asset
-	{
-		char handle[8];
-		char filename[FN_SIZE];
-		AssetType type = ASSET_NONE;
-		bool loaded = false;
-		btui64 tickLastAccessed = 0u;
-		void* asset = nullptr;
-	};
-
 	//items (also make inaccessable)
 	extern BaseItem* items[ITEMS_COUNT];
 	extern ItemType item_types[ITEMS_COUNT];
@@ -312,15 +304,6 @@ namespace acv
 
 	extern ActorBase actor_templates[ACTORBASE_COUNT];
 	extern btui32 actor_template_index;
-
-	#ifndef DEF_ARCHIVER
-
-	void LoadAsset(btui32 INDEX);
-	void UnloadAsset(btui32 INDEX);
-
-	#endif // DEF_ARCHIVER
-
-	void ClearMemory();
 }
 
 #endif

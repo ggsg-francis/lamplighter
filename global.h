@@ -46,11 +46,16 @@
 #define SCREEN_POSTPROCESS_DOWNSAMPLE_DIVISION 4
 
 // Release version
-#define VERSION_MAJOR 16u
-#define VERSION_MINOR 2u
+#define VERSION_MAJOR 17u
+#define VERSION_MINOR 0u
 #define VERSION_COMMENT "prototype"
 
 #define MD_MATRIX_COUNT 4u
+
+#define ARCHIVE_FILENAME "_ARCHIVE"
+#define ARCHIVE_DATA_FILENAME "_ARCHIVE_DATA"
+#define ARCHIVE_C_FILENAME "../archive_data.h"
+#define ARCHIVE_MAX_LOADED_DATA 0b00000010000000000000000000000000
 
 // Buffer / ID definitions
 #define BUF_SIZE 512
@@ -86,6 +91,12 @@
 #define HOSTNAME_MAX_LEN 22
 
 #define forceinline __forceinline
+
+#if defined _MSC_VER
+#define PACKED_STRUCT(name) __pragma(pack(push,1)) struct name __pragma(pack(pop))
+#elif defined(__GNUC__)
+#define PACKED_STRUCT(name) struct __attribute__((packed)) name
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,7 +150,6 @@ extern "C" {
 	#define ENTITY_TYPE_EDITOR_PAWN 0u
 	#define ENTITY_TYPE_RESTING_ITEM 1u
 	#define ENTITY_TYPE_ACTOR 2u
-	// Count the above
 	#define ENTITY_TYPE_COUNT 3u
 
 	typedef btui8 ItemType;
@@ -151,16 +161,17 @@ extern "C" {
 	#define ITEM_TYPE_CONS 5u
 	#define ITEM_TYPE_COUNT 6u
 
-	typedef btui8 ActivatorType2;
+	typedef btui8 ActivatorType;
+	#define ACTIVATOR_TYPE_JUNK 0u
+	#define ACTIVATOR_TYPE_COUNT 1u
 
-	///*
 	typedef btui8 AssetType;
 	#define ASSET_NONE 0u
 	#define ASSET_TEXTURE_FILE 1u
 	#define ASSET_MESH_FILE 2u
 	#define ASSET_MESHBLEND_FILE 3u
 	#define ASSET_MESHDEFORM_FILE 4u
-	//*/
+	#define ASSET_SOUNDWAV_FILE 5u
 
 	#ifdef __cplusplus
 }

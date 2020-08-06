@@ -16,7 +16,7 @@ namespace core
 		{
 			if (GetEntityExists(i) && i != index) // If entity exists and is not me
 			{
-				if (ENTITY(i)->type == ENTITY_TYPE_ACTOR) // and is actor
+				if (GetEntityType(i) == ENTITY_TYPE_ACTOR) // and is actor
 				{
 					if (ACTOR(i)->atk_target == index)
 						ACTOR(i)->atk_target = BUF_NULL;
@@ -167,7 +167,7 @@ namespace core
 		return current_closest;
 	}
 
-	btID GetClosestActivator(btID index)
+	btID GetClosestEntityButDifferent(btID index)
 	{
 		btID id = BUF_NULL;
 		btf32 closestDist = 2.f;
@@ -222,7 +222,7 @@ namespace core
 		ENTITY(index)->state.damagestate = STATE_DAMAGE_MAX;
 		ENTITY(index)->radius = 0.15f;
 		ENTITY(index)->height = 0.7f;
-		if (ENTITY(index)->type == ENTITY_TYPE_ACTOR)
+		if (GetEntityType(index) == ENTITY_TYPE_ACTOR)
 		{
 			ACTOR(index)->atk_target = BUF_NULL;
 			ACTOR(index)->ai_target_ent = BUF_NULL;
@@ -284,6 +284,7 @@ namespace core
 	}
 	void NameEntity(btID id)
 	{
+		/*
 		// generate name
 		FILE* file = fopen("n.txt", "rb"); // Open file
 		if (file != NULL)
@@ -316,6 +317,10 @@ namespace core
 			}
 		}
 		fclose(file);
+		*/
+		btui32 random = (btui32)m::Random(0, TEMP_NAME_COUNT);
+		strcpy((char*)ACTOR(id)->name, TemplateNames[random]);
+
 	}
 
 	namespace prefab
@@ -332,7 +337,6 @@ namespace core
 
 	void prefab_pc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_ACTOR);
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
@@ -341,19 +345,15 @@ namespace core
 		ACTOR(id)->aiControlled = false;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
-		/*
-		ACTOR(id)->inventory.AddNew(6u);
-		ACTOR(id)->inventory.AddNew(4u);
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(7u); // heal
-		*/
+
+		ACTOR(id)->inventory.AddNew(6u); // sword
+		ACTOR(id)->inventory.AddNew(5u); // annoying bug
+
 		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_ACTOR);
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
@@ -362,22 +362,12 @@ namespace core
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
-		ACTOR(id)->inventory.AddNew(6u);
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(7u); // heal
+		//ACTOR(id)->inventory.AddNew(6u);
 		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_ACTOR);
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::playerhunter;
@@ -386,15 +376,11 @@ namespace core
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
-		ACTOR(id)->inventory.AddNew(0u);
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
-		ACTOR(id)->inventory.AddNew(8u); // magazine
+		ACTOR(id)->inventory.AddNew(3u); // gun
+		ACTOR(id)->inventory.AddNew(4u); // ammo
+		ACTOR(id)->inventory.AddNew(4u); // ammo
+		ACTOR(id)->inventory.AddNew(4u); // ammo
+		ACTOR(id)->inventory.AddNew(4u); // ammo
 		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 		//ACTOR(id)->inventory.items[ACTOR(id)->inv_active_slot];
 		//TODO: clean up this mess
@@ -402,7 +388,6 @@ namespace core
 
 	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_ACTOR);
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::undead;
@@ -417,7 +402,6 @@ namespace core
 
 	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)
 	{
-		IndexInitEntity(id, ENTITY_TYPE_EDITOR_PAWN);
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);

@@ -446,7 +446,7 @@ namespace graphics
 	struct Texture : TextureBase
 	{
 		// Load this texture from a file
-		void LoadFile(char* FILENAME);
+		void LoadFile(void* ACV_FILE);
 		// Generate as a read-write capable RGBA render texture
 		void InitRenderBuffer(GLuint FRAMEBUFFER, int WIDTH, int HEIGHT, bool LINEAR);
 		// Function that creates the mysterious 'intermediate' buffer
@@ -467,7 +467,7 @@ namespace graphics
 	{
 	public:
 		GLuint vao; // Vertex Array Object
-		void LoadFile(char* FILENAME, bool CLEARMEM);
+		void LoadFile(void* ACV_FILE, bool CLEARMEM);
 		void Unload();
 	private:
 		GLuint vbo; // Vertex Buffer Object
@@ -490,7 +490,7 @@ namespace graphics
 		size_t ices_size;
 	public:
 		GLuint vao; // Vertex Array Object
-		void LoadFile(char* FILENAME);
+		void LoadFile(void* ACV_FILE);
 		void Unload();
 		size_t IcesSize() { return ices_size; };
 	private:
@@ -504,7 +504,7 @@ namespace graphics
 		size_t ices_size;
 	public:
 		GLuint vao; // Vertex Array Object
-		void LoadFile(char* FILENAME);
+		void LoadFile(void* ACV_FILE);
 		void Unload();
 		size_t IcesSize() { return ices_size; };
 	private:

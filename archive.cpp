@@ -5,6 +5,10 @@
 // temp? for generating skin texture
 #include "maths.hpp"
 
+#if defined DEF_ARCHIVE_IN_CODE && !defined DEF_ARCHIVER
+#include "archive_data.h"
+#endif
+
 // hmmmmmmmmmm
 // from core
 extern btui64 tickCount;
@@ -32,37 +36,60 @@ namespace acv
 	// Assets
 
 	archive_asset assets[FN_COUNT];
-	btui32 assetCount;
+	btui32 assetCount = 0u;
+	btui64 asset_loaded_size = 0u;
 
 	//#ifndef DEF_ARCHIVER
 
-	void LoadAsset(btui32 i)
+	FILE* fileARCHIVE;
+
+	void Init()
 	{
-		if (!assets[i].loaded)
-		{
-			switch (assets[i].type)
-			{
-			case ASSET_TEXTURE_FILE:
-				assets[i].asset = new graphics::Texture;
-				((graphics::Texture*)assets[i].asset)->LoadFile(assets[i].filename);
-				assets[i].loaded = true; 
-				return;
-			case ASSET_MESH_FILE:
-				assets[i].asset = new graphics::Mesh;
-				((graphics::Mesh*)assets[i].asset)->LoadFile(assets[i].filename, false);
+		// Get sums
+		//btui8 sum = 0ui8;
+		//GetSum(ARCHIVE_FILENAME, &sum);
+		//GetSum(ARCHIVE_DATA_FILENAME, &sum);
+
+		serializer::LoadArchive(ARCHIVE_FILENAME);
+
+		fileARCHIVE = fopen(ARCHIVE_DATA_FILENAME, "rb");
+	}
+	void End()
+	{
+		acv::ClearMemory();
+
+		if (fileARCHIVE != NULL)
+			fclose(fileARCHIVE);
+	}
+
+	void LoadAsset(btui32 i) {
+		if (!assets[i].loaded) {
+			if (fileARCHIVE != NULL) {
+				int err = fseek(fileARCHIVE, assets[i].file_pos, SEEK_SET); // Seek file beginning
+				switch (assets[i].type) {
+				case ASSET_TEXTURE_FILE:
+					assets[i].asset = new graphics::Texture;
+					((graphics::Texture*)assets[i].asset)->LoadFile(fileARCHIVE);
+					goto finish;
+				case ASSET_MESH_FILE:
+					assets[i].asset = new graphics::Mesh;
+					((graphics::Mesh*)assets[i].asset)->LoadFile(fileARCHIVE, false);
+					goto finish;
+				case ASSET_MESHBLEND_FILE:
+					assets[i].asset = new graphics::MeshBlend;
+					((graphics::MeshBlend*)assets[i].asset)->LoadFile(fileARCHIVE);
+					goto finish;
+				case ASSET_MESHDEFORM_FILE:
+					assets[i].asset = new graphics::MeshDeform;
+					((graphics::MeshDeform*)assets[i].asset)->LoadFile(fileARCHIVE);
+					goto finish;
+				};
+			finish:
 				assets[i].loaded = true;
-				return;
-			case ASSET_MESHBLEND_FILE:
-				assets[i].asset = new graphics::MeshBlend;
-				((graphics::MeshBlend*)assets[i].asset)->LoadFile(assets[i].filename);
-				assets[i].loaded = true;
-				return;
-			case ASSET_MESHDEFORM_FILE:
-				assets[i].asset = new graphics::MeshDeform;
-				((graphics::MeshDeform*)assets[i].asset)->LoadFile(assets[i].filename);
-				assets[i].loaded = true;
-				return;
-			};
+				asset_loaded_size += assets[i].file_size;
+				btf64 use_amount = (btf64)asset_loaded_size / (btf64)ARCHIVE_MAX_LOADED_DATA;
+				printf("Loaded asset %i | Usage: %i of %i , %f\n", i, asset_loaded_size, ARCHIVE_MAX_LOADED_DATA, (btf32)use_amount * 100.f);
+			}
 		}
 	}
 
@@ -86,9 +113,20 @@ namespace acv
 				return;
 			};
 			assets[i].loaded = false;
+			asset_loaded_size -= assets[i].file_size;
 			delete assets[i].asset;
 		}
 	};
+
+	bool IsLoaded(btui32 i)
+	{
+		return assets[i].loaded;
+	}
+
+	btui32 AssetCount()
+	{
+		return assetCount;
+	}
 
 	//#endif // DEF_ARCHIVER
 
@@ -105,11 +143,9 @@ namespace acv
 		}
 		#endif // DEF_ARCHIVER
 	}
-}
 
-//#ifndef DEF_ARCHIVER
-namespace res
-{
+	//#ifndef DEF_ARCHIVER
+
 	forceinline void AssetAccessCheck(btui32& index)
 	{
 		// Load the asset if needed
@@ -171,19 +207,22 @@ namespace res
 
 	graphics::ModifiableTexture skin_t[4];
 
-	void Init()
+	// put in network code
+	void GetSum(char* fn, btui8* out_sum)
 	{
-		serializer::LoadArchive("res/archive.UwUa");
-
-		//for now, just load everything
-		/*for (btui32 i = 0u; i < acv::assetCount; i++)
-		{
-			acv::LoadAsset(i);
-		}*/
+		btui8 read = 0ui8;
+		FILE* file = fopen(fn, "rb"); // Open file
+		if (file != NULL) {
+			fseek(file, 0, SEEK_END); // Seek file end
+			btui64 bytecount = ftell(file); // Get file size
+			fseek(file, 0, SEEK_SET); // Seek file beginning
+			// Add bytes
+			for (btui64 i = 0; i < bytecount; ++i) {
+				fread(&read, 1, 1, file);
+				*out_sum += read;
+			}
+			fclose(file);
+		}
 	}
-	void End()
-	{
-		acv::ClearMemory();
-	}
+	//#endif
 }
-//#endif

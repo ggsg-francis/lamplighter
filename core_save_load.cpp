@@ -14,7 +14,10 @@
 #define SIZE_64 8
 
 extern mem::ObjBuf<EntAddr, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> block_entity;
-extern mem::ObjBuf<EntAddr, ItemType, ENTITY_TYPE_NULL, BUF_SIZE> block_item;
+extern mem::ObjBuf<RestingItem, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_resting_item;
+extern mem::ObjBuf<Actor, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_chara;
+
+extern mem::ObjBuf<HeldItem, ItemType, ENTITY_TYPE_NULL, BUF_SIZE> buf_iteminst;
 
 namespace core
 {
@@ -41,9 +44,9 @@ void SaveState()
 	printf("SAVE FUNCTION CALLED ON TICK %i\n", tickCount);
 
 	// clean all unused item instances
-	for (btID index_item = 0; index_item <= block_item.index_end; index_item++) // For every item
+	for (btID index_item = 0; index_item <= buf_iteminst.index_end; index_item++) // For every item
 	{
-		if (block_item.Used(index_item))
+		if (buf_iteminst.Used(index_item))
 		{
 			btui32 item_reference_count = 0u;
 			for (btID index_ent = 0; index_ent <= block_entity.index_end; index_ent++) // For every entity
@@ -51,7 +54,7 @@ void SaveState()
 				if (block_entity.Used(index_ent))
 				{
 					// if this entity has an inventory
-					if (ENTITY(index_ent)->type == ENTITY_TYPE_ACTOR)
+					if (GetEntityType(index_ent) == ENTITY_TYPE_ACTOR)
 					{
 						// for every invntory slot
 						for (btui32 inv_slot = 0; inv_slot < ACTOR(index_ent)->inventory.items.Size(); ++inv_slot)
@@ -64,7 +67,7 @@ void SaveState()
 							}
 						}
 					}
-					else if (ENTITY(index_ent)->type == ENTITY_TYPE_RESTING_ITEM)
+					else if (GetEntityType(index_ent) == ENTITY_TYPE_RESTING_ITEM)
 					{
 						// if this entity hold this item
 						if (ITEM(index_ent)->item_instance == index_item)
@@ -101,58 +104,101 @@ void SaveState()
 
 		fwrite(&block_entity.index_end, SIZE_16, 1, file);
 		fwrite(block_entity.TypeRW(), SIZE_8, (size_t)(block_entity.index_end + 1u), file);
+		fwrite(&block_entity.Data(0), sizeof(EntAddr), (size_t)(block_entity.index_end + 1u), file);
+
+		fwrite(&buf_resting_item.index_end, SIZE_16, 1, file);
+		fwrite(buf_resting_item.TypeRW(), SIZE_8, (size_t)(buf_resting_item.index_end + 1u), file);
+
+		fwrite(&buf_chara.index_end, SIZE_16, 1, file);
+		fwrite(buf_chara.TypeRW(), SIZE_8, (size_t)(buf_chara.index_end + 1u), file);
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 		{
 			if (block_entity.Used(i))
 			{
 				Entity* entptr = ENTITY(i);
-
-				fwrite(&entptr->type, SIZE_8, 1, file);
-
-				fwrite(&entptr->radius, SIZE_32, 1, file);
-				fwrite(&entptr->height, SIZE_32, 1, file);
+				fwrite(&entptr->name, 32, 1, file);
 				fwrite(&entptr->properties, SIZE_8, 1, file);
 				fwrite(&entptr->faction, SIZE_8, 1, file);
-				fwrite(&entptr->state.damagestate, SIZE_16, 1, file); // duplicated due to it used to being a 32 bit number
-				fwrite(&entptr->state.damagestate, SIZE_16, 1, file); // duplicated due to it used to being a 32 bit number
+				fwrite(&entptr->state.damagestate, SIZE_16, 1, file);
 				fwrite(&entptr->state.stateFlags, SIZE_64, 1, file);
 				fwrite(&entptr->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
+				fwrite(&entptr->radius, SIZE_32, 1, file);
+				fwrite(&entptr->height, SIZE_32, 1, file);
 				fwrite(&entptr->t.position.x, SIZE_32, 1, file);
 				fwrite(&entptr->t.position.y, SIZE_32, 1, file);
+				fwrite(&entptr->t.velocity.x, SIZE_32, 1, file);
+				fwrite(&entptr->t.velocity.y, SIZE_32, 1, file);
 				fwrite(&entptr->t.height, SIZE_32, 1, file);
+				fwrite(&entptr->t.height_velocity, SIZE_32, 1, file);
 				fwrite(&entptr->t.yaw, SIZE_32, 1, file);
+				fwrite(&entptr->t.csi, sizeof(CellSpace), 1, file);
+				fwrite(&entptr->slideVelocity.x, SIZE_32, 1, file);
+				fwrite(&entptr->slideVelocity.y, SIZE_32, 1, file);
+				fwrite(&entptr->grounded, SIZE_8, 1, file);
 
-				switch (ENTITY(i)->type)
+				switch (GetEntityType(i))
 				{
 				case ENTITY_TYPE_RESTING_ITEM:
+				{
 					fwrite(&ITEM(i)->item_instance, SIZE_16, 1, file);
-					break;
+				}
+				break;
 				case ENTITY_TYPE_ACTOR:
-					fwrite(&ACTOR(i)->name, 32, 1, file);
-					fwrite(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
-					fwrite(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
-					fwrite(&ACTOR(i)->speed, SIZE_32, 1, file);
-					fwrite(&ACTOR(i)->agility, SIZE_32, 1, file);
-					fwrite(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
-					fwrite(&ACTOR(i)->inv_active_slot, SIZE_32, 1, file);
-					fwrite(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
-					fwrite(&ACTOR(i)->skin_col_a, sizeof(m::Vector3), 1, file);
-					fwrite(&ACTOR(i)->skin_col_b, sizeof(m::Vector3), 1, file);
-					fwrite(&ACTOR(i)->skin_col_c, sizeof(m::Vector3), 1, file);
-					break;
+				{
+					Actor* actptr = ACTOR(i);
+					fwrite(&actptr->inputBV, SIZE_16, 1, file);
+					fwrite(&actptr->input.x, SIZE_32, 1, file);
+					fwrite(&actptr->input.y, SIZE_32, 1, file);
+					fwrite(&actptr->viewYaw, SIZE_32, 1, file);
+					fwrite(&actptr->viewPitch, SIZE_32, 1, file);
+					fwrite(&actptr->actorBase, SIZE_8, 1, file);
+					fwrite(&actptr->skin_col_a, sizeof(m::Vector3), 1, file);
+					fwrite(&actptr->skin_col_b, sizeof(m::Vector3), 1, file);
+					fwrite(&actptr->skin_col_c, sizeof(m::Vector3), 1, file);
+					fwrite(&actptr->speed, SIZE_32, 1, file);
+					fwrite(&actptr->agility, SIZE_32, 1, file);
+					fwrite(&actptr->stamina, sizeof(MaxedStat), 1, file);
+					fwrite(&actptr->inventory, sizeof(Inventory), 1, file);
+					fwrite(&actptr->inv_active_slot, SIZE_32, 1, file);
+					fwrite(&actptr->atk_target, SIZE_16, 1, file);
+					fwrite(&actptr->atkYaw, SIZE_32, 1, file);
+					fwrite(&actptr->staticPropertiesBV, SIZE_8, 1, file);
+					fwrite(&actptr->foot_state, SIZE_8, 1, file);
+					fwrite(&actptr->jump_state, SIZE_8, 1, file);
+					fwrite(&actptr->animationBV, SIZE_8, 1, file);
+					fwrite(&actptr->t_body, sizeof(Transform3D), 1, file);
+					fwrite(&actptr->t_head, sizeof(Transform3D), 1, file);
+					fwrite(&actptr->fpCurrentL, sizeof(m::Vector3), 1, file);
+					fwrite(&actptr->fpCurrentR, sizeof(m::Vector3), 1, file);
+					fwrite(&actptr->ani_body_lean, sizeof(m::Vector2), 1, file);
+					fwrite(&actptr->aniStandHeight, SIZE_32, 1, file);
+					fwrite(&actptr->aniCrouch, SIZE_8, 1, file);
+					fwrite(&actptr->aniSlideResponse, SIZE_32, 1, file);
+					fwrite(&actptr->aniRun, SIZE_8, 1, file);
+					fwrite(&actptr->aniTimer, SIZE_32, 1, file);
+					fwrite(&actptr->lastGroundFootPos, sizeof(m::Vector3), 1, file);
+					fwrite(&actptr->aniHandHoldTarget, SIZE_16, 1, file);
+					fwrite(&actptr->ai_target_ent, SIZE_16, 1, file);
+					fwrite(&actptr->ai_ally_ent, SIZE_16, 1, file);
+					fwrite(&actptr->aiControlled, SIZE_8, 1, file);
+					fwrite(&actptr->ai_path, sizeof(path::Path), 1, file);
+					fwrite(&actptr->ai_path_current_index, SIZE_8, 1, file);
+					fwrite(&actptr->ai_pathing, SIZE_8, 1, file);
+				}
+				break;
 				}
 			}
 		}
 
 		//-------------------------------- ITEMS
 
-		fwrite(&block_item.index_end, SIZE_16, 1, file);
-		fwrite(block_item.TypeRW(), SIZE_8, (size_t)(block_item.index_end + 1u), file);
+		fwrite(&buf_iteminst.index_end, SIZE_16, 1, file);
+		fwrite(buf_iteminst.TypeRW(), SIZE_8, (size_t)(buf_iteminst.index_end + 1u), file);
 
-		for (btID i = 0; i <= block_item.index_end; i++) // For every item
+		for (btID i = 0; i <= buf_iteminst.index_end; i++) // For every item
 		{
-			if (block_item.Used(i))
+			if (buf_iteminst.Used(i))
 			{
 				HeldItem* itemptr = GETITEMINST(i);
 
@@ -220,70 +266,104 @@ void LoadStateFileV001()
 
 		fread(&block_entity.index_end, SIZE_16, 1, file);
 		fread(block_entity.TypeRW(), SIZE_8, (size_t)(block_entity.index_end + 1u), file);
+		fread(&block_entity.Data(0), sizeof(EntAddr), (size_t)(block_entity.index_end + 1u), file);
+
+		fread(&buf_resting_item.index_end, SIZE_16, 1, file);
+		fread(buf_resting_item.TypeRW(), SIZE_8, (size_t)(buf_resting_item.index_end + 1u), file);
+
+		fread(&buf_chara.index_end, SIZE_16, 1, file);
+		fread(buf_chara.TypeRW(), SIZE_8, (size_t)(buf_chara.index_end + 1u), file);
 
 		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
 		{
 			if (block_entity.Used(i))
 			{
-				EntityType type_temp;
-				fread(&type_temp, SIZE_8, 1, file);
+				Entity* entptr = ENTITY(i);
+				fread(&entptr->name, 32, 1, file);
+				fread(&entptr->properties, SIZE_8, 1, file);
+				fread(&entptr->faction, SIZE_8, 1, file);
+				fread(&entptr->state.damagestate, SIZE_16, 1, file);
+				fread(&entptr->state.stateFlags, SIZE_64, 1, file);
+				fread(&entptr->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
+				fread(&entptr->radius, SIZE_32, 1, file);
+				fread(&entptr->height, SIZE_32, 1, file);
+				fread(&entptr->t.position.x, SIZE_32, 1, file);
+				fread(&entptr->t.position.y, SIZE_32, 1, file);
+				fread(&entptr->t.velocity.x, SIZE_32, 1, file);
+				fread(&entptr->t.velocity.y, SIZE_32, 1, file);
+				fread(&entptr->t.height, SIZE_32, 1, file);
+				fread(&entptr->t.height_velocity, SIZE_32, 1, file);
+				fread(&entptr->t.yaw, SIZE_32, 1, file);
+				fread(&entptr->t.csi, sizeof(CellSpace), 1, file);
+				fread(&entptr->slideVelocity.x, SIZE_32, 1, file);
+				fread(&entptr->slideVelocity.y, SIZE_32, 1, file);
+				fread(&entptr->grounded, SIZE_8, 1, file);
 
-				// initialize entity here (eg. new) 
-				IndexInitEntity(i, type_temp);
-
-				ENTITY(i)->type = type_temp;
-				fread(&ENTITY(i)->radius, SIZE_32, 1, file);
-				fread(&ENTITY(i)->height, SIZE_32, 1, file);
-				fread(&ENTITY(i)->properties, SIZE_8, 1, file);
-				fread(&ENTITY(i)->faction, SIZE_8, 1, file);
-				fread(&ENTITY(i)->state.damagestate, SIZE_16, 1, file); // duplicated due to it used to being a 32 bit number
-				fread(&ENTITY(i)->state.damagestate, SIZE_16, 1, file); // duplicated due to it used to being a 32 bit number
-				fread(&ENTITY(i)->state.stateFlags, SIZE_64, 1, file);
-				fread(&ENTITY(i)->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
-				fread(&ENTITY(i)->t.position.x, SIZE_32, 1, file);
-				fread(&ENTITY(i)->t.position.y, SIZE_32, 1, file);
-				fread(&ENTITY(i)->t.height, SIZE_32, 1, file);
-				fread(&ENTITY(i)->t.yaw, SIZE_32, 1, file);
-
-				switch (ENTITY(i)->type)
+				switch (GetEntityType(i))
 				{
 				case ENTITY_TYPE_RESTING_ITEM:
+				{
 					fread(&ITEM(i)->item_instance, SIZE_16, 1, file);
-					break;
-				case ENTITY_TYPE_ACTOR:
-					fread(&ACTOR(i)->name, 32, 1, file);
-					fread(&ACTOR(i)->viewYaw, SIZE_32, 1, file);
-					fread(&ACTOR(i)->viewPitch, SIZE_32, 1, file);
-					fread(&ACTOR(i)->speed, SIZE_32, 1, file);
-					fread(&ACTOR(i)->agility, SIZE_32, 1, file);
-					fread(&ACTOR(i)->inventory, sizeof(Inventory), 1, file);
-					fread(&ACTOR(i)->inv_active_slot, SIZE_32, 1, file);
-					fread(&ACTOR(i)->aiControlled, SIZE_8, 1, file);
-					ACTOR(i)->ai_target_ent = ID_NULL; // temp
-					ACTOR(i)->ai_ally_ent = ID_NULL; // temp
-					fread(&ACTOR(i)->skin_col_a, sizeof(m::Vector3), 1, file);
-					fread(&ACTOR(i)->skin_col_b, sizeof(m::Vector3), 1, file);
-					fread(&ACTOR(i)->skin_col_c, sizeof(m::Vector3), 1, file);
-					break;
 				}
-
-				std::cout << "Loaded entity ID " << i << std::endl;
+				break;
+				case ENTITY_TYPE_ACTOR:
+				{
+					Actor* actptr = ACTOR(i);
+					fread(&actptr->inputBV, SIZE_16, 1, file);
+					fread(&actptr->input.x, SIZE_32, 1, file);
+					fread(&actptr->input.y, SIZE_32, 1, file);
+					fread(&actptr->viewYaw, SIZE_32, 1, file);
+					fread(&actptr->viewPitch, SIZE_32, 1, file);
+					fread(&actptr->actorBase, SIZE_8, 1, file);
+					fread(&actptr->skin_col_a, sizeof(m::Vector3), 1, file);
+					fread(&actptr->skin_col_b, sizeof(m::Vector3), 1, file);
+					fread(&actptr->skin_col_c, sizeof(m::Vector3), 1, file);
+					fread(&actptr->speed, SIZE_32, 1, file);
+					fread(&actptr->agility, SIZE_32, 1, file);
+					fread(&actptr->stamina, sizeof(MaxedStat), 1, file);
+					fread(&actptr->inventory, sizeof(Inventory), 1, file);
+					fread(&actptr->inv_active_slot, SIZE_32, 1, file);
+					fread(&actptr->atk_target, SIZE_16, 1, file);
+					fread(&actptr->atkYaw, SIZE_32, 1, file);
+					fread(&actptr->staticPropertiesBV, SIZE_8, 1, file);
+					fread(&actptr->foot_state, SIZE_8, 1, file);
+					fread(&actptr->jump_state, SIZE_8, 1, file);
+					fread(&actptr->animationBV, SIZE_8, 1, file);
+					fread(&actptr->t_body, sizeof(Transform3D), 1, file);
+					fread(&actptr->t_head, sizeof(Transform3D), 1, file);
+					fread(&actptr->fpCurrentL, sizeof(m::Vector3), 1, file);
+					fread(&actptr->fpCurrentR, sizeof(m::Vector3), 1, file);
+					fread(&actptr->ani_body_lean, sizeof(m::Vector2), 1, file);
+					fread(&actptr->aniStandHeight, SIZE_32, 1, file);
+					fread(&actptr->aniCrouch, SIZE_8, 1, file);
+					fread(&actptr->aniSlideResponse, SIZE_32, 1, file);
+					fread(&actptr->aniRun, SIZE_8, 1, file);
+					fread(&actptr->aniTimer, SIZE_32, 1, file);
+					fread(&actptr->lastGroundFootPos, sizeof(m::Vector3), 1, file);
+					fread(&actptr->aniHandHoldTarget, SIZE_16, 1, file);
+					fread(&actptr->ai_target_ent, SIZE_16, 1, file);
+					fread(&actptr->ai_ally_ent, SIZE_16, 1, file);
+					fread(&actptr->aiControlled, SIZE_8, 1, file);
+					fread(&actptr->ai_path, sizeof(path::Path), 1, file);
+					fread(&actptr->ai_path_current_index, SIZE_8, 1, file);
+					fread(&actptr->ai_pathing, SIZE_8, 1, file);
+				}
+				break;
+				}
 			}
 		}
 
 		//-------------------------------- ITEMS
 
-		fread(&block_item.index_end, SIZE_16, 1, file);
-		fread(block_item.TypeRW(), SIZE_8, (size_t)(block_item.index_end + 1u), file);
+		fread(&buf_iteminst.index_end, SIZE_16, 1, file);
+		fread(buf_iteminst.TypeRW(), SIZE_8, (size_t)(buf_iteminst.index_end + 1u), file);
 
-		for (btID i = 0; i <= block_item.index_end; i++) // For every entity
+		for (btID i = 0; i <= buf_iteminst.index_end; i++) // For every entity
 		{
-			if (block_item.Used(i))
+			if (buf_iteminst.Used(i))
 			{
 				btID template_temp;
 				fread(&template_temp, SIZE_16, 1, file);
-
-				IndexInitItemInstance(i, acv::item_types[template_temp]);
 
 				GETITEMINST(i)->id_item_template = template_temp;
 
@@ -306,8 +386,6 @@ void LoadStateFileV001()
 				fread(&GETITEMINST(i)->charge, SIZE_32, 1, file);
 
 				fread(&GETITEMINST(i)->uses, SIZE_32, 1, file);
-
-				std::cout << "Loaded item ID " << i << std::endl;
 			}
 		}
 
@@ -347,6 +425,8 @@ void LoadState()
 			LoadStateFileV001();
 			break;
 		}
+
+		core::RegenCellRefs();
 	}
 }
 

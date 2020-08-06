@@ -13,8 +13,11 @@ void RunSerializer()
 {
 	serializer::convert_files_src("0000gameassets.uwu");
 	serializer::InterpretArchiveContents("0000gamecontents.uwu");
-	serializer::SaveArchive("res/archive.UwUa");
+	serializer::SaveArchive(ARCHIVE_FILENAME);
 	acv::ClearMemory();
+	#ifdef DEF_ARCHIVE_IN_CODE
+	serializer::ARCHIVE_to_C();
+	#endif
 }
 
 int main(int argc, char * argv[])
@@ -54,7 +57,7 @@ int main(int argc, char * argv[])
 	//*
 
 	graphics::Init();
-	res::Init();
+	acv::Init();
 
 	while (true)
 	{
@@ -63,7 +66,7 @@ int main(int argc, char * argv[])
 		//ArchiverGUITick();
 	}
 
-	res::End();
+	acv::End();
 	graphics::End();
 
 	//*/

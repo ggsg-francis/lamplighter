@@ -25,7 +25,7 @@ void Actor_OnHitGround(Actor* chr)
 	if (chr->foot_state == Actor::eL_DOWN) chr->foot_state = Actor::eR_DOWN;
 	else if (chr->foot_state == Actor::eR_DOWN) chr->foot_state = Actor::eL_DOWN;
 }
-void Entity_Deintersect(Entity* ent, CellSpace& csi)
+void Entity_Deintersect(btID id, Entity* ent, CellSpace& csi)
 {
 	btf32 offsetx, offsety;
 	bool overlapN, overlapS, overlapE, overlapW, touchNS = false, touchEW = false;
@@ -51,7 +51,7 @@ void Entity_Deintersect(Entity* ent, CellSpace& csi)
 							if (dist < combined_radius && dist > 0.f)
 							{
 								// TEMP! if same type
-								if (ent->type == ENTITY(core::CellEntity(x, y, e))->type)
+								if (GetEntityType(id) == GetEntityType(core::CellEntity(x, y, e)))
 								{
 									ent->t.position += m::Normalize(vec) * (combined_radius - dist) * 0.5f;
 									ENTITY(core::CellEntity(x, y, e))->t.position -= m::Normalize(vec) * (combined_radius - dist) * 0.5f;
@@ -157,7 +157,7 @@ void Entity_Deintersect(Entity* ent, CellSpace& csi)
 	}
 	//*/
 }
-void Entity_CheckGrounded(Entity* ent)
+void Entity_CheckGrounded(btID id, Entity* ent)
 {
 	btf32 th;
 	env::GetHeight(th, ent->t.csi);
@@ -166,7 +166,7 @@ void Entity_CheckGrounded(Entity* ent)
 	{
 		ent->grounded = false;
 		ent->slideVelocity *= 0.f;
-		if (ent->type == ENTITY_TYPE_ACTOR)
+		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
 			((Actor*)ent)->jump_state = Actor::eJUMP_JUMP;
 	}
 	else if (ent->t.height_velocity > 0.f)
@@ -176,14 +176,14 @@ void Entity_CheckGrounded(Entity* ent)
 	}
 	else if (!ent->grounded)
 	{
-		if (ent->type == ENTITY_TYPE_ACTOR)
-			ent->grounded = RayEntity(ent->id, ((Actor*)ent)->aniStandHeight);
+		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
+			ent->grounded = RayEntity(id, ((Actor*)ent)->aniStandHeight);
 		else
-			ent->grounded = RayEntity(ent->id, 0.f);
+			ent->grounded = RayEntity(id, 0.f);
 		if (ent->grounded)
 		{
 			ent->slideVelocity = ent->t.velocity;
-			if (ent->type == ENTITY_TYPE_ACTOR) {
+			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
 				Actor_OnHitGround((Actor*)ent);
 			}
 		}
@@ -202,50 +202,132 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 		core::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
 	}
 
-	Entity_CheckGrounded(ent);
+	Entity_CheckGrounded(id, ent);
 
 	// contains ground height...
 	btf32 ground_height;
 
-	btf32 distBelowSand;
+	btf32 distBelowSand = 0.f;
 	// look at how long this is
 	switch (acv::props[env::eCells.prop[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]].floorType)
 	{
 	case acv::EnvProp::FLOOR_QUICKSAND:
-		ent->t.height -= 0.0025f;
 		env::GetHeight(ground_height, ent->t.csi);
-		// if above the ground
-		if (ent->t.height + ent->t.height_velocity > ground_height)
+		if (ent->grounded)
 		{
-			ent->t.height_velocity -= 0.006f; // Add gravity
-			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
-			ent->slideVelocity *= 0.8f;
+			ent->t.height -= 0.005f;
+			
+			// slow height velocity
+			ent->t.height_velocity *= 0.9f;
+			ent->slideVelocity *= 0.9f;
 
-			ent->t.position += ent->t.velocity; // Apply velocity
-			ent->t.height += ent->t.height_velocity; // Apply velocity
+			// Multiplier reduces the depth at which you can't move
+			distBelowSand = (ent->t.height - ground_height) * 1.4f;
+			if (-distBelowSand > ent->height) {
+				ent->state.Damage(1000, 0);
+			}
+			distBelowSand = m::Clamp(distBelowSand, 0.f, 1.f);
+			ent->t.velocity *= distBelowSand;
 		}
 		else
 		{
-			// remove all velocity
-			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.7f;
-
-			// Multiplier reduces the depth at which you can't move
-			distBelowSand = (ground_height - ent->t.height) * 2.5f;
-			if (distBelowSand > ent->height)
-			{
-				if (ent->type == ENTITY_TYPE_RESTING_ITEM)
-					int bp = 0;
-				ent->state.Damage(1000, 0);
-			}
-			if (distBelowSand > 1.f) distBelowSand = 1.f;
-			ent->t.position += (ent->t.velocity * (1.f - distBelowSand)); // Apply velocity
+			// Add gravity
+			ent->t.height_velocity -= 0.20f * dt;
+			// Velocity reduction (Air drag)
+			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
 		}
+		if (ent->grounded) ent->t.position += ent->slideVelocity;
+		ent->t.position += ent->t.velocity; // Apply velocity
+		ent->t.height += ent->t.height_velocity; // Apply velocity
 		break;
+	case acv::EnvProp::FLOOR_ICE: // same as normal ground but dont slow slide
+		if (ent->grounded)
+		{
+			env::GetHeight(ground_height, ent->t.csi);
+			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
+				ent->t.height = m::Lerp(ent->t.height, ground_height + ((Actor*)ent)->aniStandHeight, 6.f * dt);
+			}
+			else {
+				ent->t.height = ground_height;
+				ent->t.velocity *= 0.f; // Remove slide on non actors
+			}
+
+			m::Vector2 slope;
+			env::GetSlope(slope.x, slope.y, ent->t.csi);
+
+			m::Vector2 surfMod(1.f, 1.f);
+
+			//ent->slideVelocity += ent->t.velocity * 0.1f; // a reasonable implementation would look like this
+			ent->slideVelocity += ent->t.velocity * 1.1f;
+
+			// Don't slide uphill
+			if (ent->slideVelocity.x > 0.f && slope.x > 0.f) {
+				surfMod.x = 0.5f;
+				slope.x = 0.f;
+			}
+			else if (ent->slideVelocity.x < 0.f && slope.x < 0.f) {
+				surfMod.x = 0.5f;
+				slope.x = 0.f;
+			}
+			if (ent->slideVelocity.y > 0.f && slope.y > 0.f) {
+				surfMod.y = 0.5f;
+				slope.y = 0.f;
+			}
+			else if (ent->slideVelocity.y < 0.f && slope.y < 0.f) {
+				surfMod.y = 0.5f;
+				slope.y = 0.f;
+			}
+
+			btf32 slide_reduce = 0.005f * dt; // Slide reduction per second multiplied by frame length
+			// Linear slide reduction (with slope adjustment)
+			m::Vector2 slideMag = (btf32)m::Length(ent->slideVelocity);
+			slideMag.y = slideMag.x;
+			if (slideMag.x > slide_reduce / (abs(slope.x) + surfMod.x)) {
+				slideMag.x -= slide_reduce / (abs(slope.x) + surfMod.x);
+			}
+			else slideMag.x = 0.f;
+			if (slideMag.y > slide_reduce / (abs(slope.y) + surfMod.y)) {
+				slideMag.y -= slide_reduce / (abs(slope.y) + surfMod.y);
+			}
+			else slideMag.y = 0.f;
+			ent->slideVelocity = m::Normalize(ent->slideVelocity) * slideMag;
+
+			// No height velocity when on the ground!
+			ent->t.height_velocity = 0.f;
+		}
+		else
+		{
+			// Add gravity
+			ent->t.height_velocity -= 0.20f * dt;
+			// Velocity reduction (Air drag)
+			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
+		}
+		if (ent->grounded) ent->t.position += ent->slideVelocity;
+		ent->t.position += ent->t.velocity; // Apply velocity
+		ent->t.height += ent->t.height_velocity; // Apply velocity
+		break;
+	case acv::EnvProp::FLOOR_LAVA:
+		if (ent->grounded && ent->state.stateFlags.get(ActiveState::eALIVE)) {
+			ent->state.Damage(1000u, 0.f);
+			char string[64] = "You got burnt by lava R.I.P.";
+			core::GUISetMessag(0, string);
+		}
+		goto defaul;
+	case acv::EnvProp::FLOOR_ACID:
+		if (ent->grounded && ent->state.stateFlags.get(ActiveState::eALIVE)) {
+			ent->state.Damage(1000u, 0.f);
+			remove("save/save.bin");
+			char string[64] = "The acid desintegrated your save file";
+			core::GUISetMessag(0, string);
+		}
+		//goto defaul;
+	defaul:
+		// no break, use default physics
 	default:
 		if (ent->grounded)
 		{
 			env::GetHeight(ground_height, ent->t.csi);
-			if (ent->type == ENTITY_TYPE_ACTOR) {
+			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
 				ent->t.height = m::Lerp(ent->t.height, ground_height + ((Actor*)ent)->aniStandHeight, 6.f * dt);
 			}
 			else {
@@ -306,7 +388,16 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 		break;
 	}
 
-	Entity_Deintersect(ent, ent->t.csi);
+	Entity_Deintersect(id, ent, ent->t.csi);
+
+	// duplicate of start of function
+	core::GetCellSpaceInfo(ent->t.position, ent->t.csi);
+	// If the new CS is different, remove us from the last cell and add us to the new one
+	if (cs_last.c[eCELL_I].x != ent->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != ent->t.csi.c[eCELL_I].y)
+	{
+		core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
+		core::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
+	}
 }
 
 char* DisplayNameActor(void* ent)
@@ -319,39 +410,109 @@ char* DisplayNameRestingItem(void* ent)
 	//return (char*)acv::items[GETITEM_MISC(((RestingItem*)index::GetEntityPtr(ent))->item_instance)->item_template]->name;
 	return (char*)acv::items[GETITEMINST(((RestingItem*)ent)->item_instance)->id_item_template]->name;
 };
-void DrawRestingItem(void* ent)
+
+void TickRestingItem(btID id, void* ent, btf32 dt)
+{
+	RestingItem* chr = (RestingItem*)ent;
+
+	if (chr->state.stateFlags.get(ActiveState::eDIED_REPORT))
+	{
+		//chr->state.stateFlags.unset(ActiveState::eDIED_REPORT);
+		core::DestroyEntity(id);
+	}
+
+	chr->matrix = graphics::Matrix4x4();
+	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)GetItemInstance(chr->item_instance))->id_item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
+
+	Entity_PhysicsTick(chr, id, dt);
+}
+void DrawRestingItem(btID id, void* ent)
 {
 	RestingItem* item = (RestingItem*)ent;
 	// Draw the mesh of our item id
-	//DrawMesh(ent, res::GetM(acv::items[index::GetItem(item->item_instance)->item_template]->id_mesh), res::GetT(acv::items[index::GetItem(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->t_item.getMatrix());
-	if (item->id == core::viewtarget[core::activePlayer])
+	//DrawMesh(ent, acv::GetM(acv::items[index::GetItem(item->item_instance)->item_template]->id_mesh), acv::GetT(acv::items[index::GetItem(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->t_item.getMatrix());
+	if (id == core::viewtarget[core::activePlayer])
 	{
 		graphics::GetShader(graphics::S_SOLID).Use();
 		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, false);
-		DrawMesh(item->id, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+		DrawMesh(id, acv::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, true);
 	}
 	else
 	{
 		if (m::Length(graphics::GetViewPos() - m::Vector3(item->t.position.x, item->t.height, -item->t.position.y)) > 5.f)
-			DrawMesh(ID_NULL, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh_lod), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+			DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh_lod), acv::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 		else
-			DrawMesh(ID_NULL, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+			DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 
 
-		//DrawMesh(item->id, res::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), res::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
+		//DrawMesh(item->id, acv::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
 	}
 }
-void DrawEditorPawn(void* ent)
+
+void TickEditorPawn(btID id, void* ent, btf32 dt)
+{
+	EditorPawn* chr = (EditorPawn*)ent;
+
+	bool can_move = true;
+	bool can_turn = true;
+
+	if (chr->state.stateFlags.get(ActiveState::eALIVE))
+	{
+		chr->t.velocity = chr->input * dt * 5.f;
+
+		//-------------------------------- APPLY MOVEMENT
+
+		//moving = (m::Length(chr->t.velocity) > 0.016f);
+		m::Vector2 oldpos = chr->t.position;
+		chr->t.position += chr->t.velocity; // Apply velocity
+
+		CellSpace cs_last = chr->t.csi;
+
+		//I don't want this to be here
+		if (cs_last.c[eCELL_I].x != chr->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != chr->t.csi.c[eCELL_I].y)
+		{
+			core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
+			core::AddEntityCell(chr->t.csi.c[eCELL_I].x, chr->t.csi.c[eCELL_I].y, id);
+		}
+
+		//-------------------------------- SET HEIGHT AND CELL SPACE
+
+		btf32 height2;
+		env::GetHeight(height2, chr->t.csi);
+		chr->t.height = m::Lerp(chr->t.height, height2, 0.05f);
+
+		//-------------------------------- RUN COLLISION & AI
+
+	} // End if alive
+
+	  //________________________________________________________________
+	  //------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
+
+	  // Reset transforms
+	chr->t_body = Transform3D();
+	chr->t_head = Transform3D();
+
+	chr->t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.7f, chr->t.position.y));
+	chr->t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
+
+	// Set head transform
+	chr->t_head.SetPosition(chr->t_body.GetPosition());
+	chr->t_head.Rotate(chr->viewYaw.Rad(), m::Vector3(0, 1, 0));
+	chr->t_head.Rotate(chr->viewPitch.Rad(), m::Vector3(1, 0, 0));
+	chr->t_head.Translate(chr->t_body.GetUp() * 0.7f);
+	chr->t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
+}
+void DrawEditorPawn(btID id, void* ent)
 {
 	EditorPawn* chr = (EditorPawn*)ent;
 
 	// need a good way of knowing own index
-	DrawMesh(chr->id, res::GetM(res::m_debug_bb), res::GetT(res::t_col_red), SS_NORMAL, chr->t_body.getMatrix());
+	DrawMesh(id, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, chr->t_body.getMatrix());
 
 	// draw head
 
-	//DrawBlendMesh(index, res::GetMB(res::mb_char_head), 0, res::GetT(chr->t_skin), SS_CHARA, t_head.getMatrix());
+	//DrawBlendMesh(index, acv::GetMB(acv::mb_char_head), 0, acv::GetT(chr->t_skin), SS_CHARA, t_head.getMatrix());
 }
 
 
@@ -381,6 +542,8 @@ void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, 
 	effect.effect_magnitude = magnitude;
 	effects.Add(effect);
 
+	aud::PlaySnd(aud::FILE_EFFECT, m::Vector3(ENTITY(caster)->t.position.x, ENTITY(caster)->t.height, ENTITY(caster)->t.position.y));
+
 	// TODO: include AI 'notify attack' function call here
 }
 void ActiveState::AddSpell(btID caster, btID spell)
@@ -391,13 +554,13 @@ void ActiveState::AddSpell(btID caster, btID spell)
 	// TODO: this only works in the case of cast on self, should deal with this properly but dont know how best to yet
 	if (core::players[0] == caster)
 	{
-		char string[64] = "Got ";
+		char string[64] = "Got Effect: ";
 		strcat(string, (char*)acv::spells[spell].name);
 		core::GUISetMessag(0, string);
 	}
 	else if (core::players[1] == caster)
 	{
-		char string[64] = "Got ";
+		char string[64] = "Got Effect: ";
 		strcat(string, (char*)acv::spells[spell].name);
 		core::GUISetMessag(1, string);
 	}
@@ -430,23 +593,9 @@ void ActiveState::TickEffects(btf32 dt)
 }
 
 
-void TickRestingItem(void* ent, btf32 dt)
-{
-	RestingItem* chr = (RestingItem*)ent;
 
-	if (chr->state.stateFlags.get(ActiveState::eDIED_REPORT))
-	{
-		//chr->state.stateFlags.unset(ActiveState::eDIED_REPORT);
-		core::DestroyEntity(chr->id);
-	}
 
-	chr->matrix = graphics::Matrix4x4();
-	graphics::MatrixTransform(chr->matrix, m::Vector3(chr->t.position.x, chr->t.height + acv::items[((HeldItem*)GetItemPtr(chr->item_instance))->id_item_template]->f_model_height, chr->t.position.y), chr->t.yaw.Rad());
-
-	Entity_PhysicsTick(chr, chr->id, dt);
-}
-
-void Actor::TryHoldHand(btID id)
+void Actor::TryHoldHand(btID id_self, btID id)
 {
 	Actor* actr = (Actor*)GetEntityPtr(id);
 
@@ -458,16 +607,16 @@ void Actor::TryHoldHand(btID id)
 				aniHandHoldTarget = ID_NULL;
 			else
 				aniHandHoldTarget = id;
-			if (actr->aniHandHoldTarget == this->id)
+			if (actr->aniHandHoldTarget == id_self)
 				actr->aniHandHoldTarget = ID_NULL;
 			else
-				actr->aniHandHoldTarget = this->id;
+				actr->aniHandHoldTarget = id_self;
 		}
 	}
 
 }
 
-void Actor::TakeItem(btID id)
+void Actor::TakeItem(btID id_self, btID id)
 {
 	RestingItem* item = (RestingItem*)GetEntityPtr(id);
 	HeldItem* item_held = GETITEMINST(item->item_instance);
@@ -475,13 +624,13 @@ void Actor::TakeItem(btID id)
 	core::DestroyEntity(id);
 	if (slot_added == inv_active_slot)
 		ItemOnEquip(inventory.items[inv_active_slot], this);
-	if (core::players[0] == this->id)
+	if (core::players[0] == id_self)
 	{
 		char string[64] = "Picked up ";
 		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->id_item_template]->name);
 		core::GUISetMessag(0, string);
 	}
-	else if (core::players[1] == this->id)
+	else if (core::players[1] == id_self)
 	{
 		char string[64] = "Picked up ";
 		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->id_item_template]->name);
@@ -489,7 +638,7 @@ void Actor::TakeItem(btID id)
 	}
 }
 
-void Actor::DropItem(btID slot)
+void Actor::DropItem(btID id_self, btID slot)
 {
 	if (slot < inventory.items.Size() && inventory.items.Used(slot))
 	{
@@ -682,7 +831,7 @@ void Actor_AnimateLegs(Actor* chr)
 	// Clamp positions so they never exceed the length of a leg in distance
 	Actor_ClampLegs(chr);
 }
-void TickChara(void* ent, btf32 dt)
+void TickChara(btID id, void* ent, btf32 dt)
 {
 	Actor* chr = (Actor*)ent;
 
@@ -707,7 +856,7 @@ void TickChara(void* ent, btf32 dt)
 			if (!GetEntityExists(chr->aniHandHoldTarget) || m::Length(ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position) > 1.4f)
 				chr->aniHandHoldTarget = ID_NULL;
 	// or if our target is ourself somehow
-	if (chr->aniHandHoldTarget == chr->id)
+	if (chr->aniHandHoldTarget == id)
 		chr->aniHandHoldTarget = ID_NULL;
 	// modify input to keep holding characters together
 	if (chr->aniHandHoldTarget != ID_NULL)
@@ -715,7 +864,6 @@ void TickChara(void* ent, btf32 dt)
 		{
 			chr->input += (ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position);
 		}
-
 
 	// Jump
 	if (chr->inputBV.get(Actor::IN_JUMP)) {
@@ -788,7 +936,7 @@ void TickChara(void* ent, btf32 dt)
 
 		//-------------------------------- APPLY MOVEMENT
 
-		Entity_PhysicsTick(chr, chr->id, dt);
+		Entity_PhysicsTick(chr, id, dt);
 
 		// set height for collision
 		chr->height = chr->t_head.GetPosition().y - chr->t_body.GetPosition().y;
@@ -796,14 +944,14 @@ void TickChara(void* ent, btf32 dt)
 		//-------------------------------- RUN AI FUNCTION
 
 		// if AI controlled run the AI function
-		if (chr->aiControlled) NPCTick(chr->id);
+		if (chr->aiControlled) NPCTick(id);
 		// if player controlled, just aim at whatever's in front of us
-		else chr->atk_target = core::GetViewTargetEntity(chr->id, 100.f, fac::enemy);
+		else chr->atk_target = core::GetViewTargetEntity(id, 100.f, fac::enemy);
 
 		//-------------------------------- RUN ITEM TICK
 
 		if (chr->inventory.items.Used(chr->inv_active_slot))
-			ItemTick(chr->inventory.items[chr->inv_active_slot], dt, chr);
+			ItemTick(chr->inventory.items[chr->inv_active_slot], dt, id, chr);
 	} // End if alive
 
 	//________________________________________________________________
@@ -833,7 +981,10 @@ void TickChara(void* ent, btf32 dt)
 		chr->t_head.Rotate(chr->viewPitch.Rad(), m::Vector3(1, 0, 0));
 		chr->t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
 
-		chr->ani_body_lean = m::Lerp(chr->ani_body_lean, chr->t.position, 0.3f);
+		if (m::Length(chr->ani_body_lean - chr->t.position) < 1.f)
+			chr->ani_body_lean = m::Lerp(chr->ani_body_lean, chr->t.position, 0.3f);
+		else
+			chr->ani_body_lean = chr->t.position;
 
 		// Set body transform
 		//t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.6f - (m::Length(chr->slideVelocity) * 0.5f), chr->t.position.y));
@@ -868,7 +1019,7 @@ void TickChara(void* ent, btf32 dt)
 		chr->t_head.Translate(chr->t_body.GetUp() * BODYLEN);
 	}
 }
-void DrawChara(void* ent)
+void DrawChara(btID id, void* ent)
 {
 	Actor* chr = (Actor*)ent;
 
@@ -913,13 +1064,13 @@ void DrawChara(void* ent)
 		tr_body.GetPosition() + (vecup * lenUp),
 			m::Normalize(vecfw * len + vecup * lenUp),
 			vecup_upper * -1.f);
-	DrawMeshDeform(chr->id, res::GetMD(acv::actor_templates[chr->actorBase].m_body), res::GetT(acv::actor_templates[chr->actorBase].t_body), SS_CHARA, 2u,
+	DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_body), acv::GetT(acv::actor_templates[chr->actorBase].t_body), SS_CHARA, 2u,
 		matBodyLo, matBodyUp, graphics::Matrix4x4(), graphics::Matrix4x4());
 
 	#ifndef DEF_NMP
 	if (chr->state.stateFlags.get(ActiveState::eALIVE))
 	{
-		//DrawMeshDeform(chr->id, res::GetMD(res::md_equip_body_robe_01), res::GetT(res::t_equip_body_robe_01), SS_NORMAL, 4u,
+		//DrawMeshDeform(chr->id, acv::GetMD(acv::md_equip_body_robe_01), acv::GetT(acv::t_equip_body_robe_01), SS_NORMAL, 4u,
 		//matBodyLo, matBodyUp, matLegUpL, matLegUpR);
 	}
 	#endif
@@ -940,7 +1091,7 @@ void DrawChara(void* ent)
 
 	if (inventory.items.Used(inv_active_slot))
 	{
-		HeldItem* heldItem = ((HeldItem*)GetItemPtr(inventory.items[inv_active_slot]));
+		HeldItem* heldItem = ((HeldItem*)GetItemInstance(inventory.items[inv_active_slot]));
 
 		// Draw held item
 		ItemDraw(inventory.items[inv_active_slot],
@@ -952,25 +1103,23 @@ void DrawChara(void* ent)
 		m::Vector3 handPosL = ItemLHPos(inventory.items[inv_active_slot]);
 
 		// Arm orientation vectors
-		#define bodyForwardR m::Normalize((t_upperbody.GetRight() * -1.f) + t_upperbody.GetUp() * 0.75f + t_upperbody.GetForward() * 0.5f)
-		#define bodyForwardL m::Normalize(t_upperbody.GetRight() + t_upperbody.GetUp() * 0.75f + t_upperbody.GetForward() * 0.5f)
-		//#define bodyForwardR m::Normalize((graphics::MatrixGetRight(matBodyUp) * -1.f) + graphics::MatrixGetUp(matBodyUp) * 0.75f + graphics::MatrixGetForward(matBodyUp)* 0.5f)
-		//#define bodyForwardL m::Normalize(graphics::MatrixGetRight(matBodyUp) * 1.f +    graphics::MatrixGetUp(matBodyUp) * 0.75f + graphics::MatrixGetForward(matBodyUp)* 0.5f)
-
+		//only used once but the calculation is so long it's easier to read here
+		#define ELBOW_DIR_R m::Normalize(m::Cross(m::Normalize(chr->t_body.GetPosition() - handPosR), t_upperbody.GetUp() * -1.f) - t_upperbody.GetRight() * 0.4f - m::Vector3(0.f, -1.f, 0.f))
+		#define ELBOW_DIR_L m::Normalize(m::Cross(m::Normalize(chr->t_body.GetPosition() - handPosL), t_upperbody.GetUp())        + t_upperbody.GetRight() * 0.4f - m::Vector3(0.f, -1.f, 0.f))
 
 		// Arm right
 		len = m::Length(jointPosR - handPosR);
 		if (len > ARMLEN(chr->actorBase,0)) len = ARMLEN(chr->actorBase,0);
 		lenUp = sqrtf(ARMLEN(chr->actorBase,0) * ARMLEN(chr->actorBase,0) - len * len); // Pythagorean theorem
 		m::Vector3 vecfw = m::Normalize(handPosR - jointPosR);
-		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, bodyForwardR));
+		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, ELBOW_DIR_R));
 		m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside)) * -1.f;
 		graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransformXFlip(matLegLoR, jointPosR - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup);
 		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (ARMLEN(chr->actorBase,0) - len), vecfw, vecup);
 		// Draw arm
 		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(chr->id, res::GetMD(acv::actor_templates[chr->actorBase].m_arm), res::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 
 		// Arm left
@@ -978,16 +1127,16 @@ void DrawChara(void* ent)
 		if (len > ARMLEN(chr->actorBase,0)) len = ARMLEN(chr->actorBase,0);
 		lenUp = sqrtf(ARMLEN(chr->actorBase,0) * ARMLEN(chr->actorBase,0) - len * len); // Pythagorean theorem
 		vecfw = m::Normalize(handPosL - jointPosL);
-		vecside = m::Normalize(m::Cross(vecfw, bodyForwardL));
+		vecside = m::Normalize(m::Cross(vecfw, ELBOW_DIR_L));
 		vecup = m::Normalize(m::Cross(vecfw, vecside) * -1.f);
 		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (ARMLEN(chr->actorBase,0) - len), vecfw, vecup);
 		// Draw arm
-		DrawMeshDeform(chr->id, res::GetMD(acv::actor_templates[chr->actorBase].m_arm), res::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
 
-		#undef bodyForwardR 
-		#undef bodyForwardL
+		#undef ELBOW_DIR_R 
+		#undef ELBOW_DIR_L
 	}
 	else
 	{
@@ -1021,8 +1170,8 @@ void DrawChara(void* ent)
 		}
 
 		// Arm orientation vectors
-		#define bodyForwardR m::Normalize(graphics::MatrixGetRight(matBodyUp) * -0.25f + graphics::MatrixGetUp(matBodyUp) * 0.75f + graphics::MatrixGetForward(matBodyUp)* 0.5f)
-		#define bodyForwardL m::Normalize(graphics::MatrixGetRight(matBodyUp) *  0.25f + graphics::MatrixGetUp(matBodyUp) * 0.75f + graphics::MatrixGetForward(matBodyUp)* 0.5f)
+		#define ELBOW_DIR_R m::Normalize(graphics::MatrixGetRight(matBodyUp) * -0.25f + graphics::MatrixGetUp(matBodyUp) * 0.75f + graphics::MatrixGetForward(matBodyUp)* 0.5f)
+		#define ELBOW_DIR_L m::Normalize(graphics::MatrixGetRight(matBodyUp) *  0.25f + graphics::MatrixGetUp(matBodyUp) * 0.75f + graphics::MatrixGetForward(matBodyUp)* 0.5f)
 
 		#define handlentemp 0.1f
 
@@ -1031,14 +1180,14 @@ void DrawChara(void* ent)
 		if (len > ARMLEN(chr->actorBase,0)) len = ARMLEN(chr->actorBase,0);
 		lenUp = sqrtf(ARMLEN(chr->actorBase,0) * ARMLEN(chr->actorBase,0) - len * len); // Pythagorean theorem
 		m::Vector3 vecfw = m::Normalize(handPosR - jointPosR);
-		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, bodyForwardR));
+		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, ELBOW_DIR_R));
 		m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside)) * -1.f;
 		graphics::MatrixTransformXFlip(matLegUpR, jointPosR, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransformXFlip(matLegLoR, jointPosR - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup);
 		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (ARMLEN(chr->actorBase,0) - len), vecfw, vecup);
 		// Draw arm
 		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(chr->id, res::GetMD(acv::actor_templates[chr->actorBase].m_arm), res::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 
 		// Arm left
@@ -1046,16 +1195,16 @@ void DrawChara(void* ent)
 		if (len > ARMLEN(chr->actorBase,0)) len = ARMLEN(chr->actorBase,0);
 		lenUp = sqrtf(ARMLEN(chr->actorBase,0) * ARMLEN(chr->actorBase,0) - len * len); // Pythagorean theorem
 		vecfw = m::Normalize(handPosL - jointPosL);
-		vecside = m::Normalize(m::Cross(vecfw, bodyForwardL));
+		vecside = m::Normalize(m::Cross(vecfw, ELBOW_DIR_L));
 		vecup = m::Normalize(m::Cross(vecfw, vecside) * -1.f);
 		graphics::MatrixTransform(matLegUpL, jointPosL, m::Normalize(vecfw * len - vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (ARMLEN(chr->actorBase,0) - len), vecfw, vecup);
 		// Draw arm
-		DrawMeshDeform(chr->id, res::GetMD(acv::actor_templates[chr->actorBase].m_arm), res::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
 
-		#undef bodyForwardR 
-		#undef bodyForwardL
+		#undef ELBOW_DIR_R 
+		#undef ELBOW_DIR_L
 	}
 
 	//-------------------------------- DRAW LEGS
@@ -1085,7 +1234,7 @@ void DrawChara(void* ent)
 		graphics::MatrixTransformXFlip(matLegFootR, chr->fpCurrentR + m::Vector3(0.f, LEGLEN(chr->actorBase,0), 0.f), m::Vector3(0.f, -1.f, 0.f), vecup_inv);
 		// Draw leg
 		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(chr->id, res::GetMD(acv::actor_templates[chr->actorBase].m_leg), res::GetT(res::t_equip_legs_robe_01), SS_NORMAL, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_leg), acv::GetT(acv::actor_templates[chr->actorBase].t_leg), SS_NORMAL, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 		// transform legR for cloak
 		//graphics::MatrixTransformForwardUp(matLegUpR, t_body.GetPosition(), chr->fpCurrentR - t_body.GetPosition(), t_body.GetForward());
@@ -1103,7 +1252,7 @@ void DrawChara(void* ent)
 		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup_inv);
 		graphics::MatrixTransform(matLegFootL, chr->fpCurrentL + m::Vector3(0.f, LEGLEN(chr->actorBase,0), 0.f), m::Vector3(0.f, -1.f, 0.f), vecup_inv);
 		// Draw leg
-		DrawMeshDeform(chr->id, res::GetMD(acv::actor_templates[chr->actorBase].m_leg), res::GetT(res::t_equip_legs_robe_01), SS_NORMAL, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_leg), acv::GetT(acv::actor_templates[chr->actorBase].t_leg), SS_NORMAL, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 		// transform legL for cloak
 		//graphics::MatrixTransformForwardUp(matLegUpL, t_body.GetPosition(), chr->fpCurrentL - t_body.GetPosition(), t_body.GetForward());
 
@@ -1115,9 +1264,9 @@ void DrawChara(void* ent)
 	t2.SetPosition(tr_body.GetPosition());
 	t2.SetRotation(t_upperbody.GetRotation());
 	t2.TranslateLocal(m::Vector3(0.f, 0.7f, 0.f));
-	//DrawMeshDeform(chr->id, res::GetMD(res::md_char_head), res::GetT(chr->t_skin), SS_CHARA, 4u,
+	//DrawMeshDeform(chr->id, acv::GetMD(acv::md_char_head), acv::GetT(chr->t_skin), SS_CHARA, 4u,
 	//	t2.getMatrix(), t_head.getMatrix(), t_head.getMatrix(), t_head.getMatrix());
-	DrawMeshDeform(chr->id, res::GetMD(acv::actor_templates[chr->actorBase].m_head), res::GetT(acv::actor_templates[chr->actorBase].t_head), SS_CHARA, 4u,
+	DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_head), acv::GetT(acv::actor_templates[chr->actorBase].t_head), SS_CHARA, 4u,
 		t2.getMatrix(), tr_head.getMatrix(), tr_head.getMatrix(), tr_head.getMatrix());
 
 	#undef t_body
@@ -1132,104 +1281,4 @@ void DrawChara(void* ent)
 	#undef footPosTargL
 	#undef ani_body_lean
 	#undef t_head
-}
-
-
-void TickEditorPawn(void* ent, btf32 dt)
-{
-	EditorPawn* chr = (EditorPawn*)ent;
-
-	#define t_body chr->t_body
-	#define viewYaw chr->viewYaw
-	#define speed chr->speed
-	#define inventory chr->inventory
-	#define inv_active_slot chr->inv_active_slot
-	#define t_skin chr->t_skin
-	#define viewPitch chr->viewPitch
-	#define t_head chr->t_head
-	#define state chr->state
-	#define input chr->input
-	#define aiControlled chr->aiControlled
-	#define atk_target chr->atk_target
-
-	bool can_move = true;
-	bool can_turn = true;
-
-	if (state.stateFlags.get(ActiveState::eALIVE))
-	{
-		chr->t.velocity = input * dt * 5.f;
-
-		//-------------------------------- APPLY MOVEMENT
-
-		//moving = (m::Length(chr->t.velocity) > 0.016f);
-		m::Vector2 oldpos = chr->t.position;
-		chr->t.position += chr->t.velocity; // Apply velocity
-
-		CellSpace cs_last = chr->t.csi;
-
-		//regenerate csi
-		core::GetCellSpaceInfo(chr->t.position, chr->t.csi);
-
-		//I don't want this to be here
-		if (cs_last.c[eCELL_I].x != chr->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != chr->t.csi.c[eCELL_I].y)
-		{
-			core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, chr->id);
-			core::AddEntityCell(chr->t.csi.c[eCELL_I].x, chr->t.csi.c[eCELL_I].y, chr->id);
-		}
-
-		//-------------------------------- SET HEIGHT AND CELL SPACE
-
-		btf32 height2;
-		env::GetHeight(height2, chr->t.csi);
-		chr->t.height = m::Lerp(chr->t.height, height2, 0.05f);
-
-		//-------------------------------- RUN COLLISION & AI
-
-	} // End if alive
-
-	//________________________________________________________________
-	//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
-
-	// Reset transforms
-	t_body = Transform3D();
-	t_head = Transform3D();
-
-	t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.7f, chr->t.position.y));
-	t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
-
-	// Set head transform
-	t_head.SetPosition(t_body.GetPosition());
-	t_head.Rotate(viewYaw.Rad(), m::Vector3(0, 1, 0));
-	t_head.Rotate(viewPitch.Rad(), m::Vector3(1, 0, 0));
-	t_head.Translate(t_body.GetUp() * 0.7f);
-	t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
-
-	#undef t_body
-	#undef viewYaw
-	#undef speed
-	#undef inventory
-	#undef inv_active_slot
-	#undef matLegHipR
-	#undef matLegUpR
-	#undef matLegLoR
-	#undef matLegFootR
-	#undef matLegHipL
-	#undef matLegUpL
-	#undef matLegLoL
-	#undef matLegFootL
-	#undef t_skin
-	#undef viewPitch
-	#undef foot_state
-	#undef footPosTargR
-	#undef footPosTargL
-	#undef ani_body_lean
-	#undef footPosR
-	#undef footPosL
-	#undef t_head
-	#undef state
-	#undef input
-	//#undef moving
-	#undef csi
-	#undef aiControlled
-	#undef atk_target
 }

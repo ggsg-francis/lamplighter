@@ -79,7 +79,7 @@ namespace serializer
 		std::cout << "FILENAMES" << std::endl;
 		for (btui32 i = 0u; i < acv::assetCount; i++)
 		{
-			std::cout << "FILE " << i << " | TYPE " << (int)acv::assets[i].type << " | ADDR " << acv::assets[i].filename << std::endl;
+			std::cout << "FILE " << i << " | TYPE " << (int)acv::assets[i].type << " | ADDR " << acv::assets[i].file_pos << std::endl;
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "PROPS" << std::endl;
@@ -194,9 +194,14 @@ namespace serializer
 	{
 		printf("  ||||||||                      ||||||||\n||||    ||||                  ||||    ||||\n||||    ||||  ||||      ||||  ||||    ||||\n||||    ||||  ||||  ||  ||||  ||||    ||||\n  ||||||||      ||||||||||      ||||||||\n");
 
+		FILE* fileARCHIVE = fopen(ARCHIVE_DATA_FILENAME, "wb");
+
 		FILE* file = fopen(fn, "r"); // Open file
-		if (file != NULL)
+		
+		if (fileARCHIVE != NULL && file != NULL)
 		{
+			fseek(fileARCHIVE, 0, SEEK_SET); // Seek file beginning
+
 			fseek(file, 0, SEEK_SET); // Seek file beginning
 
 			btui32 index = 0u;
@@ -313,49 +318,45 @@ namespace serializer
 
 					//....................................... CONVERT AND SAVE ASSETS
 
+					acv::assets[index].file_pos = ftell(fileARCHIVE);
+
 					if (type == ASSET_TEXTURE_FILE)
 					{
-						std::cout << "CONV TEXTURE         [" << cdest << "]" << std::endl;
-						graphics::ConvertTex(csrca, cdest, t_filter_mode, t_edge_mode); // Create source file
-						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
-						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
+						std::cout << "CONV TEXTURE         [" << cdest << "] ";
+						graphics::ConvertTex(csrca, fileARCHIVE, t_filter_mode, t_edge_mode); // Create source file
 						acv::assets[index].type = ASSET_TEXTURE_FILE;
-						std::cout << "---------------------" << std::endl;
 					}
 					else if (type == ASSET_MESH_FILE)
 					{
-						std::cout << "CONV MESH            [" << cdest << "]" << std::endl;
-						graphics::ConvertMesh(csrca, cdest); // Create source file
-						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
-						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
+						std::cout << "CONV MESH            [" << cdest << "] ";
+						graphics::ConvertMesh(csrca, fileARCHIVE); // Create source file
 						acv::assets[index].type = ASSET_MESH_FILE;
-						std::cout << "---------------------" << std::endl;
 					}
 					else if (type == ASSET_MESHBLEND_FILE)
 					{
-						std::cout << "CONV MESHBLEND       [" << cdest << "]" << std::endl;
-						graphics::ConvertMB(csrca, csrcb, cdest); // Create source file
-						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
-						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
+						std::cout << "CONV MESHBLEND       [" << cdest << "] ";
+						graphics::ConvertMB(csrca, csrcb, fileARCHIVE); // Create source file
 						acv::assets[index].type = ASSET_MESHBLEND_FILE;
-						std::cout << "---------------------" << std::endl;
 					}
 					else if (type == ASSET_MESHDEFORM_FILE)
 					{
-						std::cout << "CONV MESHDEFORM      [" << cdest << "]" << std::endl;
+						std::cout << "CONV MESHDEFORM      [" << cdest << "] ";
 						if (acv::assets[index].handle[0] == 'L' && acv::assets[index].handle[1] == 'e' && acv::assets[index].handle[2] == 'g')
-							graphics::ConvertMD(csrca, cdest, graphics::eLEG); // Create source file
+							graphics::ConvertMD(csrca, fileARCHIVE, graphics::eLEG); // Create source file
 						else if (acv::assets[index].handle[0] == 'B' && acv::assets[index].handle[1] == 'o' && acv::assets[index].handle[2] == 'd')
-							graphics::ConvertMD(csrca, cdest, graphics::eBODY); // Create source file
+							graphics::ConvertMD(csrca, fileARCHIVE, graphics::eBODY); // Create source file
 						else if (acv::assets[index].handle[0] == 'A' && acv::assets[index].handle[1] == 'r' && acv::assets[index].handle[2] == 'm')
-							graphics::ConvertMD(csrca, cdest, graphics::eARM); // Create source file
+							graphics::ConvertMD(csrca, fileARCHIVE, graphics::eARM); // Create source file
 						else
-							graphics::ConvertMD(csrca, cdest, graphics::eDEFAULT); // Create source file
-						std::cout << "SETTING INDEX        [" << index << "]" << std::endl;
-						strcpy(acv::assets[index].filename, cdest); // Copy filename into archive
+							graphics::ConvertMD(csrca, fileARCHIVE, graphics::eDEFAULT); // Create source file
 						acv::assets[index].type = ASSET_MESHDEFORM_FILE;
-						std::cout << "---------------------" << std::endl;
 					}
+
+					acv::assets[index].file_size = (ftell(fileARCHIVE) - acv::assets[index].file_pos);
+					printf("| Wrote %i bytes\n", acv::assets[index].file_size);
+					for (int i = 0; i < acv::assets[index].file_size / 4096; ++i)
+						printf("*");
+					printf("\n");
 
 					++index; // We are done with this index
 
@@ -365,7 +366,10 @@ namespace serializer
 			}
 			acv::assetCount = index; // Conveniently, the index is left equaling the total number of assets
 			std::cout << "FINAL ASSET COUNT    [" << acv::assetCount << "]" << std::endl;
+			
 			fclose(file); // Close file
+			
+			fclose(fileARCHIVE); // Close file
 		}
 	}
 	#endif
@@ -799,13 +803,10 @@ namespace serializer
 			fread(&acv::assetCount, sizeof(btui32), 1, file); // Read filename count
 			for (btui32 i = 0u; i < acv::assetCount; i++) // Read file types
 			{
+				fread(&acv::assets[i].handle, 8, 1, file);
+				fread(&acv::assets[i].file_pos, sizeof(btui64), 1, file);
+				fread(&acv::assets[i].file_size, sizeof(btui64), 1, file);
 				fread(&acv::assets[i].type, sizeof(btui8), 1, file);
-			}
-			for (btui32 i = 0u; i < acv::assetCount; i++)
-			{
-				btui8 sl;
-				fread(&sl, sizeof(btui8), 1, file); // Read string length
-				fread(acv::assets[i].filename, sl, 1, file); // Read file string
 			}
 
 			//-------------------------------- Prop part
@@ -882,13 +883,10 @@ namespace serializer
 
 			for (btui32 i = 0u; i < acv::assetCount; i++) // Write file types
 			{
+				fwrite(&acv::assets[i].handle, 8, 1, file);
+				fwrite(&acv::assets[i].file_pos, sizeof(btui64), 1, file);
+				fwrite(&acv::assets[i].file_size, sizeof(btui64), 1, file);
 				fwrite(&acv::assets[i].type, sizeof(btui8), 1, file);
-			}
-			for (btui32 i = 0u; i < acv::assetCount; i++) // Write file names
-			{
-				btui8 sl = (btui8)strlen(acv::assets[i].filename);
-				fwrite(&sl, sizeof(btui8), 1, file);
-				fputs(acv::assets[i].filename, file); // save file address
 			}
 
 			//-------------------------------- Prop part
@@ -951,4 +949,65 @@ namespace serializer
 			std::cout << "SAVE COMPLETE!" << std::endl;
 		}
 	}
+
+	#ifdef DEF_ARCHIVE_IN_CODE
+	void ARCHIVE_to_C()
+	{
+		int sum = 0;
+
+		btui8 read = 0ui8;
+		int linecount = 0;
+
+		FILE* file_cpp = fopen(ARCHIVE_C_FILENAME, "w"); // Open file
+		if (file_cpp != NULL) {
+			fseek(file_cpp, 0, SEEK_SET); // Seek file beginning
+
+			FILE* file_bin = fopen(ARCHIVE_FILENAME, "rb"); // Open file
+			if (file_bin != NULL) {
+				fseek(file_bin, 0, SEEK_END); // Seek file end
+				btui64 bytecount = ftell(file_bin); // Get file size
+				fseek(file_bin, 0, SEEK_SET); // Seek file beginning
+
+				fprintf(file_cpp, "char data[%i] {\n", bytecount);
+				// Add bytes
+				for (btui64 i = 0; i < bytecount; ++i) {
+					fread(&read, 1, 1, file_bin);
+					fprintf(file_cpp, "%i,", (int)read);
+					linecount++;
+					if (linecount > 32) {
+						linecount = 0;
+						fputs("\n", file_cpp);
+					}
+				}
+				fputs("\n};", file_cpp);
+
+				fclose(file_bin);
+			}
+			
+			file_bin = fopen(ARCHIVE_DATA_FILENAME, "rb"); // Open file
+			if (file_bin != NULL) {
+				fseek(file_bin, 0, SEEK_END); // Seek file end
+				btui64 bytecount = ftell(file_bin); // Get file size
+				fseek(file_bin, 0, SEEK_SET); // Seek file beginning
+
+				fprintf(file_cpp, "char data_data[%i] {\n", bytecount);
+				// Add bytes
+				for (btui64 i = 0; i < bytecount; ++i) {
+					fread(&read, 1, 1, file_bin);
+					fprintf(file_cpp, "%i,", (int)read);
+					linecount++;
+					if (linecount > 32) {
+						linecount = 0;
+						fputs("\n", file_cpp);
+					}
+				}
+				fputs("\n};", file_cpp);
+
+				fclose(file_bin);
+			}
+
+			fclose(file_cpp);
+		}
+	}
+	#endif
 }

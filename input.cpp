@@ -11,6 +11,8 @@ extern "C" {
 #include "network.h"
 #endif // DEF_NMP
 
+#include "cfg.h"
+
 #define JOY_AXIS_MAX ((bti16)0b0111111111111111)
 #define JOY_AXIS_MIN ((bti16)0b1000000000000000)
 #define JOY_AXIS_THRESH_MAX ((bti16)0b0000011111111111)
@@ -145,39 +147,70 @@ namespace input
 
 	void Init()
 	{
-		ScancodeTransfer[SDL_SCANCODE_ESCAPE] = key::QUIT;
-		ScancodeTransfer[SDL_SCANCODE_W] = key::DIR_F;
-		ScancodeTransfer[SDL_SCANCODE_S] = key::DIR_B;
-		ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
-		ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
-		ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
-		ScancodeTransfer[SDL_SCANCODE_LALT] = key::CROUCH;
-		ScancodeTransfer[SDL_SCANCODE_SPACE] = key::JUMP;
-		ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
-		ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
-		ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;
-		ScancodeTransfer[SDL_SCANCODE_3] = key::ACTION_C;
-		ScancodeTransfer[SDL_SCANCODE_R] = key::DROP_HELD;
-		ScancodeTransfer[SDL_SCANCODE_Z] = key::INV_CYCLE_L;
-		ScancodeTransfer[SDL_SCANCODE_X] = key::INV_CYCLE_R;
-		ScancodeTransfer[SDL_SCANCODE_F1] = key::FUNCTION_1;
-		ScancodeTransfer[SDL_SCANCODE_F2] = key::FUNCTION_2;
-		ScancodeTransfer[SDL_SCANCODE_F3] = key::FUNCTION_3;
-		ScancodeTransfer[SDL_SCANCODE_F4] = key::FUNCTION_4;
-		ScancodeTransfer[SDL_SCANCODE_F5] = key::FUNCTION_5;
-		ScancodeTransfer[SDL_SCANCODE_F6] = key::FUNCTION_6;
-		ScancodeTransfer[SDL_SCANCODE_F7] = key::FUNCTION_7;
-		ScancodeTransfer[SDL_SCANCODE_F8] = key::FUNCTION_8;
-		ScancodeTransfer[SDL_SCANCODE_F9] = key::FUNCTION_9;
-		ScancodeTransfer[SDL_SCANCODE_F10] = key::FUNCTION_10;
-		ScancodeTransfer[SDL_SCANCODE_F11] = key::FUNCTION_11;
-		ScancodeTransfer[SDL_SCANCODE_F12] = key::FUNCTION_12;
+		if (!cfg::bEditMode) {
+			ScancodeTransfer[SDL_SCANCODE_ESCAPE] = key::QUIT;
+			ScancodeTransfer[SDL_SCANCODE_W] = key::DIR_F;
+			ScancodeTransfer[SDL_SCANCODE_S] = key::DIR_B;
+			ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
+			ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
+			ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
+			ScancodeTransfer[SDL_SCANCODE_LALT] = key::CROUCH;
+			ScancodeTransfer[SDL_SCANCODE_SPACE] = key::JUMP;
+			ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
+			ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
+			ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;
+			ScancodeTransfer[SDL_SCANCODE_3] = key::ACTION_C;
+			ScancodeTransfer[SDL_SCANCODE_R] = key::DROP_HELD;
+			ScancodeTransfer[SDL_SCANCODE_Z] = key::INV_CYCLE_L;
+			ScancodeTransfer[SDL_SCANCODE_X] = key::INV_CYCLE_R;
+			ScancodeTransfer[SDL_SCANCODE_F1] = key::FUNCTION_1;
+			ScancodeTransfer[SDL_SCANCODE_F2] = key::FUNCTION_2;
+			ScancodeTransfer[SDL_SCANCODE_F3] = key::FUNCTION_3;
+			ScancodeTransfer[SDL_SCANCODE_F4] = key::FUNCTION_4;
+			ScancodeTransfer[SDL_SCANCODE_F5] = key::FUNCTION_5;
+			ScancodeTransfer[SDL_SCANCODE_F6] = key::FUNCTION_6;
+			ScancodeTransfer[SDL_SCANCODE_F7] = key::FUNCTION_7;
+			ScancodeTransfer[SDL_SCANCODE_F8] = key::FUNCTION_8;
+			ScancodeTransfer[SDL_SCANCODE_F9] = key::FUNCTION_9;
+			ScancodeTransfer[SDL_SCANCODE_F10] = key::FUNCTION_10;
+			ScancodeTransfer[SDL_SCANCODE_F11] = key::FUNCTION_11;
+			ScancodeTransfer[SDL_SCANCODE_F12] = key::FUNCTION_12;
 
-		JoyButtonTransfer[JOY_BUMPER_L] = key::C_RUN;
-		JoyButtonTransfer[JOY_BUMPER_R] = key::C_JUMP;
-		JoyButtonTransfer[JOY_FACE_A] = key::C_ACTIVATE;
-		JoyButtonTransfer[JOY_FACE_B] = key::C_USE_ALT;
-		JoyButtonTransfer[JOY_STICK_R] = key::C_CROUCH;
+			JoyButtonTransfer[JOY_BUMPER_L] = key::C_RUN;
+			JoyButtonTransfer[JOY_BUMPER_R] = key::C_JUMP;
+			JoyButtonTransfer[JOY_FACE_A] = key::C_ACTIVATE;
+			JoyButtonTransfer[JOY_FACE_B] = key::C_USE_ALT;
+			JoyButtonTransfer[JOY_STICK_R] = key::C_CROUCH;
+		}
+		else {
+			ScancodeTransfer[SDL_SCANCODE_ESCAPE] = key::QUIT;
+			ScancodeTransfer[SDL_SCANCODE_W] = key::DIR_F;
+			ScancodeTransfer[SDL_SCANCODE_S] = key::DIR_B;
+			ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
+			ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
+			ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
+			ScancodeTransfer[SDL_SCANCODE_LALT] = key::CROUCH;
+			ScancodeTransfer[SDL_SCANCODE_SPACE] = key::JUMP;
+			ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
+			ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
+			ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;
+			ScancodeTransfer[SDL_SCANCODE_3] = key::ACTION_C;
+			ScancodeTransfer[SDL_SCANCODE_R] = key::DROP_HELD;
+			ScancodeTransfer[SDL_SCANCODE_Z] = key::INV_CYCLE_L;
+			ScancodeTransfer[SDL_SCANCODE_X] = key::INV_CYCLE_R;
+			ScancodeTransfer[SDL_SCANCODE_F1] = key::FUNCTION_1;
+			ScancodeTransfer[SDL_SCANCODE_F2] = key::FUNCTION_2;
+			ScancodeTransfer[SDL_SCANCODE_F3] = key::FUNCTION_3;
+			ScancodeTransfer[SDL_SCANCODE_F4] = key::FUNCTION_4;
+			ScancodeTransfer[SDL_SCANCODE_F5] = key::FUNCTION_5;
+			ScancodeTransfer[SDL_SCANCODE_F6] = key::FUNCTION_6;
+			ScancodeTransfer[SDL_SCANCODE_F7] = key::FUNCTION_7;
+			ScancodeTransfer[SDL_SCANCODE_F8] = key::FUNCTION_8;
+			ScancodeTransfer[SDL_SCANCODE_F9] = key::FUNCTION_9;
+			ScancodeTransfer[SDL_SCANCODE_F10] = key::FUNCTION_10;
+			ScancodeTransfer[SDL_SCANCODE_F11] = key::FUNCTION_11;
+			ScancodeTransfer[SDL_SCANCODE_F12] = key::FUNCTION_12;
+		}
 	}
 
 	#ifdef DEF_NMP

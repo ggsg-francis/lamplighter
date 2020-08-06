@@ -95,23 +95,85 @@ void StoreBlockAdd(StoreBlock* block, StoreBlockAddr* out_addr, btui16 size)
 	
 }
 
-struct teststr1
+// Some test stuff
+
+///*
+
+
+
+//__declspec(align(8))
+struct myStruct2
 {
-	int i;
-	int i2;
+	btui32 a;
+	btui8 c;
+	btui32 b;
 };
 
-struct teststr2
-{
-	int i;
-};
+PACKED_STRUCT(MyStruct3{
+btui32 a;
+btui8 c;
+btui32 b;
+});
+
+
+
+//*/
+
+// cursed shit but it works
+
+/*
+
+//typedef btui8 Name[4];
+
+
+#define PACKED_STRUCT2(NAME, SIZE, VARS) struct NAME { btui8 bytes[SIZE]; VARS }
+#define PACKED_VARIABLE2X(TYPE, NAME, OFFSET) __forceinline TYPE& NAME() { return (TYPE&)(bytes[OFFSET]); }
+#define PACKED_VARIABLE2(TYPE, NAMEGET, NAMESET, OFFSET) \
+	TYPE NAMEGET() { return (TYPE)(bytes[OFFSET]); } \
+	void NAMESET(TYPE x) { *(TYPE*)(&bytes[OFFSET]) = x; }
+
+PACKED_STRUCT2(Ps1, 9,
+	PACKED_VARIABLE2(btui32, GetInt0, SetInt0, 0)
+	PACKED_VARIABLE2(btui8, GetInt1, SetInt1, 4)
+	PACKED_VARIABLE2(btui32, GetInt2, SetInt2, 5)
+);
+
+#define PACKED_STRUCT3(NAME, SIZE, ...) struct NAME { btui8 bytes[SIZE]; enum e { __VA_ARGS__ }; }
+#define PACKED_GET(STRUCT, TYPE, OFFSET) ((TYPE)(STRUCT.bytes[OFFSET]))
+
+PACKED_STRUCT3(PackedStruct2, 9, BYTE_0, BYTE_1 = 4, BYTE_2 = 5, );
+
+
+#define PACKED_STRUCT4(SIZE, NAME) typedef btui8 NAME[SIZE];
+
+PACKED_STRUCT4(8, PackedStruct4);
+
+
+//*/
 
 void InitTest()
 {
-	path::Path vec;
-	path::PathFind(&vec, 1024, 1024, 1026, 1026);
+	/*
+	
 
-	//StoreBlock store;
+	Ps1 stru;
 
-	//StoreBlockAddr addr[16];
+	PackedStruct2 stru2;
+	memset(stru2.bytes, 0, 8);
+
+	for (int i = 0; i < 100000000; ++i)
+		++PACKED_GET(stru2, btui8, PackedStruct2::BYTE_1);
+	
+	for (int i = 0; i < 100000000; ++i)
+		stru.SetInt1(stru.GetInt1() + 1);
+
+	int i = sizeof(PackedStruct2);
+	int i4 = sizeof(Ps1);
+	int i2 = sizeof(myStruct2);
+	int i3 = sizeof(MyStruct3);
+	//*/
+	
+	//path::Path vec;
+	//path::PathFind(&vec, 1024, 1024, 1026, 1026);
+
 }

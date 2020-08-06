@@ -242,14 +242,14 @@ namespace env
 	{
 		for (btui32 i = 0u; i < wldNumTextures; ++i)
 		{
-			DrawCompositeMesh(ID_NULL, wldMeshes[i], res::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
+			DrawCompositeMesh(ID_NULL, wldMeshes[i], acv::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
 		}
 		//graphics::SetFrontFaceInverse();
 		//graphics::Matrix4x4 matr;
 		//graphics::MatrixTransform(matr, 0.f, 0.f, 0.f);
 		//DrawTerrainMesh(ID_NULL, wldMeshTerrain,
-		//	res::GetT(res::t_gui_box), res::GetT(res::t_gui_hurt),
-		//	res::GetT(res::t_terrain_sanddirt), res::GetT(res::t_terrain_sanddirt),
+		//	acv::GetT(acv::t_gui_box), acv::GetT(acv::t_gui_hurt),
+		//	acv::GetT(acv::t_terrain_sanddirt), acv::GetT(acv::t_terrain_sanddirt),
 		//	matr);
 		//graphics::SetFrontFace();
 
@@ -257,28 +257,28 @@ namespace env
 	void DrawTerrain()
 	{
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
-			res::GetT(res::t_terrain_01), res::GetT(res::t_terrain_02),
-			res::GetT(res::t_terrain_03), res::GetT(res::t_terrain_04),
-			res::GetT(res::t_terrain_05), res::GetT(res::t_terrain_06),
-			res::GetT(res::t_terrain_07), res::GetT(res::t_terrain_08),
+			acv::GetT(acv::t_terrain_01), acv::GetT(acv::t_terrain_02),
+			acv::GetT(acv::t_terrain_03), acv::GetT(acv::t_terrain_04),
+			acv::GetT(acv::t_terrain_05), acv::GetT(acv::t_terrain_06),
+			acv::GetT(acv::t_terrain_07), acv::GetT(acv::t_terrain_08),
 			graphics::Matrix4x4());
 	}
 	void DrawTerrainDebug()
 	{
 		graphics::Matrix4x4 matr;
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
-			res::GetT(res::t_terrain_01), res::GetT(res::t_terrain_02),
-			res::GetT(res::t_terrain_03), res::GetT(res::t_terrain_04),
-			res::GetT(res::t_terrain_05), res::GetT(res::t_terrain_06),
-			res::GetT(res::t_terrain_07), res::GetT(res::t_terrain_08),
+			acv::GetT(acv::t_terrain_01), acv::GetT(acv::t_terrain_02),
+			acv::GetT(acv::t_terrain_03), acv::GetT(acv::t_terrain_04),
+			acv::GetT(acv::t_terrain_05), acv::GetT(acv::t_terrain_06),
+			acv::GetT(acv::t_terrain_07), acv::GetT(acv::t_terrain_08),
 			matr);
 		graphics::MatrixTransform(matr, m::Vector3(0.f, 0.01f, 0.f));
 		graphics::SetRenderWire();
 		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
-			res::GetT(res::t_col_black), res::GetT(res::t_col_black),
-			res::GetT(res::t_col_black), res::GetT(res::t_col_black),
-			res::GetT(res::t_col_black), res::GetT(res::t_col_black),
-			res::GetT(res::t_col_black), res::GetT(res::t_col_black),
+			acv::GetT(acv::t_col_black), acv::GetT(acv::t_col_black),
+			acv::GetT(acv::t_col_black), acv::GetT(acv::t_col_black),
+			acv::GetT(acv::t_col_black), acv::GetT(acv::t_col_black),
+			acv::GetT(acv::t_col_black), acv::GetT(acv::t_col_black),
 			matr);
 		graphics::SetRenderSolid();
 	}
@@ -345,7 +345,7 @@ namespace env
 					{
 						if (acv::props[env::eCells.prop[x][y]].idTxtr == wldTxtr[i])
 						{
-							wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
+							wldMeshes[i].AddMesh(&acv::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
 								m::Vector3((btf32)x, (btf32)eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, (btf32)y),
 								(graphics::CompositeMesh::MeshOrientation)env::eCells.prop_dir[x][y]);
 							foundTxtr = true;
@@ -358,7 +358,7 @@ namespace env
 							if (wldTxtr[i] == 0u)
 							{
 								wldTxtr[i] = acv::props[env::eCells.prop[x][y]].idTxtr;
-								wldMeshes[i].AddMesh(&res::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
+								wldMeshes[i].AddMesh(&acv::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
 									m::Vector3((btf32)x, (btf32)eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, (btf32)y),
 									(graphics::CompositeMesh::MeshOrientation)env::eCells.prop_dir[x][y]);
 								++wldNumTextures;
@@ -378,26 +378,19 @@ namespace env
 
 	void GenerateTerrainMesh()
 	{
-		#ifdef DEF_TERRAIN_EXPERIMENTAL
 		wldMeshTerrain.GenerateComplexEnv(eCells.terrain_height, eCells.terrain_material,
 			(btui32*)&eCells.flags, eflag::EF_BLOCK_SHAPE,
 			eCells.terrain_height_ne, eCells.terrain_height_nw,
 			eCells.terrain_height_se, eCells.terrain_height_sw);
-		#else
-		wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
-		#endif
+		//wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
 	}
 	void GenerateTerrainMeshEditor()
 	{
-		//wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
-		#ifdef DEF_TERRAIN_EXPERIMENTAL
 		wldMeshTerrain.GenerateComplexEnv(eCells.terrain_height, eCells.terrain_material,
 			(btui32*)&eCells.flags, eflag::EF_BLOCK_SHAPE,
 			eCells.terrain_height_ne, eCells.terrain_height_nw,
 			eCells.terrain_height_se, eCells.terrain_height_sw);
-		#else
-		wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
-		#endif
+		//wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
 	}
 }
 

@@ -18,6 +18,7 @@ public:
 	void TransferItemSend(btID ITEM_ID);
 	//btID GetItemOfType(ItemType TYPE);
 	btID GetItemOfTemplate(btID ITEM_TEMPLATE);
+	btui32 CountItemsOfTemplate(btID ITEM_TEMPLATE);
 	btID GetItemOfAmmunitionType(btui8 AMMO_TYPE);
 	void Draw(btui16 ACTIVE_SLOT);
 };

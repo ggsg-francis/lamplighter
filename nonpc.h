@@ -15,7 +15,7 @@ void NPCFocusEnemy(Actor* actor)
 
 	btf32 attack_dist = 1.5f;
 	// if its a ranged weapon, set the attack range higher
-	if (GetItemType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
+	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
 	{
 		attack_dist = 30.f;
 	}
@@ -220,7 +220,7 @@ void NPCTick(btID id)
 
 	// bad and temporary :P
 	// makes npc only point its gun if its looking at an enemy
-	if (GetItemType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
+	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
 	{
 		actor->inputBV.setto(Actor::ActorInput::IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
 		actor->inputBV.setto(Actor::ActorInput::IN_ACTN_A, actor->ai_target_ent != BUF_NULL);

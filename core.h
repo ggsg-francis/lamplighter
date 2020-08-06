@@ -38,8 +38,9 @@ namespace core
 	void End();
 
 	void ClearBuffers();
+	void RegenCellRefs();
 
-	void Tick(btf32 DELTA);
+	void Tick(btf32 delta);
 	void TickGUI();
 
 	void GUISetMessag(int player, char* string);
@@ -50,31 +51,37 @@ namespace core
 
 	void SetViewFocus(btID i);
 
+	//-------------------------------- SPAWN FUNCTIONS
+
 	// Creates an Entity instance, adds it to the index and allocates it an ID
-	btID SpawnEntity(btui8 TYPE_PREFAB_TEMP, m::Vector2 pos, float dir);
-	// Removes a given Entity from the index
-	void DestroyEntity(btID ID);
-
+	btID SpawnEntity(btui8 type_prefab_temp, m::Vector2 pos, float dir);
 	// Spawn an item on the ground, initializing a new item instance
-	btID SpawnNewEntityItem(btID ITEM_TEMPLATE, m::Vector2 POSITION, btf32 DIRECTION);
+	btID SpawnNewEntityItem(btID item_template, m::Vector2 position, btf32 direction);
 	// Spawn an item on the ground, referencing an existing item instance
-	btID SpawnEntityItem(btID ITEMID, m::Vector2 POSITION, btf32 DIRECTION);
-
-	inline void spawn_setup_t(btID index, m::Vector2 pos, btf32 dir);
+	btID SpawnEntityItem(btID itemid, m::Vector2 position, btf32 direction);
+	// Removes a given Entity from the index
+	void DestroyEntity(btID id);
 
 	// Create a new item instance of type TYPE
-	btID SpawnItem(btID ITEM_TEMPLATE);
+	btID SpawnItem(btID item_template);
 	// Destroy the item at ID
-	void DestroyItem(btID ID);
+	void DestroyItem(btID id);
+
+	// Create a new activator
+	btID SpawnActivator(btui32 x, btui32 y);
+	// Destroy an activator
+	void DestroyActivator(btID id);
 
 	// Creates a projectile instance, allocates an ID
-	void SpawnProjectile(fac::faction FACTION, btID TEMPLATE_TYPE, m::Vector2 POSITION, btf32 HEIGHT,
-		float YAW, float PITCH);
+	void SpawnProjectile(fac::faction faction, btID template_type, m::Vector2 position, btf32 height,
+		float yaw, float pitch);
 	// Creates a projectile instance, allocates an ID, includes a random spread amount
-	void SpawnProjectileSpread(fac::faction FACTION, btID TEMPLATE_TYPE, m::Vector2 POSITION, btf32 HEIGHT,
-		float YAW, float PITCH, float SPREAD);
+	void SpawnProjectileSpread(fac::faction faction, btID template_type, m::Vector2 position, btf32 height,
+		float yaw, float pitch, float spread);
 	// Removes a given projectile from the index
-	void DestroyProjectile(btID ID);
+	void DestroyProjectile(btID id);
+
+	//-------------------------------- idk
 
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg);
 	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& csi);
@@ -83,7 +90,7 @@ namespace core
 	btui16 GetHP(btID id);
 
 	// Set shadow texture ID (TODO: hacky, get rid of this)
-	void SetShadowTexture(btui32 ID);
+	void SetShadowTexture(btui32 id);
 
 	extern btui64 spawnz_time_temp;
 
@@ -96,29 +103,29 @@ namespace core
 	int CellEntityCount(int x, int y);
 	btID CellEntity(int x, int y, int e);
 
-	void SetPlayerInput(btID PLAYER_INDEX, m::Vector2 INPUT, btf32 YAW, btf32 PITCH,
-		bool WantAttack, bool use_hit, bool WantAttack2,
-		bool RUN, bool AIM, bool ACTION_A, bool ACTION_B, bool ACTION_C,
+	void SetPlayerInput(btID player_index, m::Vector2 input, btf32 yaw, btf32 pitch,
+		bool wantattack, bool use_hit, bool wantattack2,
+		bool run, bool aim, bool action_a, bool action_b, bool action_c,
 		bool crouch, bool jump);
 
 	void SetViewTargetID(btID ID, btui32 player);
 	btID GetViewTargetID(btui32 player);
 
 	//void EntDeintersect(Entity* ENT, CellSpace& CSI);
-	void ActorCastProj(btID ID);
+	void ActorCastProj(btID id);
 
 	// Adds this entity to the local vector of this cell
-	void AddEntityCell(btui32 X, btui32 Y, btID ENTITY);
+	void AddEntityCell(btui32 x, btui32 y, btID entity);
 	// Removes this entity from the local vector of this cell
-	void RemoveEntityCell(btui32 X, btui32 Y, btID ENTITY);
+	void RemoveEntityCell(btui32 x, btui32 y, btID entity);
 
-	bool LOSCheck(btID ENT_THIS, btID ENT_TARG);
-	btID GetClosestPlayer(btID INDEX);
-	btID GetClosestEntity(btID INDEX, btf32 DISTANCE);
-	btID GetViewTargetEntity(btID INDEX, btf32 DISTANCE, fac::facalleg ALLEGIANCE);
-	btID GetClosestEntityAlleg(btID INDEX, btf32 DISTANCE, fac::facalleg ALLEGIANCE);
-	btID GetClosestEntityAllegLOS(btID INDEX, btf32 DISTANCE, fac::facalleg ALLEGIANCE);
-	btID GetClosestActivator(btID INDEX);
+	bool LOSCheck(btID ent_this, btID ent_targ);
+	btID GetClosestPlayer(btID index);
+	btID GetClosestEntity(btID index, btf32 distance);
+	btID GetViewTargetEntity(btID index, btf32 distance, fac::facalleg allegiance);
+	btID GetClosestEntityAlleg(btID index, btf32 distance, fac::facalleg allegiance);
+	btID GetClosestEntityAllegLOS(btID index, btf32 distance, fac::facalleg allegiance);
+	btID GetClosestEntityButDifferent(btID index);
 }
 
 #endif

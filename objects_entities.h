@@ -113,14 +113,14 @@ void Entity_PhysicsTick(Entity* ENTITY, btID ID, btf32 DELTA_TIME);
 char* DisplayNameActor(void* ent);
 char* DisplayNameRestingItem(void* ent);
 
-void TickRestingItem(void* ent, btf32 dt);
-void DrawRestingItem(void* ent);
+void TickRestingItem(btID id, void* ent, btf32 dt);
+void DrawRestingItem(btID id, void* ent);
 
-void TickChara(void* ent, btf32 dt);
-void DrawChara(void* ent);
+void TickChara(btID id, void* ent, btf32 dt);
+void DrawChara(btID id, void* ent);
 
-void TickEditorPawn(void* ent, btf32 dt);
-void DrawEditorPawn(void* ent);
+void TickEditorPawn(btID id, void* ent, btf32 dt);
+void DrawEditorPawn(btID id, void* ent);
 
 // does this need to be here?
 m::Vector3 Actor_SetFootPos(m::Vector2 position);
@@ -128,8 +128,6 @@ m::Vector3 Actor_SetFootPos(m::Vector2 position);
 // Base entity class
 struct Entity
 {
-	btID id;
-	EntityType type;
 	bti8 name[32];
 
 	enum EntityFlags : btui8
@@ -247,7 +245,7 @@ struct Actor : public Entity
 	mem::bv<btui8, CharaAniFlags> animationBV;
 
 	Transform3D t_body, t_head;
-	m::Vector3 fpCurrentR, fpCurrentL;
+	m::Vector3 fpCurrentL, fpCurrentR;
 	m::Vector2 ani_body_lean;
 	btf32 aniStandHeight;
 	bool aniCrouch = false;
@@ -270,9 +268,9 @@ struct Actor : public Entity
 	btui8 ai_path_current_index = 0u;
 	bool ai_pathing = false;
 
-	void TryHoldHand(btID ID);
-	void TakeItem(btID ID);
-	void DropItem(btID SLOT);
+	void TryHoldHand(btID ID_SELF, btID ID);
+	void TakeItem(btID ID_SELF, btID ID);
+	void DropItem(btID ID_SELF, btID SLOT);
 	void DropAllItems();
 	void SetEquipSlot(btui32 slot);
 	void IncrEquipSlot();

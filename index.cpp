@@ -27,14 +27,14 @@ char*(*fpName[ENTITY_TYPE_COUNT])(void* self) = {
 };
 
 // Tick this entity
-void(*fpTick[ENTITY_TYPE_COUNT])(void* self, btf32 dt) = {
+void(*fpTick[ENTITY_TYPE_COUNT])(btID id, void* self, btf32 dt) = {
 	TickEditorPawn,
 	TickRestingItem,
 	TickChara,
 };
 
 // Render graphics of this entity
-void(*fpDraw[ENTITY_TYPE_COUNT])(void* self) = {
+void(*fpDraw[ENTITY_TYPE_COUNT])(btID id, void* self) = {
 	DrawEditorPawn,
 	DrawRestingItem,
 	DrawChara,
@@ -51,49 +51,9 @@ void*(*GetEntArray[ENTITY_TYPE_COUNT])(btID) = {
 	getEntActor,
 };
 // Array lookup function
-btID AssignEntityID(EntityType type) {
-	return block_entity.Add(type);
-}
-bool GetEntityExists(btID id) {
-	return block_entity.Used(id);
-}
-btID GetLastEntity() {
-	return block_entity.index_end;
-}
-void* GetEntityPtr(btID id) {
-	return GetEntArray[block_entity.Data(id).type](block_entity.Data(id).type_buffer_index);
-}
-EntityType GetEntityType(btID id) {
-	return block_entity.Data(id).type;
-}
+btID InitEntity(EntityType type) {
+	btID id = block_entity.Add(type);
 
-//-------------------------------- ITEMS
-
-// (idk which is which and at this point i'm too afraid to ask)
-mem::ObjBuf<EntAddr, ItemType, ENTITY_TYPE_NULL, BUF_SIZE> block_item; // Item buffer
-mem::ObjBuf<HeldItem, ItemType, ENTITY_TYPE_NULL, BUF_SIZE> buf_iteminst; // Item buffer
-btID AssignItemID(ItemType type) {
-	return block_item.Add(type);
-}
-bool GetItemExists(btID id) {
-	return block_item.Used(id);
-}
-void* GetItemPtr(btID id) {
-	return &buf_iteminst.Data(id);
-}
-ItemType GetItemType(btID id) {
-	return block_item.Data(id).type;
-}
-
-//-------------------------------- ACTIVATORS
-
-mem::ObjBuf<StaticActivator, ActivatorType2, (ActivatorType2)255u, BUF_SIZE> activators;
-
-//________________________________________________________________________________________________________________________________
-// INITIALIZATION ----------------------------------------------------------------------------------------------------------------
-
-void IndexInitEntity(btID id, EntityType type)
-{
 	block_entity.Data(id).type = type;
 	switch (type)
 	{
@@ -113,14 +73,25 @@ void IndexInitEntity(btID id, EntityType type)
 		break;
 	}
 
-	ENTITY(id)->id = id;
-	ENTITY(id)->type = type;
+	return id;
+}
+bool GetEntityExists(btID id) {
+	return block_entity.Used(id);
+}
+btID GetLastEntity() {
+	return block_entity.index_end;
+}
+void* GetEntityPtr(btID id) {
+	return GetEntArray[block_entity.Data(id).type](block_entity.Data(id).type_buffer_index);
+}
+EntityType GetEntityType(btID id) {
+	return block_entity.Type(id);
 }
 void IndexFreeEntity(btID id)
 {
 	if (block_entity.Used(id))
 	{
-		switch (ENTITY(id)->type)
+		switch (GetEntityType(id))
 		{
 		case ENTITY_TYPE_EDITOR_PAWN:
 			break;
@@ -134,45 +105,55 @@ void IndexFreeEntity(btID id)
 	}
 	block_entity.Remove(id);
 }
-void IndexInitItemInstance(btID id, ItemType type)
-{
-	block_item.Data(id).type = type;
+
+//-------------------------------- ITEMS
+
+mem::ObjBuf<HeldItem, ItemType, ENTITY_TYPE_NULL, BUF_SIZE> buf_iteminst;
+btID InitItemInstance(ItemType type) {
+	return buf_iteminst.Add(type);
 }
-void IndexFreeItem(btID id)
-{
-	if (block_item.Used(id))
-	{
-		buf_iteminst.Remove(block_item.Data(id).type_buffer_index);
-	}
-	block_item.Remove(id);
+bool ItemInstanceExists(btID id) {
+	return buf_iteminst.Used(id);
 }
+void* GetItemInstance(btID id) {
+	return &buf_iteminst.Data(id);
+}
+ItemType GetItemInstanceType(btID id) {
+	return buf_iteminst.Type(id);
+}
+void FreeItemInstance(btID id) {
+	if (buf_iteminst.Used(id))
+		buf_iteminst.Remove(id);
+}
+
+//-------------------------------- ACTIVATORS
+
+mem::ObjBuf<StaticActivator, ActivatorType, (ActivatorType)255u, BUF_SIZE> activators;
+btID InitActivator(ActivatorType type) {
+	return activators.Add(type);
+}
+bool GetActivatorExists(btID id) {
+	return activators.Used(id);
+}
+void* GetActivatorPtr(btID id) {
+	return &activators.Data(id);
+}
+ActivatorType GetActivatorType(btID id) {
+	return activators.Type(id);
+}
+void FreeActivator(btID id) {
+	if (activators.Used(id))
+		activators.Remove(id);
+}
+
+//________________________________________________________________________________________________________________________________
+// INITIALIZATION ----------------------------------------------------------------------------------------------------------------
 
 PrjID MakePrjID(int i)
 {
 	PrjID h;
 	h.id = (btID)i;
 	return h;
-}
-
-//________________________________________________________________________________________________________________________________
-// TEMP MATHS --------------------------------------------------------------------------------------------------------------------
-
-// temp
-#define CONV_RAD 0.01745329251994329576923690768489
-#define CONV_DEG 57.295779513082320876798154814105
-
-btf32 Random(btf32 min, btf32 max)
-{
-	//return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
-	return min + (btf32)(rand()) / (((btf32)RAND_MAX) / (max - min));
-};
-inline btf32 Radians(btf32 value)
-{
-	return value * CONV_RAD;
-}
-inline btf32 Degrees(btf32 value)
-{
-	return value * CONV_DEG;
 }
 
 //________________________________________________________________________________________________________________________________

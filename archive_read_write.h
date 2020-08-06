@@ -9,6 +9,9 @@ namespace serializer
 	void InterpretArchiveContents(char* fn);
 	void LoadArchive(char* fn);
 	void SaveArchive(char* fn);
+	#ifdef DEF_ARCHIVE_IN_CODE
+	void ARCHIVE_to_C();
+	#endif
 }
 
 #endif

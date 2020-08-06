@@ -193,7 +193,7 @@ namespace graphics
 				x *= 0.5f;
 			}
 			else
-			#endif
+				#endif
 			{
 				gPtr->frameSizeX = x / scale;
 			}
@@ -704,9 +704,9 @@ namespace graphics
 		std::cout << "SHADER VERT: " << vertexPath << " FRAG: " << fragmentPath << std::endl;
 		for (btui32 i = 0u; i < LOCATION_COUNT; ++i)
 		{
-		location[i] = glGetUniformLocation(ID, names[i]);
-		if (location[i] != -1)
-			std::cout << "Got shader property ID: " << location[i] << " STR: " << names[i] << std::endl;
+			location[i] = glGetUniformLocation(ID, names[i]);
+			if (location[i] != -1)
+				std::cout << "Got shader property ID: " << location[i] << " STR: " << names[i] << std::endl;
 		}//*/
 		/*
 		location[matModel] = glGetUniformLocation(ID, "matm");
@@ -956,131 +956,125 @@ namespace graphics
 		SetEdgeMode[edge_mode]();
 	}
 
-	void Texture::LoadFile(char * fn)
+	void Texture::LoadFile(void* File)
 	{
 		glGenTextures(1, &glID);
 
-		FILE* file = fopen(fn, "rb"); // Open the file
-		if (file)
+		FILE* file = (FILE*)File;
+
+		// Read version
+		version_t v;
+		fread(&v, sizeof(version_t), 1, file);
+		TextureFilterMode fm;
+		TextureEdgeMode em;
+		fread(&fm, 1, 1, file);
+		fread(&em, 1, 1, file);
+		// Read dimensions
+		fread(&width, sizeof(btui16), 1, file);
+		fread(&height, sizeof(btui16), 1, file);
+		// Read pixel buffer
+		graphics::colour* buffer = new colour[width * height];
+		fread(buffer, sizeof(graphics::colour), width * height, file);
+
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, glID);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width / 2, height / 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_mip);
+
+		// Custom Mip test
+		#ifdef DEF_CUSTOM_MIPMAP
+		if (fm == eLINEAR_MIPMAP || fm == eNEAREST_MIPMAP)
 		{
-			// Seek the beginning of the file
-			fseek(file, 0, SEEK_SET);
-			// Read version
-			version_t v;
-			fread(&v, sizeof(version_t), 1, file);
-			TextureFilterMode fm;
-			TextureEdgeMode em;
-			fread(&fm, 1, 1, file);
-			fread(&em, 1, 1, file);
-			// Read dimensions
-			fread(&width, sizeof(btui16), 1, file);
-			fread(&height, sizeof(btui16), 1, file);
-			// Read pixel buffer
-			graphics::colour* buffer = new colour[width * height];
-			fread(buffer, sizeof(graphics::colour), width * height, file);
-			// Close file
-			fclose(file);
-
-			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, glID);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-			//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width / 2, height / 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_mip);
-
-			// Custom Mip test
-			#ifdef DEF_CUSTOM_MIPMAP
-			if (fm == eLINEAR_MIPMAP || fm == eNEAREST_MIPMAP)
+			graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
+			graphics::colour* buffer_mip02 = new colour[width / 4 * height / 4];
+			graphics::colour* buffer_mip03 = new colour[width / 8 * height / 8];
+			graphics::colour* buffer_mip04 = new colour[width / 16 * height / 16];
+			graphics::colour* buffer_mip05 = new colour[width / 32 * height / 32];
+			graphics::colour* buffer_mip06 = new colour[width / 64 * height / 64];
+			graphics::colour* buffer_mip07 = new colour[width / 128 * height / 128];
+			graphics::colour* buffer_mip08 = new colour[width / 256 * height / 256];
+			graphics::colour* buffer_mip09 = new colour[width / 512 * height / 512];
+			graphics::colour* buffer_mip10 = new colour[width / 1024 * height / 1024];
+			graphics::colour* buffer_mip11 = new colour[width / 2048 * height / 2048];
+			graphics::colour* buffer_mip12 = new colour[width / 4096 * height / 4096];
+			graphics::colour* buffer_array[]{ buffer,
+				buffer_mip01, buffer_mip02, buffer_mip03, buffer_mip04, buffer_mip05, buffer_mip06,
+				buffer_mip07, buffer_mip08, buffer_mip09, buffer_mip10, buffer_mip11, buffer_mip12 };
+			int division = 2;
+			for (int i = 1; i < 13; ++i)
 			{
-				graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
-				graphics::colour* buffer_mip02 = new colour[width / 4 * height / 4];
-				graphics::colour* buffer_mip03 = new colour[width / 8 * height / 8];
-				graphics::colour* buffer_mip04 = new colour[width / 16 * height / 16];
-				graphics::colour* buffer_mip05 = new colour[width / 32 * height / 32];
-				graphics::colour* buffer_mip06 = new colour[width / 64 * height / 64];
-				graphics::colour* buffer_mip07 = new colour[width / 128 * height / 128];
-				graphics::colour* buffer_mip08 = new colour[width / 256 * height / 256];
-				graphics::colour* buffer_mip09 = new colour[width / 512 * height / 512];
-				graphics::colour* buffer_mip10 = new colour[width / 1024 * height / 1024];
-				graphics::colour* buffer_mip11 = new colour[width / 2048 * height / 2048];
-				graphics::colour* buffer_mip12 = new colour[width / 4096 * height / 4096];
-				graphics::colour* buffer_array[]{ buffer,
-					buffer_mip01, buffer_mip02, buffer_mip03, buffer_mip04, buffer_mip05, buffer_mip06,
-					buffer_mip07, buffer_mip08, buffer_mip09, buffer_mip10, buffer_mip11, buffer_mip12 };
-				int division = 2;
-				for (int i = 1; i < 13; ++i)
+				for (int x = 0; x < width / division; ++x)
 				{
-					for (int x = 0; x < width / division; ++x)
+					for (int y = 0; y < height / division; ++y)
 					{
-						for (int y = 0; y < height / division; ++y)
-						{
-							buffer_array[i][x * (width / division) + y].r = buffer[(x * division) * width + (y * division)].r;
-							buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
-							buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
-							buffer_array[i][x * (width / division) + y].a = buffer[(x * division) * width + (y * division)].a;
-						}
+						buffer_array[i][x * (width / division) + y].r = buffer[(x * division) * width + (y * division)].r;
+						buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
+						buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
+						buffer_array[i][x * (width / division) + y].a = buffer[(x * division) * width + (y * division)].a;
 					}
-					glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, width / division, height / division, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_array[i]);
-					division *= 2;
 				}
-				for (int i = 1; i < 13; ++i)
-					delete[] buffer_array[i];
+				glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, width / division, height / division, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_array[i]);
+				division *= 2;
 			}
-			else if (fm == eFOLIAGE)
-			{
-				graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
-				graphics::colour* buffer_mip02 = new colour[width / 4 * height / 4];
-				graphics::colour* buffer_mip03 = new colour[width / 8 * height / 8];
-				graphics::colour* buffer_mip04 = new colour[width / 16 * height / 16];
-				graphics::colour* buffer_mip05 = new colour[width / 32 * height / 32];
-				graphics::colour* buffer_mip06 = new colour[width / 64 * height / 64];
-				graphics::colour* buffer_mip07 = new colour[width / 128 * height / 128];
-				graphics::colour* buffer_mip08 = new colour[width / 256 * height / 256];
-				graphics::colour* buffer_mip09 = new colour[width / 512 * height / 512];
-				graphics::colour* buffer_mip10 = new colour[width / 1024 * height / 1024];
-				graphics::colour* buffer_mip11 = new colour[width / 2048 * height / 2048];
-				graphics::colour* buffer_mip12 = new colour[width / 4096 * height / 4096];
-				graphics::colour* buffer_array[]{ buffer,
-					buffer_mip01, buffer_mip02, buffer_mip03, buffer_mip04, buffer_mip05, buffer_mip06,
-					buffer_mip07, buffer_mip08, buffer_mip09, buffer_mip10, buffer_mip11, buffer_mip12 };
-				int division = 2;
-				for (int i = 1; i < 13; ++i)
-				{
-					for (int x = 0; x < width / division; ++x)
-					{
-						for (int y = 0; y < height / division; ++y)
-						{
-							buffer_array[i][x * (width / division) + y].r = buffer[(x * division) * width + (y * division)].r;
-							buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
-							buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
-							// Get minimum alpha
-							#ifdef DEF_CUSTOM_MIPMAP_FOLIAGE_MIN
-							buffer_array[i][x * (width / division) + y].a = m::Min<btui8>(4u,
-								#else
-							buffer_array[i][x * (width / division) + y].a = m::Max<btui8>(4u,
-								#endif
-								buffer_array[i - 1][(x * 2)     * (width / (division / 2)) + (y * 2)].a,
-								buffer_array[i - 1][(x * 2 + 1) * (width / (division / 2)) + (y * 2)].a,
-								buffer_array[i - 1][(x * 2)     * (width / (division / 2)) + (y * 2 + 1)].a,
-								buffer_array[i - 1][(x * 2 + 1) * (width / (division / 2)) + (y * 2 + 1)].a);
-						}
-					}
-					glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, width / division, height / division, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_array[i]);
-					division *= 2;
-				}
-				for (int i = 1; i < 13; ++i)
-					delete[] buffer_array[i];
-			}
-			#endif
-
-			#ifdef DEF_OLDSKOOL
-			if (fm == eLINEAR) fm = eNEAREST;
-			if (fm == eLINEAR_MIPMAP) fm = eNEAREST_MIPMAP;
-			#endif
-			SetFilterMode[fm]();
-			SetEdgeMode[em]();
-
-			delete[] buffer;
+			for (int i = 1; i < 13; ++i)
+				delete[] buffer_array[i];
 		}
+		else if (fm == eFOLIAGE)
+		{
+			graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
+			graphics::colour* buffer_mip02 = new colour[width / 4 * height / 4];
+			graphics::colour* buffer_mip03 = new colour[width / 8 * height / 8];
+			graphics::colour* buffer_mip04 = new colour[width / 16 * height / 16];
+			graphics::colour* buffer_mip05 = new colour[width / 32 * height / 32];
+			graphics::colour* buffer_mip06 = new colour[width / 64 * height / 64];
+			graphics::colour* buffer_mip07 = new colour[width / 128 * height / 128];
+			graphics::colour* buffer_mip08 = new colour[width / 256 * height / 256];
+			graphics::colour* buffer_mip09 = new colour[width / 512 * height / 512];
+			graphics::colour* buffer_mip10 = new colour[width / 1024 * height / 1024];
+			graphics::colour* buffer_mip11 = new colour[width / 2048 * height / 2048];
+			graphics::colour* buffer_mip12 = new colour[width / 4096 * height / 4096];
+			graphics::colour* buffer_array[]{ buffer,
+				buffer_mip01, buffer_mip02, buffer_mip03, buffer_mip04, buffer_mip05, buffer_mip06,
+				buffer_mip07, buffer_mip08, buffer_mip09, buffer_mip10, buffer_mip11, buffer_mip12 };
+			int division = 2;
+			for (int i = 1; i < 13; ++i)
+			{
+				for (int x = 0; x < width / division; ++x)
+				{
+					for (int y = 0; y < height / division; ++y)
+					{
+						buffer_array[i][x * (width / division) + y].r = buffer[(x * division) * width + (y * division)].r;
+						buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
+						buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
+						// Get minimum alpha
+						#ifdef DEF_CUSTOM_MIPMAP_FOLIAGE_MIN
+						buffer_array[i][x * (width / division) + y].a = m::Min<btui8>(4u,
+							#else
+						buffer_array[i][x * (width / division) + y].a = m::Max<btui8>(4u,
+							#endif
+							buffer_array[i - 1][(x * 2)     * (width / (division / 2)) + (y * 2)].a,
+							buffer_array[i - 1][(x * 2 + 1) * (width / (division / 2)) + (y * 2)].a,
+							buffer_array[i - 1][(x * 2)     * (width / (division / 2)) + (y * 2 + 1)].a,
+							buffer_array[i - 1][(x * 2 + 1) * (width / (division / 2)) + (y * 2 + 1)].a);
+					}
+				}
+				glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, width / division, height / division, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_array[i]);
+				division *= 2;
+			}
+			for (int i = 1; i < 13; ++i)
+				delete[] buffer_array[i];
+		}
+		#endif
+
+		#ifdef DEF_OLDSKOOL
+		if (fm == eLINEAR) fm = eNEAREST;
+		if (fm == eLINEAR_MIPMAP) fm = eNEAREST_MIPMAP;
+		#endif
+		SetFilterMode[fm]();
+		SetEdgeMode[em]();
+
+		delete[] buffer;
 	}
 	void Texture::InitRenderBuffer(GLuint fbuf, int x, int y, bool linear)
 	{
@@ -1223,74 +1217,69 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// MESH --------------------------------------------------------------------------------------------------------------------------
 
-	void Mesh::LoadFile(char* fn, bool clearmem)
+	void Mesh::LoadFile(void* file, bool clearmem)
 	{
-		std::cout << "Loading " << fn << "... ";
+		//std::cout << "Loading " << fn << "... ";
 
 		//Vertex* vces; // Vertices
 		//btui32* ices; // Indices
 
 		//-------------------------------- OPEN FILE
 
-		FILE* in = fopen(fn, "rb");
-		if (in != NULL)
+		FILE* in = (FILE*)file;
+
+		//Vert* vces; // Vertices
+		//size_t vces_size;
+		//btui32* ices; // Indices
+		//size_t ices_size;
+
+		version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
+
+		//-------------------------------- READ VERTICES
+
+		fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
+		vces = (Vertex*)malloc(sizeof(Vertex) * vces_size); // Allocate buffer to hold our vertices
+		fread(&vces[0], sizeof(Vertex), vces_size, in); // Read vertices
+
+		//-------------------------------- READ INDICES
+
+		fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
+		ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
+		fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
+
+		//glID = (GLuint)ices_size; // Set number of indices used in Draw()
+
+		//-------------------------------- INITIALIZE OPENGL BUFFER
+
+		glGenVertexArrays(1, &vao); // Create vertex buffer
+		glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
+
+		glBindVertexArray(vao); // Bind this vertex array
+		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
+		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+
+		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
+		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
+		glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
+		glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_NOR);
+		glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
+		glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
+		glEnableVertexAttribArray(VI_COL); // Set Vertex colour
+		glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
+
+		glBindVertexArray(0); // Bind default vertex array
+
+		if (clearmem)
 		{
-			//Vert* vces; // Vertices
-			//size_t vces_size;
-			//btui32* ices; // Indices
-			//size_t ices_size;
-
-			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
-			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
-
-			//-------------------------------- READ VERTICES
-
-			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
-			vces = (Vertex*)malloc(sizeof(Vertex) * vces_size); // Allocate buffer to hold our vertices
-			fread(&vces[0], sizeof(Vertex), vces_size, in); // Read vertices
-
-			//-------------------------------- READ INDICES
-
-			fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
-			ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
-			fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
-
-			fclose(in);
-
-			//glID = (GLuint)ices_size; // Set number of indices used in Draw()
-
-			//-------------------------------- INITIALIZE OPENGL BUFFER
-
-			glGenVertexArrays(1, &vao); // Create vertex buffer
-			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
-
-			glBindVertexArray(vao); // Bind this vertex array
-			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
-
-			glEnableVertexAttribArray(VI_POS); // Set Vertex positions
-			glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
-			glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
-			glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_NOR);
-			glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
-			glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
-			glEnableVertexAttribArray(VI_COL); // Set Vertex colour
-			glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
-
-			glBindVertexArray(0); // Bind default vertex array
-
-			if (clearmem)
-			{
-				free(vces);
-				vces = nullptr;
-				free(ices);
-				ices = nullptr;
-			}
-
-			std::cout << "Generated Mesh!" << std::endl;
+			free(vces);
+			vces = nullptr;
+			free(ices);
+			ices = nullptr;
 		}
+
+		std::cout << "Generated Mesh!" << std::endl;
 	}
 	void Mesh::Unload()
 	{
@@ -1304,71 +1293,66 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// MESH BLEND --------------------------------------------------------------------------------------------------------------------
 
-	void MeshBlend::LoadFile(char* fn)
+	void MeshBlend::LoadFile(void* file)
 	{
-		std::cout << "Loading " << fn << "... ";
+		//std::cout << "Loading " << fn << "... ";
 
 		//-------------------------------- OPEN FILE
 
-		FILE* in = fopen(fn, "rb");
-		if (in != NULL)
-		{
-			VertexBlend* vces; // Vertices
-			size_t vces_size;
-			btui32* ices; // Indices
+		FILE* in = (FILE*)file;
 
-			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
-			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
+		VertexBlend* vces; // Vertices
+		size_t vces_size;
+		btui32* ices; // Indices
 
-			//-------------------------------- READ VERTICES
+		version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
 
-			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
-			vces = (VertexBlend*)malloc(sizeof(VertexBlend) * vces_size); // Allocate buffer to hold our vertices
-			fread(&vces[0], sizeof(VertexBlend), vces_size, in); // Read vertices
+		//-------------------------------- READ VERTICES
 
-			//-------------------------------- READ INDICES
+		fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
+		vces = (VertexBlend*)malloc(sizeof(VertexBlend) * vces_size); // Allocate buffer to hold our vertices
+		fread(&vces[0], sizeof(VertexBlend), vces_size, in); // Read vertices
 
-			fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
-			ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
-			fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
+		//-------------------------------- READ INDICES
 
-			fclose(in);
+		fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
+		ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
+		fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
 
-			ices_size = (GLuint)ices_size; // Set number of indices used in Draw()
+		ices_size = (GLuint)ices_size; // Set number of indices used in Draw()
 
-			//-------------------------------- INITIALIZE OPENGL BUFFER
+		//-------------------------------- INITIALIZE OPENGL BUFFER
 
-			glGenVertexArrays(1, &vao); // Create vertex buffer
-			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
+		glGenVertexArrays(1, &vao); // Create vertex buffer
+		glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
 
-			glBindVertexArray(vao); // Bind this vertex array
-			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexBlend), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+		glBindVertexArray(vao); // Bind this vertex array
+		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
+		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexBlend), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
-			glEnableVertexAttribArray(vbi_pos_a); // Set Vertex positions
-			glVertexAttribPointer(vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_a);
-			glEnableVertexAttribArray(vbi_pos_b);
-			glVertexAttribPointer(vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_b);
+		glEnableVertexAttribArray(vbi_pos_a); // Set Vertex positions
+		glVertexAttribPointer(vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_a);
+		glEnableVertexAttribArray(vbi_pos_b);
+		glVertexAttribPointer(vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_b);
 
-			glEnableVertexAttribArray(vbi_nor_a); // Set Vertex normals
-			glVertexAttribPointer(vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_nor_a);
-			glEnableVertexAttribArray(vbi_nor_b);
-			glVertexAttribPointer(vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_nor_b);
+		glEnableVertexAttribArray(vbi_nor_a); // Set Vertex normals
+		glVertexAttribPointer(vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_nor_a);
+		glEnableVertexAttribArray(vbi_nor_b);
+		glVertexAttribPointer(vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_nor_b);
 
-			glEnableVertexAttribArray(vbi_uvc); // Set Vertex texture coords
-			glVertexAttribPointer(vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_uvc);
+		glEnableVertexAttribArray(vbi_uvc); // Set Vertex texture coords
+		glVertexAttribPointer(vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_uvc);
 
-			glEnableVertexAttribArray(vbi_col); // Set Vertex colour
-			glVertexAttribPointer(vbi_col, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_col);
+		glEnableVertexAttribArray(vbi_col); // Set Vertex colour
+		glVertexAttribPointer(vbi_col, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_col);
 
-			glBindVertexArray(0); // Bind default vertex array
-			free(vces);
-			free(ices);
+		glBindVertexArray(0); // Bind default vertex array
+		free(vces);
+		free(ices);
 
-			std::cout << "Generated Mesh Blend!" << std::endl;
-		}
+		std::cout << "Generated Mesh Blend!" << std::endl;
 	}
 	void MeshBlend::Unload()
 	{
@@ -1380,70 +1364,65 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// MESH DEFORM -------------------------------------------------------------------------------------------------------------------
 
-	void MeshDeform::LoadFile(char* fn)
+	void MeshDeform::LoadFile(void* file)
 	{
-		std::cout << "Loading " << fn << "... ";
+		//std::cout << "Loading " << fn << "... ";
 
 		//-------------------------------- OPEN FILE
 
-		FILE* in = fopen(fn, "rb");
-		if (in != NULL)
+		FILE* in = (FILE*)file;
+
+		VertexDeform* vces; // Vertices
+		size_t vces_size;
+		btui32* ices; // Indices
+
+		version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
+
+		//-------------------------------- READ VERTICES
+
+		fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
+		vces = (VertexDeform*)malloc(sizeof(VertexDeform) * vces_size); // Allocate buffer to hold our vertices
+		fread(&vces[0], sizeof(VertexDeform), vces_size, in); // Read vertices
+
+		//-------------------------------- READ INDICES
+
+		fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
+		ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
+		fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
+
+		ices_size = (GLuint)ices_size; // Set number of indices used in Draw()
+
+		//-------------------------------- INITIALIZE OPENGL BUFFER
+
+		glGenVertexArrays(1, &vao); // Create vertex buffer
+		glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
+
+		glBindVertexArray(vao); // Bind this vertex array
+		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
+		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexDeform), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+
+		glEnableVertexAttribArray(vdi_pos); // Set Vertex positions
+		glVertexAttribPointer(vdi_pos, 3u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_pos);
+		glEnableVertexAttribArray(vdi_nor); // Set Vertex normals
+		glVertexAttribPointer(vdi_nor, 3u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_nor);
+		glEnableVertexAttribArray(vdi_uvc); // Set Vertex texture coords
+		glVertexAttribPointer(vdi_uvc, 2u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_uvc);
+		glEnableVertexAttribArray(vdi_col); // Set Vertex colour
+		glVertexAttribPointer(vdi_col, 4u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_col);
+		// Set the matrix value array
+		for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
 		{
-			VertexDeform* vces; // Vertices
-			size_t vces_size;
-			btui32* ices; // Indices
-
-			fseek(in, 0, SEEK_SET); // Seek the beginning of the file
-			version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
-
-			//-------------------------------- READ VERTICES
-
-			fread(&vces_size, sizeof(size_t), 1, in); // Read number of vertices
-			vces = (VertexDeform*)malloc(sizeof(VertexDeform) * vces_size); // Allocate buffer to hold our vertices
-			fread(&vces[0], sizeof(VertexDeform), vces_size, in); // Read vertices
-
-			//-------------------------------- READ INDICES
-
-			fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
-			ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
-			fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
-
-			fclose(in);
-
-			ices_size = (GLuint)ices_size; // Set number of indices used in Draw()
-
-			//-------------------------------- INITIALIZE OPENGL BUFFER
-
-			glGenVertexArrays(1, &vao); // Create vertex buffer
-			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
-
-			glBindVertexArray(vao); // Bind this vertex array
-			glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
-			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexDeform), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
-
-			glEnableVertexAttribArray(vdi_pos); // Set Vertex positions
-			glVertexAttribPointer(vdi_pos, 3u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_pos);
-			glEnableVertexAttribArray(vdi_nor); // Set Vertex normals
-			glVertexAttribPointer(vdi_nor, 3u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_nor);
-			glEnableVertexAttribArray(vdi_uvc); // Set Vertex texture coords
-			glVertexAttribPointer(vdi_uvc, 2u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_uvc);
-			glEnableVertexAttribArray(vdi_col); // Set Vertex colour
-			glVertexAttribPointer(vdi_col, 4u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_col);
-			// Set the matrix value array
-			for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
-			{
-				glEnableVertexAttribArray(vdi_mat + i); // Set Vertex colour
-				glVertexAttribPointer(vdi_mat + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)(vd_mat + (sizeof(btf32) * i)));
-			}
-
-			glBindVertexArray(0); // Bind default vertex array
-			free(vces);
-			free(ices);
-
-			std::cout << "Generated Mesh Deform!" << std::endl;
+			glEnableVertexAttribArray(vdi_mat + i); // Set Vertex colour
+			glVertexAttribPointer(vdi_mat + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)(vd_mat + (sizeof(btf32) * i)));
 		}
+
+		glBindVertexArray(0); // Bind default vertex array
+		free(vces);
+		free(ices);
+
+		std::cout << "Generated Mesh Deform!" << std::endl;
 	}
 	void MeshDeform::Unload()
 	{
@@ -1451,7 +1430,7 @@ namespace graphics
 		glDeleteBuffers(1, &vbo);
 		glDeleteBuffers(1, &ebo);
 	}
-	
+
 	//________________________________________________________________________________________________________________________________
 	// COMPOSITE MESH ----------------------------------------------------------------------------------------------------------------
 
@@ -1660,7 +1639,7 @@ namespace graphics
 					cliffNS = true;
 				if (HEIGHTMAP[x][y] > HEIGHTMAP[x][y + 1] + (btui16)5u || HEIGHTMAP[x][y] < HEIGHTMAP[x][y + 1] - (btui16)5u)
 					cliffEW = true;
-				
+
 				// Copy in the things from the new mesh
 				vces[v + 0].pos.x = (btf32)x;
 				vces[v + 0].pos.z = (btf32)y;
@@ -1882,10 +1861,10 @@ namespace graphics
 					// Triangulate based on longest height difference
 					#ifdef DEF_TERRAIN_USE_EROSION_TRIANGULATION
 					if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) < abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
-						triangulate_alternate = true; 
+						triangulate_alternate = true;
 					#else
 					if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) > abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
-						triangulate_alternate = true; 
+						triangulate_alternate = true;
 					#endif
 
 					if (triangulate_alternate)
@@ -2062,10 +2041,10 @@ namespace graphics
 
 				for (int i = 0; i < 4; ++i)
 				{
-					vces[v+i].txtr[0] = 0.f; vces[v+i].txtr[1] = 0.f;
-					vces[v+i].txtr[2] = 0.f; vces[v+i].txtr[3] = 0.f;
-					vces[v+i].txtr[4] = 0.f; vces[v+i].txtr[5] = 0.f;
-					vces[v+i].txtr[6] = 0.f; vces[v+i].txtr[7] = 0.f;
+					vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
+					vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
+					vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
+					vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
 				}
 				vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
 				vces[v + 1].txtr[MATMAP[x - 1][y]] = 1.f; //nw
@@ -2167,7 +2146,7 @@ namespace graphics
 					//ne
 					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
 					vces[v + 2u].pos.y = (btf32)hmap_se[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
-					
+
 					for (int i = 0; i < 3; ++i)
 					{
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
@@ -2200,7 +2179,7 @@ namespace graphics
 					//nw
 					vces[v + 2u].pos.x = (btf32)x - 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
 					vces[v + 2u].pos.y = (btf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
-					
+
 					for (int i = 0; i < 3; ++i)
 					{
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
@@ -2317,7 +2296,7 @@ namespace graphics
 					//se
 					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y - 0.5f;
 					vces[v + 2u].pos.y = (btf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
-					
+
 					for (int i = 0; i < 3; ++i)
 					{
 						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;

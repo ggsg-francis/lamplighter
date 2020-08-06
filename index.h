@@ -12,7 +12,7 @@ typedef struct EntAddr
 //-------------------------------- ENTITIES
 
 // Make an entity, return ID
-btID AssignEntityID(EntityType TYPE);
+btID InitEntity(EntityType TYPE);
 // Get whether an entity with this ID exists
 bool GetEntityExists(btID ID);
 // Get the ID of the last entity
@@ -21,26 +21,43 @@ btID GetLastEntity();
 void* GetEntityPtr(btID ID);
 // Get the type of the entity at ID
 EntityType GetEntityType(btID ID);
+//
+void IndexFreeEntity(btID ID);
 
 //-------------------------------- ITEMS
 
 // Make an item, return ID
-btID AssignItemID(ItemType TYPE);
+btID InitItemInstance(ItemType TYPE);
 // Get whether an item with this ID exists
-bool GetItemExists(btID ID);
+bool ItemInstanceExists(btID ID);
 // Get the pointer address of the item at ID
-void* GetItemPtr(btID ID);
+void* GetItemInstance(btID ID);
 // Get the type of the item at ID
-ItemType GetItemType(btID ID);
+ItemType GetItemInstanceType(btID ID);
+//
+void FreeItemInstance(btID ID);
+
+//-------------------------------- ACTIVATORS
+
+// Make an item, return ID
+btID InitActivator(ActivatorType type);
+// Get whether an item with this ID exists
+bool GetActivatorExists(btID id);
+// Get the pointer address of the item at ID
+void* GetActivatorPtr(btID id);
+// Get the type of the item at ID
+ActivatorType GetActivatorType(btID id);
+//
+void FreeActivator(btID ID);
 
 //-------------------------------- OTHER STUFF
 
 // Return a string which will be printed to the screen when this entity is looked at
 extern char*(*fpName[ENTITY_TYPE_COUNT])(void* self);
 // Tick this entity
-extern void(*fpTick[ENTITY_TYPE_COUNT])(void* self, btf32 dt);
+extern void(*fpTick[ENTITY_TYPE_COUNT])(btID id, void* self, btf32 dt);
 // Render graphics of this entity
-extern void(*fpDraw[ENTITY_TYPE_COUNT])(void* self);
+extern void(*fpDraw[ENTITY_TYPE_COUNT])(btID id, void* self);
 
 // TODO: working on reducing the use of these functions
 //  ok
@@ -53,12 +70,7 @@ extern void(*fpDraw[ENTITY_TYPE_COUNT])(void* self);
 #define ITEM(a) ((RestingItem*)GetEntityPtr(a))
 
 // Get address of item instance by index
-#define GETITEMINST(a) ((HeldItem*)GetItemPtr(a))
-
-void IndexInitEntity(btID ID, EntityType TYPE);
-void IndexFreeEntity(btID ID);
-void IndexInitItemInstance(btID ID, ItemType TYPE);
-void IndexFreeItem(btID ID);
+#define GETITEMINST(a) ((HeldItem*)GetItemInstance(a))
 
 //-------------------------------- PROJECTILES
 

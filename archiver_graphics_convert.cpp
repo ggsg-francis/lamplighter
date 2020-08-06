@@ -309,11 +309,13 @@ namespace graphics
 
 	//|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| CONVERSION FUNCTIONS
 
-	//add dds loader from this address
+	// TODO: add dds loader from this address
 	//http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/
 
-	void ConvertTex(char* sfn, char* dfn, btui8 filter, btui8 edge)
+	void ConvertTex(char* sfn, void* OUT, btui8 filter, btui8 edge)
 	{
+		FILE* out = (FILE*)OUT;
+		
 		//open file
 		//tga reader version
 		FILE *in = fopen(sfn, "rb");
@@ -340,37 +342,27 @@ namespace graphics
 
 			//std::cout << "Loaded texture: " << sfn << std::endl;
 
-			FILE* out = fopen(dfn, "wb");
-			if (out != NULL)
-			{
-				// Seek the beginning of the file
-				fseek(out, 0, SEEK_SET);
-				// Write version
-				version_t v = FILE_VERSION_TEX;
-				fwrite(&v, sizeof(version_t), 1, out);
-				fwrite(&filter, 1, 1, out);
-				fwrite(&edge, 1, 1, out);
-				// Write dimensions
-				fwrite(&width, sizeof(btui16), 1, out); // Max value: 65535
-				fwrite(&height, sizeof(btui16), 1, out);
-				// Write pixel buffer
-				fwrite(carr, sizeof(color), width * height, out);
-				// Close file
-				fclose(out);
-			}
-			else
-			{
-				std::cout << errno << std::endl;
-				std::cout << "Failed to convert Texture: " << dfn << std::endl;
-			}
+			// Write version
+			version_t v = FILE_VERSION_TEX;
+			fwrite(&v, sizeof(version_t), 1, out);
+			fwrite(&filter, 1, 1, out);
+			fwrite(&edge, 1, 1, out);
+			// Write dimensions
+			fwrite(&width, sizeof(btui16), 1, out); // Max value: 65535
+			fwrite(&height, sizeof(btui16), 1, out);
+			// Write pixel buffer
+			fwrite(carr, sizeof(color), width * height, out);
+			// Close file
 
 			free(carr);
 			tgaFree(pixels);
 		}
 	}
 
-	void ConvertMesh(char* sfn, char* dfn)
+	void ConvertMesh(char* sfn, void* OUT)
 	{
+		FILE* out = (FILE*)OUT;
+		
 		Model ma = Model(sfn);
 		Mesh a = ma.meshes[0];
 
@@ -394,27 +386,22 @@ namespace graphics
 		// Copy indices straight from mesh A, as they should be identical in each mesh
 		//ices = a.indices;
 
-		FILE* out = fopen(dfn, "wb");
-		if (out != NULL)
-		{
-			// Seek the beginning of the file
-			fseek(out, 0, SEEK_SET);
-			// Write version
-			version_t v = FILE_VERSION_MB;
-			fwrite(&v, sizeof(version_t), 1, out);
-			// Write vertices
-			size_t i = vces.size(); // Get number of vertices
-			fwrite(&i, sizeof(size_t), 1, out);
-			fwrite(&vces[0], sizeof(Vertex), vces.size(), out);
-			// Write indices
-			i = ices.size(); // Get number of indices
-			fwrite(&i, sizeof(size_t), 1, out);
-			fwrite(&ices[0], sizeof(btui32), ices.size(), out);
-			fclose(out);
-		}
+		// Write version
+		version_t v = FILE_VERSION_MB;
+		fwrite(&v, sizeof(version_t), 1, out);
+		// Write vertices
+		size_t i = vces.size(); // Get number of vertices
+		fwrite(&i, sizeof(size_t), 1, out);
+		fwrite(&vces[0], sizeof(Vertex), vces.size(), out);
+		// Write indices
+		i = ices.size(); // Get number of indices
+		fwrite(&i, sizeof(size_t), 1, out);
+		fwrite(&ices[0], sizeof(btui32), ices.size(), out);
 	}
-	void ConvertMB(char* sfn_a, char* sfn_b, char* dfn)
+	void ConvertMB(char* sfn_a, char* sfn_b, void* OUT)
 	{
+		FILE* out = (FILE*)OUT;
+		
 		Model ma = Model(sfn_a);
 		Model mb = Model(sfn_b);
 		Mesh a = ma.meshes[0];
@@ -440,32 +427,27 @@ namespace graphics
 			// Copy indices straight from mesh A, as they should be identical in each mesh
 			ices = a.indices;
 
-			FILE* out = fopen(dfn, "wb");
-			if (out != NULL)
-			{
-				// Seek the beginning of the file
-				fseek(out, 0, SEEK_SET);
-				// Write version
-				version_t v = FILE_VERSION_MB;
-				fwrite(&v, sizeof(version_t), 1, out);
-				// Write vertices
-				size_t i = vces.size(); // Get number of vertices
-				fwrite(&i, sizeof(size_t), 1, out);
-				fwrite(&vces[0], sizeof(VertexBlend), vces.size(), out);
-				// Write indices
-				i = ices.size(); // Get number of indices
-				fwrite(&i, sizeof(size_t), 1, out);
-				fwrite(&ices[0], sizeof(unsigned int), ices.size(), out);
-				fclose(out);
-			}
+			// Write version
+			version_t v = FILE_VERSION_MB;
+			fwrite(&v, sizeof(version_t), 1, out);
+			// Write vertices
+			size_t i = vces.size(); // Get number of vertices
+			fwrite(&i, sizeof(size_t), 1, out);
+			fwrite(&vces[0], sizeof(VertexBlend), vces.size(), out);
+			// Write indices
+			i = ices.size(); // Get number of indices
+			fwrite(&i, sizeof(size_t), 1, out);
+			fwrite(&ices[0], sizeof(unsigned int), ices.size(), out);
 		}
 		else
 		{
 			std::cout << "Could not generate Model Blend, number of vertices not consistent!" << std::endl;
 		}
 	}
-	void ConvertMD(char* sfn, char* dfn, MDHandleType type)
+	void ConvertMD(char* sfn, void* OUT, MDHandleType type)
 	{
+		FILE* out = (FILE*)OUT;
+
 		Model ma = Model(sfn);
 		Mesh a = ma.meshes[0];
 
@@ -511,23 +493,16 @@ namespace graphics
 		// Copy indices straight from mesh A, as they should be identical in each mesh
 		ices = a.indices;
 
-		FILE* out = fopen(dfn, "wb");
-		if (out != NULL)
-		{
-			// Seek the beginning of the file
-			fseek(out, 0, SEEK_SET);
-			// Write version
-			version_t v = FILE_VERSION_MD;
-			fwrite(&v, sizeof(version_t), 1, out);
-			// Write vertices
-			size_t i = vces.size(); // Get number of vertices
-			fwrite(&i, sizeof(size_t), 1, out);
-			fwrite(&vces[0], sizeof(VertexDeform), vces.size(), out);
-			// Write indices
-			i = ices.size(); // Get number of indices
-			fwrite(&i, sizeof(size_t), 1, out);
-			fwrite(&ices[0], sizeof(btui32), ices.size(), out);
-			fclose(out);
-		}
+		// Write version
+		version_t v = FILE_VERSION_MD;
+		fwrite(&v, sizeof(version_t), 1, out);
+		// Write vertices
+		size_t i = vces.size(); // Get number of vertices
+		fwrite(&i, sizeof(size_t), 1, out);
+		fwrite(&vces[0], sizeof(VertexDeform), vces.size(), out);
+		// Write indices
+		i = ices.size(); // Get number of indices
+		fwrite(&i, sizeof(size_t), 1, out);
+		fwrite(&ices[0], sizeof(btui32), ices.size(), out);
 	}
 }
