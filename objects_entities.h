@@ -267,15 +267,14 @@ struct Actor : public Entity
 	path::Path ai_path;
 	btui8 ai_path_current_index = 0u;
 	bool ai_pathing = false;
-
-	void TryHoldHand(btID ID_SELF, btID ID);
-	void TakeItem(btID ID_SELF, btID ID);
-	void DropItem(btID ID_SELF, btID SLOT);
-	void DropAllItems();
-	void SetEquipSlot(btui32 slot);
-	void IncrEquipSlot();
-	void DecrEquipSlot();
 };
+void ActorTryHoldHand(btID id_self, btID id);
+void ActorTakeItem(btID id_self, btID id);
+void ActorDropItem(btID id_self, btID slot);
+void ActorDropAllItems(btID id_self);
+void ActorSetEquipSlot(btID id_self, btui32 slot);
+void ActorIncrEquipSlot(btID id_self);
+void ActorDecrEquipSlot(btID id_self);
 struct EditorPawn : public Actor
 {
 	Transform3D t_body, t_head;

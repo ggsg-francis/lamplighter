@@ -52,7 +52,7 @@ namespace mem
 	{
 	}
 
-	void idbuf::add(btID id)
+	void idbuf::Add(btID id)
 	{
 		// Search this vector ahead of time for a matching ID
 		for (btui32 i = 0; i < IDBUF_SIZE; i++)
@@ -63,9 +63,10 @@ namespace mem
 			}
 		// If that passes, look for the first empty space (can optimize this)
 		for (btui32 i = 0; i < IDBUF_SIZE; i++)
-			//if no ptr in this vector
-			if (ptr_used[i] == false)
-			{
+			// if no ptr in this vector
+			if (ptr_used[i] == false) {
+				// Add the ID
+				++size;
 				ptr_used[i] = true;
 				ptr_id[i] = id;
 				if (i > id_end) id_end = i; // If we hit new ground expand the end index
@@ -77,7 +78,7 @@ namespace mem
 
 	// I realize that this is slow, but it will do for now
 	// otherwise, store in every entity a 'cell ID' so it can remove itself from the cell faster
-	void idbuf::remove(btID id)
+	void idbuf::Remove(btID id)
 	{
 		//search this vector
 		for (btui32 i = 0; i < IDBUF_SIZE; i++)
@@ -88,6 +89,7 @@ namespace mem
 				ptr_id[i] = ID_NULL;
 				if (i == id_end && id_end > 0u)
 				{
+					--size;
 					--id_end; // Go back one step
 				//	while (!ptr_used[id_end]) --id_end; // Continue rolling back until we reach the next last full space
 				}
@@ -97,20 +99,20 @@ namespace mem
 		std::cout << "IDBUF attempted to remove pointer not in array" << std::endl;
 	}
 
-	void idbuf::clear()
+	void idbuf::Clear()
 	{
 		for (int i = 0; i < IDBUF_SIZE; ++i)
 		{
 			ptr_id[i] = ID_NULL;
 			ptr_used[i] = false;
 		}
+		id_end = 0;
+		size = 0;
 	}
 
-	// TODO: useless function call wastes time, just access id_end directly!
-	btui32 idbuf::end()
+	btui32 idbuf::Size()
 	{
-		return id_end;
-		//return IDBUF_SIZE - 1;
+		return size;
 	}
 
 	btID idbuf::operator[] (btui32 x)

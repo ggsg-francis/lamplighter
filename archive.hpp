@@ -10,15 +10,17 @@
 // Number of filenames (number of assets, in other words)
 #define FN_COUNT 128
 // -
-#define ITEMS_COUNT 64
+#define ITEM_RECORD_COUNT 64
 // -
-#define PROPS_COUNT 32
+#define PROP_RECORD_COUNT 32
 // -
-#define SPELL_COUNT 8
+#define SPELL_RECORD_COUNT 8
 // -
-#define PROJECTILE_TEMPLATE_COUNT 8
+#define PROJECTILE_RECORD_COUNT 8
 // -
-#define ACTORBASE_COUNT 8
+#define ACTOR_RECORD_COUNT 8
+// -
+#define ACTIVATOR_RECORD_COUNT 8
 
 #define DEFAULT_TEXTURE 0u
 #define DEFAULT_MESH 1u
@@ -33,8 +35,7 @@ namespace acv
 	// That means anything that needs to be referenced by the engine directly
 	// ONLY CONTAINS ASSET IDS DIRECTLY REFERENCED IN THE CODE, THIS LIST SHOULD GET SMALLER OVER TIME
 	// AND REQUIRE LESS MAINTENANCE AS THE ARCHIVE IS IMPROVED UPON
-	enum AssetConstantID : assetID // Maintain with 0000gameassets
-	{
+	enum AssetConstantID : assetID { // Maintain with 0000gameassets
 		// Debug stuff
 		t_default,
 		m_default,
@@ -52,8 +53,8 @@ namespace acv
 		// Shadow
 		t_cursor,
 		// sky
-		m_skydome,
-		m_skystars,
+		m_world_phys,
+		m_world,
 		t_sky, // role is indeterminate so name is vague
 		m_skymoon,
 		t_skymoon,
@@ -87,8 +88,7 @@ namespace acv
 	};
 
 	// art assets archive
-	struct archive_asset
-	{
+	struct Resource {
 		char handle[8];
 		btui64 file_pos = 0u;
 		btui64 file_size = 0u;
@@ -123,10 +123,8 @@ namespace acv
 
 	//#endif
 
-	struct EnvProp
-	{
-		enum EnvPropFloorMat : btui8
-		{
+	struct PropRecord {
+		enum EnvPropFloorMat : btui8 {
 			FLOOR_STANDARD,
 			FLOOR_WATER,
 			FLOOR_TAR,
@@ -136,8 +134,7 @@ namespace acv
 			FLOOR_ACID,
 		};
 		// well.... maybe this should be directly in the tiles
-		enum EnvPropPhysShape : btui8
-		{
+		enum EnvPropPhysShape : btui8 {
 			eSHAPE_NONE, // No shape, just floor
 			eSHAPE_BOX, // full square impassable tile
 			eSHAPE_DIAG_NE, // Diagonal face
@@ -150,8 +147,7 @@ namespace acv
 			eSHAPE_QUARTER_CIRCLE_SE, // Quarter-circle with 1 radius
 			eSHAPE_QUARTER_CIRCLE_SW, // Quarter-circle with 1 radius
 		};
-		enum EnvPropFlags : btui8
-		{
+		enum EnvPropFlags : btui8 {
 			eBLOCK_LIGHT_SKY = 0b00000001,
 			eNONE1 = 0b00000010,
 			eNONE2 = 0b00000100,
@@ -170,14 +166,12 @@ namespace acv
 		btui8 placeholder;
 	};
 
-	enum SpellCastType : btui8
-	{
+	enum SpellCastType : btui8 {
 		ON_CASTER,
 		ON_TARGET,
 		ON_CASTER_AND_TARGET,
 	};
-	typedef struct Spell
-	{
+	typedef struct SpellRecord {
 		char handle[8];
 		bti8 name[32];
 		SpellCastType cast_type = ON_TARGET;
@@ -187,8 +181,7 @@ namespace acv
 		btui32 target_effect_magnitude;
 	} Spell;
 
-	typedef struct ProjectileTemplate
-	{
+	typedef struct ProjectileRecord {
 		char handle[8];
 		btui32 damage;
 		bool saveOnHit;
@@ -198,37 +191,22 @@ namespace acv
 	} ProjectileTemplate;
 
 	#define ENTITY_MAX_LIMB_NUM 4
-	typedef struct ActorBase
-	{
+	typedef struct ActorRecord {
 		char handle[8];
-		btID m_head;
-		btID m_body;
-		btID m_arm;
-		btID m_leg;
-		btID t_head;
-		btID t_body;
-		btID t_arm;
-		btID t_leg;
-		btf32 jpos_arm_fw;
-		btf32 jpos_arm_rt;
-		btf32 jpos_arm_up;
-		btf32 leng_arm;
-		btf32 jpos_leg_fw;
-		btf32 jpos_leg_rt;
-		btf32 jpos_leg_up;
-		btf32 leng_leg;
+		btID m_head, m_body, m_arm, m_leg;
+		btID t_head, t_body, t_arm, t_leg;
+		btf32 jpos_arm_fw, jpos_arm_rt, jpos_arm_up, leng_arm;
+		btf32 jpos_leg_fw, jpos_leg_rt, jpos_leg_up, leng_leg;
 		btf32 leng_body;
-	} EntityTemplate;
+	} ActorRecord;
 
-	struct BaseItem
-	{
+	struct ItemRecord {
 		enum BVBase { // 16 of these
 			eDETONATEABLE = 1u,
 			eUNUSED1 = 1u << 1u,
 			eUNUSED2 = 1u << 2u,
 			eUNUSED3 = 1u << 3u,
 		};
-		// Root
 		char handle[8];
 		bti8 name[64];
 		btID id_icon = 0u;
@@ -242,68 +220,51 @@ namespace acv
 		btID id_tex = 0u;
 		bti16 FILLER2 = 0u;
 	};
-
-	struct BaseItemEqp : public BaseItem
-	{
-		// Meshes
+	struct ItemRecordEqp : public ItemRecord {
 		btID id_mesh_head; btID id_texture_head;
 		btID id_mesh_arms; btID id_texture_arms;
 		btID id_mesh_legs; btID id_texture_legs;
-		// Block values
 		float block_pierce; float block_slice; float block_slam;
 	};
-
-	struct BaseItemMel : public BaseItem
-	{
-		// Damage values
+	struct ItemRecordMel : public ItemRecord {
 		float f_dam_pierce; float f_dam_slash; float f_dam_slam;
 	};
-
-	struct BaseItemGun : public BaseItem
-	{
+	struct ItemRecordGun : public ItemRecord {
 		btui8 b_automatic;
 		btui8 ammunition_type;
 	};
-
-	struct BaseItemMgc : public BaseItem
-	{
+	struct ItemRecordMgc : public ItemRecord {
 		float f_temp;
 	};
-
-	struct BaseItemCon : public BaseItem
-	{
+	struct ItemRecordCon : public ItemRecord {
 		btui32 use_count;
-		// Spell effects
 		btID id_effect;
 		btID id_projectile;
 	};
 
-	union ItemTemplate
-	{
-		BaseItem item;
-		BaseItemEqp itemeqp;
-		BaseItemMel itemmel;
-		BaseItemGun itemgun;
-		BaseItemMgc itemmgc;
-		BaseItemCon itemcon;
+	struct ActivatorRecord {
+		btui32 type;
 	};
 
 	//items (also make inaccessable)
-	extern BaseItem* items[ITEMS_COUNT];
-	extern ItemType item_types[ITEMS_COUNT];
+	extern ItemRecord* items[ITEM_RECORD_COUNT];
+	extern ItemType item_types[ITEM_RECORD_COUNT];
 	extern btui32 item_index; // number of items, I think
 
-	extern EnvProp props[PROPS_COUNT];
+	extern PropRecord props[PROP_RECORD_COUNT];
 	extern btui32 prop_index;
 
-	extern Spell spells[SPELL_COUNT];
+	extern SpellRecord spells[SPELL_RECORD_COUNT];
 	extern btui32 spell_index;
 
-	extern ProjectileTemplate projectiles[PROJECTILE_TEMPLATE_COUNT];
+	extern ProjectileRecord projectiles[PROJECTILE_RECORD_COUNT];
 	extern btui32 projectiles_index;
 
-	extern ActorBase actor_templates[ACTORBASE_COUNT];
+	extern ActorRecord actor_templates[ACTOR_RECORD_COUNT];
 	extern btui32 actor_template_index;
+
+	extern ActivatorRecord activators[ACTIVATOR_RECORD_COUNT];
+	extern btui32 activator_index;
 }
 
 #endif

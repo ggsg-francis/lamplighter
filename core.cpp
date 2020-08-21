@@ -31,17 +31,8 @@ namespace core
 	void SetViewFocus(btID index)
 	{
 		activePlayer = index;
-		#ifdef DEF_3PP
 		Actor* chara = ACTOR(players[activePlayer]);
-		cfg::bEditMode ?
-			graphics::SetMatViewEditor(&((EditorPawn*)chara)->t_head) :
-			graphics::SetMatView(&viewTarget[activePlayer], &viewPosition[activePlayer], &chara->t_head);
-		#else
-		Actor* chara = ACTOR(players[activePlayer]);
-		cfg::bEditMode ?
-			graphics::SetMatViewEditor(&((EditorPawn*)chara)->t_head) :
-			graphics::SetMatView(&chara->t_head, nullptr, nullptr);
-		#endif
+		graphics::SetMatView(&viewTarget[activePlayer], &viewPosition[activePlayer], nullptr);
 	}
 
 	enum flood_fill_type
@@ -55,7 +46,7 @@ namespace core
 	void flood_fill_temp(btui16 srcx, btui16 srcy, btui16 x, btui16 y, graphics::colour col)
 	{
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
-		if (!env::Get(x, y, env::eflag::eIMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
+		if (!env::Get(x, y, env::eflag::EF_IMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
 		{
 			if (env::eCells.terrain_height[x][y] < env::eCells.terrain_height[srcx][srcy] + 8u //incline check
 			&& env::eCells.terrain_height[x][y] > env::eCells.terrain_height[srcx][srcy] - 12u) // decline check
@@ -221,18 +212,19 @@ namespace core
 
 		//-------------------------------- Spawnz
 
-		if (cfg::bEditMode)
-			players[0] = SpawnEntity(prefab::PREFAB_EDITORPAWN, m::Vector2(1024.f, 1024.f), 0.f);
-		else {
+		if (!cfg::bEditMode) {
 			if (SaveExists()) LoadState();
 			else {
 				SpawnActivator(1024u, 1024u);
 
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
+				// test npc
+				SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025.f, 1025.f), 0.f);
+				#ifndef DEF_PLAYERS_ALLIED
 				// PVP - align p2 with player hunter faction
-				//ENTITY(players[1])->faction = fac::playerhunter;
-				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(1024.f, 1024.f), 0.f);
+				ENTITY(players[1])->faction = fac::playerhunter;
+				#endif
 				#ifdef DEF_SPAWN_ON_START
 				DoSpawn();
 				#endif
@@ -264,6 +256,7 @@ namespace core
 	void End()
 	{
 		ClearBuffers();
+		env::Free();
 	}
 
 	//destroy all data
@@ -287,7 +280,7 @@ namespace core
 		{
 			for (int y = 0; y < WORLD_SIZE; ++y)
 			{
-				refCells[x][y].ref_ents.clear();
+				refCells[x][y].ref_ents.Clear();
 			}
 		}
 	}
@@ -363,15 +356,33 @@ namespace core
 
 		ProjectileTick(dt);
 
+		#ifndef DEF_NMP
 		if (cfg::bEditMode)
 		{
 			Entity* entity = ENTITY(0);
 
-			#define GetCellY entity->t.csi.c[0].y
-			#define GetCellX entity->t.csi.c[0].x
-			#define GetOffsX entity->t.csi.offsetx
-			#define GetOffsY entity->t.csi.offsety
+			if (input::GetHeld(input::key::RUN)) {
+				editor_cam_pitch.RotateClamped(input::buf.mouse_y * 20.f * dt, 5.f, 85.f);
+				editor_cam_yaw.Rotate(input::buf.mouse_x * 10.f * dt);
+			}
+			else {
+				m::Vector2 vec = m::AngToVec2(editor_cam_yaw.Rad());
+				editor_cursor +=
+					((m::Vector2(vec.y, -vec.x) * input::buf.mouse_x)
+						+ (vec * -input::buf.mouse_y)) * 0.35f * dt;
+			}
+			
+			bti32 editor_cursor_x = roundf(editor_cursor.x);
+			bti32 editor_cursor_y = roundf(editor_cursor.y);
 
+			btf32 editor_cursor_offset_x = editor_cursor.x - (btf32)editor_cursor_x;
+			btf32 editor_cursor_offset_y = editor_cursor.y - (btf32)editor_cursor_y;
+
+			#define GetCellX editor_cursor_x
+			#define GetCellY editor_cursor_y
+			#define GetOffsX editor_cursor_offset_x
+			#define GetOffsY editor_cursor_offset_y
+			
 			if (input::GetHit(input::key::USE))
 			{
 				++env::eCells.terrain_material[GetCellX][GetCellY];
@@ -387,8 +398,7 @@ namespace core
 			else if (input::GetHit(input::key::ACTIVATE))
 			{
 				//env::GeneratePhysicsSurfaces();
-				//env::SaveBin();
-				
+				//env::SaveBin();	
 			}
 			else if (input::GetHeld(input::key::DIR_F)) // Forward
 				env::eCells.prop_dir[GetCellX][GetCellY] = env::eNORTH;
@@ -400,6 +410,7 @@ namespace core
 				env::eCells.prop_dir[GetCellX][GetCellY] = env::eWEST;
 			else if (input::GetHit(input::key::FUNCTION_1)) // COPY
 			{
+				editor_flags_copy = env::eCells.flags[GetCellX][GetCellY];
 				editor_prop_copy = env::eCells.prop[GetCellX][GetCellY];
 				editor_prop_dir_copy = env::eCells.prop_dir[GetCellX][GetCellY];
 				editor_height_copy_ne = env::eCells.terrain_height_ne[GetCellX][GetCellY];
@@ -410,6 +421,7 @@ namespace core
 			}
 			else if (input::GetHeld(input::key::FUNCTION_2)) // PASTE
 			{
+				env::eCells.flags[GetCellX][GetCellY] = (env::eflag::flag)editor_flags_copy;
 				env::eCells.prop[GetCellX][GetCellY] = editor_prop_copy;
 				env::eCells.prop_dir[GetCellX][GetCellY] = editor_prop_dir_copy;
 				env::eCells.terrain_height_ne[GetCellX][GetCellY] = editor_height_copy_ne;
@@ -422,7 +434,8 @@ namespace core
 			else if (input::GetHit(input::key::FUNCTION_3)) // TOGGLE LIGHT
 			{
 				env::Get(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC)
-					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC) : env::Set(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC);
+					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC)
+					: env::Set(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC);
 			}
 			else if (input::GetHit(input::key::FUNCTION_4)) // TOGGLE SPAWN
 			{
@@ -458,7 +471,9 @@ namespace core
 			}
 			else if (input::GetHit(input::key::ACTION_A))
 			{
-				env::Get(GetCellX, GetCellY, env::eflag::eIMPASSABLE) ? env::UnSet(GetCellX, GetCellY, env::eflag::eIMPASSABLE) : env::Set(GetCellX, GetCellY, env::eflag::eIMPASSABLE);
+				env::Get(GetCellX, GetCellY, env::eflag::EF_IMPASSABLE)
+					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_IMPASSABLE)
+					: env::Set(GetCellX, GetCellY, env::eflag::EF_IMPASSABLE);
 			}
 			else if (input::GetHit(input::key::ACTION_B))
 			{
@@ -469,6 +484,13 @@ namespace core
 			{
 				if (env::eCells.prop[GetCellX][GetCellY] < acv::prop_index)
 					++env::eCells.prop[GetCellX][GetCellY];
+			}
+			else if (input::GetHit(input::key::FUNCTION_7))
+			{
+				env::Get(GetCellX, GetCellY, env::eflag::EF_INVISIBLE)
+					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_INVISIBLE)
+					: env::Set(GetCellX, GetCellY, env::eflag::EF_INVISIBLE);
+				env::GenerateTerrainMesh();
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_R))
 			{
@@ -603,6 +625,7 @@ namespace core
 			#undef GetOffsY
 		}
 		else
+		#endif
 		{
 			#ifdef DEF_NMP
 			for (btui32 i = 0; i < NUM_PLAYERS; ++i)
@@ -634,34 +657,76 @@ namespace core
 
 		//-------------------------------- Modify camera
 
-		m::Vector3 p0 = m::Vector3(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.height + 0.8f, ENTITY(players[0])->t.position.y);
-		m::Vector3 p1 = m::Vector3(ENTITY(players[1])->t.position.x, ENTITY(players[1])->t.height + 0.8f, ENTITY(players[1])->t.position.y);
+		if (cfg::bEditMode) {
 
-		m::Vector2 vd0 = (m::AngToVec2(ENTITY(players[0])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[0])->viewYaw.Rad())) * 0.5f;
-		m::Vector2 vd1 = (m::AngToVec2(ENTITY(players[1])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[1])->viewYaw.Rad())) * 0.5f;
+			GetCellSpaceInfo(editor_cursor, editor_cursorCS);
 
-		m::Vector3 o0 = p0 - (m::Vector3(vd0.x, -0.4f, vd0.y)) * 3.f;
-		m::Vector3 o1 = p1 - (m::Vector3(vd1.x, -0.4f, vd1.y)) * 3.f;
+			btf32 height;
+			env::GetHeight(height, editor_cursorCS);
 
-		// Snap if the difference between now and the target is too great
-		if (m::Length(viewTarget[0] - p0) > 10.f || m::Length(viewPosition[0] - o0) > 10.f) {
-			viewTarget[0] = p0;
-			viewPosition[0] = o0;
+			editor_cursor_height = m::Lerp(editor_cursor_height, height, 1.5f * dt);
+
+			viewTarget[0] = m::Vector3(editor_cursor.x, editor_cursor_height, editor_cursor.y);
+
+			btf32 r = 3.5f;
+			btf32 pitch_x = cos(editor_cam_pitch.Rad());
+			btf32 pitch_y = sin(editor_cam_pitch.Rad());
+			btf32 yaw_x = cos(editor_cam_yaw.Rad());
+			btf32 yaw_y = sin(editor_cam_yaw.Rad());
+			viewPosition[0] = viewTarget[0] + r * m::Vector3(-yaw_y * pitch_x, pitch_y, -yaw_x * pitch_x);
 		}
-		// Move camera gradually
 		else {
-			viewTarget[0] = m::Lerp(viewTarget[0], p0, 0.15f);
-			viewPosition[0] = m::Lerp(viewPosition[0], o0, 0.05f);
-		}
-		// Snap if the difference between now and the target is too great
-		if (m::Length(viewTarget[1] - p1) > 10.f || m::Length(viewPosition[1] - o1) > 10.f) {
-			viewTarget[1] = p1;
-			viewPosition[1] = o1;
-		}
-		// Move camera gradually
-		else {
-			viewTarget[1] = m::Lerp(viewTarget[1], p1, 0.15f);
-			viewPosition[1] = m::Lerp(viewPosition[1], o1, 0.05f);
+
+			#ifdef DEF_3PP
+
+			m::Vector3 target_a = m::Vector3(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.height + 0.8f, ENTITY(players[0])->t.position.y);
+			m::Vector3 target_b = m::Vector3(ENTITY(players[1])->t.position.x, ENTITY(players[1])->t.height + 0.8f, ENTITY(players[1])->t.position.y);
+
+			m::Vector2 dir_a = (m::AngToVec2(ENTITY(players[0])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[0])->viewYaw.Rad())) * 0.5f;
+			m::Vector2 dir_b = (m::AngToVec2(ENTITY(players[1])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[1])->viewYaw.Rad())) * 0.5f;
+
+			m::Vector3 position_a = target_a - (m::Vector3(dir_a.x, -0.2f, dir_a.y)) * 3.f;
+			m::Vector3 position_b = target_b - (m::Vector3(dir_b.x, -0.2f, dir_b.y)) * 3.f;
+
+			if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y))
+			{
+				position_a = m::Lerp(position_a, target_a, 0.5f);
+				if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y))
+				{
+					position_a = m::Lerp(position_a, target_a, 0.75f);
+				}
+			}
+
+			// Snap if the difference between now and the target is too great
+			if (m::Length(viewTarget[0] - target_a) > 10.f || m::Length(viewPosition[0] - position_a) > 10.f) {
+				viewTarget[0] = target_a;
+				viewPosition[0] = position_a;
+			}
+			// Move camera gradually
+			else {
+				viewTarget[0] = m::Lerp(viewTarget[0], target_a, 0.15f);
+				viewPosition[0] = m::Lerp(viewPosition[0], position_a, 0.05f);
+			}
+			// Snap if the difference between now and the target is too great
+			if (m::Length(viewTarget[1] - target_b) > 10.f || m::Length(viewPosition[1] - position_b) > 10.f) {
+				viewTarget[1] = target_b;
+				viewPosition[1] = position_b;
+			}
+			// Move camera gradually
+			else {
+				viewTarget[1] = m::Lerp(viewTarget[1], target_b, 0.15f);
+				viewPosition[1] = m::Lerp(viewPosition[1], position_b, 0.05f);
+			}
+
+			#else
+
+			viewPosition[0] = ACTOR(0)->t_head.GetPosition() + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(0)->t_head.GetRotation());
+			viewPosition[1] = ACTOR(1)->t_head.GetPosition() + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(1)->t_head.GetRotation());
+
+			viewTarget[0] = viewPosition[0] + ACTOR(0)->t_head.GetForward();
+			viewTarget[1] = viewPosition[1] + ACTOR(1)->t_head.GetForward();
+
+			#endif // !DEF_3PP
 		}
 
 		//-------------------------------- Stuff
@@ -760,16 +825,16 @@ namespace core
 
 		if (cfg::bEditMode)
 		{
-			bti32 x2 = ENTITY(players[activePlayer])->t.csi.c[0].x;
-			bti32 y2 = ENTITY(players[activePlayer])->t.csi.c[0].y;
-			graphics::MatrixTransform(matrix, m::Vector3(x2, env::eCells.terrain_height[x2][y2] / TERRAIN_HEIGHT_DIVISION, y2));
+			bti32 editor_cursor_x = roundf(editor_cursor.x);
+			bti32 editor_cursor_y = roundf(editor_cursor.y);
+			graphics::MatrixTransform(matrix, m::Vector3(editor_cursor_x, env::eCells.terrain_height[editor_cursor_x][editor_cursor_y] / TERRAIN_HEIGHT_DIVISION, editor_cursor_y));
 			DrawMesh(ID_NULL, acv::GetM(acv::m_debugcell), acv::GetT(acv::t_gui_bar_red), SS_NORMAL, matrix);
 
-			btui32 drawrange = 8u; // Create min/max draw coordinates
-			bti32 minx = x2 - drawrange; if (minx < 0) minx = 0;
-			bti32 maxx = x2 + drawrange; if (maxx > WORLD_SIZE_MAXINT) maxx = WORLD_SIZE_MAXINT;
-			bti32 miny = y2 - drawrange; if (miny < 0) miny = 0;
-			bti32 maxy = y2 + drawrange; if (maxy > WORLD_SIZE_MAXINT) maxy = WORLD_SIZE_MAXINT;
+			btui32 drawrange = 16u; // Create min/max draw coordinates
+			bti32 minx = editor_cursor_x - drawrange; if (minx < 0) minx = 0;
+			bti32 maxx = editor_cursor_x + drawrange; if (maxx > WORLD_SIZE_MAXINT) maxx = WORLD_SIZE_MAXINT;
+			bti32 miny = editor_cursor_y - drawrange; if (miny < 0) miny = 0;
+			bti32 maxy = editor_cursor_y + drawrange; if (maxy > WORLD_SIZE_MAXINT) maxy = WORLD_SIZE_MAXINT;
 			for (bti32 x = minx; x <= maxx; x++)
 			{
 				for (bti32 y = miny; y < maxy; y++)
@@ -780,7 +845,7 @@ namespace core
 					};
 					matrix = graphics::Matrix4x4();
 
-					if (env::Get(x, y, env::eflag::eIMPASSABLE))
+					if (env::Get(x, y, env::eflag::EF_IMPASSABLE))
 					{
 						graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
 						DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_debug_bb), SS_NORMAL, matrix);
@@ -827,6 +892,7 @@ namespace core
 		}
 		else
 		{
+			//*
 			for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
 			{
 				#ifdef DEF_FPP_INVISIBLE
@@ -838,6 +904,7 @@ namespace core
 					fpDraw[GetEntityType(i)](i, ENTITY(i)); // Call draw on entity
 				}
 			}
+			//*/
 
 			#define DRAWRANGE 16u
 			/*
@@ -851,22 +918,20 @@ namespace core
 				for (bti32 y = miny; y < maxy; y++) {
 					//-------------------------------- DRAW ENTITIES ON THIS CELL
 					for (int e = 0; e <= refCells[x][y].ref_ents.end(); e++)
-						if (refCells[x][y].ref_ents[e] != ID_NULL && block_entity.used[refCells[x][y].ref_ents[e]])
-							//ENTITY(cells[x][y].ents[e])->fpDraw(ENT_VOID(cells[x][y].ents[e]));
-							fpDraw[block_entity_data[refCells[x][y].ref_ents[e]].type](ENT_VOID(refCells[x][y].ref_ents[e]));
-							//ENTITY(cells[x][y].ents[e])->Draw(cells[x][y].ents[e]);
-					if (oob)
+						if (refCells[x][y].ref_ents[e] != ID_NULL && GetEntityExists(refCells[x][y].ref_ents[e]))
+							fpDraw[GetEntityType(refCells[x][y].ref_ents[e])](refCells[x][y].ref_ents[e], ENTITY(refCells[x][y].ref_ents[e])); // Call draw on entity
+					//-------------------------------- DRAW ACTIVATOR ON THIS CELL
+					//if (oob)
 					{
-						//-------------------------------- DRAW ENVIRONMENT PROP ON THIS CELL
-						if (env::eCells.prop[x][y] != ID_NULL && env::eCells.prop[x][y] > 0u)
+						if (refCells[x][y].ref_activator != ID_NULL)
 						{
-							//graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells[x][y].height / TERRAIN_HEIGHT_DIVISION, y));
-							//DrawMesh(ID_NULL, acv::GetM(acv::props[env::eCells[x][y].prop].idMesh), acv::GetT(acv::props[env::eCells[x][y].prop].idTxtr), SS_NORMAL, matrix);
+							graphics::MatrixTransform(matrix, m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y));
+							DrawMesh(ID_NULL, acv::GetM(acv::m_debug_monkey), acv::GetT(acv::t_default), SS_NORMAL, matrix);
 						}
 					}
 				}
 			}
-			*/
+			//*/
 			#ifndef DEF_SHADOW_ALL_OBJECTS
 			if (oob)
 			#endif
@@ -888,33 +953,38 @@ namespace core
 		for (btID i = 0u; i < NUM_PLAYERS; ++i)
 		{
 			if (input::GetHit(i, input::key::INV_CYCLE_L))
-				ACTOR(players[i])->DecrEquipSlot();
+				ActorDecrEquipSlot(players[i]);
 			if (input::GetHit(i, input::key::INV_CYCLE_R))
-				ACTOR(players[i])->IncrEquipSlot();
+				ActorIncrEquipSlot(players[i]);
 			if (input::GetHit(i, input::key::ACTIVATE)) // Pick up items
-				if (viewtarget[i] != ID_NULL && ENTITY(viewtarget[i])->type == ENTITY_TYPE_RESTING_ITEM)
-				{
-					ACTOR(players[i])->TakeItem(viewtarget[i]);
+				if (viewtarget[i] != ID_NULL && GetEntityType(viewtarget[i]) == ENTITY_TYPE_RESTING_ITEM) {
+					ActorTakeItem(players[i], viewtarget[i]);
 				}
-				else if (viewtarget[i] != ID_NULL && ENTITY(viewtarget[i])->type == ENTITY_TYPE_ACTOR)
+				else if (viewtarget[i] != ID_NULL && GetEntityType(viewtarget[i]) == ENTITY_TYPE_ACTOR)
 				{
+					// hold hand
+					ActorTryHoldHand(players[i], viewtarget[i]);
+
+					// SOUL TRANSFER
 					// if we are allied
-					if (fac::GetAllegiance(ENTITY(players[i])->faction, ENTITY(viewtarget[i])->faction) == fac::allied)
+					/*
+					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget[activePlayer])->faction) == fac::allied)
 					{
-						// SOUL TRANSFER
-						if (players[0] != players[1]) // If both player's arent using the same entity
-						{
-							ACTOR(players[i])->aiControlled = true; // Let the AI take over
-							ACTOR(players[i])->ai_target_ent = ID_NULL; // Let the AI take over
-							ACTOR(players[i])->ai_ally_ent = ID_NULL; // Let the AI take over
-						}
-						players[i] = viewtarget[i]; // Set player to control player's view target
-						ACTOR(players[i])->aiControlled = false;
+					// SOUL TRANSFER
+					if (players[0] != players[1]) // If both player's arent using the same entity
+					{
+					ACTOR(players[activePlayer])->aiControlled = true; // Let the AI take over
+					ACTOR(players[activePlayer])->ai_target_ent = ID_NULL; // Let the AI take over
+					ACTOR(players[activePlayer])->ai_ally_ent = ID_NULL; // Let the AI take over
 					}
+					players[activePlayer] = viewtarget[activePlayer]; // Set player to control player's view target
+					ACTOR(players[activePlayer])->aiControlled = false;
+					}
+					*/
 				}
 			if (input::GetHit(i, input::key::DROP_HELD))
 			{
-				ACTOR(players[i])->DropItem(ACTOR(players[i])->inv_active_slot);
+				ActorDropItem(players[i], ACTOR(players[i])->inv_active_slot);
 				//network::SendCharaInv(ACTOR(players[i]), players[i]); // TEMP FAILSAFE
 			}
 		}
@@ -922,16 +992,16 @@ namespace core
 		if (activePlayer == 0u)
 		{
 			if (input::GetHit(input::key::INV_CYCLE_L))
-				ACTOR(players[activePlayer])->DecrEquipSlot();
+				ActorDecrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::INV_CYCLE_R))
-				ACTOR(players[activePlayer])->IncrEquipSlot();
+				ActorIncrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_RESTING_ITEM)
-					ACTOR(players[activePlayer])->TakeItem(players[activePlayer], viewtarget[activePlayer]);
+					ActorTakeItem(players[activePlayer], viewtarget[activePlayer]);
 				else if (viewtarget[activePlayer] != ID_NULL && GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_ACTOR)
 				{
 					// hold hand
-					ACTOR(players[activePlayer])->TryHoldHand(players[activePlayer], viewtarget[activePlayer]);
+					ActorTryHoldHand(players[activePlayer], viewtarget[activePlayer]);
 
 					// SOUL TRANSFER
 					// if we are allied
@@ -951,17 +1021,17 @@ namespace core
 					*/
 				}
 			if (input::GetHit(input::key::DROP_HELD))
-				ACTOR(players[activePlayer])->DropItem(players[activePlayer], ACTOR(players[activePlayer])->inv_active_slot);
+				ActorDropItem(players[activePlayer], ACTOR(players[activePlayer])->inv_active_slot);
 		}
 		else
 		{
 			if (input::GetHit(input::key::C_INV_CYCLE_L))
-				ACTOR(players[activePlayer])->DecrEquipSlot();
+				ActorDecrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::C_INV_CYCLE_R))
-				ACTOR(players[activePlayer])->IncrEquipSlot();
+				ActorIncrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::C_ACTIVATE)) // Pick up items
 				if (viewtarget[activePlayer] != ID_NULL && GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_RESTING_ITEM)
-					ACTOR(players[activePlayer])->TakeItem(players[activePlayer], viewtarget[activePlayer]);
+					ActorTakeItem(players[activePlayer], viewtarget[activePlayer]);
 				else if (viewtarget[activePlayer] != ID_NULL && GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_ACTOR)
 				{
 					// SOUL TRANSFER
@@ -980,7 +1050,7 @@ namespace core
 					}
 				}
 			if (input::GetHit(input::key::C_DROP_HELD))
-				ACTOR(players[activePlayer])->DropItem(players[activePlayer], ACTOR(players[activePlayer])->inv_active_slot);
+				ActorDropItem(players[activePlayer], ACTOR(players[activePlayer])->inv_active_slot);
 		}
 		#endif // DEF_NMP
 	}
@@ -1104,12 +1174,12 @@ namespace core
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
 	{
-		refCells[x][y].ref_ents.add(e);
+		refCells[x][y].ref_ents.Add(e);
 	}
 
 	void RemoveEntityCell(btui32 x, btui32 y, btID e)
 	{
-		refCells[x][y].ref_ents.remove(e);
+		refCells[x][y].ref_ents.Remove(e);
 	}
 
 	//________________________________________________________________________________________________________________________________
@@ -1140,7 +1210,7 @@ namespace core
 		ENTITY(id)->height = 0.5f;
 		return id;
 	}
-	btID SpawnEntityItem(btID itemid, m::Vector2 pos, btf32 dir)
+	btID SpawnEntityItem(btID itemid, m::Vector2 pos, btf32 height, btf32 dir)
 	{
 		btID id = InitEntity(ENTITY_TYPE_RESTING_ITEM);
 
@@ -1151,8 +1221,9 @@ namespace core
 		ENTITY(id)->t.height_velocity = 0.f;
 		ENTITY(id)->t.yaw.Set(dir);
 		GetCellSpaceInfo(ENTITY(id)->t.position, ENTITY(id)->t.csi);
-		env::GetHeight(ENTITY(id)->t.height, ENTITY(id)->t.csi);
-		ENTITY(id)->t.height += 1.f; // temp
+		//env::GetHeight(ENTITY(id)->t.height, ENTITY(id)->t.csi);
+		//ENTITY(id)->t.height += 1.f; // temp
+		ENTITY(id)->t.height = height;
 		AddEntityCell(ENTITY(id)->t.csi.c[eCELL_I].x, ENTITY(id)->t.csi.c[eCELL_I].y, id);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->state.damagestate = STATE_DAMAGE_MAX;
@@ -1221,6 +1292,17 @@ namespace core
 		proj->t.position_x = pos.x;
 		proj->t.position_y = pos.y;
 		proj->t.position_h = height;
+
+		//
+		/*
+		btf32 r = 5.f;
+		btf32 pitch_x = cos(editor_cam_pitch.Rad());
+		btf32 pitch_y = sin(editor_cam_pitch.Rad());
+		btf32 yaw_x = cos(editor_cam_yaw.Rad());
+		btf32 yaw_y = sin(editor_cam_yaw.Rad());
+		viewPosition[0] = viewTarget[0] + r * m::Vector3(-yaw_y * pitch_x, pitch_y, -yaw_x * pitch_x);
+		*/
+
 		proj->t.velocity_h = -sin(pitch);
 		proj->t.velocity_x = (m::AngToVec2(yaw) * cos(pitch)).x; // '* cos(pitch)' makes it move less horizontally if shot upwards
 		proj->t.velocity_y = (m::AngToVec2(yaw) * cos(pitch)).y; // '* cos(pitch)' makes it move less horizontally if shot upwards
@@ -1266,7 +1348,7 @@ namespace core
 
 		int x = (int)roundf(proj->t.position_x);
 		int y = (int)roundf(proj->t.position_y);
-		if (env::Get(x, y, env::eflag::eIMPASSABLE)) // if hit an impassable tile
+		if (env::Get(x, y, env::eflag::EF_IMPASSABLE)) // if hit an impassable tile
 			return true;
 
 		CellSpace csi;

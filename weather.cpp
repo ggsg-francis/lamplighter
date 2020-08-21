@@ -38,7 +38,6 @@ namespace weather
 
 			w.stat_overcast_level = m::Random(0.f, 1.f);
 			if (cfg::bEditMode) w.stat_overcast_level = 0.f; // Overcast override
-			else w.stat_overcast_level = 1.f; // Overcast override
 			std::cout << "Recalculated weather, overcast level " << w.stat_overcast_level << std::endl;
 
 			if (w.stat_overcast_level > 0.5f)

@@ -10,7 +10,7 @@ namespace core
 	void RemoveAllReferences(btID index)
 	{
 		// Remove us from the cell we're on
-		refCells[ENTITY(index)->t.csi.c[eCELL_I].x][ENTITY(index)->t.csi.c[eCELL_I].y].ref_ents.remove(index);
+		refCells[ENTITY(index)->t.csi.c[eCELL_I].x][ENTITY(index)->t.csi.c[eCELL_I].y].ref_ents.Remove(index);
 		// Remove all references to us by other entities
 		for (int i = 0; i <= GetLastEntity(); i++)
 		{
@@ -180,7 +180,7 @@ namespace core
 			for (int y = entity_index->t.csi.c[eCELL_I].y - 3u; y < entity_index->t.csi.c[eCELL_I].y + 3u; y++)
 			{
 				// Iterate through every entity space in this cell
-				for (int e = 0; e <= refCells[x][y].ref_ents.end(); e++)
+				for (int e = 0; e <= refCells[x][y].ref_ents.Size(); e++)
 				{
 					//if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->Type() == Entity::eITEM)
 					if (refCells[x][y].ref_ents[e] != ID_NULL && refCells[x][y].ref_ents[e] != index && GetEntityExists(refCells[x][y].ref_ents[e]))
@@ -346,8 +346,8 @@ namespace core
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
 
-		ACTOR(id)->inventory.AddNew(6u); // sword
-		ACTOR(id)->inventory.AddNew(5u); // annoying bug
+		//ACTOR(id)->inventory.AddNew(6u); // sword
+		//ACTOR(id)->inventory.AddNew(5u); // annoying bug
 
 		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
 	}

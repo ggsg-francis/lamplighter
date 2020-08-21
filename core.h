@@ -58,7 +58,7 @@ namespace core
 	// Spawn an item on the ground, initializing a new item instance
 	btID SpawnNewEntityItem(btID item_template, m::Vector2 position, btf32 direction);
 	// Spawn an item on the ground, referencing an existing item instance
-	btID SpawnEntityItem(btID itemid, m::Vector2 position, btf32 direction);
+	btID SpawnEntityItem(btID itemid, m::Vector2 position, btf32 height, btf32 direction);
 	// Removes a given Entity from the index
 	void DestroyEntity(btID id);
 

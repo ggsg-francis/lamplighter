@@ -30,13 +30,13 @@ m::Vector3 HeldItemGetLHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * -0.5f;
-	return self->t_item.GetPosition() + self->t_item.GetRight() * -((acv::BaseItem*)acv::items[self->id_item_template])->f_radius;
+	return self->t_item.GetPosition() + self->t_item.GetRight() * -((acv::ItemRecord*)acv::items[self->id_item_template])->f_radius;
 }
 m::Vector3 HeldItemGetRHPos(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * 0.5f;
-	return self->t_item.GetPosition() + self->t_item.GetRight() * ((acv::BaseItem*)acv::items[self->id_item_template])->f_radius;
+	return self->t_item.GetPosition() + self->t_item.GetRight() * ((acv::ItemRecord*)acv::items[self->id_item_template])->f_radius;
 }
 bool HeldItemBlockTurn(btID id)
 {
@@ -181,7 +181,7 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, Actor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 
-	bool bauto = (bool)((acv::BaseItemGun*)acv::items[self->id_item_template])->b_automatic;
+	bool bauto = (bool)((acv::ItemRecordGun*)acv::items[self->id_item_template])->b_automatic;
 	bool bgetfire;
 	if (bauto) bgetfire = owner->inputBV.get(Actor::IN_USE);
 	else bgetfire = owner->inputBV.get(Actor::IN_USE_HIT);
@@ -190,12 +190,12 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, Actor* owner)
 	{
 		// if we try to fire, see if we can load the weapon
 		if (self->id_ammoInstance == ID_NULL)
-			self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::BaseItemGun*)acv::items[self->id_item_template])->ammunition_type);
+			self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::ItemRecordGun*)acv::items[self->id_item_template])->ammunition_type);
 
 		if (self->id_ammoInstance != ID_NULL)
 		{
 			if (!HeldConUse(self->id_ammoInstance, owner))
-				self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::BaseItemGun*)acv::items[self->id_item_template])->ammunition_type);
+				self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::ItemRecordGun*)acv::items[self->id_item_template])->ammunition_type);
 
 			self->fire_time = tickCount + 3u;
 
@@ -221,7 +221,7 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, Actor* owner)
 
 				if (GetItemInstanceType(self->id_ammoInstance) == ITEM_TYPE_CONS)
 					core::SpawnProjectileSpread(owner->faction, // TODO: fucking hell please make this easier to access
-					((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemInstance(self->id_ammoInstance))->id_item_template])->id_projectile,
+					((acv::ItemRecordCon*)acv::items[((HeldItem*)GetItemInstance(self->id_ammoInstance))->id_item_template])->id_projectile,
 						m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, angle_yaw, angle_pit, 2.5f);
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
 			}
@@ -231,7 +231,7 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, Actor* owner)
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
 				if (GetItemInstanceType(self->id_ammoInstance) == ITEM_TYPE_CONS)
 					core::SpawnProjectileSpread(owner->faction, // TODO: fucking hell please make this easier to access
-					((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemInstance(self->id_ammoInstance))->id_item_template])->id_projectile,
+					((acv::ItemRecordCon*)acv::items[((HeldItem*)GetItemInstance(self->id_ammoInstance))->id_item_template])->id_projectile,
 						m::Vector2(spawnpos.x, spawnpos.z), spawnpos.y, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 2.5f);
 				else printf("Tried to fire a projectile from non-consumable type item!\n");
 			}
@@ -458,7 +458,7 @@ void HeldConTick(btID id, btf32 dt, btID owner_id, Actor* owner)
 	HeldItem* self = GETITEMINST(id);
 	if (owner->inputBV.get(Actor::IN_USE_HIT) && self->uses > 0u)
 	{
-		owner->state.AddSpell(owner_id, ((acv::BaseItemCon*)acv::items[self->id_item_template])->id_effect);
+		owner->state.AddSpell(owner_id, ((acv::ItemRecordCon*)acv::items[self->id_item_template])->id_effect);
 		//if (self->uses > 1u) --self->uses;
 		//else owner->inventory.DestroyID(id);
 		HeldConUse(id, owner);
@@ -497,7 +497,7 @@ void HeldNothingInit(btID id)
 void HeldConInit(btID id)
 {
 	HeldItem* self = GETITEMINST(id);
-	self->uses = ((acv::BaseItemCon*)acv::items[self->id_item_template])->use_count;
+	self->uses = ((acv::ItemRecordCon*)acv::items[self->id_item_template])->use_count;
 }
 
 //________________________________________________________________________________________________________________________________

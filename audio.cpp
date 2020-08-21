@@ -38,8 +38,7 @@ namespace aud
 	cs_play_sound_def_t def_shot;
 	cs_playing_sound_t* sound_shot;
 
-	btf32 mstrVol = 0.6f;
-	//btf32 mstrVol = 1.f;
+	btf32 mstrVol = 1.f;
 
 	void Init(void* handle)
 	{

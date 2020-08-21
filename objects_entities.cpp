@@ -17,6 +17,9 @@
 
 #include "nonpc.h"
 
+#include "3rdparty\cute_c2.h"
+
+
 void Actor_OnHitGround(Actor* chr)
 {
 	if (chr->foot_state == Actor::eL_DOWN) aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, chr->fpCurrentL);
@@ -25,53 +28,57 @@ void Actor_OnHitGround(Actor* chr)
 	if (chr->foot_state == Actor::eL_DOWN) chr->foot_state = Actor::eR_DOWN;
 	else if (chr->foot_state == Actor::eR_DOWN) chr->foot_state = Actor::eL_DOWN;
 }
-void Entity_Deintersect(btID id, Entity* ent, CellSpace& csi)
+void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 {
 	btf32 offsetx, offsety;
-	bool overlapN, overlapS, overlapE, overlapW, touchNS = false, touchEW = false;
+	bool overlapN, overlapS, overlapE, overlapW;
 
-	//-------------------------------- ACTOR COLLISION CHECK
+	//-------------------------------- ENTITY COLLISION CHECK
 
-	if (ent->properties.get(Entity::eCOLLIDE_ENT))
-	{
-		for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x)
-		{
-			for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y)
-			{
-				//de-intersect entities
-				for (int e = 0; e < core::CellEntityCount(x, y); e++)
-				{
-					if (core::CellEntity(x, y, e) != ID_NULL)
-					{
-						if (GetEntityExists(core::CellEntity(x, y, e)) && ENTITY(core::CellEntity(x, y, e))->properties.get(Entity::eCOLLIDE_ENT))
-						{
+	// exploding item
+	if (GetEntityType(id) == ENTITY_TYPE_RESTING_ITEM) {
+		RestingItem* item = ITEM(id);
+		HeldItem* iteminst = (HeldItem*)GetItemInstance(item->item_instance);
+		if (mem::bvget<btui16>(acv::items[iteminst->id_item_template]->bv_base, (btui16)acv::ItemRecord::eDETONATEABLE)) {
+			for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x) {
+				for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y) {
+					// De-intersect against other entities
+					for (int e = 0; e < core::CellEntityCount(x, y); e++) {
+						if (core::CellEntity(x, y, e) != ID_NULL) {
+							if (GetEntityExists(core::CellEntity(x, y, e))) {
+								m::Vector2 vec = ent->t.position - ENTITY(core::CellEntity(x, y, e))->t.position;
+								float dist = m::Length(vec);
+								btf32 combined_radius = ent->radius + ENTITY(core::CellEntity(x, y, e))->radius;
+								if (dist < combined_radius && dist > 0.f) {
+									// explode
+									ENTITY(core::CellEntity(x, y, e))->state.Damage(900, 0.f);
+									ent->state.Damage(1000, 0.f);
+									aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
+								}
+							}
+						} // End for each entity in cell
+					} // End if entity count of this cell is bigger than zero
+				} // End for each cell group Y
+			} // End for each cell group X
+		}
+	}
+
+	if (ent->properties.get(Entity::eCOLLIDE_ENT)) {
+		for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x) {
+			for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y) {
+				// De-intersect against other entities
+				for (int e = 0; e < core::CellEntityCount(x, y); e++) {
+					if (core::CellEntity(x, y, e) != ID_NULL) {
+						if (GetEntityExists(core::CellEntity(x, y, e)) && ENTITY(core::CellEntity(x, y, e))->properties.get(Entity::eCOLLIDE_ENT)) {
 							m::Vector2 vec = ent->t.position - ENTITY(core::CellEntity(x, y, e))->t.position;
 							float dist = m::Length(vec);
 							btf32 combined_radius = ent->radius + ENTITY(core::CellEntity(x, y, e))->radius;
-							if (dist < combined_radius && dist > 0.f)
-							{
+							if (dist < combined_radius && dist > 0.f) {
 								// TEMP! if same type
-								if (GetEntityType(id) == GetEntityType(core::CellEntity(x, y, e)))
-								{
+								if (GetEntityType(id) == GetEntityType(core::CellEntity(x, y, e))) {
 									ent->t.position += m::Normalize(vec) * (combined_radius - dist) * 0.5f;
 									ENTITY(core::CellEntity(x, y, e))->t.position -= m::Normalize(vec) * (combined_radius - dist) * 0.5f;
 								}
-
-								// consider using some kind of collision callback
-
-								/*
-								// knockback effect
-								m::Vector2 surface = m::Normalize(vec * -1.f);
-								if (ent->type == ENTITY_TYPE_CHARA && m::Length(ent->t.velocity) > 0.02f)
-								{
-								// if other is also a character
-								if (ENTITY(cells[x][y].ents[e])->type == ENTITY_TYPE_CHARA)
-								{
-								ent->t.velocity = surface * -0.1f; // set my velocity
-								ENTITY(cells[x][y].ents[e])->t.velocity = surface * 0.3f; // set their velocity
-								}
-								}
-								*/
 							}
 						}
 					} // End for each entity in cell
@@ -80,82 +87,148 @@ void Entity_Deintersect(btID id, Entity* ent, CellSpace& csi)
 		} // End for each cell group X
 	} // end does collide entities check
 
-	  ///*
-	  //-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
+	//-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
+
+	#define ACTOR_NO_COLLIDE_HEIGHT 0.0625f
+
+	{
+		WCoord coords;
+		c2Circle circle;
+		c2Poly* poly;
+		c2x transform = c2xIdentity();
+		c2Manifold mani;
+
+	collide_tris:
+		//core::GetCellSpaceInfo(ent->t.position, ent->t.csi);
+		// For every cell in our cell-space
+		for (int cell = 0; cell < eCELL_COUNT; ++cell) {
+			coords.x = ent->t.csi.c[cell].x;
+			coords.y = ent->t.csi.c[cell].y;
+			circle.p.x = ent->t.position.x;
+			circle.p.y = ent->t.position.y;
+			circle.r = 0.5f;
+			// check against all triangles
+			for (int i = 0; i < env::GetNumTris(coords); ++i) {
+				if (env::GetTriHeight(coords, i, ent->t.position.x, ent->t.position.y) > ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) {
+					if (env::GetTriExists(coords, i)) {
+						poly = (c2Poly*)env::GetC2Tri(coords, i);
+						c2CircletoPolyManifold(circle, poly, &transform, &mani);
+						if (mani.count > 0) {
+							// decollide
+							ent->t.position.x -= mani.n.x * mani.depths[0];
+							ent->t.position.y -= mani.n.y * mani.depths[0];
+							// modify velocity
+							btf32 velLen = m::Length(ent->t.velocity);
+							btf32 dir = m::Dot(ent->t.velocity, m::Vector2(mani.n.y, -mani.n.x));
+							if (m::Length(ent->t.velocity) > 0.f) {
+								// simple velocity reduction
+								//ent->t.velocity = m::Vector2(mani.n.y, -mani.n.x) * dir;
+								// slide along wall at normal speed
+								ent->t.velocity = m::Normalize(m::Vector2(mani.n.y, -mani.n.x) * dir) * velLen;
+							}
+						}
+					}
+					else {
+						printf("Tried to collide against nonexistent triangle.\n");
+					}
+				}
+			}
+		}
+	}
+
+	/*
 
 	offsetx = ent->t.position.x - ent->t.csi.c[eCELL_I].x;
 	offsety = ent->t.position.y - ent->t.csi.c[eCELL_I].y;
 
-	overlapN = offsety > 0;
-	overlapS = offsety < 0;
-	overlapE = offsetx > 0;
-	overlapW = offsetx < 0;
+	overlapN = offsety > 0.f;
+	overlapS = offsety < 0.f;
+	overlapE = offsetx > 0.f;
+	overlapW = offsetx < 0.f;
 
-	//-------------------------------- STRAIGHT EDGE COLLISION CHECK
+
+	// STRAIGHT EDGE COLLISION CHECK
+
+	btf32 height_terrain;
 	// North
-	if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
-	>(ent->t.height + 0.5f) && overlapN)
-	{
-		ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
-		ent->t.velocity.y = 0.f;
-		touchNS = true;
+	if (overlapN) {
+		height_terrain = m::Lerp(
+			(btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u],
+			(btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u],
+			offsetx) / TERRAIN_HEIGHT_DIVISION;
+		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
+			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
+			ent->t.velocity.y = 0.f;
+		}
 	}
 	// South
-	if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
-		> (ent->t.height + 0.5f) && overlapS)
-	{
-		ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
-		ent->t.velocity.y = 0.f;
-		touchNS = true;
+	if (overlapS) {
+		height_terrain = m::Lerp(
+			(btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u],
+			(btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u],
+			offsetx) / TERRAIN_HEIGHT_DIVISION;
+		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
+			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
+			ent->t.velocity.y = 0.f;
+		}
 	}
 	// East
-	if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION)
-	> (ent->t.height + 0.5f) && overlapE)
-	{
-		ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
-		ent->t.velocity.x = 0.f;
-		touchEW = true;
+	if (overlapE) {
+		height_terrain = m::Lerp(
+			(btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y],
+			(btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y],
+			offsety) / TERRAIN_HEIGHT_DIVISION;
+		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
+			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
+			ent->t.velocity.x = 0.f;
+		}
 	}
 	// West
-	if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y] / TERRAIN_HEIGHT_DIVISION)
-	> (ent->t.height + 0.5f) && overlapW)
-	{
-		ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
-		ent->t.velocity.x = 0.f;
-		touchEW = true;
+	if (overlapW) {
+		height_terrain = m::Lerp(
+			(btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y],
+			(btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y],
+			offsety) / TERRAIN_HEIGHT_DIVISION;
+		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
+			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
+			ent->t.velocity.x = 0.f;
+		}
 	}
 
-	//-------------------------------- CORNER COLLISION CHECK
+	// CORNER COLLISION CHECK
+
+	// TODO: Something up with the corner checks, not sure what
 
 	// North-east
-	if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
-	> (ent->t.height + 0.5f) && overlapN && overlapE) {
+	if (((btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
+	> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapN && overlapE) {
 		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, 0.5f);
 		if (m::Length(offset) < 0.5f)
 			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 	}
 	// North-west
-	if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
-		> (ent->t.height + 0.5f) && overlapN && overlapW) {
+	if (((btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
+		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapN && overlapW) {
 		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, 0.5f);
 		if (m::Length(offset) < 0.5f)
 			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 	}
 	// South-east
-	if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
-		> (ent->t.height + 0.5f) && overlapS && overlapE) {
+	if (((btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
+		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapS && overlapE) {
 		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, -0.5f);
 		if (m::Length(offset) < 0.5f)
 			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 	}
 	// South-west
-	if (((btf32)env::eCells.terrain_height[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
-		> (ent->t.height + 0.5f) && overlapS && overlapW) {
+	if (((btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
+		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapS && overlapW) {
 		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, -0.5f);
 		if (m::Length(offset) < 0.5f)
 			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
 	}
-	//*/
+	*/
+	#undef ACTOR_NO_COLLIDE_HEIGHT
 }
 void Entity_CheckGrounded(btID id, Entity* ent)
 {
@@ -196,27 +269,34 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 	CellSpace cs_last = ent->t.csi;
 	core::GetCellSpaceInfo(ent->t.position, ent->t.csi);
 	// If the new CS is different, remove us from the last cell and add us to the new one
-	if (cs_last.c[eCELL_I].x != ent->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != ent->t.csi.c[eCELL_I].y)
+	/*if (cs_last.c[eCELL_I].x != ent->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != ent->t.csi.c[eCELL_I].y)
 	{
 		core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
 		core::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
-	}
+	}*/
 
 	Entity_CheckGrounded(id, ent);
 
-	// contains ground height...
-	btf32 ground_height;
-
-	btf32 distBelowSand = 0.f;
-	// look at how long this is
-	switch (acv::props[env::eCells.prop[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]].floorType)
+	if (!ent->grounded)
 	{
-	case acv::EnvProp::FLOOR_QUICKSAND:
-		env::GetHeight(ground_height, ent->t.csi);
-		if (ent->grounded)
+		// Add gravity
+		ent->t.height_velocity -= 0.20f * dt;
+		// Velocity reduction (Air drag)
+		if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
+	}
+	else
+	{
+		// contains ground height...
+		btf32 ground_height;
+		btf32 distBelowSand = 0.f;
+
+		// look at how long this is
+		switch (acv::props[env::eCells.prop[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]].floorType) {
+		case acv::PropRecord::FLOOR_QUICKSAND:
 		{
-			ent->t.height -= 0.005f;
-			
+			env::GetHeight(ground_height, ent->t.csi);
+			ent->t.height -= 0.12f * dt;
+
 			// slow height velocity
 			ent->t.height_velocity *= 0.9f;
 			ent->slideVelocity *= 0.9f;
@@ -229,19 +309,8 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 			distBelowSand = m::Clamp(distBelowSand, 0.f, 1.f);
 			ent->t.velocity *= distBelowSand;
 		}
-		else
-		{
-			// Add gravity
-			ent->t.height_velocity -= 0.20f * dt;
-			// Velocity reduction (Air drag)
-			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
-		}
-		if (ent->grounded) ent->t.position += ent->slideVelocity;
-		ent->t.position += ent->t.velocity; // Apply velocity
-		ent->t.height += ent->t.height_velocity; // Apply velocity
 		break;
-	case acv::EnvProp::FLOOR_ICE: // same as normal ground but dont slow slide
-		if (ent->grounded)
+		case acv::PropRecord::FLOOR_ICE: // same as normal ground but dont slow slide
 		{
 			env::GetHeight(ground_height, ent->t.csi);
 			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
@@ -257,8 +326,14 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 
 			m::Vector2 surfMod(1.f, 1.f);
 
-			//ent->slideVelocity += ent->t.velocity * 0.1f; // a reasonable implementation would look like this
-			ent->slideVelocity += ent->t.velocity * 1.1f;
+			// a reasonable implementation would look like this
+			ent->slideVelocity += ent->t.velocity * 0.1f;
+			// Slide speed cap
+			btf32 slide_len = m::Length(ent->slideVelocity);
+			if (slide_len > 3.f * dt)
+				ent->slideVelocity = m::Normalize(ent->slideVelocity) * 3.f * dt;
+
+			//ent->slideVelocity += ent->t.velocity * 1.1f;
 
 			// Don't slide uphill
 			if (ent->slideVelocity.x > 0.f && slope.x > 0.f) {
@@ -278,7 +353,8 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 				slope.y = 0.f;
 			}
 
-			btf32 slide_reduce = 0.005f * dt; // Slide reduction per second multiplied by frame length
+			// Slide reduction per second multiplied by frame length
+			btf32 slide_reduce = 0.005f * dt;
 			// Linear slide reduction (with slope adjustment)
 			m::Vector2 slideMag = (btf32)m::Length(ent->slideVelocity);
 			slideMag.y = slideMag.x;
@@ -295,36 +371,25 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 			// No height velocity when on the ground!
 			ent->t.height_velocity = 0.f;
 		}
-		else
-		{
-			// Add gravity
-			ent->t.height_velocity -= 0.20f * dt;
-			// Velocity reduction (Air drag)
-			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
-		}
-		if (ent->grounded) ent->t.position += ent->slideVelocity;
-		ent->t.position += ent->t.velocity; // Apply velocity
-		ent->t.height += ent->t.height_velocity; // Apply velocity
 		break;
-	case acv::EnvProp::FLOOR_LAVA:
-		if (ent->grounded && ent->state.stateFlags.get(ActiveState::eALIVE)) {
-			ent->state.Damage(1000u, 0.f);
-			char string[64] = "You got burnt by lava R.I.P.";
-			core::GUISetMessag(0, string);
-		}
-		goto defaul;
-	case acv::EnvProp::FLOOR_ACID:
-		if (ent->grounded && ent->state.stateFlags.get(ActiveState::eALIVE)) {
-			ent->state.Damage(1000u, 0.f);
-			remove("save/save.bin");
-			char string[64] = "The acid desintegrated your save file";
-			core::GUISetMessag(0, string);
-		}
-		//goto defaul;
-	defaul:
-		// no break, use default physics
-	default:
-		if (ent->grounded)
+		case acv::PropRecord::FLOOR_LAVA:
+			if (ent->state.stateFlags.get(ActiveState::eALIVE)) {
+				ent->state.Damage(1000u, 0.f);
+				char string[64] = "You got burnt by lava R.I.P.";
+				core::GUISetMessag(0, string);
+			}
+			// no break, use default physics
+			goto defaul;
+		case acv::PropRecord::FLOOR_ACID:
+			if (ent->state.stateFlags.get(ActiveState::eALIVE)) {
+				ent->state.Damage(1000u, 0.f);
+				remove("save/save.bin");
+				char string[64] = "The acid desintegrated your save file";
+				core::GUISetMessag(0, string);
+			}
+			// no break, use default physics
+		defaul:
+		default:
 		{
 			env::GetHeight(ground_height, ent->t.csi);
 			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
@@ -375,20 +440,17 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 			// No height velocity when on the ground!
 			ent->t.height_velocity = 0.f;
 		}
-		else
-		{
-			// Add gravity
-			ent->t.height_velocity -= 0.20f * dt;
-			// Velocity reduction (Air drag)
-			if (ent->properties.get(Entity::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
-		}
-		if (ent->grounded) ent->t.position += ent->slideVelocity;
-		ent->t.position += ent->t.velocity; // Apply velocity
-		ent->t.height += ent->t.height_velocity; // Apply velocity
 		break;
+		}
+
+		ent->t.position += ent->slideVelocity;
 	}
 
-	Entity_Deintersect(id, ent, ent->t.csi);
+	// Apply velocity
+	ent->t.position += ent->t.velocity;
+	ent->t.height += ent->t.height_velocity;
+
+	Entity_Collision(id, ent, ent->t.csi);
 
 	// duplicate of start of function
 	core::GetCellSpaceInfo(ent->t.position, ent->t.csi);
@@ -450,70 +512,8 @@ void DrawRestingItem(btID id, void* ent)
 	}
 }
 
-void TickEditorPawn(btID id, void* ent, btf32 dt)
-{
-	EditorPawn* chr = (EditorPawn*)ent;
-
-	bool can_move = true;
-	bool can_turn = true;
-
-	if (chr->state.stateFlags.get(ActiveState::eALIVE))
-	{
-		chr->t.velocity = chr->input * dt * 5.f;
-
-		//-------------------------------- APPLY MOVEMENT
-
-		//moving = (m::Length(chr->t.velocity) > 0.016f);
-		m::Vector2 oldpos = chr->t.position;
-		chr->t.position += chr->t.velocity; // Apply velocity
-
-		CellSpace cs_last = chr->t.csi;
-
-		//I don't want this to be here
-		if (cs_last.c[eCELL_I].x != chr->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != chr->t.csi.c[eCELL_I].y)
-		{
-			core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
-			core::AddEntityCell(chr->t.csi.c[eCELL_I].x, chr->t.csi.c[eCELL_I].y, id);
-		}
-
-		//-------------------------------- SET HEIGHT AND CELL SPACE
-
-		btf32 height2;
-		env::GetHeight(height2, chr->t.csi);
-		chr->t.height = m::Lerp(chr->t.height, height2, 0.05f);
-
-		//-------------------------------- RUN COLLISION & AI
-
-	} // End if alive
-
-	  //________________________________________________________________
-	  //------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
-
-	  // Reset transforms
-	chr->t_body = Transform3D();
-	chr->t_head = Transform3D();
-
-	chr->t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.7f, chr->t.position.y));
-	chr->t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
-
-	// Set head transform
-	chr->t_head.SetPosition(chr->t_body.GetPosition());
-	chr->t_head.Rotate(chr->viewYaw.Rad(), m::Vector3(0, 1, 0));
-	chr->t_head.Rotate(chr->viewPitch.Rad(), m::Vector3(1, 0, 0));
-	chr->t_head.Translate(chr->t_body.GetUp() * 0.7f);
-	chr->t_head.SetScale(m::Vector3(0.95f, 0.95f, 0.95f));
-}
-void DrawEditorPawn(btID id, void* ent)
-{
-	EditorPawn* chr = (EditorPawn*)ent;
-
-	// need a good way of knowing own index
-	DrawMesh(id, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, chr->t_body.getMatrix());
-
-	// draw head
-
-	//DrawBlendMesh(index, acv::GetMB(acv::mb_char_head), 0, acv::GetT(chr->t_skin), SS_CHARA, t_head.getMatrix());
-}
+void TickEditorPawn(btID id, void* ent, btf32 dt) {}
+void DrawEditorPawn(btID id, void* ent) {}
 
 
 void ActiveState::Damage(btui32 amount, btf32 angle)
@@ -548,7 +548,7 @@ void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, 
 }
 void ActiveState::AddSpell(btID caster, btID spell)
 {
-	AddEffect(0, (StatusEffectType)acv::spells[spell].target_effect_type,
+	AddEffect(caster, (StatusEffectType)acv::spells[spell].target_effect_type,
 		acv::spells[spell].target_effect_duration,
 		acv::spells[spell].target_effect_magnitude);
 	// TODO: this only works in the case of cast on self, should deal with this properly but dont know how best to yet
@@ -595,18 +595,19 @@ void ActiveState::TickEffects(btf32 dt)
 
 
 
-void Actor::TryHoldHand(btID id_self, btID id)
+void ActorTryHoldHand(btID id_self, btID id)
 {
+	Actor* self = (Actor*)GetEntityPtr(id_self);
 	Actor* actr = (Actor*)GetEntityPtr(id);
 
 	// check our inventory if we're not holding anything
-	if (!inventory.items.Used(inv_active_slot)) {
+	if (!self->inventory.items.Used(self->inv_active_slot)) {
 		// check other actor's inventory
-		if (!actr->inventory.items.Used(inv_active_slot)) {
-			if (aniHandHoldTarget == id)
-				aniHandHoldTarget = ID_NULL;
+		if (!actr->inventory.items.Used(actr->inv_active_slot)) {
+			if (self->aniHandHoldTarget == id)
+				self->aniHandHoldTarget = ID_NULL;
 			else
-				aniHandHoldTarget = id;
+				self->aniHandHoldTarget = id;
 			if (actr->aniHandHoldTarget == id_self)
 				actr->aniHandHoldTarget = ID_NULL;
 			else
@@ -616,83 +617,92 @@ void Actor::TryHoldHand(btID id_self, btID id)
 
 }
 
-void Actor::TakeItem(btID id_self, btID id)
+void ActorTakeItem(btID id_self, btID id)
 {
+	Actor* self = (Actor*)GetEntityPtr(id_self);
 	RestingItem* item = (RestingItem*)GetEntityPtr(id);
 	HeldItem* item_held = GETITEMINST(item->item_instance);
-	btui32 slot_added = inventory.TransferItemRecv(item->item_instance);
+	btui32 slot_added = self->inventory.TransferItemRecv(item->item_instance);
 	core::DestroyEntity(id);
-	if (slot_added == inv_active_slot)
-		ItemOnEquip(inventory.items[inv_active_slot], this);
+	if (slot_added == self->inv_active_slot)
+		ItemOnEquip(self->inventory.items[self->inv_active_slot], self);
 	if (core::players[0] == id_self)
 	{
 		char string[64] = "Picked up ";
-		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->id_item_template]->name);
+		strcat(string, (char*)(acv::ItemRecord*)acv::items[item_held->id_item_template]->name);
 		core::GUISetMessag(0, string);
 	}
 	else if (core::players[1] == id_self)
 	{
 		char string[64] = "Picked up ";
-		strcat(string, (char*)(acv::BaseItem*)acv::items[item_held->id_item_template]->name);
+		strcat(string, (char*)(acv::ItemRecord*)acv::items[item_held->id_item_template]->name);
 		core::GUISetMessag(1, string);
 	}
 }
 
-void Actor::DropItem(btID id_self, btID slot)
+void ActorDropItem(btID id_self, btID slot)
 {
-	if (slot < inventory.items.Size() && inventory.items.Used(slot))
+	Actor* self = (Actor*)GetEntityPtr(id_self);
+	if (slot < self->inventory.items.Size() && self->inventory.items.Used(slot))
 	{
-		m::Vector2 throwDir = m::AngToVec2(viewYaw.Rad());
-		btID item_entity = core::SpawnEntityItem(inventory.items[slot], t.position + (throwDir * radius), viewYaw.Deg());
-		ENTITY(item_entity)->t.velocity = throwDir * 0.05f;
-		inventory.TransferItemSendIndex(slot);
-		DecrEquipSlot();
+		m::Vector2 throwDir = m::AngToVec2(self->viewYaw.Rad());
+		btID item_entity = core::SpawnEntityItem(self->inventory.items[slot],
+			self->t.position + (throwDir * (self->radius + acv::items[((HeldItem*)GetItemInstance(self->inventory.items[slot]))->id_item_template]->f_radius)),
+			self->t.height, self->viewYaw.Deg());
+		ENTITY(item_entity)->t.velocity = throwDir * 0.05f + self->t.velocity;
+		self->inventory.TransferItemSendIndex(slot);
+		ActorDecrEquipSlot(id_self);
 	}
 }
 
-void Actor::DropAllItems()
+void ActorDropAllItems(btID id_self)
 {
+	Actor* self = (Actor*)GetEntityPtr(id_self);
 	for (btui32 slot = 0u; slot < INV_SIZE; ++slot)
 	{
-		if (slot < inventory.items.Size() && inventory.items.Used(slot))
+		if (slot < self->inventory.items.Size() && self->inventory.items.Used(slot))
 		{
-			core::SpawnEntityItem(inventory.items[slot], m::Vector2(
-				m::Random(t.position.x - 0.5f, t.position.x + 0.5f),
-				m::Random(t.position.y - 0.5f, t.position.y + 0.5f)),
+			core::SpawnEntityItem(self->inventory.items[slot], m::Vector2(
+				m::Random(self->t.position.x - 0.5f, self->t.position.x + 0.5f),
+				m::Random(self->t.position.y - 0.5f, self->t.position.y + 0.5f)),
+				self->t.height,
 				m::Random(0.f, 360.f));
-			inventory.TransferItemSendIndex(slot);
-			DecrEquipSlot();
+			self->inventory.TransferItemSendIndex(slot);
+			ActorDecrEquipSlot(id_self);
 		}
 	}
 }
 
-void Actor::SetEquipSlot(btui32 index)
+void ActorSetEquipSlot(btID id_self, btui32 index)
 {
-	if (index < inventory.items.Size())
+	Actor* self = (Actor*)GetEntityPtr(id_self);
+	if (index < self->inventory.items.Size())
 	{
-		inv_active_slot = index;
-		if (inventory.items.Used(inv_active_slot))
-			ItemOnEquip(inventory.items[inv_active_slot], this);
+		self->inv_active_slot = index;
+		if (self->inventory.items.Used(self->inv_active_slot))
+			ItemOnEquip(self->inventory.items[self->inv_active_slot], self);
 	}
 }
 
-void Actor::IncrEquipSlot()
+void ActorIncrEquipSlot(btID id_self)
 {
-	if (inv_active_slot < inventory.items.Size() - 1u)
+	Actor* self = (Actor*)GetEntityPtr(id_self);
+	if (self->inv_active_slot < self->inventory.items.Size() - 1u)
 	{
-		++inv_active_slot;
-		if (inventory.items.Used(inv_active_slot))
-			ItemOnEquip(inventory.items[inv_active_slot], this);
+		++self->inv_active_slot;
+		if (self->inventory.items.Used(self->inv_active_slot))
+			ItemOnEquip(self->inventory.items[self->inv_active_slot], self);
 	}
 }
 
-void Actor::DecrEquipSlot()
+void ActorDecrEquipSlot(btID id_self)
 {
-	if (inv_active_slot > 0u)
+	Actor* self = (Actor*)GetEntityPtr(id_self);
+	if (self->inv_active_slot > 0u)
 	{
-		--inv_active_slot;
-		if (inventory.items.Used(inv_active_slot))
-			ItemOnEquip(inventory.items[inv_active_slot], this);
+		--self->inv_active_slot;
+		if (self->inventory.items.Used(self->inv_active_slot))
+			ItemOnEquip(self->inventory.items[self->inv_active_slot], self);
 	}
 }
 
@@ -865,29 +875,42 @@ void TickChara(btID id, void* ent, btf32 dt)
 			chr->input += (ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position);
 		}
 
-	// Jump
-	if (chr->inputBV.get(Actor::IN_JUMP)) {
-		if (chr->grounded) {
-			// Enter jump
-			chr->t.height_velocity = 0.1f;
-			chr->t.velocity = chr->input * dt * chr->speed + chr->slideVelocity;
-			chr->aniCrouch = false;
-			chr->jump_state = Actor::eJUMP_JUMP;
-		}
-		#ifdef DEF_LONGJUMP // enable to turn on hover jumping
-		else if (chr->jump_state == Actor::eJUMP_JUMP)
-			chr->t.height_velocity += 0.005f; // hover
-		#endif
-		else if (chr->jump_state == Actor::eJUMP_SPRINT)
-			chr->t.height_velocity -= 0.01f; // anti-hover
+	bool canJump = true;
+
+	switch (acv::props[env::eCells.prop[chr->t.csi.c[eCELL_I].x][chr->t.csi.c[eCELL_I].y]].floorType) {
+	case acv::PropRecord::FLOOR_QUICKSAND:
+		canJump = false;
+		break;
 	}
-	// Sprint
-	else if (chr->grounded && chr->aniRun && m::Length(chr->t.velocity) > 0.5f * dt) {
-		// Enter sprint jump
-		chr->t.height_velocity = 0.038f; // enter jump
-		chr->t.velocity = chr->input * dt * (chr->speed * 1.1f) + (chr->slideVelocity * 0.9f);
-		chr->aniCrouch = false;
-		chr->jump_state = Actor::eJUMP_SPRINT;
+
+	// Jump
+	if (canJump) {
+		if (chr->inputBV.get(Actor::IN_JUMP)) {
+			if (chr->grounded) {
+				// Enter jump
+				if (chr->aniCrouch) // jump higher out of a crouch position
+					chr->t.height_velocity = 0.135f;
+				else
+					chr->t.height_velocity = 0.1f;
+				chr->t.velocity = chr->input * dt * chr->speed + chr->slideVelocity;
+				chr->aniCrouch = false;
+				chr->jump_state = Actor::eJUMP_JUMP;
+			}
+			#ifdef DEF_LONGJUMP // enable to turn on hover jumping
+			else if (chr->jump_state == Actor::eJUMP_JUMP)
+				chr->t.height_velocity += 0.005f; // hover
+			#endif
+			else if (chr->jump_state == Actor::eJUMP_SPRINT)
+				chr->t.height_velocity -= 0.01f; // anti-hover
+		}
+		// Sprint
+		else if (chr->grounded && chr->aniRun && m::Length(chr->t.velocity) > 0.5f * dt) {
+			// Enter sprint jump
+			chr->t.height_velocity = 0.038f; // enter jump
+			chr->t.velocity = chr->input * dt * (chr->speed * 1.1f) + (chr->slideVelocity * 0.9f);
+			chr->aniCrouch = false;
+			chr->jump_state = Actor::eJUMP_SPRINT;
+		}
 	}
 
 	bool can_move = true;
@@ -900,7 +923,7 @@ void TickChara(btID id, void* ent, btf32 dt)
 
 	if (chr->state.stateFlags.get(ActiveState::eDIED_REPORT))
 	{
-		chr->DropAllItems();
+		ActorDropAllItems(id);
 		chr->state.stateFlags.unset(ActiveState::eDIED_REPORT);
 	}
 	if (chr->state.stateFlags.get(ActiveState::eALIVE))
@@ -922,7 +945,7 @@ void TickChara(btID id, void* ent, btf32 dt)
 		}
 		if (can_turn)
 		{
-			btf32 angdif = abs(m::AngDif(chr->t.yaw.Deg(), chr->viewYaw.Deg()));
+			btf32 angdif = m::AngDifAbs(chr->t.yaw.Deg(), chr->viewYaw.Deg());
 			if (angdif > 85.f)
 				if (angdif - 85.f < 8.f)
 					chr->t.yaw.RotateTowards(chr->viewYaw.Deg(), angdif - 85.f); // Rotate body towards the target direction

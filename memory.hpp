@@ -269,16 +269,21 @@ namespace mem
 	struct idbuf
 	{
 	private:
-		btID ptr_id[IDBUF_SIZE]{ ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL,ID_NULL };
+		btID ptr_id[IDBUF_SIZE]{
+			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
+			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
+			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
+			ID_NULL, ID_NULL, ID_NULL, ID_NULL };
 		bool ptr_used[IDBUF_SIZE]{ false };
 		btui32 id_end = 0u;
+		btui32 size = 0u;
 	public:
 		idbuf(); // Constructor
 		~idbuf(); // Destructor
-		void add(btID ID);
-		void remove(btID ID);
-		void clear();
-		btui32 end();
+		void Add(btID ID);
+		void Remove(btID ID);
+		void Clear();
+		btui32 Size();
 		btID operator[] (btui32 x);
 	};
 }

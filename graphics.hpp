@@ -504,7 +504,7 @@ namespace graphics
 		size_t ices_size;
 	public:
 		GLuint vao; // Vertex Array Object
-		void LoadFile(void* ACV_FILE);
+		void LoadFile(void* acv_file);
 		void Unload();
 		size_t IcesSize() { return ices_size; };
 	private:
@@ -523,11 +523,9 @@ namespace graphics
 		GLuint vao; // Vertex Array Object
 		CompositeMesh();
 		~CompositeMesh();
-		void Draw(unsigned int TEXTURE, unsigned int SHADER);
-		void AddMesh(Mesh* MESH, Matrix4x4 position);
-		void AddMesh(Mesh* MESH, m::Vector3 position, MeshOrientation ori);
-		// TODO: remove me
-		void AddTerrainTile(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE]);
+		void Draw(unsigned int texture, unsigned int shader);
+		void AddMesh(Mesh* mesh, Matrix4x4 position);
+		void AddMesh(Mesh* mesh, m::Vector3 position, MeshOrientation orientation);
 		void ReBindGL();
 		void Unload();
 	private:
@@ -544,16 +542,16 @@ namespace graphics
 	{
 	public:
 		void Draw();
-		void GenerateFromHMap(btui8(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE], btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]);
+		void GenerateFromHMap(btui8(&heightmap)[WORLD_SIZE][WORLD_SIZE], btui8(&matmap)[WORLD_SIZE][WORLD_SIZE]);
 		void GenerateComplexEnv(
-			btui8(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE],
-			btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE],
-			btui32* FLAGS,
-			btui32 FLAG_BLOCK,
-			btui8(&HEIGHTMAP_NE)[WORLD_SIZE][WORLD_SIZE],
-			btui8(&HEIGHTMAP_NW)[WORLD_SIZE][WORLD_SIZE],
-			btui8(&HEIGHTMAP_SE)[WORLD_SIZE][WORLD_SIZE],
-			btui8(&HEIGHTMAP_SW)[WORLD_SIZE][WORLD_SIZE]);
+			btui8(&heightmap)[WORLD_SIZE][WORLD_SIZE],
+			btui8(&matmap)[WORLD_SIZE][WORLD_SIZE],
+			btui32* flags,
+			btui32 flag_invisible,
+			btui8(&heightmap_ne)[WORLD_SIZE][WORLD_SIZE],
+			btui8(&heightmap_nw)[WORLD_SIZE][WORLD_SIZE],
+			btui8(&heightmap_se)[WORLD_SIZE][WORLD_SIZE],
+			btui8(&heightmap_sw)[WORLD_SIZE][WORLD_SIZE]);
 	private:
 		void ReBindGL();
 		GLuint vao = UI32_NULL; // Vertex Array Object

@@ -88,10 +88,10 @@ btID Inventory::GetItemOfAmmunitionType(btui8 ammo_type)
 		{
 			if (GetItemInstanceType(items[i]) == ITEM_TYPE_CONS)
 			{
-				if (((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemInstance(items[i]))->id_item_template])->id_projectile != ID_NULL)
+				if (((acv::ItemRecordCon*)acv::items[((HeldItem*)GetItemInstance(items[i]))->id_item_template])->id_projectile != ID_NULL)
 				{
 					// TODO: again, this is the fucking worst, i mean jus look at it...
-					if (ammo_type == acv::projectiles[((acv::BaseItemCon*)acv::items[((HeldItem*)GetItemInstance(items[i]))->id_item_template])->id_projectile].ammunition_type)
+					if (ammo_type == acv::projectiles[((acv::ItemRecordCon*)acv::items[((HeldItem*)GetItemInstance(items[i]))->id_item_template])->id_projectile].ammunition_type)
 					{
 						return items[i];
 					}

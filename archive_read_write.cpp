@@ -11,7 +11,7 @@
 
 namespace acv
 {
-	extern archive_asset assets[FN_COUNT];
+	extern Resource assets[FN_COUNT];
 	extern btui32 assetCount;
 }
 
@@ -126,10 +126,10 @@ namespace serializer
 		std::cout << "ITEMS" << std::endl;
 		for (btui32 i = 0; i < acv::item_index; i++)
 		{
-			#define ITEMI ((acv::BaseItem*)acv::items[i])
-			#define WMELI ((acv::BaseItemMel*)acv::items[i])
-			#define WGUNI ((acv::BaseItemGun*)acv::items[i])
-			#define CONSI ((acv::BaseItemCon*)acv::items[i])
+			#define ITEMI ((acv::ItemRecord*)acv::items[i])
+			#define WMELI ((acv::ItemRecordMel*)acv::items[i])
+			#define WGUNI ((acv::ItemRecordGun*)acv::items[i])
+			#define CONSI ((acv::ItemRecordCon*)acv::items[i])
 
 			std::cout << "---------------------" << std::endl;
 			std::cout << "TYPE                 " << (int)acv::item_types[i] << std::endl;
@@ -403,13 +403,13 @@ namespace serializer
 		fgetc(file); //  Advance past space
 	}
 
+	#define ELEMEQUALS(s) *(btui32*)elem == *(btui32*)&s
+
 	void InterpretValue(char* elem, char* value, int value_size, void* pTARGET, int* pOFFSET)
 	{
 		// If we're already going hard we may as well go full butt clench
 		// so here is weird casting and macro use at the same time
 		
-		#define ELEMEQUALS(s) *(btui32*)elem == *(btui32*)&s
-
 		#define INTERPRET_INT(TYPE) { \
 			*(TYPE*)(((char*)pTARGET) + *pOFFSET) = (TYPE)atoi(value); \
 			*pOFFSET += sizeof(TYPE); }
@@ -492,7 +492,6 @@ namespace serializer
 		else if (ELEMEQUALS("BV32")) INTERPRET_BITVEC(btui32)
 		else if (ELEMEQUALS("BV64")) INTERPRET_BITVEC(btui64)
 
-		#undef ELEMEQUALS
 		#undef INTERPRET_INT
 		#undef INTERPRET_FLOAT
 		#undef INTERPRET_STRING
@@ -501,14 +500,7 @@ namespace serializer
 	void InterpretArchiveContents(char* fn)
 	{
 		void* item;
-
 		bool comment = false;
-
-		#define GET2_ITEM_ITEM ((acv::BaseItem*)item)
-		#define GET2_ITEM_APR ((acv::BaseItemEqp*)item)
-		#define GET2_ITEM_W_MELEE ((acv::BaseItemMel*)item)
-		#define GET2_ITEM_PTN ((acv::BaseItemCon*)item)
-		#define GET2_ITEM_GUN ((acv::BaseItemGun*)item)
 
 		FILE* file = fopen(fn, "r"); // Open file
 		if (file != NULL)
@@ -678,30 +670,30 @@ namespace serializer
 					if (elem[0] == 'w') // If it's a weapon
 					{
 						if (strcmp(elem, "wmel") == 0) {
-							acv::items[acv::item_index] = new acv::BaseItemMel();
+							acv::items[acv::item_index] = new acv::ItemRecordMel();
 							acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MELEE;
 						}
 						else if (strcmp(elem, "wgun") == 0) {
-							acv::items[acv::item_index] = new acv::BaseItemGun();
+							acv::items[acv::item_index] = new acv::ItemRecordGun();
 							acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MATCHGUN;
 						}
 						else if (strcmp(elem, "wmgc") == 0) {
-							acv::items[acv::item_index] = new acv::BaseItemMgc();
+							acv::items[acv::item_index] = new acv::ItemRecordMgc();
 							acv::item_types[acv::item_index] = ITEM_TYPE_WPN_MAGIC;
 						}
 					}
 					else
 					{
 						if (strcmp(elem, "misc") == 0) {
-							acv::items[acv::item_index] = new acv::BaseItem();
+							acv::items[acv::item_index] = new acv::ItemRecord();
 							acv::item_types[acv::item_index] = ITEM_TYPE_MISC;
 						}
 						else if (strcmp(elem, "aprl") == 0) {
-							acv::items[acv::item_index] = new acv::BaseItemEqp();
+							acv::items[acv::item_index] = new acv::ItemRecordEqp();
 							acv::item_types[acv::item_index] = ITEM_TYPE_EQUIP;
 						}
 						else if (strcmp(elem, "cons") == 0) {
-							acv::items[acv::item_index] = new acv::BaseItemCon();
+							acv::items[acv::item_index] = new acv::ItemRecordCon();
 							acv::item_types[acv::item_index] = ITEM_TYPE_CONS;
 						}
 					}
@@ -740,10 +732,7 @@ namespace serializer
 
 			//-------------------------------- ENTITY TEMPLATES
 
-			///*
 		getEntTElemName:
-			//fgets(&elem[0], 5, file); // Get element name
-		//skipEntTElemName:
 			while (strcmp(elem, "ACTT") == 0) // is it a new item?
 			{
 				AdvanceSpace(file);
@@ -773,21 +762,56 @@ namespace serializer
 				++acv::actor_template_index;
 			nextEntTElem:
 				AdvanceSpace(file);
+				InterpretCommand(file, elem);
 				goto getEntTElemName;
 			}
-			//*/
+
+			//-------------------------------- ACTIVATORS
+
+			//InterpretCommand(file, elem);
+
+		getActivatorElemName:
+			while (strcmp(elem, "ACVR") == 0) // is it a new item?
+			{
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
+
+				if (strcmp(elem, "acvr") != 0) goto nextActivatorElem;
+
+				// READ PROPERTIES
+
+				void* pTARGET = &(acv::activators[acv::activator_index]);
+				int pOFFSET = 0;
+
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
+				while (strcmp(elem, "<<<<") != 0) // While we haven't reached the end of this item's stats
+				{
+					AdvanceSpace(file);
+					char value[256]; int value_size = 0;
+					InterpretWord(file, value, &value_size);
+
+					InterpretValue(elem, value, value_size, pTARGET, &pOFFSET);
+
+					//get name of next operator
+					oper = fgetc(file); //  Advance past line break
+					InterpretCommand(file, elem);
+				}
+				++acv::activator_index;
+			nextActivatorElem:
+				AdvanceSpace(file);
+				InterpretCommand(file, elem);
+				goto getActivatorElemName;
+			}
 
 			//-------------------------------- END
 
 			debug_output();
 			fclose(file); // Close file
 		}
-		#undef ITEM_ITEM
-		#undef ITEM_MISC
-		#undef ITEM_APR
-		#undef ITEM_WPN
-		#undef ITEM_PTN
 	}
+
+	#undef ELEMEQUALS
 
 	void LoadArchive(char* fn)
 	{
@@ -812,17 +836,17 @@ namespace serializer
 			//-------------------------------- Prop part
 
 			fread(&acv::prop_index, sizeof(btui32), 1, file);
-			fread(&acv::props, sizeof(acv::EnvProp), acv::prop_index, file);
+			fread(&acv::props, sizeof(acv::PropRecord), acv::prop_index, file);
 
 			//-------------------------------- Spell part
 
 			fread(&acv::spell_index, sizeof(btui32), 1, file);
-			fread(&acv::spells, sizeof(acv::Spell), acv::spell_index, file);
+			fread(&acv::spells, sizeof(acv::SpellRecord), acv::spell_index, file);
 
 			//-------------------------------- Projectile part
 
 			fread(&acv::projectiles_index, sizeof(btui32), 1, file);
-			fread(&acv::projectiles, sizeof(acv::ProjectileTemplate), acv::projectiles_index, file);
+			fread(&acv::projectiles, sizeof(acv::ProjectileRecord), acv::projectiles_index, file);
 
 			//-------------------------------- Item part
 
@@ -834,24 +858,24 @@ namespace serializer
 				switch (acv::item_types[i])
 				{
 				default: // base (ITEM_ROOT)
-					acv::items[i] = new acv::BaseItem();
-					fread(acv::items[i], sizeof(acv::BaseItem), 1, file);
+					acv::items[i] = new acv::ItemRecord();
+					fread(acv::items[i], sizeof(acv::ItemRecord), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MELEE:
-					acv::items[i] = new acv::BaseItemMel();
-					fread(acv::items[i], sizeof(acv::BaseItemMel), 1, file);
+					acv::items[i] = new acv::ItemRecordMel();
+					fread(acv::items[i], sizeof(acv::ItemRecordMel), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MATCHGUN:
-					acv::items[i] = new acv::BaseItemGun();
-					fread(acv::items[i], sizeof(acv::BaseItemGun), 1, file);
+					acv::items[i] = new acv::ItemRecordGun();
+					fread(acv::items[i], sizeof(acv::ItemRecordGun), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MAGIC:
-					acv::items[i] = new acv::BaseItemMgc();
-					fread(acv::items[i], sizeof(acv::BaseItemMgc), 1, file);
+					acv::items[i] = new acv::ItemRecordMgc();
+					fread(acv::items[i], sizeof(acv::ItemRecordMgc), 1, file);
 					break;
 				case ITEM_TYPE_CONS:
-					acv::items[i] = new acv::BaseItemCon();
-					fread(acv::items[i], sizeof(acv::BaseItemCon), 1, file);
+					acv::items[i] = new acv::ItemRecordCon();
+					fread(acv::items[i], sizeof(acv::ItemRecordCon), 1, file);
 					break;
 				}
 			}
@@ -859,7 +883,7 @@ namespace serializer
 			//-------------------------------- Entity Template part
 
 			fread(&acv::actor_template_index, sizeof(btui32), 1, file);
-			fread(&acv::actor_templates, sizeof(acv::ActorBase), acv::actor_template_index, file);
+			fread(&acv::actor_templates, sizeof(acv::ActorRecord), acv::actor_template_index, file);
 
 			fclose(file); // Close file
 
@@ -893,19 +917,19 @@ namespace serializer
 
 			count = acv::prop_index;
 			fwrite(&count, sizeof(btui32), 1, file);
-			fwrite(&acv::props, sizeof(acv::EnvProp), count, file);
+			fwrite(&acv::props, sizeof(acv::PropRecord), count, file);
 
 			//-------------------------------- Spell part
 
 			count = acv::spell_index;
 			fwrite(&count, sizeof(btui32), 1, file);
-			fwrite(&acv::spells, sizeof(acv::Spell), count, file);
+			fwrite(&acv::spells, sizeof(acv::SpellRecord), count, file);
 
 			//-------------------------------- Projectile part
 
 			count = acv::projectiles_index;
 			fwrite(&count, sizeof(btui32), 1, file);
-			fwrite(&acv::projectiles, sizeof(acv::ProjectileTemplate), count, file);
+			fwrite(&acv::projectiles, sizeof(acv::ProjectileRecord), count, file);
 
 			//-------------------------------- Item part
 
@@ -917,23 +941,23 @@ namespace serializer
 				{
 				default: // base (ITEM_ROOT)
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::BaseItem), 1, file);
+					fwrite(acv::items[i], sizeof(acv::ItemRecord), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MELEE:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::BaseItemMel), 1, file);
+					fwrite(acv::items[i], sizeof(acv::ItemRecordMel), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MATCHGUN:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::BaseItemGun), 1, file);
+					fwrite(acv::items[i], sizeof(acv::ItemRecordGun), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MAGIC:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::BaseItemMgc), 1, file);
+					fwrite(acv::items[i], sizeof(acv::ItemRecordMgc), 1, file);
 					break;
 				case ITEM_TYPE_CONS:
 					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
-					fwrite(acv::items[i], sizeof(acv::BaseItemCon), 1, file);
+					fwrite(acv::items[i], sizeof(acv::ItemRecordCon), 1, file);
 					break;
 				}
 			}
@@ -942,7 +966,7 @@ namespace serializer
 
 			count = acv::actor_template_index;
 			fwrite(&count, sizeof(btui32), 1, file);
-			fwrite(&acv::actor_templates, sizeof(acv::ActorBase), count, file);
+			fwrite(&acv::actor_templates, sizeof(acv::ActorRecord), count, file);
 
 			fclose(file); // Close file
 

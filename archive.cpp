@@ -17,25 +17,28 @@ namespace acv
 {
 	// Contents
 
-	BaseItem* items[ITEMS_COUNT]{ nullptr };
-	ItemType item_types[ITEMS_COUNT];
-	btui32 item_index = 0;
+	ItemRecord* items[ITEM_RECORD_COUNT]{ nullptr };
+	ItemType item_types[ITEM_RECORD_COUNT];
+	btui32 item_index = 0u;
 
-	EnvProp props[PROPS_COUNT];
-	btui32 prop_index = 0;
+	PropRecord props[PROP_RECORD_COUNT];
+	btui32 prop_index = 0u;
 
-	Spell spells[SPELL_COUNT];
-	btui32 spell_index = 0;
+	SpellRecord spells[SPELL_RECORD_COUNT];
+	btui32 spell_index = 0u;
 
-	ProjectileTemplate projectiles[PROJECTILE_TEMPLATE_COUNT];
-	btui32 projectiles_index;
+	ProjectileRecord projectiles[PROJECTILE_RECORD_COUNT];
+	btui32 projectiles_index = 0u;
 
-	ActorBase actor_templates[ACTORBASE_COUNT];
-	btui32 actor_template_index = 0;
+	ActorRecord actor_templates[ACTOR_RECORD_COUNT];
+	btui32 actor_template_index = 0u;
+
+	ActivatorRecord activators[ACTIVATOR_RECORD_COUNT];
+	btui32 activator_index = 0u;
 
 	// Assets
 
-	archive_asset assets[FN_COUNT];
+	Resource assets[FN_COUNT];
 	btui32 assetCount = 0u;
 	btui64 asset_loaded_size = 0u;
 
@@ -43,8 +46,7 @@ namespace acv
 
 	FILE* fileARCHIVE;
 
-	void Init()
-	{
+	void Init() {
 		// Get sums
 		//btui8 sum = 0ui8;
 		//GetSum(ARCHIVE_FILENAME, &sum);
@@ -54,10 +56,8 @@ namespace acv
 
 		fileARCHIVE = fopen(ARCHIVE_DATA_FILENAME, "rb");
 	}
-	void End()
-	{
+	void End() {
 		acv::ClearMemory();
-
 		if (fileARCHIVE != NULL)
 			fclose(fileARCHIVE);
 	}
@@ -93,12 +93,9 @@ namespace acv
 		}
 	}
 
-	void UnloadAsset(btui32 i)
-	{
-		if (assets[i].asset != nullptr && assets[i].loaded)
-		{
-			switch (assets[i].type)
-			{
+	void UnloadAsset(btui32 i) {
+		if (assets[i].asset != nullptr && assets[i].loaded) {
+			switch (assets[i].type) {
 			case ASSET_TEXTURE_FILE:
 				((graphics::Texture*)assets[i].asset)->Unload();
 				return;
@@ -118,20 +115,17 @@ namespace acv
 		}
 	};
 
-	bool IsLoaded(btui32 i)
-	{
+	bool IsLoaded(btui32 i) {
 		return assets[i].loaded;
 	}
 
-	btui32 AssetCount()
-	{
+	btui32 AssetCount() {
 		return assetCount;
 	}
 
 	//#endif // DEF_ARCHIVER
 
-	void ClearMemory()
-	{
+	void ClearMemory() {
 		for (int i = 0; i < acv::item_index; i++)
 		{
 			delete(acv::items[i]);
@@ -146,62 +140,50 @@ namespace acv
 
 	//#ifndef DEF_ARCHIVER
 
-	forceinline void AssetAccessCheck(btui32& index)
-	{
+	forceinline void AssetAccessCheck(btui32& index) {
 		// Load the asset if needed
 		if (!acv::assets[index].loaded)
 			acv::LoadAsset(index);
 		acv::assets[index].tickLastAccessed = tickCount;
 	}
 
-	graphics::Texture& GetT(btui32 index)
-	{
+	graphics::Texture& GetT(btui32 index) {
 		AssetAccessCheck(index);
-		// Return the reference
 		if (index < acv::assetCount && acv::assets[index].type == ASSET_TEXTURE_FILE)
 			return *(graphics::Texture*)acv::assets[index].asset;
 		return *(graphics::Texture*)acv::assets[DEFAULT_TEXTURE].asset;
 	}
 
-	graphics::Mesh& GetM(btui32 index)
-	{
+	graphics::Mesh& GetM(btui32 index) {
 		AssetAccessCheck(index);
-		// Return the reference
 		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESH_FILE)
 			return *(graphics::Mesh*)acv::assets[index].asset;
 		return *(graphics::Mesh*)acv::assets[DEFAULT_MESH].asset;
 	}
 
-	graphics::MeshBlend& GetMB(btui32 index)
-	{
+	graphics::MeshBlend& GetMB(btui32 index) {
 		AssetAccessCheck(index);
-		// Return the reference
 		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHBLEND_FILE)
 			return *(graphics::MeshBlend*)acv::assets[index].asset;
 		return *(graphics::MeshBlend*)acv::assets[DEFAULT_MESHBLEND].asset;
 	}
 
-	graphics::MeshDeform& GetMD(btui32 index)
-	{
+	graphics::MeshDeform& GetMD(btui32 index) {
 		AssetAccessCheck(index);
-		// Return the reference
 		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHDEFORM_FILE)
 			return *(graphics::MeshDeform*)acv::assets[index].asset;
 		return *(graphics::MeshDeform*)acv::assets[DEFAULT_MESHDEFORM].asset;
 	}
 
-	bool IsTexture(btui32 index)
-	{
+	bool IsTexture(btui32 index) {
 		return acv::assets[index].type == ASSET_TEXTURE_FILE;
 	}
 
-	bool IsMesh(btui32 index)
-	{
+	bool IsMesh(btui32 index) {
 		return acv::assets[index].type == ASSET_MESH_FILE;
 	}
 
-	bool IsMeshBlend(btui32 index)
-	{
+	bool IsMeshBlend(btui32 index) {
 		return acv::assets[index].type == ASSET_MESHBLEND_FILE;
 	}
 

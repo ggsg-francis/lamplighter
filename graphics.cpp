@@ -527,20 +527,8 @@ namespace graphics
 		mdlproj = glm::translate(mdlproj, glm::vec3(-view.x, 0, -view.z - (view.y * 0.5f)));
 		mat_view = mdlproj;
 		#else // !DEF_OLDSKOOL
-		// this is not.... good.....
-		#ifdef DEF_3PP
 		view = *(m::Vector3*)p * m::Vector3(1.f, 1.f, -1.f);
 		mat_view = glm::lookAt(*(glm::vec3*)p * m::Vector3(1.f, 1.f, -1.f), *(glm::vec3*)t * m::Vector3(1.f, 1.f, -1.f), glm::vec3(0.f, 1.f, 0.f));
-		#else // !DEF_3PP
-		view = m::Vector3(((Transform3D*)t)->pos_glm * glm::vec3(1.f, 1.f, -1.f));
-		#define T ((Transform3D*)t)
-		view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
-		mat_view = glm::lookAt((glm::vec3)view, (glm::vec3)view + (T->GetForward()) * glm::vec3(1.f, 1.f, -1.f), (glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
-
-		//view = m::Vector3((T->pos_glm * glm::vec3(1.f, 1.f, -1.f)));
-		//mat_view = glm::lookAt((glm::vec3)view + (T->GetForward() * -15.f * glm::vec3(1.f, 1.f, -1.f)), (glm::vec3)view, glm::vec3(0.f, 1.f, 0.f));
-		#undef T
-		#endif // !DEF_3PP
 		#endif // !DEF_OLDSKOOL
 	}
 	// Lightsource
@@ -1610,151 +1598,6 @@ namespace graphics
 		}
 	}
 
-	void CompositeMesh::AddTerrainTile(btui16(&HEIGHTMAP)[WORLD_SIZE][WORLD_SIZE])
-	{
-		glm::vec3 vector;
-		glm::mat4x4 matr;
-
-		//glm::vec3 vc2 = vector * matr;
-
-		int tile_radius = 128;
-
-		vces_size = 4u * (tile_radius * tile_radius);
-		ices_size = 6u * (tile_radius * tile_radius);
-		//
-		vces = new Vertex[vces_size];
-		ices = new btui32[ices_size];
-
-		btf32 uvscale = 0.5f;
-		int v = 0;
-		int i = 0;
-		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x)
-		{
-			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 4, i += 6)
-			{
-				bool cliffNS = false;
-				bool cliffEW = false;
-
-				if (HEIGHTMAP[x][y] > HEIGHTMAP[x + 1][y] + (btui16)5u || HEIGHTMAP[x][y] < HEIGHTMAP[x + 1][y] - (btui16)5u)
-					cliffNS = true;
-				if (HEIGHTMAP[x][y] > HEIGHTMAP[x][y + 1] + (btui16)5u || HEIGHTMAP[x][y] < HEIGHTMAP[x][y + 1] - (btui16)5u)
-					cliffEW = true;
-
-				// Copy in the things from the new mesh
-				vces[v + 0].pos.x = (btf32)x;
-				vces[v + 0].pos.z = (btf32)y;
-				//vces[v + 0].pos.y = (((btf32)HEIGHTMAP[x - 1][y - 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 0].pos.y = (((btf32)HEIGHTMAP[x][y])) / TERRAIN_HEIGHT_DIVISION;
-				if (cliffEW)
-				{
-					vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
-					vces[v + 0].uvc.y = -vces[v + 0].pos.y * uvscale;
-				}
-				else if (cliffNS)
-				{
-					vces[v + 0].uvc.x = vces[v + 0].pos.z * uvscale;
-					vces[v + 0].uvc.y = -vces[v + 0].pos.y * uvscale;
-				}
-				else
-				{
-					vces[v + 0].uvc.x = vces[v + 0].pos.x * uvscale;
-					vces[v + 0].uvc.y = vces[v + 0].pos.z * uvscale;
-				}
-				vces[v + 0].nor.y = 1.f;
-				vces[v + 0].nor.x = 0.f;
-				vces[v + 0].nor.z = 0.f;
-				vces[v + 0].col.y = 1.f;
-
-				vces[v + 1u].pos.x = (btf32)x;
-				vces[v + 1u].pos.z = (btf32)y + 0.25f;
-				//vces[v + 1u].pos.y = (((btf32)HEIGHTMAP[x - 1][y + 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 1u].pos.y = (((btf32)HEIGHTMAP[x][y + 1])) / TERRAIN_HEIGHT_DIVISION;
-				if (cliffEW)
-				{
-					vces[v + 1].uvc.x = vces[v + 1].pos.x * uvscale;
-					vces[v + 1].uvc.y = -vces[v + 1].pos.y * uvscale;
-				}
-				else if (cliffNS)
-				{
-					vces[v + 1].uvc.x = vces[v + 1].pos.z * uvscale;
-					vces[v + 1].uvc.y = -vces[v + 1].pos.y * uvscale;
-				}
-				else
-				{
-					vces[v + 1].uvc.x = vces[v + 1].pos.x * uvscale;
-					vces[v + 1].uvc.y = vces[v + 1].pos.z * uvscale;
-				}
-				vces[v + 1].nor.y = 1.f;
-				vces[v + 1].nor.x = 0.f;
-				vces[v + 1].nor.z = 0.f;
-				vces[v + 1].col.y = 1.f;
-
-				vces[v + 2u].pos.x = (btf32)x + 0.25f;
-				vces[v + 2u].pos.z = (btf32)y;
-				//vces[v + 2u].pos.y = (((btf32)HEIGHTMAP[x + 1][y - 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 2u].pos.y = (((btf32)HEIGHTMAP[x + 1][y])) / TERRAIN_HEIGHT_DIVISION;
-				if (cliffEW)
-				{
-					vces[v + 2].uvc.x = vces[v + 2].pos.x * uvscale;
-					vces[v + 2].uvc.y = -vces[v + 2].pos.y * uvscale;
-				}
-				else if (cliffNS)
-				{
-					vces[v + 2].uvc.x = vces[v + 2].pos.z * uvscale;
-					vces[v + 2].uvc.y = -vces[v + 2].pos.y * uvscale;
-				}
-				else
-				{
-					vces[v + 2].uvc.x = vces[v + 2].pos.x * uvscale;
-					vces[v + 2].uvc.y = vces[v + 2].pos.z * uvscale;
-				}
-				vces[v + 2].nor.y = 1.f;
-				vces[v + 2].nor.x = 0.f;
-				vces[v + 2].nor.z = 0.f;
-				vces[v + 2].col.y = 1.f;
-
-				vces[v + 3u].pos.x = (btf32)x + 0.25f;
-				vces[v + 3u].pos.z = (btf32)y + 0.25f;
-				//vces[v + 3u].pos.y = (((btf32)HEIGHTMAP[x + 1][y + 1] + (btf32)HEIGHTMAP[x][y]) * 0.5f) / TERRAIN_HEIGHT_DIVISION;
-				vces[v + 3u].pos.y = (((btf32)HEIGHTMAP[x + 1][y + 1])) / TERRAIN_HEIGHT_DIVISION;
-				if (cliffEW)
-				{
-					vces[v + 3].uvc.x = vces[v + 3].pos.x * uvscale;
-					vces[v + 3].uvc.y = -vces[v + 3].pos.y * uvscale;
-				}
-				else if (cliffNS)
-				{
-					vces[v + 3].uvc.x = vces[v + 3].pos.z * uvscale;
-					vces[v + 3].uvc.y = -vces[v + 3].pos.y * uvscale;
-				}
-				else
-				{
-					vces[v + 3].uvc.x = vces[v + 3].pos.x * uvscale;
-					vces[v + 3].uvc.y = vces[v + 3].pos.z * uvscale;
-				}
-				vces[v + 3].nor.y = 1.f;
-				vces[v + 3].nor.x = 0.f;
-				vces[v + 3].nor.z = 0.f;
-				vces[v + 3].col.y = 1.f;
-
-				ices[i + 0u] = v + 0u;
-				ices[i + 1u] = v + 3u;
-				ices[i + 2u] = v + 1u;
-				ices[i + 3u] = v + 2u;
-				ices[i + 4u] = v + 3u;
-				ices[i + 5u] = v + 0u;
-			}
-		}
-
-		//-------------------------------- INITIALIZE OPENGL BUFFER
-
-		//if (old_vces_size == 0)
-		{
-			glGenVertexArrays(1, &vao); // Create vertex buffer
-			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
-		}
-	}
-
 	void CompositeMesh::ReBindGL()
 	{
 		//-------------------------------- UPDATE OPENGL BUFFER
@@ -1924,7 +1767,7 @@ namespace graphics
 		btui8(&hmap)[WORLD_SIZE][WORLD_SIZE],
 		btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE],
 		btui32* flags,
-		btui32 flag_block,
+		btui32 flag_invisible,
 		btui8(&hmap_ne)[WORLD_SIZE][WORLD_SIZE],
 		btui8(&hmap_nw)[WORLD_SIZE][WORLD_SIZE],
 		btui8(&hmap_se)[WORLD_SIZE][WORLD_SIZE],
@@ -1938,10 +1781,10 @@ namespace graphics
 		btui8 tgendata[128][128];
 		memset(tgendata, 0u, 128 * 128);
 
-		#define BVGET(x, y) (x & y)
+		#define BVGET(x, y, flag) (flags[x * WORLD_SIZE + y] & flag)
 
-		bool b = BVGET(flags[0], flag_block);
-
+		int face_VertexCount = 0;
+		int face_IndexCount = 0;
 		int edge_VertexCount = 0;
 		int edge_IndexCount = 0;
 		{ // Scope
@@ -1952,6 +1795,14 @@ namespace graphics
 				int datay = 0;
 				for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay)
 				{
+					bool bInvisible = BVGET(x, y, flag_invisible);
+
+					// if solid face
+					if (!bInvisible) {
+						face_VertexCount += 4;
+						face_IndexCount += 6;
+					}
+
 					// (Ramp ends only need 1 additional triangle, so each corner separation is counted separately)
 					//-------------------------------- North edge check
 					if (hmap_ne[x][y] != hmap_se[x][y + 1])
@@ -1988,8 +1839,10 @@ namespace graphics
 		}
 
 		// Assign memory to vertex and index counts
-		vces_size = 4u * (tile_radius * tile_radius) + edge_VertexCount;
-		ices_size = 6u * (tile_radius * tile_radius) + edge_IndexCount;
+		/*vces_size = 4u * (tile_radius * tile_radius) + edge_VertexCount;
+		ices_size = 6u * (tile_radius * tile_radius) + edge_IndexCount;*/
+		vces_size = face_VertexCount + edge_VertexCount;
+		ices_size = face_IndexCount + edge_IndexCount;
 
 		vces = (VertexTerrain*)malloc(sizeof(VertexTerrain) * vces_size);
 		ices = (btui32*)malloc(sizeof(btui32) * ices_size);
@@ -2002,88 +1855,86 @@ namespace graphics
 			int datay = 0;
 			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay)
 			{
-				// Copy in the things from the new mesh
-				//ne
-				vces[v].pos.x = (btf32)x + 0.5f;
-				vces[v].pos.z = (btf32)y + 0.5f;
-				vces[v].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
-				//nw
-				vces[v + 1u].pos.x = (btf32)x - 0.5f;
-				vces[v + 1u].pos.z = (btf32)y + 0.5f;
-				vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
-				//se
-				vces[v + 2u].pos.x = (btf32)x + 0.5f;
-				vces[v + 2u].pos.z = (btf32)y - 0.5f;
-				vces[v + 2u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
-				//sw
-				vces[v + 3u].pos.x = (btf32)x - 0.5f;
-				vces[v + 3u].pos.z = (btf32)y - 0.5f;
-				vces[v + 3u].pos.y = (btf32)hmap_sw[x][y] / TERRAIN_HEIGHT_DIVISION;
+				//-------------------------------- Generate top face
+				// if top face is visible
+				if (!BVGET(x, y, flag_invisible)) {
+					//ne
+					vces[v].pos.x = (btf32)x + 0.5f;
+					vces[v].pos.z = (btf32)y + 0.5f;
+					vces[v].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//nw
+					vces[v + 1u].pos.x = (btf32)x - 0.5f;
+					vces[v + 1u].pos.z = (btf32)y + 0.5f;
+					vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//se
+					vces[v + 2u].pos.x = (btf32)x + 0.5f;
+					vces[v + 2u].pos.z = (btf32)y - 0.5f;
+					vces[v + 2u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+					//sw
+					vces[v + 3u].pos.x = (btf32)x - 0.5f;
+					vces[v + 3u].pos.z = (btf32)y - 0.5f;
+					vces[v + 3u].pos.y = (btf32)hmap_sw[x][y] / TERRAIN_HEIGHT_DIVISION;
 
-				for (btui32 i = 0; i < 4; ++i)
-				{
-					vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
-					vces[v + i].uvc.y = vces[v + i].pos.z * TERRAIN_UV_SCALE;
-					vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
-					//vces[v + i].nor.x += (btf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-					//vces[v + i].nor.x -= (btf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-					//vces[v + i].nor.z += (btf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-					//vces[v + i].nor.z -= (btf32)(hmap[x][y] - hmap[x][y - 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+					for (btui32 i = 0; i < 4; ++i)
+					{
+						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
+						vces[v + i].uvc.y = vces[v + i].pos.z * TERRAIN_UV_SCALE;
+						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
+						//vces[v + i].nor.x += (btf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+						//vces[v + i].nor.x -= (btf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+						//vces[v + i].nor.z += (btf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+						//vces[v + i].nor.z -= (btf32)(hmap[x][y] - hmap[x][y - 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+					}
+
+					// normalize
+					btf32 nlen = sqrt(vces[v].nor.x * vces[v].nor.x + vces[v].nor.y * vces[v].nor.y + vces[v].nor.z * vces[v].nor.z);
+					if (nlen != 0) {
+						vces[v].nor.x = vces[v].nor.x / nlen;
+						vces[v].nor.y = vces[v].nor.y / nlen;
+						vces[v].nor.z = vces[v].nor.z / nlen;
+					}
+
+					for (int i = 0; i < 4; ++i)
+					{
+						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
+						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
+						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
+						vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
+					}
+					vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
+					vces[v + 1].txtr[MATMAP[x - 1][y]] = 1.f; //nw
+					vces[v + 2].txtr[MATMAP[x][y - 1]] = 1.f; //se
+					vces[v + 3].txtr[MATMAP[x - 1][y - 1]] = 1.f; //sw
+
+					bool triangulate_alternate = false;
+					// | FALSE | TRUE
+					// | 1--0  | 1--0
+					// | | /|  | |\ |
+					// | |/ |  | | \|
+					// | 3--2  | 3--2
+
+					// Triangulate based on longest height difference
+					#ifdef DEF_TERRAIN_USE_EROSION_TRIANGULATION
+					//if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) < abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
+					if (abs((int)hmap_ne[x][y] - (int)hmap_sw[x][y]) < abs((int)hmap_nw[x][y] - (int)hmap_se[x][y]))
+						triangulate_alternate = true;
+					#else
+					if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) > abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
+						triangulate_alternate = true;
+					#endif
+
+					if (triangulate_alternate) {
+						ices[i + 0u] = v + 0u; ices[i + 1u] = v + 1u; ices[i + 2u] = v + 2u;
+						ices[i + 3u] = v + 1u; ices[i + 4u] = v + 3u; ices[i + 5u] = v + 2u;
+					}
+					else {
+						ices[i + 0u] = v + 0u; ices[i + 1u] = v + 1u; ices[i + 2u] = v + 3u;
+						ices[i + 3u] = v + 0u; ices[i + 4u] = v + 3u; ices[i + 5u] = v + 2u;
+					}
+
+					i += 6;
+					v += 4;
 				}
-
-				// normalize
-				btf32 nlen = sqrt(vces[v].nor.x * vces[v].nor.x + vces[v].nor.y * vces[v].nor.y + vces[v].nor.z * vces[v].nor.z);
-				if (nlen != 0) {
-					vces[v].nor.x = vces[v].nor.x / nlen;
-					vces[v].nor.y = vces[v].nor.y / nlen;
-					vces[v].nor.z = vces[v].nor.z / nlen;
-				}
-
-				for (int i = 0; i < 4; ++i)
-				{
-					vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
-					vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
-					vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
-					vces[v + i].txtr[6] = 0.f; vces[v + i].txtr[7] = 0.f;
-				}
-				vces[v].txtr[MATMAP[x][y]] = 1.f; //ne
-				vces[v + 1].txtr[MATMAP[x - 1][y]] = 1.f; //nw
-				vces[v + 2].txtr[MATMAP[x][y - 1]] = 1.f; //se
-				vces[v + 3].txtr[MATMAP[x - 1][y - 1]] = 1.f; //sw
-
-				// 1--0
-				// | /|
-				// |/ |
-				// 3--2
-
-				// 1--0
-				// |\ |
-				// | \|
-				// 3--2
-
-				bool triangulate_alternate = false;
-
-				// Triangulate based on longest height difference
-				#ifdef DEF_TERRAIN_USE_EROSION_TRIANGULATION
-				//if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) < abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
-				if (abs((int)hmap_ne[x][y] - (int)hmap_sw[x][y]) < abs((int)hmap_nw[x][y] - (int)hmap_se[x][y]))
-					triangulate_alternate = true;
-				#else
-				if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) > abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
-					triangulate_alternate = true;
-				#endif
-
-				if (triangulate_alternate) {
-					ices[i + 0u] = v + 0u; ices[i + 1u] = v + 1u; ices[i + 2u] = v + 2u;
-					ices[i + 3u] = v + 1u; ices[i + 4u] = v + 3u; ices[i + 5u] = v + 2u;
-				}
-				else {
-					ices[i + 0u] = v + 0u; ices[i + 1u] = v + 1u; ices[i + 2u] = v + 3u;
-					ices[i + 3u] = v + 0u; ices[i + 4u] = v + 3u; ices[i + 5u] = v + 2u;
-				}
-
-				i += 6;
-				v += 4;
 
 				// Edge faces
 

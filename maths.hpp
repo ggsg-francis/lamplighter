@@ -54,10 +54,7 @@ namespace m
 		inline void RotateTowards(btf32 other, btf32 amt)
 		{
 			// Sometimes the angles are jacked and stacked, so put them within range
-			while (other < 0.f)
-				other += 360.f;
-			while (other >= 360.f)
-				other -= 360.f;
+			other = fmodf(other, 360.f);
 			// Is there any way to optimize this?
 			if (fabsf(other - deg) <= amt) // are we close enough to just set the angle
 				Set(other);
@@ -91,8 +88,8 @@ namespace m
 		}
 	};
 
-	#undef CONV_RAD
-	#undef CONV_DEG
+	//#undef CONV_RAD
+	//#undef CONV_DEG
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- VECTOR2 ------------------------------------------
@@ -243,7 +240,10 @@ namespace m
 	// Convert to a magnitude of one??????????
 	Quaternion Normalize(const Quaternion& QUATERNION);
 
+	// Signed difference between two angles in degrees
 	btf32 AngDif(btf32 ANGLE_A, btf32 ANGLE_B);
+	// Absolute difference between two angles in degrees (Sometimes you only need an absolute value so use this, its quicker)
+	btf32 AngDifAbs(btf32 ANGLE_A, btf32 ANGLE_B);
 
 	// Convert radians angle to Vector2
 	Vector2 AngToVec2(float ANGLE);

@@ -21,6 +21,18 @@ Show history with insertions and deletions:
 Show history with insertions and deletions (detailed):
 	git log --stat
 
+Create remote repo:
+	ssh bnf_btype@ssh.phx.nearlyfreespeech.net
+	cd wherever
+	mkdir repositoryname
+	cd repositoryname
+	git --bare init
+
+ssh://bnf_btype@ssh.phx.nearlyfreespeech.net/home/public/git_mv.git
+
+git config --local user.name “your name”
+git config --local user.email “your email with @”
+
 --------------------------------------------------------------------
 
 Library install:

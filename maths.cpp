@@ -193,10 +193,20 @@ namespace m
 
 	btf32 AngDif(btf32 anga, btf32 angb)
 	{
-		btf32 angdif =anga - angb;
-		//angdif = abs(fmod(angdif + 180.f, 360.f) - 180.f);
-		angdif = fmod(angdif + 180.f, 360.f) - 180.f;
+		//anga = fmodf(anga, 360.f);
+		//angb = fmodf(angb, 360.f);
+		btf32 angdif = angb - anga;
+		if (angdif > 180.f)
+			angdif -= 360.f;
+		else if (angdif < -180.f)
+			angdif += 360.f;
 		return angdif;
+	}
+	btf32 AngDifAbs(btf32 anga, btf32 angb)
+	{
+		//anga = fmodf(anga, 360.f);
+		//angb = fmodf(angb, 360.f);
+		return 180.f - fabsf(fabsf(anga - angb) - 180.f);
 	}
 
 	//-------------------------------- ANGLE / VECTOR2 CONVERSION

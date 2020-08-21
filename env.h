@@ -46,19 +46,24 @@ namespace path
 
 namespace env
 {
+	btui32 GetNumTris(WCoord coords);
+	btf32 GetTriHeight(WCoord coords, btui32 index, btf32 pos_x, btf32 pos_y);
+	bool GetTriExists(WCoord coords, btui32 index);
+	void* GetC2Tri(WCoord coords, btui32 index);
+
 	// Environment flags
 	namespace eflag
 	{
 		enum flag : btui32
 		{
-			eNULL = 0x0u,
+			EF_EMPTY = 0x0u,
 			// Base collision
-			eIMPASSABLE = (0x1u),
-			EF_BASE_1 = (0x1u << 0x1u),
-			EF_NODE_FLAG_BASE_2 = (0x1u << 0x2u),
-			EF_CYLINDRIC = (0x1u << 0x3u), // If the tile is to be treated as a round object like a tree
+			EF_IMPASSABLE = (0x1u),
+			EF_INVISIBLE = (0x1u << 0x1u),
+			EF_2 = (0x1u << 0x2u),
+			EF_3 = (0x1u << 0x3u), // If the tile is to be treated as a round object like a tree
 			// Shape information
-			EF_BLOCK_SHAPE = (0x1u << 0x4u),
+			EF_TEMP_1 = (0x1u << 0x4u),
 			EF_TEMP_2 = (0x1u << 0x5u),
 			EF_TEMP_3 = (0x1u << 0x6u),
 			EF_TEMP_4 = (0x1u << 0x7u),
@@ -72,7 +77,7 @@ namespace env
 			EF_SPAWN_TEST = (0x1u << 0xeu),
 			EF_SPAWN_ITEM_TEST = (0x1u << 0xfu),
 			// Status effects
-			EF_UNUSED_16 = (0x1u << 0x10u),
+			EF_16 = (0x1u << 0x10u),
 			EF_BURNING = (0x1u << 0x11u),
 			EF_SMOKE = (0x1u << 0x12u),
 			EF_POISON = (0x1u << 0x13u),
@@ -80,16 +85,16 @@ namespace env
 			EF_21 = (0x1u << 0x15u),
 			EF_22 = (0x1u << 0x16u),
 			EF_23 = (0x1u << 0x17u),
-			// Nothing much
 			EF_24 = (0x1u << 0x18u),
 			EF_25 = (0x1u << 0x19u),
 			EF_26 = (0x1u << 0x1au),
-			EF_FOODSRC = (0x1u << 0x1bu),
-			// Meatstuff
+			EF_27 = (0x1u << 0x1bu),
 			EF_28 = (0x1u << 0x1cu),
-			EF_CONTAINS_MEAT = (0x1u << 0x1du),
+			EF_29 = (0x1u << 0x1du),
 			EF_30 = (0x1u << 0x1eu),
-			EF_PROPAGATES_MEAT = (0x1u << 0x1fu),
+			EF_31 = (0x1u << 0x1fu),
+
+			// put some templates here with |
 		};
 	}
 
@@ -117,9 +122,9 @@ namespace env
 		eflag::flag flags[WORLD_SIZE][WORLD_SIZE];
 		btui16 prop[WORLD_SIZE][WORLD_SIZE];
 		NodePropDirection prop_dir[WORLD_SIZE][WORLD_SIZE];
-		btui8 terrain_height[WORLD_SIZE][WORLD_SIZE];
+		btui8 terrain_height[WORLD_SIZE][WORLD_SIZE]; // unuse this if possible
 		btui8 terrain_material[WORLD_SIZE][WORLD_SIZE];
-		btui8 water_height[WORLD_SIZE][WORLD_SIZE];
+		btui8 water_height[WORLD_SIZE][WORLD_SIZE]; // this one's basically free i think
 		btui8 terrain_height_ne[WORLD_SIZE][WORLD_SIZE];
 		btui8 terrain_height_nw[WORLD_SIZE][WORLD_SIZE];
 		btui8 terrain_height_se[WORLD_SIZE][WORLD_SIZE];
@@ -152,6 +157,8 @@ namespace env
 	void GeneratePropMeshes();
 	void GenerateTerrainMesh();
 	void GenerateTerrainMeshEditor();
+
+	void Free();
 }
 
 #endif

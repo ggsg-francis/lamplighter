@@ -233,6 +233,7 @@ namespace core
 	btui16 player_hp[2]{ 1000u, 1000u };
 
 	//env::EnvNode editor_node_copy;
+	btui32 editor_flags_copy;
 	btID editor_prop_copy;
 	env::NodePropDirection editor_prop_dir_copy;
 	btui8 editor_height_copy_ne;
@@ -240,6 +241,13 @@ namespace core
 	btui8 editor_height_copy_se;
 	btui8 editor_height_copy_sw;
 	btui8 editor_material_copy;
+
+	m::Vector2 editor_cursor = m::Vector2(1024.f, 1024.f);
+	CellSpace editor_cursorCS;
+	btf32 editor_cursor_height = 0.f;
+	btui32 editor_zoom = 5u;
+	m::Angle editor_cam_pitch = m::Angle(60.f);
+	m::Angle editor_cam_yaw = m::Angle(0.f);
 
 	struct ReferenceCell
 	{
@@ -250,7 +258,7 @@ namespace core
 
 	int CellEntityCount(int x, int y)
 	{
-		return core::refCells[x][y].ref_ents.end() + 1;
+		return core::refCells[x][y].ref_ents.Size();
 	}
 	btID CellEntity(int x, int y, int e)
 	{

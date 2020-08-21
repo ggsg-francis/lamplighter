@@ -10,7 +10,8 @@ namespace weather
 	struct Weather
 	{
 		//templates
-		glm::vec3 col_clear_sun = glm::vec3(1.6f, 1.55f, 1.45f);
+		//glm::vec3 col_clear_sun = glm::vec3(1.6f, 1.55f, 1.45f);
+		glm::vec3 col_clear_sun = glm::vec3(1.f, 1.f, 1.f);
 		glm::vec3 col_clear_amb = glm::vec3(0.64f, 0.9f, 0.96f);
 		glm::vec3 col_clear_fog = glm::vec3(0.7f, 0.73f, 0.77f);
 
