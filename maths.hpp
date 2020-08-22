@@ -54,7 +54,12 @@ namespace m
 		inline void RotateTowards(btf32 other, btf32 amt)
 		{
 			// Sometimes the angles are jacked and stacked, so put them within range
-			other = fmodf(other, 360.f);
+			while (other < 0.f)
+				other += 360.f;
+			while (other >= 360.f)
+				other -= 360.f;
+			// why doesn't this work
+			//other = fmodf(other, 360.f);
 			// Is there any way to optimize this?
 			if (fabsf(other - deg) <= amt) // are we close enough to just set the angle
 				Set(other);

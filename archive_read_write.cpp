@@ -354,9 +354,9 @@ namespace serializer
 
 					acv::assets[index].file_size = (ftell(fileARCHIVE) - acv::assets[index].file_pos);
 					printf("| Wrote %i bytes\n", acv::assets[index].file_size);
-					for (int i = 0; i < acv::assets[index].file_size / 4096; ++i)
-						printf("*");
-					printf("\n");
+					//for (int i = 0; i < acv::assets[index].file_size / 4096; ++i)
+					//	printf("*");
+					//printf("\n");
 
 					++index; // We are done with this index
 

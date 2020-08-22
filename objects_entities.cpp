@@ -1228,6 +1228,18 @@ void DrawChara(btID id, void* ent)
 
 		#undef ELBOW_DIR_R 
 		#undef ELBOW_DIR_L
+
+		// debug draw path
+		if (chr->ai_pathing) {
+			for (int i = 0; i < chr->ai_path.len; ++i) {
+				//CellSpace cs;
+				//core::GetCellSpaceInfo();
+				//env::GetHeight();
+				graphics::Matrix4x4 mattt;
+				graphics::MatrixTransform(mattt, m::Vector3(chr->ai_path.pos_x[chr->ai_path_current_index], chr->t.height, chr->ai_path.pos_y[chr->ai_path_current_index]));
+				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_debug_bb), SS_NORMAL, mattt);
+			}
+		}
 	}
 
 	//-------------------------------- DRAW LEGS

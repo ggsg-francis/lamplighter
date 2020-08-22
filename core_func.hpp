@@ -31,12 +31,15 @@ namespace core
 
 	bool LOSCheck(btID enta, btID entb)
 	{
+		/*
 		Entity* entity_a = ENTITY(enta);
 		Entity* entity_b = ENTITY(entb);
 		return env::LineTraceBh(
 			entity_a->t.csi.c[eCELL_I].x, entity_a->t.csi.c[eCELL_I].y,
 			entity_b->t.csi.c[eCELL_I].x, entity_b->t.csi.c[eCELL_I].y,
 			entity_a->t.height, entity_b->t.height);
+			*/
+		return true;
 	}
 
 	btID GetClosestPlayer(btID index)
@@ -284,43 +287,46 @@ namespace core
 	}
 	void NameEntity(btID id)
 	{
-		/*
-		// generate name
-		FILE* file = fopen("n.txt", "rb"); // Open file
-		if (file != NULL)
-		{
-			fseek(file, 0L, SEEK_END);
-			long sz = ftell(file);
-			long random = (long)m::Random(0, sz);
-			// TODO: quick fix, this system has no answer for reaching the end of the file
-			random = 0;
-			fseek(file, random, SEEK_SET); // Seek file beginning
+		char name1[32];
+		char name2[32];
 
-			int name_index = 0;
-			char c;
-			bool has_advanced_word = false;
-		getchar:
-			fread(&c, 1, 1, file);
-			if (c == CHARCODE_ASCII::space || c == CHARCODE_ASCII::CR || c == CHARCODE_ASCII::LF)
-			{
-				// if we reach the first 'empty character' we've hit the end of the current word
-				has_advanced_word = true;
-				goto getchar;
-			}
-			else
-			{
-				if (!has_advanced_word)
-					goto getchar;
-				ACTOR(id)->name[0] = Capitalize(c);
-				// else we can read from here assuming this is the start of a new word
-				fgets((char*)(&ACTOR(id)->name[1]), 31, file);
-			}
+		btui32 random;
+		btui32 usePrefix = (btui32)m::Random(0u, 100u);
+
+		btui32 prefix_percent = 5u;
+
+		if (usePrefix < prefix_percent) { // X% chance of having a prefix
+			random = (btui32)roundf(m::Random(0u, TEMP_NAME_PREFIX_COUNT));
+			strcpy(name1, TemplatePrefixes[random]);
 		}
-		fclose(file);
-		*/
-		btui32 random = (btui32)m::Random(0, TEMP_NAME_COUNT);
-		strcpy((char*)ACTOR(id)->name, TemplateNames[random]);
+		else {
+			random = (btui32)roundf(m::Random(0, TEMP_NAME_COUNT));
+			strcpy(name1, TemplateNames[random]);
+		}
 
+		btui32 remaining_space = 31 - strlen(name1);
+
+		// if there's enough space for a second name
+		if (remaining_space > 8) {
+		gen2ndname:
+			if (usePrefix < prefix_percent) { // X% chance of having a prefix
+				random = (btui32)roundf(m::Random(0, TEMP_NAME_COUNT));
+				strcpy(name2, TemplateNames[random]);
+			}
+			else {
+				random = (btui32)roundf(m::Random(0, TEMP_NAME_FAMILY_COUNT));
+				strcpy(name2, TemplateFamilyNames[random]);
+			}
+			// if second name is short enough to fit
+			if (strlen(name2) < remaining_space) {
+				strcat(name1, " "); // add space
+				strcat(name1, name2); // add second name
+				strcpy((char*)ACTOR(id)->name, name1);
+			}
+			else goto gen2ndname;
+		}
+		// Name too long to fit a second, so just roll with it
+		strcpy((char*)ACTOR(id)->name, name1);
 	}
 
 	namespace prefab

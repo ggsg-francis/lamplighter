@@ -1458,29 +1458,29 @@ namespace graphics
 		vces_size += mesh->VcesSize();
 		ices_size += mesh->IcesSize();
 		//
-		Vertex* vces_2 = new Vertex[vces_size];
-		btui32* ices_2 = new btui32[ices_size];
+		Vertex* vces_new = new Vertex[vces_size];
+		btui32* ices_new = new btui32[ices_size];
 		// copy existing vertices into the new buffer
 		for (int i = 0; i < old_vces_size; ++i)
-			vces_2[i] = vces[i];
+			vces_new[i] = vces[i];
 		for (int i = 0; i < old_ices_size; ++i)
-			ices_2[i] = ices[i];
+			ices_new[i] = ices[i];
 		// Copy in the things from the new mesh
-		for (int i = old_vces_size; i < vces_size; ++i)
-		{
-			vces_2[i] = mesh->Vces()[i - old_vces_size];
+		for (int i = old_vces_size; i < vces_size; ++i) {
+			vces_new[i] = mesh->Vces()[i - old_vces_size];
 			// temp
-			m::Vector3 vector = m::Vector3(vces_2[i].pos.x, vces_2[i].pos.y, vces_2[i].pos.z);
+			m::Vector3 vector = m::Vector3(vces_new[i].pos.x, vces_new[i].pos.y, vces_new[i].pos.z);
 			vector = vector * position;
-			vces_2[i].pos.x = vector.x;
-			vces_2[i].pos.y = vector.y;
-			vces_2[i].pos.z = vector.z;
+			vces_new[i].pos.x = vector.x;
+			vces_new[i].pos.y = vector.y;
+			vces_new[i].pos.z = vector.z;
 		}
-		for (int i = old_ices_size; i < ices_size; ++i)
-			ices_2[i] = mesh->Ices()[i - old_vces_size] + (btui32)old_vces_size;
+		for (int i = old_ices_size; i < ices_size; ++i) {
+			ices_new[i] = mesh->Ices()[i - old_ices_size] + old_vces_size;
+		}
 		// Clear the old buffers from memory
-		delete[] vces; vces = vces_2;
-		delete[] ices; ices = ices_2;
+		delete[] vces; vces = vces_new;
+		delete[] ices; ices = ices_new;
 
 		//-------------------------------- INITIALIZE OPENGL BUFFER
 
@@ -1524,20 +1524,20 @@ namespace graphics
 		vces_size += mesh->VcesSize();
 		ices_size += mesh->IcesSize();
 		//
-		Vertex* vces_2 = new Vertex[vces_size];
-		btui32* ices_2 = new btui32[ices_size];
+		Vertex* vces_new = new Vertex[vces_size];
+		btui32* ices_new = new btui32[ices_size];
 		// copy existing vertices into the new buffer
 		for (int i = 0; i < old_vces_size; ++i)
-			vces_2[i] = vces[i];
+			vces_new[i] = vces[i];
 		for (int i = 0; i < old_ices_size; ++i)
-			ices_2[i] = ices[i];
+			ices_new[i] = ices[i];
 		// Copy in the things from the new mesh
 		for (int i = old_vces_size; i < vces_size; ++i)
 		{
-			vces_2[i] = mesh->Vces()[i - old_vces_size];
+			vces_new[i] = mesh->Vces()[i - old_vces_size];
 			// temp
-			m::Vector3 vector = m::Vector3(vces_2[i].pos.x, vces_2[i].pos.y, vces_2[i].pos.z);
-			m::Vector3 normal = m::Vector3(vces_2[i].nor.x, vces_2[i].nor.y, vces_2[i].nor.z);
+			m::Vector3 vector = m::Vector3(vces_new[i].pos.x, vces_new[i].pos.y, vces_new[i].pos.z);
+			m::Vector3 normal = m::Vector3(vces_new[i].nor.x, vces_new[i].nor.y, vces_new[i].nor.z);
 
 			//vector.y += m::Lerp(height_s, height_n, vces_2[i].pos.z * 2.f) + m::Lerp(height_w, height_e, vces_2[i].pos.x * 2.f);
 			//vector.y *= 0.5f;
@@ -1554,40 +1554,40 @@ namespace graphics
 			switch (ori)
 			{
 			case graphics::CompositeMesh::eNORTH:
-				vces_2[i].pos.x = vector.x + position.x;
-				vces_2[i].pos.y = vector.y + position.y;
-				vces_2[i].pos.z = vector.z + position.z;
+				vces_new[i].pos.x = vector.x + position.x;
+				vces_new[i].pos.y = vector.y + position.y;
+				vces_new[i].pos.z = vector.z + position.z;
 				break;
 			case graphics::CompositeMesh::eSOUTH:
-				vces_2[i].pos.x = -vector.x + position.x;
-				vces_2[i].pos.y = vector.y + position.y;
-				vces_2[i].pos.z = -vector.z + position.z;
-				vces_2[i].nor.x = -normal.x;
-				vces_2[i].nor.z = -normal.z;
+				vces_new[i].pos.x = -vector.x + position.x;
+				vces_new[i].pos.y = vector.y + position.y;
+				vces_new[i].pos.z = -vector.z + position.z;
+				vces_new[i].nor.x = -normal.x;
+				vces_new[i].nor.z = -normal.z;
 				break;
 			case graphics::CompositeMesh::eEAST:
-				vces_2[i].pos.x = vector.z + position.x;
-				vces_2[i].pos.y = vector.y + position.y;
-				vces_2[i].pos.z = -vector.x + position.z;
-				vces_2[i].nor.x = normal.z;
-				vces_2[i].nor.z = -normal.x;
+				vces_new[i].pos.x = vector.z + position.x;
+				vces_new[i].pos.y = vector.y + position.y;
+				vces_new[i].pos.z = -vector.x + position.z;
+				vces_new[i].nor.x = normal.z;
+				vces_new[i].nor.z = -normal.x;
 				break;
 			case graphics::CompositeMesh::eWEST:
-				vces_2[i].pos.x = -vector.z + position.x;
-				vces_2[i].pos.y = vector.y + position.y;
-				vces_2[i].pos.z = vector.x + position.z;
-				vces_2[i].nor.x = -normal.z;
-				vces_2[i].nor.z = normal.x;
+				vces_new[i].pos.x = -vector.z + position.x;
+				vces_new[i].pos.y = vector.y + position.y;
+				vces_new[i].pos.z = vector.x + position.z;
+				vces_new[i].nor.x = -normal.z;
+				vces_new[i].nor.z = normal.x;
 				break;
 			default:
 				break;
 			}
 		}
 		for (int i = old_ices_size; i < ices_size; ++i)
-			ices_2[i] = mesh->Ices()[i - old_vces_size] + (btui32)old_vces_size;
+			ices_new[i] = mesh->Ices()[i - old_ices_size] + (btui32)old_vces_size;
 		// Clear the old buffers from memory
-		delete[] vces; vces = vces_2;
-		delete[] ices; ices = ices_2;
+		delete[] vces; vces = vces_new;
+		delete[] ices; ices = ices_new;
 
 		//-------------------------------- INITIALIZE OPENGL BUFFER
 

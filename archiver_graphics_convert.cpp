@@ -98,9 +98,9 @@ namespace graphics
 	{
 		// read file via ASSIMP
 		Assimp::Importer importer;
-		//const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices);
-		//const aiScene* scene = importer.ReadFile(path, aiProcess_FlipUVs | aiProcess_PreTransformVertices); // try aiProcess_PreTransformVertices?
-		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs); // try aiProcess_PreTransformVertices?
+		// try aiProcess_PreTransformVertices?
+		const aiScene* scene = importer.ReadFile(path,
+			aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 		
 		// check for errors
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
@@ -287,7 +287,7 @@ namespace graphics
 			// retrieve all indices of the face and store them in the indices vector
 			//for (unsigned int j = 0; j < face.mNumIndices; j++)
 			if (face.mNumIndices != 3u)
-				std::cout << "ERROR! Non-triangle face detected!" << std::endl;
+				std::cout << "WARNING: Non-triangle face detected!" << std::endl;
 
 			for (unsigned int j = 0; j < face.mNumIndices; j++)
 				indices.push_back(face.mIndices[j]);
@@ -385,6 +385,10 @@ namespace graphics
 		}
 		// Copy indices straight from mesh A, as they should be identical in each mesh
 		//ices = a.indices;
+
+		if (vces.size() == ices.size()) {
+			printf("\nWARNING: Mesh has three vertices per triangle - none are shared!\n");
+		}
 
 		// Write version
 		version_t v = FILE_VERSION_MB;

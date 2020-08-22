@@ -274,6 +274,10 @@ namespace mem
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL };
+			//ID_NULL, ID_NULL, ID_NULL, ID_NULL,
+			//ID_NULL, ID_NULL, ID_NULL, ID_NULL,
+			//ID_NULL, ID_NULL, ID_NULL, ID_NULL,
+			//ID_NULL, ID_NULL, ID_NULL, ID_NULL };
 		bool ptr_used[IDBUF_SIZE]{ false };
 		btui32 id_end = 0u;
 		btui32 size = 0u;

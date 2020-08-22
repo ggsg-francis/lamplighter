@@ -892,6 +892,15 @@ namespace core
 		}
 		else
 		{
+			// Draw debug ce;; display
+			CellSpace* cs = &ENTITY(players[activePlayer])->t.csi;
+
+			//graphics::MatrixTransform(matrix, m::Vector3(cs->c[eCELL_I].x,
+			//	ENTITY(players[activePlayer])->t.height, cs->c[eCELL_I].y));
+			//DrawMesh(ID_NULL, acv::GetM(acv::m_debugcell), acv::GetT(acv::t_gui_bar_red), SS_NORMAL, matrix);
+
+			//env::DrawDebugGizmos(cs);
+
 			//*
 			for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
 			{

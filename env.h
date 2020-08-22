@@ -32,16 +32,18 @@ struct CellSpace
 	btf32 offsety;
 };
 
-#define PATH_NUM_NODES 32
+#define PATH_NUM_NODES 64
 
 namespace path
 {
 	struct Path
 	{
-		WCoord nodes[PATH_NUM_NODES];
+		//WCoord nodes[PATH_NUM_NODES];
+		btf32 pos_x[PATH_NUM_NODES];
+		btf32 pos_y[PATH_NUM_NODES];
 		btui8 len;
 	};
-	bool PathFind(Path* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest);
+	bool PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest);
 }
 
 namespace env
@@ -146,6 +148,7 @@ namespace env
 	void Tick();
 	void DrawProps();
 	void DrawTerrain();
+	void DrawDebugGizmos(CellSpace* cs);
 	void DrawTerrainDebug();
 
 	// Load world setting from binary file

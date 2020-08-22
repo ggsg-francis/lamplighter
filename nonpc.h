@@ -132,17 +132,10 @@ void NPCFocusEnemy(Actor* actor)
 
 void NPCFollowAlly(Actor* actor)
 {
-	m::Vector2 TargetVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
+	Entity* target = ENTITY(actor->ai_ally_ent);
+	m::Vector2 TargetVector = target->t.position - actor->t.position;
 	btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 	float distance_to_target = m::Length(TargetVector);
-
-	/*bool canSeeAlly = core::LOSCheck(actor->id, actor->ai_ally_ent);
-	if (canSeeAlly) {
-		actor->inputBV.setto(Actor::ActorInput::IN_RUN, distance_to_target > 5.f);
-	}
-	else {
-		actor->inputBV.unset(Actor::ActorInput::IN_RUN);
-	}*/
 
 	// crouch if targ is
 	actor->aniCrouch = ACTOR(actor->ai_ally_ent)->aniCrouch;
@@ -150,30 +143,38 @@ void NPCFollowAlly(Actor* actor)
 	if (!actor->ai_pathing) { // if not pathing, see if we need to path
 		actor->input.x = 0.f;
 		actor->input.y = 0.f;
-		if (distance_to_target > 2.5f) { // if far enough away from the target, make a path
-			if (path::PathFind(&actor->ai_path, actor->t.position.x, actor->t.position.y, ENTITY(actor->ai_ally_ent)->t.position.x, ENTITY(actor->ai_ally_ent)->t.position.y))
+		if (distance_to_target > 2.f) { // if far enough away from the target, make a path
+			if (path::PathFind(&actor->ai_path,
+				actor->t.position.x, actor->t.position.y,
+				target->t.position.x, target->t.position.y))
 			{
+				printf("Found new path!\n");
 				actor->ai_pathing = true;
 				actor->ai_path_current_index = actor->ai_path.len - 1;
 			}
+			// if we can't reach our target, just forget it
 			else actor->ai_ally_ent = ID_NULL;
 		}
 	}
 	else { // follow path
-		// have we reached the end of the path?
-		if (actor->ai_path_current_index == 0u)
-		{
-			// stop pathing
-			actor->ai_pathing = false;
+		// look at our target
+		TargetVector = m::Vector2(
+			actor->ai_path.pos_x[actor->ai_path_current_index],
+			actor->ai_path.pos_y[actor->ai_path_current_index])
+			- actor->t.position;
+		// TODO: only do this if the target is view blocked
+		// (look the direction we're walking in)
+		angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+		distance_to_target = m::Length(TargetVector);
+		//if (distance_to_target < 0.125f) { // if we're basically touching the nav point
+		if (distance_to_target < 0.51f) { // if we're basically touching the nav point
+			// have we reached the end of the path?
+			if (actor->ai_path_current_index == 0u)
+				actor->ai_pathing = false;
+			// Otherwise just decrement index
+			else --actor->ai_path_current_index;
 		}
-		// otherwise follow the path
-		else {
-			TargetVector = m::Vector2(actor->ai_path.nodes[actor->ai_path_current_index]) - actor->t.position;
-			angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-			distance_to_target = m::Length(TargetVector);
-			if (distance_to_target < 0.25f)
-				--actor->ai_path_current_index;
-		}
+		printf("Pathing, index: %i\n", actor->ai_path_current_index);
 		actor->input = TargetVector; // go to target, whatever it is
 	}
 	actor->ai_vy_target = angle2; // look at thing
