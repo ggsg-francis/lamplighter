@@ -34,6 +34,8 @@ namespace env
 		m::Vector2 pos;
 		btf32 h;
 		m::Vector2 nor;
+		btui32 neighbors[32];
+		btui32 neighborcount;
 	};
 
 	struct EnvTri {
@@ -289,10 +291,12 @@ namespace env
 
 	void DrawProps()
 	{
-		for (btui32 i = 0u; i < wldNumTextures; ++i)
-		{
-			DrawCompositeMesh(ID_NULL, wldMeshes[i], acv::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
-		}
+		//for (btui32 i = 0u; i < wldNumTextures; ++i)
+		//{
+		//	DrawCompositeMesh(ID_NULL, wldMeshes[i], acv::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
+		//}
+		
+		
 		//graphics::SetFrontFaceInverse();
 		//graphics::Matrix4x4 matr;
 		//graphics::MatrixTransform(matr, 0.f, 0.f, 0.f);
@@ -558,6 +562,70 @@ namespace env
 			}
 		}
 
+		// determine vertex neighbors (will make triangle neighbors obsolete i guess)
+		//*
+		for (int i = 0; i < pointcount; ++i) {
+			// Triangle to find neighbors of
+			EnvVert* vert = &points[i];
+			vert->neighborcount = 0u;
+			// Now for all other triangles
+			for (int j = 0; j < tricount; ++j) {
+				EnvTri* tri_compare = &tris[j];
+				// Do we share any vertices?
+				if (VertCompare(tri_compare->a, i)) {
+					// check for vertices allready added to neighbor list
+					bool ne_already_added[2]{ false, false };
+					for (int k = 0; k < vert->neighborcount; ++k) {
+						if (vert->neighbors[k] == tri_compare->b) ne_already_added[0] = true;
+						if (vert->neighbors[k] == tri_compare->c) ne_already_added[1] = true;
+					}
+					// add neighbors
+					if (!ne_already_added[0]) {
+						vert->neighbors[vert->neighborcount] = tri_compare->b;
+						++vert->neighborcount;
+					}
+					if (!ne_already_added[1]) {
+						vert->neighbors[vert->neighborcount] = tri_compare->c;
+						++vert->neighborcount;
+					}
+				}
+				if (VertCompare(tri_compare->b, i)) {
+					// check for vertices allready added to neighbor list
+					bool ne_already_added[2]{ false, false };
+					for (int k = 0; k < vert->neighborcount; ++k) {
+						if (vert->neighbors[k] == tri_compare->a) ne_already_added[0] = true;
+						if (vert->neighbors[k] == tri_compare->c) ne_already_added[1] = true;
+					}
+					// add neighbors
+					if (!ne_already_added[0]) {
+						vert->neighbors[vert->neighborcount] = tri_compare->a;
+						++vert->neighborcount;
+					}
+					if (!ne_already_added[1]) {
+						vert->neighbors[vert->neighborcount] = tri_compare->c;
+						++vert->neighborcount;
+					}
+				}
+				if (VertCompare(tri_compare->c, i)) {
+					// check for vertices allready added to neighbor list
+					bool ne_already_added[2]{ false, false };
+					for (int k = 0; k < vert->neighborcount; ++k) {
+						if (vert->neighbors[k] == tri_compare->a) ne_already_added[0] = true;
+						if (vert->neighbors[k] == tri_compare->b) ne_already_added[1] = true;
+					}
+					// add neighbors
+					if (!ne_already_added[0]) {
+						vert->neighbors[vert->neighborcount] = tri_compare->a;
+						++vert->neighborcount;
+					}
+					if (!ne_already_added[1]) {
+						vert->neighbors[vert->neighborcount] = tri_compare->b;
+						++vert->neighborcount;
+					}
+				}
+			}
+		}//*/
+
 		#define DEF_TRI_NE_EXPERIMENTAL 0
 
 		// Determine triangle neighbors
@@ -618,6 +686,7 @@ namespace env
 			}
 			#else
 			// Now for all other triangles (or early exit if we've already found 3 neighbors)
+			//for (int j = 0; j < tricount, tri->neighborcount < 3; ++j) {
 			for (int j = 0; j < tricount; ++j) {
 				// make sure it's not the same triangle
 				if (i != j) {
