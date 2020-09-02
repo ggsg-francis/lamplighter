@@ -11,7 +11,7 @@ bool RayEntity(btID ent, btf32 stand_height)
 	Entity* entity = ENTITY(ent);
 
 	btf32 th;
-	env::GetHeight(th, entity->t.csi);
+	env::GetNearestSurfaceHeight(th, entity->t.csi, entity->t.height);
 	if (entity->t.height + entity->t.height_velocity <= th + stand_height)
 		return true;
 	return false;

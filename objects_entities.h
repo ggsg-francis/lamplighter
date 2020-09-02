@@ -123,7 +123,7 @@ void TickEditorPawn(btID id, void* ent, btf32 dt);
 void DrawEditorPawn(btID id, void* ent);
 
 // does this need to be here?
-m::Vector3 Actor_SetFootPos(m::Vector2 position);
+//m::Vector3 Actor_SetFootPos(m::Vector2 position, btf32 height);
 
 // Base entity class
 struct Entity

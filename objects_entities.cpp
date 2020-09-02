@@ -36,6 +36,7 @@ void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 	//-------------------------------- ENTITY COLLISION CHECK
 
 	// exploding item
+	/*
 	if (GetEntityType(id) == ENTITY_TYPE_RESTING_ITEM) {
 		RestingItem* item = ITEM(id);
 		HeldItem* iteminst = (HeldItem*)GetItemInstance(item->item_instance);
@@ -61,7 +62,7 @@ void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 				} // End for each cell group Y
 			} // End for each cell group X
 		}
-	}
+	}*/
 
 	if (ent->properties.get(Entity::eCOLLIDE_ENT)) {
 		for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x) {
@@ -99,7 +100,17 @@ void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 		c2Manifold mani;
 
 	collide_tris:
-		//core::GetCellSpaceInfo(ent->t.position, ent->t.csi);
+
+		env::EnvTri* nearest_ceil_above;
+		env::EnvTri* nearest_flor_above;
+		env::EnvTri* nearest_ceil_below;
+		env::EnvTri* nearest_flor_below;
+		btf32 nearest_ceil_h_above;
+		btf32 nearest_flor_h_above;
+		btf32 nearest_ceil_h_below;
+		btf32 nearest_flor_h_below;
+
+		
 		// For every cell in our cell-space
 		for (int cell = 0; cell < eCELL_COUNT; ++cell) {
 			coords.x = ent->t.csi.c[cell].x;
@@ -109,7 +120,12 @@ void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 			circle.r = 0.5f;
 			// check against all triangles
 			for (int i = 0; i < env::GetNumTris(coords); ++i) {
-				if (env::GetTriHeight(coords, i, ent->t.position.x, ent->t.position.y) > ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) {
+				env::EnvTri* tri = env::GetTri(coords, i);
+				btf32 triheight = env::GetTriHeight(coords, i, ent->t.position.x, ent->t.position.y);
+				// if the triangle is intersecting the player cylinder
+				if (triheight > ent->t.height + ACTOR_NO_COLLIDE_HEIGHT
+					&& triheight < ent->t.height + ent->height) {
+					// if tri exists, collide
 					if (env::GetTriExists(coords, i)) {
 						poly = (c2Poly*)env::GetC2Tri(coords, i);
 						c2CircletoPolyManifold(circle, poly, &transform, &mani);
@@ -233,7 +249,7 @@ void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 void Entity_CheckGrounded(btID id, Entity* ent)
 {
 	btf32 th;
-	env::GetHeight(th, ent->t.csi);
+	env::GetNearestSurfaceHeight(th, ent->t.csi, ent->t.height);
 	
 	if (ent->t.height + ent->t.height_velocity >= th + 1.f)
 	{
@@ -294,7 +310,7 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 		switch (acv::props[env::eCells.prop[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]].floorType) {
 		case acv::PropRecord::FLOOR_QUICKSAND:
 		{
-			env::GetHeight(ground_height, ent->t.csi);
+			env::GetNearestSurfaceHeight(ground_height, ent->t.csi, ent->t.height);
 			ent->t.height -= 0.12f * dt;
 
 			// slow height velocity
@@ -312,7 +328,7 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 		break;
 		case acv::PropRecord::FLOOR_ICE: // same as normal ground but dont slow slide
 		{
-			env::GetHeight(ground_height, ent->t.csi);
+			env::GetNearestSurfaceHeight(ground_height, ent->t.csi, ent->t.height);
 			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
 				ent->t.height = m::Lerp(ent->t.height, ground_height + ((Actor*)ent)->aniStandHeight, 6.f * dt);
 			}
@@ -391,7 +407,7 @@ void Entity_PhysicsTick(Entity* ent, btID id, btf32 dt)
 		defaul:
 		default:
 		{
-			env::GetHeight(ground_height, ent->t.csi);
+			env::GetNearestSurfaceHeight(ground_height, ent->t.csi, ent->t.height);
 			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
 				ent->t.height = m::Lerp(ent->t.height, ground_height + ((Actor*)ent)->aniStandHeight, 6.f * dt);
 			}
@@ -721,12 +737,12 @@ void ActorDecrEquipSlot(btID id_self)
 
 #define velocityStepMult (8.f * LEGLEN(chr->actorBase,0)) // How far to place our foot ahead when walking
 
-m::Vector3 Actor_SetFootPos(m::Vector2 position)
+m::Vector3 Actor_SetFootPos(m::Vector2 position, btf32 in_height)
 {
 	CellSpace cs;
 	core::GetCellSpaceInfo(position, cs);
 	btf32 height;
-	env::GetHeight(height, cs);
+	env::GetNearestSurfaceHeight(height, cs, in_height);
 	return m::Vector3(position.x, height + 0.075f, position.y);
 }
 void Actor_ClampLegs(Actor* chr)
@@ -753,17 +769,17 @@ void Actor_AnimateLegs(Actor* chr)
 
 	// If on the ground
 	if (chr->grounded) {
-		chr->lastGroundFootPos = Actor_SetFootPos(chr->t.position);
+		chr->lastGroundFootPos = Actor_SetFootPos(chr->t.position, chr->t.height);
 		// If we're standing still, play idle anim
 		if (m::Length(chr->input) < 0.01f) {
 			if (chr->foot_state == Actor::eL_DOWN) {
-				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * -0.15f));
-				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * 0.15f));
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * -0.15f), chr->t.height);
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * 0.15f), chr->t.height);
 				chr->aniTimer = 0.5f;
 			}
 			if (chr->foot_state == Actor::eR_DOWN) {
-				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * 0.15f));
-				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * -0.15f));
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * 0.15f), chr->t.height);
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * -0.15f), chr->t.height);
 				chr->aniTimer = 1.5f;
 			}
 		}
@@ -786,14 +802,14 @@ void Actor_AnimateLegs(Actor* chr)
 			// Create foot target positions
 			m::Vector2 voNorm = m::Normalize(velocityOffset);
 			if (chr->aniTimer < 1.f) {
-				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer)));
-				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer)));
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer)), chr->t.height);
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer)), chr->t.height);
 				tempFPL.y += m::QuadraticFootstep(0.3f, (chr->aniTimer - 0.5f) * 2.f);
 				chr->foot_state = Actor::eR_DOWN;
 			}
 			else {
-				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer - 1.f)));
-				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer - 1.f)));
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer - 1.f)), chr->t.height);
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer - 1.f)), chr->t.height);
 				tempFPR.y += m::QuadraticFootstep(0.3f, (chr->aniTimer - 1.5f) * 2.f);
 				chr->foot_state = Actor::eL_DOWN;
 			}

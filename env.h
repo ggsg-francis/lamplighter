@@ -2,6 +2,7 @@
 #define ENVIRONMENT_H
 
 #include "memory.hpp"
+#include "maths.hpp"
 
 typedef btui32 btcoord;
 //duplicate struct (of what?)
@@ -48,10 +49,58 @@ namespace path
 
 namespace env
 {
+	struct EnvVert {
+		m::Vector2 pos;
+		btf32 h;
+		m::Vector2 nor;
+		btui32 neighbors[32];
+		btui32 neighborcount;
+	};
+
+	// Triangle used for floor collision
+	struct EnvTri {
+		// Vertex indices
+		btui32 a, b, c;
+		// indices of the three neighboring triangles
+		btID neighbors[3];
+		// Which island do I belong to
+		btui16 group;
+		btui8 neighborcount;
+		// test
+		bool open_edge_ab;
+		bool open_edge_bc;
+		bool open_edge_ca;
+		// shitty
+		bool facing_up;
+	};
+
+	// Line segment used for wall collision
+	struct EnvLineSeg {
+		m::Vector2 pos_a; // Point position
+		btf32 h_a_top; // Point height top
+		btf32 h_a_bot; // Point height bottom
+		m::Vector2 pos_b; // Point position
+		btf32 h_b_top; // Point height top
+		btf32 h_b_bot; // Point height bottom
+	};
+
 	btui32 GetNumTris(WCoord coords);
 	btf32 GetTriHeight(WCoord coords, btui32 index, btf32 pos_x, btf32 pos_y);
 	bool GetTriExists(WCoord coords, btui32 index);
 	void* GetC2Tri(WCoord coords, btui32 index);
+	EnvTri* GetTri(WCoord coords, btui32 index);
+
+	struct EnvTriSurfaceSet {
+		EnvTri* nearest_ceil_above;
+		EnvTri* nearest_flor_above;
+		EnvTri* nearest_ceil_below;
+		EnvTri* nearest_flor_below;
+		btf32 nearest_ceil_h_above;
+		btf32 nearest_flor_h_above;
+		btf32 nearest_ceil_h_below;
+		btf32 nearest_flor_h_below;
+	};
+	void GetFloorsAndCeilings(CellSpace& csinf, btf32 in_height, EnvTriSurfaceSet* set);
 
 	// Environment flags
 	namespace eflag
@@ -140,8 +189,10 @@ namespace env
 	void Set(btui32 x, btui32 y, eflag::flag bit);
 	void UnSet(btui32 x, btui32 y, eflag::flag bit);
 
-	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
-	void GetSlope(btf32& OUT_SLOPE_X, btf32& OUT_SLOPE_Y, CellSpace& CELL_SPACE);
+	// Get the height of the ground.
+	// In_height represents the origin point so we can exist underneath other triangles
+	void GetNearestSurfaceHeight(btf32& out_height, CellSpace& cell_space, btf32 in_height);
+	void GetSlope(btf32& out_slope_x, btf32& out_slope_y, CellSpace& cell_space);
 
 	bool LineTraceBh(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b);
 

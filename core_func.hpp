@@ -219,7 +219,7 @@ namespace core
 		ENTITY(index)->t.height_velocity = 0.f;
 		ENTITY(index)->t.yaw.Set(dir);
 		GetCellSpaceInfo(ENTITY(index)->t.position, ENTITY(index)->t.csi);
-		env::GetHeight(ENTITY(index)->t.height, ENTITY(index)->t.csi);
+		env::GetNearestSurfaceHeight(ENTITY(index)->t.height, ENTITY(index)->t.csi, ENTITY(index)->t.height);
 		AddEntityCell(ENTITY(index)->t.csi.c[eCELL_I].x, ENTITY(index)->t.csi.c[eCELL_I].y, index);
 		ENTITY(index)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(index)->state.damagestate = STATE_DAMAGE_MAX;

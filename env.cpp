@@ -18,6 +18,12 @@
 
 #define NUM_COMPOSITES 8u
 
+//#define WORLD_HEIGHT_MAX 1024.f
+//#define WORLD_HEIGHT_MIN -1024.f
+
+#define WORLD_HEIGHT_MAX INFINITY
+#define WORLD_HEIGHT_MIN -INFINITY
+
 namespace env
 {
 	//get these tf out of here
@@ -30,28 +36,6 @@ namespace env
 	btID wldTxtr[NUM_COMPOSITES];
 	btui32 wldNumTextures = 0u;
 
-	struct EnvVert {
-		m::Vector2 pos;
-		btf32 h;
-		m::Vector2 nor;
-		btui32 neighbors[32];
-		btui32 neighborcount;
-	};
-
-	struct EnvTri {
-		// Vertex indices
-		btui32 a, b, c;
-		// indices of the three neighboring triangles
-		btID neighbors[3];
-		// Which island do I belong to
-		btui16 group;
-		btui8 neighborcount;
-		// test
-		bool open_edge_ab;
-		bool open_edge_bc;
-		bool open_edge_ca;
-	};
-
 	mem::idbuf triCells[WORLD_SIZE][WORLD_SIZE];
 
 	// Points (for navigation)
@@ -61,6 +45,9 @@ namespace env
 	EnvTri* tris = nullptr;
 	c2Poly* triCollides = nullptr;
 	btui32 tricount = 0u;
+	// Lines, represent walls in the collision
+	EnvLineSeg* lines = nullptr;
+	btui32 linecount = 0u;
 
 	m::Vector2 lineLineIntersection(m::Vector2 A, m::Vector2 B, m::Vector2 C, m::Vector2 D)
 	{
@@ -118,6 +105,67 @@ namespace env
 	void* GetC2Tri(WCoord coords, btui32 index) {
 		return (void*)&triCollides[(triCells[coords.x][coords.y])[index]];
 	}
+	EnvTri* GetTri(WCoord coords, btui32 index) {
+		return &tris[(triCells[coords.x][coords.y])[index]];
+	}
+
+	void GetFloorsAndCeilings(CellSpace& csinf, btf32 in_height, EnvTriSurfaceSet* set) {
+		// Reset values
+		set->nearest_ceil_above = nullptr;
+		set->nearest_flor_above = nullptr;
+		set->nearest_ceil_below = nullptr;
+		set->nearest_flor_below = nullptr;
+		set->nearest_ceil_h_above = WORLD_HEIGHT_MAX;
+		set->nearest_flor_h_above = WORLD_HEIGHT_MAX;
+		set->nearest_ceil_h_below = WORLD_HEIGHT_MIN;
+		set->nearest_flor_h_below = WORLD_HEIGHT_MIN;
+		// Throwaway values
+		btf32 u, v, w;
+		btf32 height;
+		// For each triangle cell we're touching
+		for (int cell = 0; cell < eCELL_COUNT; ++cell) {
+			// For each triangle in this cell
+			for (int i = 0; i < triCells[csinf.c[cell].x][csinf.c[cell].y].Size(); ++i) {
+				// If this triangle exists
+				if ((triCells[csinf.c[cell].x][csinf.c[cell].y])[i] != ID_NULL) {
+					EnvTri* tri = &tris[(triCells[csinf.c[cell].x][csinf.c[cell].y])[i]];
+					EnvTriBary(
+						m::Vector2((btf32)csinf.c[eCELL_I].x + csinf.offsetx, (btf32)csinf.c[eCELL_I].y + csinf.offsety),
+						points[tri->a].pos, points[tri->b].pos, points[tri->c].pos, u, v, w);
+					// if we're inside the triangle
+					if (u <= 1.f && v <= 1.f && w <= 1.f && u >= 0.f && v >= 0.f && w >= 0.f) {
+						// Record the height of the triangle's plane at our coordinates
+						height = points[tri->a].h * u + points[tri->b].h * v + points[tri->c].h * w;
+						// Apply height if it's below the input height and above any already recorded height
+						if (height <= in_height && height > set->nearest_flor_h_below) {
+							if (tri->facing_up) {
+								set->nearest_flor_h_below = height;
+								set->nearest_flor_below = tri;
+							}
+							else {
+								set->nearest_ceil_h_below = height;
+								set->nearest_ceil_below = tri;
+							}
+						}
+						// Apply height if it's below above input height and below any already recorded height
+						if (height > in_height && height < set->nearest_ceil_h_above) {
+							if (tri->facing_up) {
+								set->nearest_flor_h_above = height;
+								set->nearest_flor_above = tri;
+							}
+							else {
+								set->nearest_ceil_h_above = height;
+								set->nearest_ceil_above = tri;
+							}
+						}
+					}
+				}
+				else {
+					printf("Tried to get height of nonexistent triangle.\n");
+				}
+			}
+		}
+	}
 
 	btID GetTriAtPos(btf32 x, btf32 y)
 	{
@@ -147,7 +195,7 @@ namespace env
 		mem::bvunset((uint32_t&)eCells.flags[x][y], (uint32_t)bit);
 	}
 
-	void GetHeight(btf32& out_height, CellSpace& csinf)
+	void GetNearestSurfaceHeight(btf32& out_height, CellSpace& csinf, btf32 in_height)
 	{
 		out_height = 0.f;
 
@@ -162,22 +210,18 @@ namespace env
 		//	(csinf.offsety + 0.5f)) / TERRAIN_HEIGHT_DIVISION;
 
 		btf32 u, v, w;
+		btf32 height;
+		EnvTriSurfaceSet surfset;
+		GetFloorsAndCeilings(csinf, in_height, &surfset);
 
-		for (int cell = 0; cell < eCELL_COUNT; ++cell) {
-			for (int i = 0; i < triCells[csinf.c[cell].x][csinf.c[cell].y].Size(); ++i) {
-				if ((triCells[csinf.c[cell].x][csinf.c[cell].y])[i] != ID_NULL) {
-					EnvTri* tri = &tris[(triCells[csinf.c[cell].x][csinf.c[cell].y])[i]];
-					EnvTriBary(
-						m::Vector2((btf32)csinf.c[eCELL_I].x + csinf.offsetx, (btf32)csinf.c[eCELL_I].y + csinf.offsety),
-						points[tri->a].pos, points[tri->b].pos, points[tri->c].pos, u, v, w);
-					// if we're inside the triangle
-					if (u <= 1.f && v <= 1.f && w <= 1.f && u >= 0.f && v >= 0.f && w >= 0.f)
-						out_height = points[tri->a].h * u + points[tri->b].h * v + points[tri->c].h * w;
-				}
-				else {
-					printf("Tried to get height of nonexistent triangle.\n");
-				}
-			}
+		// todo: need special treatment if there are no triangles on us at all
+		// are we outside of any geometry
+		if (surfset.nearest_ceil_h_below < surfset.nearest_flor_h_below) {
+			out_height = surfset.nearest_flor_h_below;
+		}
+		// or inside
+		else {
+			out_height = surfset.nearest_flor_h_above;
 		}
 	}
 
@@ -321,38 +365,41 @@ namespace env
 	}
 	void DrawDebugGizmos(CellSpace* cs)
 	{
-		EnvTri* tri = &tris[GetTriAtPos(cs->c[eCELL_I].x + cs->offsetx, cs->c[eCELL_I].y + cs->offsety)];
-		EnvVert* va = &points[tri->a];
-		EnvVert* vb = &points[tri->b];
-		EnvVert* vc = &points[tri->c];
+		btID tri_id = GetTriAtPos(cs->c[eCELL_I].x + cs->offsetx, cs->c[eCELL_I].y + cs->offsety);
+		if (tri_id != ID_NULL) {
+			EnvTri* tri = &tris[GetTriAtPos(cs->c[eCELL_I].x + cs->offsetx, cs->c[eCELL_I].y + cs->offsety)];
+			EnvVert* va = &points[tri->a];
+			EnvVert* vb = &points[tri->b];
+			EnvVert* vc = &points[tri->c];
 
-		graphics::Matrix4x4 matr;
-		// draw vertices
-		graphics::MatrixTransform(matr, m::Vector3(va->pos.x, va->h, va->pos.y));
-		DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
-		graphics::MatrixTransform(matr, m::Vector3(vb->pos.x, vb->h, vb->pos.y));
-		DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
-		graphics::MatrixTransform(matr, m::Vector3(vc->pos.x, vc->h, vc->pos.y));
-		DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
-		// draw vertex offsets
-		graphics::MatrixTransform(matr, m::Vector3(va->pos.x + va->nor.x * 0.5f, va->h, va->pos.y + va->nor.y * 0.5f));
-		DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
-		graphics::MatrixTransform(matr, m::Vector3(vb->pos.x + vb->nor.x * 0.5f, vb->h, vb->pos.y + vb->nor.y * 0.5f));
-		DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
-		graphics::MatrixTransform(matr, m::Vector3(vc->pos.x + vc->nor.x * 0.5f, vc->h, vc->pos.y + vc->nor.y * 0.5f));
-		DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
-		// draw edges
-		if (tri->open_edge_ab) {
-			graphics::MatrixTransform(matr, m::Vector3((va->pos.x + vb->pos.x) / 2.f, (va->h + vb->h) / 2.f, (va->pos.y + vb->pos.y) / 2.f));
+			graphics::Matrix4x4 matr;
+			// draw vertices
+			graphics::MatrixTransform(matr, m::Vector3(va->pos.x, va->h, va->pos.y));
 			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
-		}
-		if (tri->open_edge_bc) {
-			graphics::MatrixTransform(matr, m::Vector3((vb->pos.x + vc->pos.x) / 2.f, (vb->h + vc->h) / 2.f, (vb->pos.y + vc->pos.y) / 2.f));
+			graphics::MatrixTransform(matr, m::Vector3(vb->pos.x, vb->h, vb->pos.y));
 			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
-		}
-		if (tri->open_edge_ca) {
-			graphics::MatrixTransform(matr, m::Vector3((vc->pos.x + va->pos.x) / 2.f, (vc->h + va->h) / 2.f, (vc->pos.y + va->pos.y) / 2.f));
+			graphics::MatrixTransform(matr, m::Vector3(vc->pos.x, vc->h, vc->pos.y));
 			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+			// draw vertex offsets
+			graphics::MatrixTransform(matr, m::Vector3(va->pos.x + va->nor.x * 0.5f, va->h, va->pos.y + va->nor.y * 0.5f));
+			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
+			graphics::MatrixTransform(matr, m::Vector3(vb->pos.x + vb->nor.x * 0.5f, vb->h, vb->pos.y + vb->nor.y * 0.5f));
+			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
+			graphics::MatrixTransform(matr, m::Vector3(vc->pos.x + vc->nor.x * 0.5f, vc->h, vc->pos.y + vc->nor.y * 0.5f));
+			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
+			// draw edges
+			if (tri->open_edge_ab) {
+				graphics::MatrixTransform(matr, m::Vector3((va->pos.x + vb->pos.x) / 2.f, (va->h + vb->h) / 2.f, (va->pos.y + vb->pos.y) / 2.f));
+				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+			}
+			if (tri->open_edge_bc) {
+				graphics::MatrixTransform(matr, m::Vector3((vb->pos.x + vc->pos.x) / 2.f, (vb->h + vc->h) / 2.f, (vb->pos.y + vc->pos.y) / 2.f));
+				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+			}
+			if (tri->open_edge_ca) {
+				graphics::MatrixTransform(matr, m::Vector3((vc->pos.x + va->pos.x) / 2.f, (vc->h + va->h) / 2.f, (vc->pos.y + va->pos.y) / 2.f));
+				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+			}
 		}
 	}
 	void DrawTerrainDebug()
@@ -483,13 +530,23 @@ namespace env
 		return min;
 	}
 
-	// there should be a possibility of checking a == b directly, but no verts are shared
-	// .. for some reason.
-	// TODO: This should be fixed somehow
+	// Check if vertices are identical
 	bool VertCompare(btui32 a, btui32 b) {
+		return a == b;
+		// backup plan
+		/*
 		return env::points[a].pos.x == env::points[b].pos.x
 			&& env::points[a].pos.y == env::points[b].pos.y
 			&& env::points[a].h == env::points[b].h;
+		//*/
+	}
+	// Record if point A is directly above point B
+	void VertCompareLedgeDetect(btf32* out, btui32 a, btui32 b) {
+		if (env::points[a].pos.x == env::points[b].pos.x // If aligned with origin x
+			&& env::points[a].pos.y == env::points[b].pos.y // If aligned with origin y
+			&& env::points[a].h > env::points[b].h // If under the origin point
+			&& *out < env::points[b].h) // If above the previously recorded below
+			*out = env::points[b].h;
 	}
 	void GenerateTerrainMesh()
 	{
@@ -520,6 +577,13 @@ namespace env
 			tri->a = mesh->Ices()[i * 3];
 			tri->b = mesh->Ices()[i * 3 + 1];
 			tri->c = mesh->Ices()[i * 3 + 2];
+
+			// Check if it's clockwise
+			if ((points[tri->b].pos.y - points[tri->a].pos.y) * (points[tri->c].pos.x - points[tri->b].pos.x)
+				- (points[tri->c].pos.y - points[tri->b].pos.y) * (points[tri->b].pos.x - points[tri->a].pos.x) < 0.f)
+				tri->facing_up = true;
+			else tri->facing_up = false;
+
 			// c2 collision tris
 			c2Poly* poly = &triCollides[i];
 			poly->count = 3;
@@ -628,6 +692,10 @@ namespace env
 
 		#define DEF_TRI_NE_EXPERIMENTAL 0
 
+		btf32* point_nearest_h_below = new btf32[pointcount];
+		for (int i = 0; i < pointcount; ++i)
+			point_nearest_h_below[i] = WORLD_HEIGHT_MIN;
+
 		// Determine triangle neighbors
 		// I'm sorry about how slow this is
 		// TODO: do this after computing cells so we don't have to iterate so much
@@ -686,7 +754,6 @@ namespace env
 			}
 			#else
 			// Now for all other triangles (or early exit if we've already found 3 neighbors)
-			//for (int j = 0; j < tricount, tri->neighborcount < 3; ++j) {
 			for (int j = 0; j < tricount; ++j) {
 				// make sure it's not the same triangle
 				if (i != j) {
@@ -709,10 +776,24 @@ namespace env
 						tri->neighbors[tri->neighborcount] = j;
 						++tri->neighborcount;
 					}
+					// Find ledges
+					// TODO: only need to do this once per other VERTEX, not per triangle
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->a);
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->b);
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->c);
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->a);
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->b);
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->c);
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->a);
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->b);
+					VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->c);
 				}
 			}
 			#endif
 		}
+
+		// todo: temp as fuck
+		lines = (EnvLineSeg*)malloc(256 * sizeof(EnvLineSeg));
 
 		// Determine triangle edges with no neighbors
 		for (int i = 0; i < pointcount; ++i) {
@@ -752,21 +833,57 @@ namespace env
 			m::Vector2 normal_ca = m::Normalize(points[tri->c].pos - points[tri->a].pos);
 			normal_ca = m::Vector2(normal_ca.y, -normal_ca.x);
 			
-			//temporary solution
+			// now make collision lines here
+			// and make nav offsets
+			//m::Vector2 v2 = lineLineIntersection(points[tri->a].pos, points[tri->b].pos, points[tri->a].pos, points[tri->c].pos);
 			if (tri->open_edge_ab) {
+				// if there was any ledge
+				if (point_nearest_h_below[tri->a] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->b] != WORLD_HEIGHT_MIN) {
+					lines[linecount].pos_a = points[tri->a].pos;
+					lines[linecount].h_a_top = points[tri->a].h;
+					lines[linecount].h_a_bot = point_nearest_h_below[tri->a];
+					lines[linecount].pos_b = points[tri->b].pos;
+					lines[linecount].h_b_top = points[tri->b].h;
+					lines[linecount].h_b_bot = point_nearest_h_below[tri->b];
+					++linecount;
+				}
+				//temporary solution
 				points[tri->a].nor += normal_ab;
 				points[tri->b].nor += normal_ab;
 			}
 			if (tri->open_edge_bc) {
+				// if there was any ledge
+				if (point_nearest_h_below[tri->b] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->c] != WORLD_HEIGHT_MIN) {
+					lines[linecount].pos_a = points[tri->b].pos;
+					lines[linecount].h_a_top = points[tri->b].h;
+					lines[linecount].h_a_bot = point_nearest_h_below[tri->b];
+					lines[linecount].pos_b = points[tri->c].pos;
+					lines[linecount].h_b_top = points[tri->c].h;
+					lines[linecount].h_b_bot = point_nearest_h_below[tri->c];
+					++linecount;
+				}
+				//temporary solution
 				points[tri->b].nor += normal_bc;
 				points[tri->c].nor += normal_bc;
 			}
 			if (tri->open_edge_ca) {
+				// if there was any ledge
+				if (point_nearest_h_below[tri->c] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->a] != WORLD_HEIGHT_MIN) {
+					lines[linecount].pos_a = points[tri->c].pos;
+					lines[linecount].h_a_top = points[tri->c].h;
+					lines[linecount].h_a_bot = point_nearest_h_below[tri->c];
+					lines[linecount].pos_b = points[tri->a].pos;
+					lines[linecount].h_b_top = points[tri->a].h;
+					lines[linecount].h_b_bot = point_nearest_h_below[tri->a];
+					++linecount;
+				}
+				//temporary solution
 				points[tri->c].nor += normal_ca;
 				points[tri->a].nor += normal_ca;
 			}
-			//m::Vector2 v2 = lineLineIntersection(points[tri->a].pos, points[tri->b].pos, points[tri->a].pos, points[tri->c].pos);
 		}
+
+		delete[] point_nearest_h_below;
 
 		wldMeshTerrain.GenerateComplexEnv(eCells.terrain_height, eCells.terrain_material,
 			(btui32*)&eCells.flags, eflag::EF_INVISIBLE,
@@ -788,6 +905,7 @@ namespace env
 		delete[] points;
 		delete[] tris;
 		delete[] triCollides;
+		delete[] lines;
 	}
 }
 
@@ -805,7 +923,7 @@ NodeFromDir node_cache[WORLD_SIZE][WORLD_SIZE];
 
 struct pathNodeTest {
 	btui32 point;
-	btID owner_tri;
+	//btID owner_tri;
 };
 bool path::PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest)
 {
@@ -825,14 +943,14 @@ bool path::PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest)
 	btID tri_dest = env::GetTriAtPos(xDest, yDest);
 
 	pathNodeTest node_start;
-	node_start.owner_tri = tri_start;
+	//node_start.owner_tri = tri_start;
 	node_start.point = env::tris[tri_start].a; // todo: actually find the closest point, but for now just use the first
 	pathNodeTest node_dest;
-	node_dest.owner_tri = tri_dest;
+	//node_dest.owner_tri = tri_dest;
 	node_dest.point = env::tris[tri_dest].a; // todo: actually find the closest point, but for now just use the first
 
 	// set intial node to point to itself, just in case
-	//node_from_cache[node_start.point] = node_start.point;
+	node_from_cache[node_start.point] = node_start.point;
 
 	std::queue<pathNodeTest> openSet;
 	openSet.push(node_start);
@@ -844,40 +962,19 @@ bool path::PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest)
 		if (current.point == node_dest.point)
 			break;
 
-		// tri this on for size, mister
-		env::EnvTri* tri_this = &env::tris[current.owner_tri];
+		// Get the point we're examining for neighbors
+		env::EnvVert* point_this = &env::points[current.point];
 
-		// for each neighbor of this triangle
-		for (int i = 0; i < tri_this->neighborcount; ++i) {
-			// get neighboring tri
-			env::EnvTri* tri_next = &env::tris[tri_this->neighbors[i]];
-			// make sure these haven't been checked already (INT_NULL)
-			if (node_from_cache[tri_next->a] == INT_NULL) {
+		// for each neighbor of this point
+		for (int i = 0; i < point_this->neighborcount; ++i) {
+			// make sure the neighboring point hasn't been checked already (INT_NULL)
+			if (node_from_cache[point_this->neighbors[i]] == INT_NULL) {
 				pathNodeTest node;
-				node.owner_tri = tri_this->neighbors[i];
-				node.point = tri_next->a;
+				node.point = point_this->neighbors[i];
 				// Add this to the queue
 				openSet.push(node);
 				// set where we came from
-				node_from_cache[tri_next->a] = current.point;
-			}
-			if (node_from_cache[tri_next->a] == INT_NULL) {
-				pathNodeTest node;
-				node.owner_tri = tri_this->neighbors[i];
-				node.point = tri_next->b;
-				// Add this to the queue
-				openSet.push(node);
-				// set where we came from
-				node_from_cache[tri_next->b] = current.point;
-			}
-			if (node_from_cache[tri_next->a] == INT_NULL) {
-				pathNodeTest node;
-				node.owner_tri = tri_this->neighbors[i];
-				node.point = tri_next->c;
-				// Add this to the queue
-				openSet.push(node);
-				// set where we came from
-				node_from_cache[tri_next->c] = current.point;
+				node_from_cache[point_this->neighbors[i]] = current.point;
 			}
 		}
 	}

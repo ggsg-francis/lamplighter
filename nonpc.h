@@ -167,7 +167,7 @@ void NPCFollowAlly(Actor* actor)
 		angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 		distance_to_target = m::Length(TargetVector);
 		//if (distance_to_target < 0.125f) { // if we're basically touching the nav point
-		if (distance_to_target < 0.51f) { // if we're basically touching the nav point
+		if (distance_to_target < 0.05f) { // if we're basically touching the nav point
 			// have we reached the end of the path?
 			if (actor->ai_path_current_index == 0u)
 				actor->ai_pathing = false;

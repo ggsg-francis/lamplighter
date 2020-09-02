@@ -18,6 +18,8 @@ namespace m
 	#define CONV_RAD 0.01745329251994329576923690768489
 	#define CONV_DEG 57.295779513082320876798154814105
 
+	#define IS_ODD_NUMBER(a) (a & 0b1 > 0)
+
 	class Angle // all calculations done in degrees?
 	{
 	private:

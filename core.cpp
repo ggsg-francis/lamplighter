@@ -220,7 +220,7 @@ namespace core
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
 				// test npc
-				SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025.f, 1025.f), 0.f);
+				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025.f, 1025.f), 0.f);
 				#ifndef DEF_PLAYERS_ALLIED
 				// PVP - align p2 with player hunter faction
 				ENTITY(players[1])->faction = fac::playerhunter;
@@ -662,7 +662,7 @@ namespace core
 			GetCellSpaceInfo(editor_cursor, editor_cursorCS);
 
 			btf32 height;
-			env::GetHeight(height, editor_cursorCS);
+			env::GetNearestSurfaceHeight(height, editor_cursorCS, 1000000.f);
 
 			editor_cursor_height = m::Lerp(editor_cursor_height, height, 1.5f * dt);
 
@@ -899,7 +899,7 @@ namespace core
 			//	ENTITY(players[activePlayer])->t.height, cs->c[eCELL_I].y));
 			//DrawMesh(ID_NULL, acv::GetM(acv::m_debugcell), acv::GetT(acv::t_gui_bar_red), SS_NORMAL, matrix);
 
-			//env::DrawDebugGizmos(cs);
+			env::DrawDebugGizmos(cs);
 
 			//*
 			for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
@@ -1363,7 +1363,7 @@ namespace core
 		CellSpace csi;
 		GetCellSpaceInfo(m::Vector2(proj->t.position_x, proj->t.position_y), csi);
 		btf32 height;
-		env::GetHeight(height, csi);
+		env::GetNearestSurfaceHeight(height, csi, proj->t.position_h);
 		if (proj->t.position_h < height) // if below the ground surface
 			return true;
 

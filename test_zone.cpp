@@ -153,6 +153,21 @@ PACKED_STRUCT4(8, PackedStruct4);
 
 void InitTest()
 {
+	bool odd;
+
+	odd = 0 & 0b1;
+	odd = 1 & 0b1;
+	odd = 2 & 0b1;
+	odd = 3 & 0b1;
+	odd = 4 & 0b1;
+	odd = 5 & 0b1;
+	odd = 6 & 0b1;
+	odd = 7 & 0b1;
+	odd = 8 & 0b1;
+	odd = 9 & 0b1;
+
+	
+	
 	/*
 	
 
