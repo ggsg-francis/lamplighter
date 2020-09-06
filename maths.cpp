@@ -234,6 +234,21 @@ namespace m
 			return -(float)acos(vec.x);
 	}
 
+	
+
+	float Vec2ToAng2(float x, float y) {
+		if (y > 0.f)
+			return (float)acos(x);
+		else
+			return -(float)acos(x);
+	}
+
+	void Example() {
+		Vector2 vec;
+		Vec2ToAng2(vec.x, vec.y); // rotation from x
+		Vec2ToAng2(vec.y, vec.x); // rotation from y (or z)
+	}
+
 	//-------------------------------- MISC FUNCTIONS
 
 	btf32 BlendValueFromDistance(const Vector3& src, const Vector3& dst, btf32 min = 0.25f, btf32 max = 1.0f)
@@ -405,14 +420,15 @@ namespace m
 		return step_height - (pow(-step_height * x, 2)) - (step_height * 0.5f);
 	}
 
-	float Vec2Angle(const Vector2 & va, const Vector2 & vb)
+	float Vec2Angle(const Vector2& va, const Vector2& vb)
 	{
 		//float dot = va.x*vb.x + va.y*vb.y; // dot product between[va.x, va.y] and [vb.x, vb.y]
 		//float det = va.x*vb.y - va.y*vb.x;  // determinant
 		//float angle = atan2(det, dot); //  # atan2(y, x) or atan2(sin, cos)
 
 		float dot = Dot(va, vb);
-		float angle = atan(dot);
+		//float angle = atan(dot);
+		float angle = acos(dot);
 
 		return angle;
 	}

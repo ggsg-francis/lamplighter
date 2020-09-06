@@ -5,6 +5,9 @@
 #include "env.h"
 #include <vector>
 
+#include "Transform.h"
+#include "maths.hpp"
+
 class testFixedPoint
 {
 public:
@@ -81,33 +84,7 @@ public:
 	}
 } FixedPointU32;
 
-#define STOREBLOCK_SIZE 1024
-typedef struct StoreBlock {
-	btui8 bytes[STOREBLOCK_SIZE];
-	bool byte_used[STOREBLOCK_SIZE];
-} StoreBlock;
-typedef struct StoreBlockAddr {
-	btui16 addr;
-	btui16 size;
-} StoreBlockAddr;
-void StoreBlockAdd(StoreBlock* block, StoreBlockAddr* out_addr, btui16 size)
-{
-	
-}
-
 // Some test stuff
-
-///*
-
-
-
-//__declspec(align(8))
-struct myStruct2
-{
-	btui32 a;
-	btui8 c;
-	btui32 b;
-};
 
 PACKED_STRUCT(MyStruct3{
 btui32 a;
@@ -115,80 +92,82 @@ btui8 c;
 btui32 b;
 });
 
+struct EntityMkII {
+	// Contains the data of this entity
+	void* component;
+	// Return a string which will be printed to the screen when this entity is looked at
+	char*(*Name)(void* self);
+	// Tick this entity
+	void(*Tick)(btID id, void* self, btf32 dt);
+	// Render graphics of this entity
+	void(*Draw)(btID id, void* self);
+	// Read / write
+	void(*RFile)(btID id, void* self, FILE* file, btui32 version);
+	void(*WFile)(btID id, void* self, FILE* file, btui32 version);
+	// initialize function pointers
+	template <typename ComponentType> void Init(
+		char*(*_Name)(void*),
+		void(*_Tick)(btID, void*, btf32),
+		void(*_Draw)(btID, void*),
+		void(*_RFile)(btID id, void* self, FILE* file, btui32 version),
+		void(*_WFile)(btID id, void* self, FILE* file, btui32 version)) {
+		component = new ComponentType;
+		Name = _Name;
+		Tick = _Tick;
+		Draw = _Draw;
+		RFile = _RFile;
+		WFile = _WFile;
+	}
+	// Free from memory
+	void End() {
+		delete component;
+	}
+};
 
 
-//*/
-
-// cursed shit but it works
-
-/*
-
-//typedef btui8 Name[4];
 
 
-#define PACKED_STRUCT2(NAME, SIZE, VARS) struct NAME { btui8 bytes[SIZE]; VARS }
-#define PACKED_VARIABLE2X(TYPE, NAME, OFFSET) __forceinline TYPE& NAME() { return (TYPE&)(bytes[OFFSET]); }
-#define PACKED_VARIABLE2(TYPE, NAMEGET, NAMESET, OFFSET) \
-	TYPE NAMEGET() { return (TYPE)(bytes[OFFSET]); } \
-	void NAMESET(TYPE x) { *(TYPE*)(&bytes[OFFSET]) = x; }
 
-PACKED_STRUCT2(Ps1, 9,
-	PACKED_VARIABLE2(btui32, GetInt0, SetInt0, 0)
-	PACKED_VARIABLE2(btui8, GetInt1, SetInt1, 4)
-	PACKED_VARIABLE2(btui32, GetInt2, SetInt2, 5)
-);
+struct EntityComponent {
+	virtual char* Name() {};
+	virtual void Tick() {};
+	virtual void Draw() {};
+	virtual void RFile(FILE* file, btui32 version) {};
+	virtual void WFile(FILE* file, btui32 version) {};
+};
 
-#define PACKED_STRUCT3(NAME, SIZE, ...) struct NAME { btui8 bytes[SIZE]; enum e { __VA_ARGS__ }; }
-#define PACKED_GET(STRUCT, TYPE, OFFSET) ((TYPE)(STRUCT.bytes[OFFSET]))
+struct ECTest : EntityComponent {
+	char* Name() {
+	};
+	void Tick() {
+		int i = 0;
+	};
+	void Draw() {
+	};
+};
 
-PACKED_STRUCT3(PackedStruct2, 9, BYTE_0, BYTE_1 = 4, BYTE_2 = 5, );
+struct EntityMkIII {
+	// Contains the data of this entity
+	EntityComponent* component;	
+	template <typename ComponentType> void Init() {
+		component = new ComponentType;
+	}
+	void End() {
+		delete component;
+	}
+};
 
+void MakeEntity(EntityType type) {
+	EntityMkIII entity;
+	switch (type)
+	{
+	case ENTITY_TYPE_ACTOR:
+		entity.Init<ECTest>();
+		break;
+	}
+}
 
-#define PACKED_STRUCT4(SIZE, NAME) typedef btui8 NAME[SIZE];
-
-PACKED_STRUCT4(8, PackedStruct4);
-
-
-//*/
-
-void InitTest()
-{
-	bool odd;
-
-	odd = 0 & 0b1;
-	odd = 1 & 0b1;
-	odd = 2 & 0b1;
-	odd = 3 & 0b1;
-	odd = 4 & 0b1;
-	odd = 5 & 0b1;
-	odd = 6 & 0b1;
-	odd = 7 & 0b1;
-	odd = 8 & 0b1;
-	odd = 9 & 0b1;
-
-	
-	
-	/*
-	
-
-	Ps1 stru;
-
-	PackedStruct2 stru2;
-	memset(stru2.bytes, 0, 8);
-
-	for (int i = 0; i < 100000000; ++i)
-		++PACKED_GET(stru2, btui8, PackedStruct2::BYTE_1);
-	
-	for (int i = 0; i < 100000000; ++i)
-		stru.SetInt1(stru.GetInt1() + 1);
-
-	int i = sizeof(PackedStruct2);
-	int i4 = sizeof(Ps1);
-	int i2 = sizeof(myStruct2);
-	int i3 = sizeof(MyStruct3);
-	//*/
-	
-	//path::Path vec;
-	//path::PathFind(&vec, 1024, 1024, 1026, 1026);
-
+void InitTest() {
+	ECTest ec;
+	ec.Tick();
 }

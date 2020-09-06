@@ -19,6 +19,7 @@
 
 #include "3rdparty\cute_c2.h"
 
+#define ACTOR_NO_COLLIDE_HEIGHT 0.0625f
 
 void Actor_OnHitGround(Actor* chr)
 {
@@ -28,6 +29,102 @@ void Actor_OnHitGround(Actor* chr)
 	if (chr->foot_state == Actor::eL_DOWN) chr->foot_state = Actor::eR_DOWN;
 	else if (chr->foot_state == Actor::eR_DOWN) chr->foot_state = Actor::eL_DOWN;
 }
+struct hit_info {
+	bool hit = false;
+	m::Vector2 surface = m::Vector2(0.f, 0.f);
+	m::Vector2 depenetrate = m::Vector2(0.f, 0.f);
+	m::Vector2 inheritedVelocity = m::Vector2(0.f, 0.f);
+};
+void PhysLineDeintersect(Entity* entity, env::EnvLineSeg* seg, btf32 radius)
+{
+	hit_info hit;
+	m::Vector2 offsettemp(0.f, 0.f);
+	// Get the offset between us and the line
+	m::Vector2 localvec(entity->t.position.x - seg->csn_position.x, entity->t.position.y - seg->csn_position.y);
+	// Rotate the offset vector by the negative line rotation so it is axis-aligned
+	localvec = m::Rotate(localvec, -seg->csn_rotation);
+	// Perform Bounding Box checks from here...
+	// If we're touching the wall plane
+	if (localvec.y < radius && localvec.y > -radius) {
+		// if we're not within the wall space, deal with the end semicircles
+		if(localvec.x > seg->csn_scale.x) {
+			// Circle collision
+			// Are we within this wall's height range?
+			if (!((seg->h_a_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_a_bot <= entity->t.height + entity->height)
+				|| (seg->h_a_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_a_bot >= entity->t.height + entity->height))) {
+				m::Vector2 offset = localvec - m::Vector2(seg->csn_scale.x, 0);
+				if (m::Length(offset) < radius) {
+					hit.hit = true;
+					m::Vector2 pushBy = m::Normalize(offset) * (0.5f - m::Length(offset));
+					pushBy = m::Rotate(pushBy, seg->csn_rotation);
+					offsettemp += pushBy;
+					hit.surface = m::Normalize(pushBy);
+				}
+			}
+		}
+		else if (localvec.x < -seg->csn_scale.x) {
+			// Are we within this wall's height range?
+			if (!((seg->h_b_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_b_bot <= entity->t.height + entity->height)
+				|| (seg->h_b_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_b_bot >= entity->t.height + entity->height))) {
+				// Circle collision
+				m::Vector2 offset = localvec - m::Vector2(-seg->csn_scale.x, 0);
+				if (m::Length(offset) < radius) {
+					hit.hit = true;
+					m::Vector2 pushBy = m::Normalize(offset) * (0.5f - m::Length(offset));
+					pushBy = m::Rotate(pushBy, seg->csn_rotation);
+					offsettemp += pushBy;
+					hit.surface = m::Normalize(pushBy);
+				}
+			}
+		}
+		// If we're within the segment, deal with the straight face
+		else {
+			btf32 lerpval = ((localvec.x / seg->csn_scale.x) * 0.5f) + 0.5f;
+			// MIGHT be backwards
+			btf32 height_lerp_top = m::Lerp(seg->h_a_top, seg->h_b_top, lerpval);
+			btf32 height_lerp_bot = m::Lerp(seg->h_a_bot, seg->h_b_bot, lerpval);
+			// Are we within this wall's height range?
+			if (!((height_lerp_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && height_lerp_bot <= entity->t.height + entity->height)
+				|| (height_lerp_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && height_lerp_bot >= entity->t.height + entity->height))) {
+				hit.hit = true;
+				// If we're on the front face of the wall
+				if (localvec.y >= 0) {
+					hit.surface = m::AngToVec2RH(seg->csn_rotation + glm::radians(90.f));
+					m::Vector2 temp(0.f, 0.f);
+					temp.y = radius - localvec.y;
+					temp = m::Rotate(temp, seg->csn_rotation);
+					offsettemp += temp;
+				}
+				// Back face
+				else {
+					hit.surface = m::AngToVec2RH(seg->csn_rotation + glm::radians(-90.f));
+					m::Vector2 temp(0.f, 0.f);
+					temp.y = localvec.y + radius;
+					temp = m::Rotate(temp, seg->csn_rotation);
+					offsettemp -= temp;
+				}
+			}
+		}
+	}
+
+	hit.depenetrate = offsettemp;
+
+	if (hit.hit) {
+		// modify position
+		entity->t.position += hit.depenetrate;
+		// modify velocity
+		btf32 velLen = m::Length(entity->t.velocity);
+		btf32 dir = m::Dot(entity->t.velocity, m::Vector2(offsettemp.y, -offsettemp.x));
+		if (m::Length(entity->t.velocity) > 0.f) {
+			// simple velocity reduction
+			//ent->t.velocity = m::Vector2(mani.n.y, -mani.n.x) * dir;
+			// Maintain speed along new vector
+			entity->t.velocity = m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x) * dir) * velLen;
+		}
+		//entity->Collide(hit);
+	}
+}
+
 void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 {
 	btf32 offsetx, offsety;
@@ -90,7 +187,13 @@ void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 
 	//-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
 
-	#define ACTOR_NO_COLLIDE_HEIGHT 0.0625f
+	// temp wall test
+
+	// for every line (temp as fuck)
+	for (int i = 0; i < env::GetNumLines(); ++i) {
+		env::EnvLineSeg* seg = env::GetLine(i);
+		PhysLineDeintersect(ent, seg, 0.5f);
+	}
 
 	{
 		WCoord coords;
@@ -110,6 +213,7 @@ void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 		btf32 nearest_ceil_h_below;
 		btf32 nearest_flor_h_below;
 
+		/*
 		
 		// For every cell in our cell-space
 		for (int cell = 0; cell < eCELL_COUNT; ++cell) {
@@ -150,6 +254,8 @@ void Entity_Collision(btID id, Entity* ent, CellSpace& csi)
 				}
 			}
 		}
+
+		*/
 	}
 
 	/*

@@ -108,6 +108,12 @@ namespace env
 	EnvTri* GetTri(WCoord coords, btui32 index) {
 		return &tris[(triCells[coords.x][coords.y])[index]];
 	}
+	btui32 GetNumLines() {
+		return linecount;
+	}
+	EnvLineSeg* GetLine(btui32 index) {
+		return &lines[index];
+	}
 
 	void GetFloorsAndCeilings(CellSpace& csinf, btf32 in_height, EnvTriSurfaceSet* set) {
 		// Reset values
@@ -122,6 +128,7 @@ namespace env
 		// Throwaway values
 		btf32 u, v, w;
 		btf32 height;
+		btui32 intersectionCount = 0u;
 		// For each triangle cell we're touching
 		for (int cell = 0; cell < eCELL_COUNT; ++cell) {
 			// For each triangle in this cell
@@ -134,6 +141,7 @@ namespace env
 						points[tri->a].pos, points[tri->b].pos, points[tri->c].pos, u, v, w);
 					// if we're inside the triangle
 					if (u <= 1.f && v <= 1.f && w <= 1.f && u >= 0.f && v >= 0.f && w >= 0.f) {
+						++intersectionCount;
 						// Record the height of the triangle's plane at our coordinates
 						height = points[tri->a].h * u + points[tri->b].h * v + points[tri->c].h * w;
 						// Apply height if it's below the input height and above any already recorded height
@@ -164,6 +172,12 @@ namespace env
 					printf("Tried to get height of nonexistent triangle.\n");
 				}
 			}
+		}
+		if (intersectionCount == 0u) {
+			set->nearest_ceil_h_above = 0.f;
+			set->nearest_flor_h_above = 0.f;
+			set->nearest_ceil_h_below = 0.f;
+			set->nearest_flor_h_below = 0.f;
 		}
 	}
 
@@ -542,8 +556,12 @@ namespace env
 	}
 	// Record if point A is directly above point B
 	void VertCompareLedgeDetect(btf32* out, btui32 a, btui32 b) {
-		if (env::points[a].pos.x == env::points[b].pos.x // If aligned with origin x
-			&& env::points[a].pos.y == env::points[b].pos.y // If aligned with origin y
+		//if (env::points[a].pos.x == env::points[b].pos.x // If aligned with origin x
+		//	&& env::points[a].pos.y == env::points[b].pos.y // If aligned with origin y
+		//	&& env::points[a].h > env::points[b].h // If under the origin point
+		//	&& *out < env::points[b].h) // If above the previously recorded below
+		//	*out = env::points[b].h;
+		if (m::Length(env::points[a].pos - env::points[b].pos) < 0.001f // If aligned with origin (or close enough)
 			&& env::points[a].h > env::points[b].h // If under the origin point
 			&& *out < env::points[b].h) // If above the previously recorded below
 			*out = env::points[b].h;
@@ -778,15 +796,17 @@ namespace env
 					}
 					// Find ledges
 					// TODO: only need to do this once per other VERTEX, not per triangle
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->a);
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->b);
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->c);
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->a);
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->b);
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->c);
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->a);
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->b);
-					VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->c);
+					if (tri->facing_up) {
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->a);
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->b);
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->a], tri->a, tri_compare->c);
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->a);
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->b);
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->b], tri->b, tri_compare->c);
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->a);
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->b);
+						VertCompareLedgeDetect(&point_nearest_h_below[tri->c], tri->c, tri_compare->c);
+					}
 				}
 			}
 			#endif
@@ -881,6 +901,15 @@ namespace env
 				points[tri->c].nor += normal_ca;
 				points[tri->a].nor += normal_ca;
 			}
+		}
+
+		// finish lines
+		for (int i = 0; i < linecount; ++i) {
+			EnvLineSeg* line = &lines[i];
+			line->csn_position = (line->pos_a + line->pos_b) / 2;
+			line->csn_scale.x = m::Length(line->pos_a - line->pos_b) / 2;
+			line->csn_scale.y = 0.f;
+			line->csn_rotation = m::Vec2ToAngRH(m::Normalize(line->pos_b - line->pos_a));
 		}
 
 		delete[] point_nearest_h_below;

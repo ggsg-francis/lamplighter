@@ -369,6 +369,7 @@ char* TemplateNames[] { // start at line 350
 	"Excity",
 	"Jpeg",
 	"Smutt",
+	"Clover",
 	"Eldred",
 	"Floog",
 	"Isvos",
@@ -908,9 +909,10 @@ char* TemplateNames[] { // start at line 350
 	"Faville",
 	"Lina",
 	"Genus",
+	"Renate"
 };
 // count the above
-#define TEMP_NAME_COUNT (910u - 350u)
+#define TEMP_NAME_COUNT (912u - 350u)
 
 namespace core
 {

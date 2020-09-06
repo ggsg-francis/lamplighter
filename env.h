@@ -82,6 +82,10 @@ namespace env
 		m::Vector2 pos_b; // Point position
 		btf32 h_b_top; // Point height top
 		btf32 h_b_bot; // Point height bottom
+		// collision variables
+		btf32 csn_rotation;
+		m::Vector2 csn_position;
+		m::Vector2 csn_scale;
 	};
 
 	btui32 GetNumTris(WCoord coords);
@@ -89,6 +93,8 @@ namespace env
 	bool GetTriExists(WCoord coords, btui32 index);
 	void* GetC2Tri(WCoord coords, btui32 index);
 	EnvTri* GetTri(WCoord coords, btui32 index);
+	btui32 GetNumLines();
+	EnvLineSeg* GetLine(btui32 index);
 
 	struct EnvTriSurfaceSet {
 		EnvTri* nearest_ceil_above;
