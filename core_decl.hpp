@@ -3,241 +3,239 @@
 //#define CUTE_C2_IMPLEMENTATION
 //#include "3rdparty/cute_c2.h"
 
-#include "objects_entities.h"
+#include "entity.h"
 #include "objects_items.h"
 #include "objects_activators.h"
 
 #include "index.h"
 #include "network.h"
 
-// just names
-/*
-"Vladislavpah",
-"Alexandrina",
-"Antoniokes",
-"Janniest",
-"Louisa",
-"Rydersil",
-"Trudymcc",
-"Esmeraldajw16",
-"Winstontheli",
-"Amara carr",
-"Robinsonblankatmhacker",
-"Robinson hacker",
-"Henry",
-"Vanessa williams",
-"Mr mark",
-"Elizabeth",
-"Elizabethcole232",
-"Annie",
-"Rich cruz",
-"Paul",
-"Anniemellor233",
-"Patricia clifford",
-"Allison babara",
-"Mabel",
-"Morris mabel",
-"Donald jude",
-"Richard",
-"Mr ken",
-"James lawrence",
-"Cedric davis",
-"Jane",
-"John brown",
-"Kenny allen",
-"Mr kenny",
-"Brenna helen",
-"Amanda hugo",
-"Mrs sandra",
-"Robert alexander",
-"Robert alex",
-"Ryan",
-"Thomas colson",
-"Bruno luis",
-"Tara kline",
-"Dr smith",
-"Nicky derek",
-"T.williams",
-"Sandra pethtel",
-"Kate johnson",
-"Smith seth",
-"Amara carr",
-"David",
-"Aster nelson",
-"Abigail winfrey",
-"Anita",
-"Cindy",
-"Paul",
-"Joannehn16",
-"Adolf preston",
-"Elizabeth lizzy",
-"Edward bee",
-"Ryan",
-"Mellisa brandon",
-"Kate johnson",
-"Anthony",
-"Lucy camile",
-"Harrison bouchard",
-"Lily walker",
-"Lucy camile",
-"Fred",
-"Mariam joneas",
-"Jose mario",
-"Georg bednorz",
-"Morris ferdinad",
-"Thomas",
-"Rossey",
-"Tricia",
-"Benjamin collie",
-"Harrison",
-"Simon",
-"Grace",
-"Micheal",
-"Connel",
-"Williams",
-"Richardpenny",
-"Mark",
-"Leonard",
-"Mariam joneas",
-"Smith",
-"Steve ashley",
-"Ryan gregory",
-"Teresa moore",
-"David wirth",
-"Kenny allen",
-"Mr roland martin",
-"Simon philip",
-"Rebecca morrison",
-"Stewartgab",
-"Roberto",
-"Mr simon",
-"Brett wood",
-"Gennady fedya",
-"Sonia buker",
-"Christ ben",
-"Jasonmoito",
-"Natalie",
-"Cari sue harris",
-"Levi",
-"Sarah",
-"Winston",
-"Wilson",
-"Scott",
-"Steve",
-"Orlando",
-"Kenneth",
-"Aaron",
-"Harrison",
-"Bouchard",
-"Tracy",
-"Giuseppe",
-"Zanotti",
-"Percy",
-"Claudette",
-"Joseph",
-"Jeffrey",
-"David",
-"Natasha",
-"Helen",
-"Alphonso",
-"Tyler",
-"Jason",
-"George",
-"Kayleigh",
-"Dennis",
-"Daniel",
-"Melvin",
-"Clark",
-"Stephen",
-"Marty",
-"Blake",
-"Sabrina",
-"Wilford",
-"Erica",
-"Michael",
-"Sharon",
-"Robert",
-"Ronald",
-"Theresa",
-"Lucinda",
-"Rickie",
-"Ashely",
-"Shirley",
-"Carlos",
-"James",
-"Raymond",
-"Billie",
-"Antonio",
-"Marissa",
-"Alexander",
-"Brenda",
-"Julianne",
-"Adriana",
-"Cynthia",
-"Paula",
-"Cathy",
-"Willis",
-"Philip",
-"Connor",
-"Eliza",
-"Richard",
-"Matt",
-"Elizabeth",
-"Thomas",
-"Howard",
-"Susan",
-"Anthony",
-"Stacy",
-"Charles",
-"Jennifer",
-"Selena",
-"Brad",
-"Harry",
-"Darrell",
-"Marcus",
-"Glenn",
-"Clinton",
-"Amy",
-"Martin",
-"Herbert",
-"Kenhix",
-"Brucep,
-"Betty",
-"Leonard",
-"Calvin",
-"Adam",
-"Kevin",
-"Gabriel",
-"Fred",
-"Arthur",
-"Anton",
-"Patrick",
-"Johnnie",
-"Allen",
-"Corey",
-"Gilbert",
-"William",
-"Ralph",
-"Matthew",
-"Melissa",
-"Donald",
-"Johnny",
-"Joan",
-"Frank",
-"Shane",
-"Alice",
-"Henry",
-"Regina",
-"Albert",
-"Bertie",
-"Trenton",
-"Mary",
-"Nick",
-"Freddie",
-"Ron",
-"Cedric",
-"Laurence",
-*/
+namespace core
+{
+	// Environment lightmap texture
+	// R: Unused | G: Lightsources | B: Unused | A: Unused
+	graphics::ModifiableTexture t_EnvLightmap;
+	// R: Height | G: Unused | B: Unused | A: Unused
+	graphics::ModifiableTexture t_EnvHeightmap;
+
+	//--------------------------- GLOBAL VARIABLES
+
+	btf64 networkTimerTemp;
+
+	unsigned int activePlayer = 0u;
+	btID players[2];
+	m::Vector3 viewTarget[2];
+	m::Vector3 viewPosition[2];
+	// for measuring HP changes for gui display
+	btui16 player_hp[2]{ 1000u, 1000u };
+
+	//env::EnvNode editor_node_copy;
+	btui32 editor_flags_copy;
+	btID editor_prop_copy;
+	env::NodePropDirection editor_prop_dir_copy;
+	btui8 editor_height_copy_ne;
+	btui8 editor_height_copy_nw;
+	btui8 editor_height_copy_se;
+	btui8 editor_height_copy_sw;
+	btui8 editor_material_copy;
+
+	m::Vector2 editor_cursor = m::Vector2(1024.f, 1024.f);
+	CellSpace editor_cursorCS;
+	btf32 editor_cursor_height = 0.f;
+	btui32 editor_zoom = 5u;
+	m::Angle editor_cam_pitch = m::Angle(60.f);
+	m::Angle editor_cam_yaw = m::Angle(0.f);
+
+	struct ReferenceCell
+	{
+		mem::idbuf ref_ents; // Entity references
+		btID ref_activator = ID_NULL;
+	};
+	ReferenceCell refCells[WORLD_SIZE][WORLD_SIZE];
+
+	int CellEntityCount(int x, int y)
+	{
+		return core::refCells[x][y].ref_ents.Size();
+	}
+	btID CellEntity(int x, int y, int e)
+	{
+		return core::refCells[x][y].ref_ents[e];
+	}
+
+	// inventory stuff
+	graphics::GUIBox guibox;
+	graphics::GUIText text_temp;
+	graphics::GUIText text_hp;
+	graphics::GUIText text_version;
+	graphics::GUIText text_fps;
+
+	graphics::GUIText text_message[2];
+	btui64 message_time[2];
+
+	bti32 cursor_x = 0u;
+	bti32 cursor_y = 0u;
+
+	//--------------------------- FUNCTION DECLARATIONS
+
+	btID GetClosestPlayer(btID id);
+	btID GetClosestEntity(btID id, btf32 dist);
+	btID GetClosestEntityAlleg(btID index, btf32 dist, fac::facalleg allegiance);
+
+	void ProjectileTick(btf32 dt);
+	void ProjectileDraw();
+	void ProjectileHitCheck();
+	void RemoveAllReferences(btID id);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -914,81 +912,231 @@ char* TemplateNames[] { // start at line 350
 // count the above
 #define TEMP_NAME_COUNT (912u - 350u)
 
-namespace core
-{
-	// Environment lightmap texture
-	// R: Unused | G: Lightsources | B: Unused | A: Unused
-	graphics::ModifiableTexture t_EnvLightmap;
-	// R: Height | G: Unused | B: Unused | A: Unused
-	graphics::ModifiableTexture t_EnvHeightmap;
-
-	//--------------------------- GLOBAL VARIABLES
-
-	btf64 networkTimerTemp;
-
-	unsigned int activePlayer = 0u;
-	btID players[2];
-	m::Vector3 viewTarget[2];
-	m::Vector3 viewPosition[2];
-	btID viewtarget[2]{ ID_NULL, ID_NULL };
-	btID viewtarget_last_tick[2]{ ID_NULL, ID_NULL };
-	// for measuring HP changes for gui display
-	btui16 player_hp[2]{ 1000u, 1000u };
-
-	//env::EnvNode editor_node_copy;
-	btui32 editor_flags_copy;
-	btID editor_prop_copy;
-	env::NodePropDirection editor_prop_dir_copy;
-	btui8 editor_height_copy_ne;
-	btui8 editor_height_copy_nw;
-	btui8 editor_height_copy_se;
-	btui8 editor_height_copy_sw;
-	btui8 editor_material_copy;
-
-	m::Vector2 editor_cursor = m::Vector2(1024.f, 1024.f);
-	CellSpace editor_cursorCS;
-	btf32 editor_cursor_height = 0.f;
-	btui32 editor_zoom = 5u;
-	m::Angle editor_cam_pitch = m::Angle(60.f);
-	m::Angle editor_cam_yaw = m::Angle(0.f);
-
-	struct ReferenceCell
-	{
-		mem::idbuf ref_ents; // Entity references
-		btID ref_activator = ID_NULL;
-	};
-	ReferenceCell refCells[WORLD_SIZE][WORLD_SIZE];
-
-	int CellEntityCount(int x, int y)
-	{
-		return core::refCells[x][y].ref_ents.Size();
-	}
-	btID CellEntity(int x, int y, int e)
-	{
-		return core::refCells[x][y].ref_ents[e];
-	}
-
-	// inventory stuff
-	graphics::GUIBox guibox;
-	graphics::GUIText text_temp;
-	graphics::GUIText text_hp;
-	graphics::GUIText text_version;
-	graphics::GUIText text_fps;
-
-	graphics::GUIText text_message[2];
-	btui64 message_time[2];
-
-	bti32 cursor_x = 0u;
-	bti32 cursor_y = 0u;
-
-	//--------------------------- FUNCTION DECLARATIONS
-
-	btID GetClosestPlayer(btID id);
-	btID GetClosestEntity(btID id, btf32 dist);
-	btID GetClosestEntityAlleg(btID index, btf32 dist, fac::facalleg allegiance);
-
-	void ProjectileTick(btf32 dt);
-	void ProjectileDraw();
-	void ProjectileHitCheck();
-	void RemoveAllReferences(btID id);
-}
+// just names
+/*
+"Vladislavpah",
+"Alexandrina",
+"Antoniokes",
+"Janniest",
+"Louisa",
+"Rydersil",
+"Trudymcc",
+"Esmeraldajw16",
+"Winstontheli",
+"Amara carr",
+"Robinsonblankatmhacker",
+"Robinson hacker",
+"Henry",
+"Vanessa williams",
+"Mr mark",
+"Elizabeth",
+"Elizabethcole232",
+"Annie",
+"Rich cruz",
+"Paul",
+"Anniemellor233",
+"Patricia clifford",
+"Allison babara",
+"Mabel",
+"Morris mabel",
+"Donald jude",
+"Richard",
+"Mr ken",
+"James lawrence",
+"Cedric davis",
+"Jane",
+"John brown",
+"Kenny allen",
+"Mr kenny",
+"Brenna helen",
+"Amanda hugo",
+"Mrs sandra",
+"Robert alexander",
+"Robert alex",
+"Ryan",
+"Thomas colson",
+"Bruno luis",
+"Tara kline",
+"Dr smith",
+"Nicky derek",
+"T.williams",
+"Sandra pethtel",
+"Kate johnson",
+"Smith seth",
+"Amara carr",
+"David",
+"Aster nelson",
+"Abigail winfrey",
+"Anita",
+"Cindy",
+"Paul",
+"Joannehn16",
+"Adolf preston",
+"Elizabeth lizzy",
+"Edward bee",
+"Ryan",
+"Mellisa brandon",
+"Kate johnson",
+"Anthony",
+"Lucy camile",
+"Harrison bouchard",
+"Lily walker",
+"Lucy camile",
+"Fred",
+"Mariam joneas",
+"Jose mario",
+"Georg bednorz",
+"Morris ferdinad",
+"Thomas",
+"Rossey",
+"Tricia",
+"Benjamin collie",
+"Harrison",
+"Simon",
+"Grace",
+"Micheal",
+"Connel",
+"Williams",
+"Richardpenny",
+"Mark",
+"Leonard",
+"Mariam joneas",
+"Smith",
+"Steve ashley",
+"Ryan gregory",
+"Teresa moore",
+"David wirth",
+"Kenny allen",
+"Mr roland martin",
+"Simon philip",
+"Rebecca morrison",
+"Stewartgab",
+"Roberto",
+"Mr simon",
+"Brett wood",
+"Gennady fedya",
+"Sonia buker",
+"Christ ben",
+"Jasonmoito",
+"Natalie",
+"Cari sue harris",
+"Levi",
+"Sarah",
+"Winston",
+"Wilson",
+"Scott",
+"Steve",
+"Orlando",
+"Kenneth",
+"Aaron",
+"Harrison",
+"Bouchard",
+"Tracy",
+"Giuseppe",
+"Zanotti",
+"Percy",
+"Claudette",
+"Joseph",
+"Jeffrey",
+"David",
+"Natasha",
+"Helen",
+"Alphonso",
+"Tyler",
+"Jason",
+"George",
+"Kayleigh",
+"Dennis",
+"Daniel",
+"Melvin",
+"Clark",
+"Stephen",
+"Marty",
+"Blake",
+"Sabrina",
+"Wilford",
+"Erica",
+"Michael",
+"Sharon",
+"Robert",
+"Ronald",
+"Theresa",
+"Lucinda",
+"Rickie",
+"Ashely",
+"Shirley",
+"Carlos",
+"James",
+"Raymond",
+"Billie",
+"Antonio",
+"Marissa",
+"Alexander",
+"Brenda",
+"Julianne",
+"Adriana",
+"Cynthia",
+"Paula",
+"Cathy",
+"Willis",
+"Philip",
+"Connor",
+"Eliza",
+"Richard",
+"Matt",
+"Elizabeth",
+"Thomas",
+"Howard",
+"Susan",
+"Anthony",
+"Stacy",
+"Charles",
+"Jennifer",
+"Selena",
+"Brad",
+"Harry",
+"Darrell",
+"Marcus",
+"Glenn",
+"Clinton",
+"Amy",
+"Martin",
+"Herbert",
+"Kenhix",
+"Brucep,
+"Betty",
+"Leonard",
+"Calvin",
+"Adam",
+"Kevin",
+"Gabriel",
+"Fred",
+"Arthur",
+"Anton",
+"Patrick",
+"Johnnie",
+"Allen",
+"Corey",
+"Gilbert",
+"William",
+"Ralph",
+"Matthew",
+"Melissa",
+"Donald",
+"Johnny",
+"Joan",
+"Frank",
+"Shane",
+"Alice",
+"Henry",
+"Regina",
+"Albert",
+"Bertie",
+"Trenton",
+"Mary",
+"Nick",
+"Freddie",
+"Ron",
+"Cedric",
+"Laurence",
+*/

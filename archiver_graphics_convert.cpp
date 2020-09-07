@@ -310,7 +310,7 @@ namespace graphics
 	//|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| CONVERSION FUNCTIONS
 
 	// TODO: add dds loader from this address
-	//http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/
+	//http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/#compressed-textures
 
 	void ConvertTex(char* sfn, void* OUT, btui8 filter, btui8 edge)
 	{

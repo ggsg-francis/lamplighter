@@ -29,17 +29,20 @@ namespace core
 		}
 	}
 
-	bool LOSCheck(btID enta, btID entb)
-	{
-		/*
-		Entity* entity_a = ENTITY(enta);
-		Entity* entity_b = ENTITY(entb);
+	bool LOSCheck(btID enta, btID entb) {
+		ECCommon* entity_a = ENTITY(enta);
+		ECCommon* entity_b = ENTITY(entb);
+		#if DEF_GRID
 		return env::LineTraceBh(
 			entity_a->t.csi.c[eCELL_I].x, entity_a->t.csi.c[eCELL_I].y,
 			entity_b->t.csi.c[eCELL_I].x, entity_b->t.csi.c[eCELL_I].y,
 			entity_a->t.height, entity_b->t.height);
-			*/
-		return true;
+		#else
+		return env::LineTrace(
+			entity_a->t.position.x, entity_a->t.position.y,
+			entity_b->t.position.x, entity_b->t.position.y,
+			entity_a->t.height, entity_b->t.height);
+		#endif
 	}
 
 	btID GetClosestPlayer(btID index)
@@ -88,8 +91,8 @@ namespace core
 					btf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
 					if (check_distance < dist)
 					{
-						Entity* ent = ENTITY(index);
-						Entity* ent_other = ENTITY(index_other);
+						ECCommon* ent = ENTITY(index);
+						ECCommon* ent_other = ENTITY(index_other);
 						// LINE TRACE
 						if (env::LineTraceBh(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y,
 							ent_other->t.csi.c[eCELL_I].x, ent_other->t.csi.c[eCELL_I].y,
@@ -137,12 +140,12 @@ namespace core
 
 	btID GetClosestEntityAllegLOS(btID index, btf32 dist, fac::facalleg allegiance)
 	{
-		Entity* entity_index = ENTITY(index);
+		ECCommon* entity_index = ENTITY(index);
 		btID current_closest = BUF_NULL;
 		btf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i <= GetLastEntity(); i++)
 		{
-			Entity* entity = ENTITY(i);
+			ECCommon* entity = ENTITY(i);
 			// If used, not me, and is alive
 			if (GetEntityExists(i) && i != index && entity->state.stateFlags.get(ActiveState::eALIVE))
 			{
@@ -153,12 +156,17 @@ namespace core
 					if (check_distance < closest_distance)
 					{
 						// Linetrace environment to see if the character is visible
-						/*if (env::LineTrace(entity_index->t.position.x, entity_index->t.position.y,
-							entity->t.position.x, entity->t.position.y))*/
+						#if DEF_GRID
 						if (env::LineTraceBh(
 							entity_index->t.csi.c[eCELL_I].x, entity_index->t.csi.c[eCELL_I].y,
 							entity->t.csi.c[eCELL_I].x, entity->t.csi.c[eCELL_I].y,
 							entity_index->t.height, entity->t.height))
+						#else
+						if (!env::LineTrace(
+							entity_index->t.position.x, entity_index->t.position.y,
+							entity->t.position.x, entity->t.position.y,
+							entity_index->t.height, entity->t.height))
+						#endif
 						{
 							current_closest = i;
 							closest_distance = check_distance;
@@ -176,7 +184,7 @@ namespace core
 		btf32 closestDist = 2.f;
 		btf32 closest_angle = 20.f;
 
-		Entity* entity_index = ENTITY(index);
+		ECCommon* entity_index = ENTITY(index);
 		// Iterate through nearby cells
 		for (int x = entity_index->t.csi.c[eCELL_I].x - 3u; x < entity_index->t.csi.c[eCELL_I].x + 3u; x++)
 		{
@@ -345,17 +353,18 @@ namespace core
 	{
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
-		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
+		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
 		ACTOR(id)->aiControlled = false;
-		ACTOR(id)->speed = 1.45f;
+		ACTOR(id)->speed = 1.45f; // default
+		//ACTOR(id)->speed = 2.5f; // quake
 		ACTOR(id)->agility = 0.f;
 
 		//ACTOR(id)->inventory.AddNew(6u); // sword
 		//ACTOR(id)->inventory.AddNew(5u); // annoying bug
 
-		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
+		ACTOR(id)->foot_state = ECActor::FootState::eL_DOWN;
 	}
 
 	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
@@ -363,13 +372,13 @@ namespace core
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
-		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
+		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
 		//ACTOR(id)->inventory.AddNew(6u);
-		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
+		ACTOR(id)->foot_state = ECActor::FootState::eL_DOWN;
 	}
 
 	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
@@ -377,7 +386,7 @@ namespace core
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::playerhunter;
-		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
+		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.45f;
@@ -387,7 +396,7 @@ namespace core
 		ACTOR(id)->inventory.AddNew(4u); // ammo
 		ACTOR(id)->inventory.AddNew(4u); // ammo
 		ACTOR(id)->inventory.AddNew(4u); // ammo
-		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
+		ACTOR(id)->foot_state = ECActor::FootState::eL_DOWN;
 		//ACTOR(id)->inventory.items[ACTOR(id)->inv_active_slot];
 		//TODO: clean up this mess
 	}
@@ -397,20 +406,20 @@ namespace core
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::undead;
-		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
+		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 3.5f;
 		ACTOR(id)->agility = 0.f;
 		ACTOR(id)->inventory.AddNew(4u);
-		ACTOR(id)->foot_state = Actor::FootState::eL_DOWN;
+		ACTOR(id)->foot_state = ECActor::FootState::eL_DOWN;
 	}
 
 	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)
 	{
 		spawn_setup_t(id, pos, dir);
 		NameEntity(id);
-		ENTITY(id)->properties.set(Entity::ePREFAB_FULLSOLID);
+		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
 		ACTOR(id)->aiControlled = false;

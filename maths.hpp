@@ -129,6 +129,7 @@ namespace m
 		Vector2 operator*=(float);
 		Vector2 operator/=(float);
 		Vector2 operator=(const btf32&);
+		bool operator==(const Vector2);
 	};
 
 
@@ -300,6 +301,12 @@ namespace m
 		va_end(args);
 		return min;
 	}
+	btf32 Min2(btf32 a, btf32 b);
+	btf32 Max2(btf32 a, btf32 b);
+	btf32 Min3(btf32 a, btf32 b, btf32 c);
+	btf32 Max3(btf32 a, btf32 b, btf32 c);
+	btui32 MinIndex(btui32 size, btf32* array);
+	btui32 MaxIndex(btui32 size, btf32* array);
 
 	// Quadratic function -- Makes a parabola
 	btf32 Quadratic(const btf32 a, const btf32 b, const btf32 c, const btf32 x);

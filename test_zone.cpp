@@ -5,7 +5,6 @@
 #include "env.h"
 #include <vector>
 
-#include "Transform.h"
 #include "maths.hpp"
 
 class testFixedPoint
@@ -128,46 +127,10 @@ struct EntityMkII {
 
 
 
-struct EntityComponent {
-	virtual char* Name() {};
-	virtual void Tick() {};
-	virtual void Draw() {};
-	virtual void RFile(FILE* file, btui32 version) {};
-	virtual void WFile(FILE* file, btui32 version) {};
-};
 
-struct ECTest : EntityComponent {
-	char* Name() {
-	};
-	void Tick() {
-		int i = 0;
-	};
-	void Draw() {
-	};
-};
 
-struct EntityMkIII {
-	// Contains the data of this entity
-	EntityComponent* component;	
-	template <typename ComponentType> void Init() {
-		component = new ComponentType;
-	}
-	void End() {
-		delete component;
-	}
-};
 
-void MakeEntity(EntityType type) {
-	EntityMkIII entity;
-	switch (type)
-	{
-	case ENTITY_TYPE_ACTOR:
-		entity.Init<ECTest>();
-		break;
-	}
-}
 
 void InitTest() {
-	ECTest ec;
-	ec.Tick();
+	//
 }

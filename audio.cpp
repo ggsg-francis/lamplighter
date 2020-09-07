@@ -3,8 +3,9 @@
 #include "maths.hpp"
 // for transform2d only
 // TODO: put transform in its own file
-#include "objects_entities.h"
+#include "entity.h"
 #include "index.h"
+#include "core.h"
 #ifdef DEF_NMP
 #include "network.h"
 #endif // DEF_NMP

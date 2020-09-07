@@ -4,7 +4,8 @@
 
 #include "index.h"
 
-#include "objects_entities.h"
+#include "ec_actor.h"
+#include "ec_misc.h"
 #include "objects_items.h"
 #include "objects_activators.h"
 
@@ -16,28 +17,28 @@
 //block of IDs in memory, tracks the numbers and IDs of any type of object
 mem::ObjBuf<EntAddr, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> block_entity; // Entity address buffer - holds indexes of the other arrays
 // Actor class buffers
-mem::ObjBuf<RestingItem, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_resting_item;
-mem::ObjBuf<Actor, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_chara;
+mem::ObjBuf<ECSingleItem, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_resting_item;
+mem::ObjBuf<ECActor, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_chara;
 
 // Return a string which will be printed to the screen when this entity is looked at
 char*(*fpName[ENTITY_TYPE_COUNT])(void* self) = {
-	DisplayNameActor,
-	DisplayNameRestingItem,
-	DisplayNameActor,
+	ActorName,
+	RestingItemName,
+	ActorName,
 };
 
 // Tick this entity
 void(*fpTick[ENTITY_TYPE_COUNT])(btID id, void* self, btf32 dt) = {
 	TickEditorPawn,
-	TickRestingItem,
-	TickChara,
+	RestingItemTick,
+	ActorTick,
 };
 
 // Render graphics of this entity
 void(*fpDraw[ENTITY_TYPE_COUNT])(btID id, void* self) = {
 	DrawEditorPawn,
-	DrawRestingItem,
-	DrawChara,
+	RestingItemDraw,
+	ActorDraw,
 };
 
 // Get Entity address from ID
@@ -62,11 +63,11 @@ btID InitEntity(EntityType type) {
 		break;
 	case ENTITY_TYPE_RESTING_ITEM:
 		block_entity.Data(id).type_buffer_index = buf_resting_item.Add(ENTITY_TYPE_RESTING_ITEM);
-		memset(ENT_VOID(id), 0, sizeof(RestingItem));
+		memset(ENT_VOID(id), 0, sizeof(ECSingleItem));
 		break;
 	case ENTITY_TYPE_ACTOR:
 		block_entity.Data(id).type_buffer_index = buf_chara.Add(ENTITY_TYPE_ACTOR);
-		memset(ENT_VOID(id), 0, sizeof(Actor));
+		memset(ENT_VOID(id), 0, sizeof(ECActor));
 		break;
 	default:
 		std::cout << "Tried to initialize entity of no valid type" << std::endl;
@@ -180,4 +181,17 @@ PrjID IndexSpawnProjectile()
 void IndexDestroyProjectileC(PrjID id)
 {
 	block_proj.remove(id.id);
+}
+
+//________________________________________________________________________________________________________________________________
+// NEW INDEX ---------------------------------------------------------------------------------------------------------------------
+
+void MakeEntity(EntityType type) {
+	Entity entity;
+	//switch (type)
+	//{
+	//case ENTITY_TYPE_ACTOR:
+	//	entity.Init<ECActor>();
+	//	break;
+	//}
 }

@@ -282,6 +282,9 @@
     <ClCompile Include="archive_read_write.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="core_save_load.cpp" />
+    <ClCompile Include="ec_actor.cpp" />
+    <ClCompile Include="ec_common.cpp" />
+    <ClCompile Include="ec_misc.cpp" />
     <ClCompile Include="index.cpp" />
     <ClCompile Include="network.cpp" />
     <ClCompile Include="audio.cpp" />
@@ -292,7 +295,7 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="maths.cpp" />
     <ClCompile Include="memory.cpp" />
-    <ClCompile Include="objects_entities.cpp" />
+    <ClCompile Include="entity.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="main.cpp" />
@@ -301,7 +304,6 @@
     <ClCompile Include="objects_items.cpp" />
     <ClCompile Include="objects_activators.cpp" />
     <ClCompile Include="test_zone.cpp" />
-    <ClCompile Include="Transform.cpp" />
     <ClCompile Include="weather.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -310,6 +312,9 @@
     <ClInclude Include="archive_read_write.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="core_save_load.h" />
+    <ClInclude Include="ec_actor.h" />
+    <ClInclude Include="ec_common.h" />
+    <ClInclude Include="ec_misc.h" />
     <ClInclude Include="global_project.h" />
     <ClInclude Include="graphics_structures.h" />
     <ClInclude Include="index.h" />
@@ -325,7 +330,7 @@
     <ClInclude Include="memory.hpp" />
     <ClInclude Include="maths.hpp" />
     <ClInclude Include="nonpc.h" />
-    <ClInclude Include="objects_entities.h" />
+    <ClInclude Include="entity.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="graphics.hpp" />
     <ClInclude Include="objects_inventory.h" />
@@ -333,7 +338,6 @@
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="objects_activators.h" />
     <ClInclude Include="test_zone.h" />
-    <ClInclude Include="Transform.h" />
     <ClInclude Include="weather.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

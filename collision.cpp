@@ -4,11 +4,11 @@
 
 #include "core.h"
 #include "index.h"
-#include "objects_entities.h"
+#include "entity.h"
 
 bool RayEntity(btID ent, btf32 stand_height)
 {
-	Entity* entity = ENTITY(ent);
+	ECCommon* entity = ENTITY(ent);
 
 	btf32 th;
 	env::GetNearestSurfaceHeight(th, entity->t.csi, entity->t.height);

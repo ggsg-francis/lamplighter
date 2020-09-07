@@ -17,21 +17,10 @@ namespace core
 		return ENTITY(id)->state.damagestate;
 	}
 
-	void SetViewTargetID(btID id, btui32 player)
-	{
-		viewtarget_last_tick[player] = viewtarget[player];
-		viewtarget[player] = id;
-		//std::cout << "looking at id " << viewtarget << std::endl;
-	}
-	btID GetViewTargetID(btui32 player)
-	{
-		return viewtarget[player];
-	}
-
 	void SetViewFocus(btID index)
 	{
 		activePlayer = index;
-		Actor* chara = ACTOR(players[activePlayer]);
+		ECActor* chara = ACTOR(players[activePlayer]);
 		graphics::SetMatView(&viewTarget[activePlayer], &viewPosition[activePlayer], nullptr);
 	}
 
@@ -220,15 +209,15 @@ namespace core
 				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
 				// test npc
-				//SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025.f, 1025.f), 0.f);
-				#ifndef DEF_PLAYERS_ALLIED
+				SpawnEntity(prefab::prefab_ai_player, m::Vector2(1025.f, 1025.f), 0.f);
+				#if DEF_PVP
 				// PVP - align p2 with player hunter faction
 				ENTITY(players[1])->faction = fac::playerhunter;
 				#endif
-				#ifdef DEF_SPAWN_ON_START
+				#if DEF_SPAWN_ON_INIT
 				DoSpawn();
 				#endif
-				#ifdef DEF_AUTOSAVE_ON_START
+				#if DEF_AUTOSAVE_ON_START
 				SaveState();
 				#endif
 			}
@@ -288,7 +277,7 @@ namespace core
 	void RegenCellRefs()
 	{
 		for (int i = 0; i <= GetLastEntity(); i++) {
-			Entity* ent = (Entity*)GetEntityPtr(i);
+			ECCommon* ent = (ECCommon*)GetEntityPtr(i);
 			AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, i);
 		}
 	}
@@ -299,7 +288,7 @@ namespace core
 	void Tick(btf32 dt)
 	{
 		// TODO: think this over, there must be a better way to handle this
-		#ifdef DEF_AUTO_RELOAD_ON_DEATH // Don't reload if it's multiplayer, this might be a temporary measure anyway
+		#if DEF_AUTO_RELOAD_ON_DEATH // Don't reload if it's multiplayer, this might be a temporary measure anyway
 		// check if either player is dead
 		if (!ENTITY(players[0])->state.stateFlags.get(ActiveState::eALIVE) || !ENTITY(players[1])->state.stateFlags.get(ActiveState::eALIVE))
 		{
@@ -332,9 +321,9 @@ namespace core
 					&& !ENTITY(i)->state.stateFlags.get(ActiveState::eDIED_REPORT))
 				{
 					//index::DestroyEntity(i);
-					ENTITY(i)->properties.unset(Entity::EntityFlags::eCOLLIDE_ENT);
-					ENTITY(i)->properties.unset(Entity::EntityFlags::eCOLLIDE_PRJ);
-					ENTITY(i)->properties.unset(Entity::EntityFlags::eCOLLIDE_MAG);
+					ENTITY(i)->properties.unset(ECCommon::EntityFlags::eCOLLIDE_ENT);
+					ENTITY(i)->properties.unset(ECCommon::EntityFlags::eCOLLIDE_PRJ);
+					ENTITY(i)->properties.unset(ECCommon::EntityFlags::eCOLLIDE_MAG);
 				}
 		//*/
 
@@ -351,15 +340,12 @@ namespace core
 
 		//-------------------------------- SOME OTHER SHIT
 
-		SetViewTargetID(GetClosestEntityButDifferent(players[0u]), 0u);
-		SetViewTargetID(GetClosestEntityButDifferent(players[1u]), 1u);
-
 		ProjectileTick(dt);
 
 		#ifndef DEF_NMP
 		if (cfg::bEditMode)
 		{
-			Entity* entity = ENTITY(0);
+			ECCommon* entity = ENTITY(0);
 
 			if (input::GetHeld(input::key::RUN)) {
 				editor_cam_pitch.RotateClamped(input::buf.mouse_y * 20.f * dt, 5.f, 85.f);
@@ -388,12 +374,12 @@ namespace core
 				++env::eCells.terrain_material[GetCellX][GetCellY];
 				if (env::eCells.terrain_material[GetCellX][GetCellY] > 7u)
 					env::eCells.terrain_material[GetCellX][GetCellY] = 0u;
-				env::GenerateTerrainMeshEditor();
+				env::GenerateTerrainMesh();
 			}
 			else if (input::GetHeld(input::key::USE_ALT))
 			{
 				env::eCells.terrain_material[GetCellX][GetCellY] = editor_material_copy;
-				env::GenerateTerrainMeshEditor();
+				env::GenerateTerrainMesh();
 			}
 			else if (input::GetHit(input::key::ACTIVATE))
 			{
@@ -553,7 +539,7 @@ namespace core
 				}
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
-				env::GenerateTerrainMeshEditor();
+				env::GenerateTerrainMesh();
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_L))
 			{
@@ -616,7 +602,7 @@ namespace core
 				}
 				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
 				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
-				env::GenerateTerrainMeshEditor();
+				env::GenerateTerrainMesh();
 			}
 
 			#undef GetCellX
@@ -677,7 +663,7 @@ namespace core
 		}
 		else {
 
-			#ifdef DEF_3PP
+			#if DEF_3PP
 
 			m::Vector3 target_a = m::Vector3(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.height + 0.8f, ENTITY(players[0])->t.position.y);
 			m::Vector3 target_b = m::Vector3(ENTITY(players[1])->t.position.x, ENTITY(players[1])->t.height + 0.8f, ENTITY(players[1])->t.position.y);
@@ -688,14 +674,22 @@ namespace core
 			m::Vector3 position_a = target_a - (m::Vector3(dir_a.x, -0.2f, dir_a.y)) * 3.f;
 			m::Vector3 position_b = target_b - (m::Vector3(dir_b.x, -0.2f, dir_b.y)) * 3.f;
 
-			if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y))
-			{
+			#if DEF_GRID
+			if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y)) {
 				position_a = m::Lerp(position_a, target_a, 0.5f);
-				if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y))
-				{
+				if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y)) {
 					position_a = m::Lerp(position_a, target_a, 0.75f);
 				}
 			}
+			#else
+			env::LineTraceHit hit;
+			if (env::LineTrace(target_a.x, target_a.z, position_a.x, position_a.z, target_a.y, position_a.y, &hit)) {
+				position_a.x = hit.pos.x;
+				position_a.z = hit.pos.y;
+				position_a = position_a + m::Vector3(dir_a.x, 0.f, dir_a.y) * 0.25f; // push the camera away from the wall a bit
+				//position_a.y = hit.h;
+			}
+			#endif
 
 			// Snap if the difference between now and the target is too great
 			if (m::Length(viewTarget[0] - target_a) > 10.f || m::Length(viewPosition[0] - position_a) > 10.f) {
@@ -726,7 +720,7 @@ namespace core
 			viewTarget[0] = viewPosition[0] + ACTOR(0)->t_head.GetForward();
 			viewTarget[1] = viewPosition[1] + ACTOR(1)->t_head.GetForward();
 
-			#endif // !DEF_3PP
+			#endif
 		}
 
 		//-------------------------------- Stuff
@@ -941,7 +935,7 @@ namespace core
 				}
 			}
 			//*/
-			#ifndef DEF_SHADOW_ALL_OBJECTS
+			#if !DEF_SHADOW_ALL_OBJECTS
 			if (oob)
 			#endif
 			{
@@ -1000,17 +994,18 @@ namespace core
 		#else
 		if (activePlayer == 0u)
 		{
+			btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
 			if (input::GetHit(input::key::INV_CYCLE_L))
 				ActorDecrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::INV_CYCLE_R))
 				ActorIncrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::ACTIVATE)) // Pick up items
-				if (viewtarget[activePlayer] != ID_NULL && GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_RESTING_ITEM)
-					ActorTakeItem(players[activePlayer], viewtarget[activePlayer]);
-				else if (viewtarget[activePlayer] != ID_NULL && GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_ACTOR)
+				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM)
+					ActorTakeItem(players[activePlayer], viewtarget);
+				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR)
 				{
 					// hold hand
-					ActorTryHoldHand(players[activePlayer], viewtarget[activePlayer]);
+					ActorTryHoldHand(players[activePlayer], viewtarget);
 
 					// SOUL TRANSFER
 					// if we are allied
@@ -1034,26 +1029,27 @@ namespace core
 		}
 		else
 		{
+			btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
 			if (input::GetHit(input::key::C_INV_CYCLE_L))
 				ActorDecrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::C_INV_CYCLE_R))
 				ActorIncrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::C_ACTIVATE)) // Pick up items
-				if (viewtarget[activePlayer] != ID_NULL && GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_RESTING_ITEM)
-					ActorTakeItem(players[activePlayer], viewtarget[activePlayer]);
-				else if (viewtarget[activePlayer] != ID_NULL && GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_ACTOR)
+				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM)
+					ActorTakeItem(players[activePlayer], viewtarget);
+				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR)
 				{
 					// SOUL TRANSFER
 					// Possession, actually
 					// if we are allied
-					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget[activePlayer])->faction) == fac::allied)
+					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget)->faction) == fac::allied)
 					{
 						// begin soul transfer
 						// If both players aren't controlling the same entity, let the AI take over
 						if (players[0] != players[1])
 							ACTOR(players[activePlayer])->aiControlled = true;
 						// Set the player to possess their view target entity
-						players[activePlayer] = viewtarget[activePlayer];
+						players[activePlayer] = viewtarget;
 						// Disable the AI on the possessed entity
 						ACTOR(players[activePlayer])->aiControlled = false;
 					}
@@ -1088,7 +1084,7 @@ namespace core
 		graphics::GetShader(graphics::S_GUI).Use();
 
 		//TODO: use 'actor'?
-		Actor* chara = ACTOR(players[activePlayer]);
+		ECActor* chara = ACTOR(players[activePlayer]);
 
 		//text_message[activePlayer].ReGen("teststr", 0, -p1_x_start, 0);
 		if (message_time[activePlayer] > tickCount)
@@ -1106,11 +1102,9 @@ namespace core
 		{
 			player_hp[activePlayer] = ENTITY(players[activePlayer])->state.damagestate;
 		}
-		#ifndef DEF_OLDSKOOL
-		#ifndef DEF_3PP
+		#if !DEF_3PP
 		// croshair
 		if (cfg::bCrossHairs) graphics::DrawGUITexture(&acv::GetT(acv::t_gui_crosshair), 0, 0, 32, 32);
-		#endif
 		#endif
 		// hp
 		graphics::DrawGUITexture(&acv::GetT(acv::t_gui_bar_red), p1_x_start + 32, p1_y_start + 8, (int)(((btf32)core::GetHP(players[activePlayer]) / 1000.f) * (64.f)), 16);
@@ -1120,22 +1114,23 @@ namespace core
 		text_hp.Draw(&acv::GetT(acv::t_gui_font));
 
 		// enemy hp
-		if (viewtarget[activePlayer] != ID_NULL && viewtarget[activePlayer] != core::players[activePlayer]) // If not null or player
+		btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+		if (viewtarget != ID_NULL && viewtarget != core::players[activePlayer]) // If not null or player
 		{
 			int textboxX = p1_x_start + 16;
 			int textboxY = p1_y_start + 64;
-			if (viewtarget[activePlayer] != viewtarget_last_tick[activePlayer]) // if target has changed
+			//if (viewtarget != viewtarget_last_tick[activePlayer]) // if target has changed
 			{
 				//text_temp.ReGen(ENTITY(viewtarget[activePlayer])->GetDisplayName(), textboxX, textboxX + 512, textboxY);
 				//text_temp.ReGen(ENTITY(viewtarget[activePlayer])->fpName(ENT_VOID(viewtarget[activePlayer])), textboxX, textboxX + 512, textboxY);
-				text_temp.ReGen(fpName[GetEntityType(viewtarget[activePlayer])](ENT_VOID(viewtarget[activePlayer])), textboxX, textboxX + 512, textboxY);
+				text_temp.ReGen(fpName[GetEntityType(viewtarget)](ENT_VOID(viewtarget)), textboxX, textboxX + 512, textboxY);
 				guibox.ReGen(textboxX, textboxX + text_temp.sizex, textboxY - text_temp.sizey, textboxY, 4, 10);
 			}
-			if (GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_ACTOR)
-				graphics::DrawGUITexture(&acv::GetT(acv::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(((btf32)core::GetHP(viewtarget[activePlayer]) / 1000.f) * (64.f)), 16);
+			if (GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR)
+				graphics::DrawGUITexture(&acv::GetT(acv::t_gui_bar_yellow), p1_x_start + 32, p1_y_start + 24, (int)(((btf32)core::GetHP(viewtarget) / 1000.f) * (64.f)), 16);
 			guibox.Draw(&acv::GetT(acv::t_gui_box));
 			text_temp.Draw(&acv::GetT(acv::t_gui_font));
-			if (GetEntityType(viewtarget[activePlayer]) == ENTITY_TYPE_RESTING_ITEM)
+			if (GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM)
 				graphics::DrawGUITexture(&acv::GetT(acv::t_gui_icon_pick_up), textboxX + 16, textboxY + 32, 32, 32);
 		}
 		// inventory
@@ -1165,20 +1160,20 @@ namespace core
 		bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C,
 		bool crouch, bool jump)
 	{
-		Actor* actor = ACTOR(players[playerIndex]);
+		ECActor* actor = ACTOR(players[playerIndex]);
 		actor->input = m::Rotate(input, actor->viewYaw.Rad()) * m::Vector2(-1.f, 1.f);
 		actor->viewYaw.Rotate(rot_x);
 		actor->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
-		actor->inputBV.setto(Actor::IN_USE, use);
-		actor->inputBV.setto(Actor::IN_USE_HIT, use_hit);
-		actor->inputBV.setto(Actor::IN_USE_ALT, use_alt);
-		actor->inputBV.setto(Actor::IN_RUN, run);
-		actor->inputBV.setto(Actor::IN_AIM, aim);
-		actor->inputBV.setto(Actor::IN_ACTN_A, ACTION_A);
-		actor->inputBV.setto(Actor::IN_ACTN_B, ACTION_B);
-		actor->inputBV.setto(Actor::IN_ACTN_C, ACTION_C);
-		actor->inputBV.setto(Actor::IN_CROUCH, crouch);
-		actor->inputBV.setto(Actor::IN_JUMP, jump);
+		actor->inputBV.setto(ECActor::IN_USE, use);
+		actor->inputBV.setto(ECActor::IN_USE_HIT, use_hit);
+		actor->inputBV.setto(ECActor::IN_USE_ALT, use_alt);
+		actor->inputBV.setto(ECActor::IN_RUN, run);
+		actor->inputBV.setto(ECActor::IN_AIM, aim);
+		actor->inputBV.setto(ECActor::IN_ACTN_A, ACTION_A);
+		actor->inputBV.setto(ECActor::IN_ACTN_B, ACTION_B);
+		actor->inputBV.setto(ECActor::IN_ACTN_C, ACTION_C);
+		actor->inputBV.setto(ECActor::IN_CROUCH, crouch);
+		actor->inputBV.setto(ECActor::IN_JUMP, jump);
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
@@ -1212,7 +1207,7 @@ namespace core
 		btID id = InitEntity(ENTITY_TYPE_RESTING_ITEM);
 		spawn_setup_t(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
-		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
+		ENTITY(id)->properties.set(ECCommon::ePREFAB_ITEM);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = SpawnItem(item_template);
 		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemInstance(ITEM(id)->item_instance))->id_item_template]->f_radius;
@@ -1237,7 +1232,7 @@ namespace core
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->state.damagestate = STATE_DAMAGE_MAX;
 		ENTITY(id)->faction = fac::faction::none;
-		ENTITY(id)->properties.set(Entity::ePREFAB_ITEM);
+		ENTITY(id)->properties.set(ECCommon::ePREFAB_ITEM);
 		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ITEM(id)->item_instance = itemid;
 		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemInstance(itemid))->id_item_template]->f_radius;
@@ -1495,7 +1490,7 @@ namespace core
 					///*
 					for (int i = 0; i <= GetLastEntity(); i++)
 					{
-						if (GetEntityExists(i) && ENTITY(i)->properties.get(Entity::eCOLLIDE_PRJ))
+						if (GetEntityExists(i) && ENTITY(i)->properties.get(ECCommon::eCOLLIDE_PRJ))
 						{
 							if (fac::GetAllegiance(ENTITY(i)->faction, (fac::faction)proj[index].faction) != fac::allied)
 							{

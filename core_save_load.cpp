@@ -2,7 +2,7 @@
 
 #include "core.h"
 #include "index.h"
-#include "objects_entities.h"
+#include "entity.h"
 #include "weather.h"
 //#include "memory.hpp"
 
@@ -14,8 +14,8 @@
 #define SIZE_64 8
 
 extern mem::ObjBuf<EntAddr, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> block_entity;
-extern mem::ObjBuf<RestingItem, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_resting_item;
-extern mem::ObjBuf<Actor, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_chara;
+extern mem::ObjBuf<ECSingleItem, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_resting_item;
+extern mem::ObjBuf<ECActor, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_chara;
 
 extern mem::ObjBuf<HeldItem, ItemType, ENTITY_TYPE_NULL, BUF_SIZE> buf_iteminst;
 
@@ -116,7 +116,7 @@ void SaveState()
 		{
 			if (block_entity.Used(i))
 			{
-				Entity* entptr = ENTITY(i);
+				ECCommon* entptr = ENTITY(i);
 				fwrite(&entptr->name, 32, 1, file);
 				fwrite(&entptr->properties, SIZE_8, 1, file);
 				fwrite(&entptr->faction, SIZE_8, 1, file);
@@ -146,7 +146,7 @@ void SaveState()
 				break;
 				case ENTITY_TYPE_ACTOR:
 				{
-					Actor* actptr = ACTOR(i);
+					ECActor* actptr = ACTOR(i);
 					fwrite(&actptr->inputBV, SIZE_16, 1, file);
 					fwrite(&actptr->input.x, SIZE_32, 1, file);
 					fwrite(&actptr->input.y, SIZE_32, 1, file);
@@ -278,7 +278,7 @@ void LoadStateFileV001()
 		{
 			if (block_entity.Used(i))
 			{
-				Entity* entptr = ENTITY(i);
+				ECCommon* entptr = ENTITY(i);
 				fread(&entptr->name, 32, 1, file);
 				fread(&entptr->properties, SIZE_8, 1, file);
 				fread(&entptr->faction, SIZE_8, 1, file);
@@ -308,7 +308,7 @@ void LoadStateFileV001()
 				break;
 				case ENTITY_TYPE_ACTOR:
 				{
-					Actor* actptr = ACTOR(i);
+					ECActor* actptr = ACTOR(i);
 					fread(&actptr->inputBV, SIZE_16, 1, file);
 					fread(&actptr->input.x, SIZE_32, 1, file);
 					fread(&actptr->input.y, SIZE_32, 1, file);

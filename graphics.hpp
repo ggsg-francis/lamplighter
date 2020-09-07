@@ -177,7 +177,6 @@ namespace graphics
 	void SetMatView(void* t, void* p, void* t2);
 	void SetMatProjLight();
 	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz);
-	void SetMatViewEditor(void* t);
 
 	glm::mat4 GetMatProj();
 	glm::mat4 GetMatView();

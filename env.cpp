@@ -18,9 +18,6 @@
 
 #define NUM_COMPOSITES 8u
 
-//#define WORLD_HEIGHT_MAX 1024.f
-//#define WORLD_HEIGHT_MIN -1024.f
-
 #define WORLD_HEIGHT_MAX INFINITY
 #define WORLD_HEIGHT_MIN -INFINITY
 
@@ -37,6 +34,7 @@ namespace env
 	btui32 wldNumTextures = 0u;
 
 	mem::idbuf triCells[WORLD_SIZE][WORLD_SIZE];
+	mem::idbuf lineCells[WORLD_SIZE][WORLD_SIZE];
 
 	// Points (for navigation)
 	EnvVert* points = nullptr;
@@ -49,31 +47,39 @@ namespace env
 	EnvLineSeg* lines = nullptr;
 	btui32 linecount = 0u;
 
-	m::Vector2 lineLineIntersection(m::Vector2 A, m::Vector2 B, m::Vector2 C, m::Vector2 D)
-	{
-		// Line AB represented as a1x + b1y = c1 
-		btf32 a1 = B.y - A.y;
-		btf32 b1 = A.x - B.x;
-		btf32 c1 = a1*(A.x) + b1*(A.y);
+	// from rosetta code
+	// https://rosettacode.org/wiki/Find_the_intersection_of_two_lines#C
+	double LineSlope(m::Vector2 a, m::Vector2 b) {
+		if (a.x - b.x == 0.0)
+			return NAN;
+		else
+			return (a.y - b.y) / (a.x - b.x);
+	}
+	m::Vector2 LineLineIntersectionInf(m::Vector2 a1, m::Vector2 a2, m::Vector2 b1, m::Vector2 b2) {
+		m::Vector2 c;
 
-		// Line CD represented as a2x + b2y = c2 
-		btf32 a2 = D.y - C.y;
-		btf32 b2 = C.x - D.x;
-		btf32 c2 = a2*(C.x) + b2*(C.y);
+		double slopeA = LineSlope(a1, a2), slopeB = LineSlope(b1, b2);
 
-		btf32 determinant = a1*b2 - a2*b1;
-
-		if (determinant == 0.f) {
-			// The lines are parallel. This is simplified 
-			// by returning a pair of FLT_MAX 
-			return m::Vector2(FLT_MAX, FLT_MAX);
+		if (slopeA == slopeB) {
+			c.x = NAN;
+			c.y = NAN;
+		}
+		else if (isnan(slopeA) && !isnan(slopeB)) {
+			c.x = a1.x;
+			c.y = (a1.x - b1.x)*slopeB + b1.y;
+		}
+		else if (isnan(slopeB) && !isnan(slopeA)) {
+			c.x = b1.x;
+			c.y = (b1.x - a1.x)*slopeA + a1.y;
 		}
 		else {
-			btf32 x = (b2*c1 - b1*c2) / determinant;
-			btf32 y = (a1*c2 - a2*c1) / determinant;
-			return m::Vector2(x, y);
+			c.x = (slopeA*a1.x - slopeB*b1.x + b1.y - a1.y) / (slopeA - slopeB);
+			c.y = slopeB*(c.x - b1.x) + b1.y;
 		}
+
+		return c;
 	}
+
 
 	void EnvTriBary(m::Vector2 p, m::Vector2 a, m::Vector2 b, m::Vector2 c, btf32 &u, btf32 &v, btf32 &w)
 	{
@@ -98,8 +104,7 @@ namespace env
 		EnvTriBary(m::Vector2(pos_x, pos_y), points[tri->a].pos, points[tri->b].pos, points[tri->c].pos, u, v, w);
 		return points[tri->a].h * u + points[tri->b].h * v + points[tri->c].h * w;
 	}
-	bool GetTriExists(WCoord coords, btui32 index)
-	{
+	bool GetTriExists(WCoord coords, btui32 index) {
 		return (triCells[coords.x][coords.y])[index] != ID_NULL;
 	}
 	void* GetC2Tri(WCoord coords, btui32 index) {
@@ -108,11 +113,11 @@ namespace env
 	EnvTri* GetTri(WCoord coords, btui32 index) {
 		return &tris[(triCells[coords.x][coords.y])[index]];
 	}
-	btui32 GetNumLines() {
-		return linecount;
+	btui32 GetNumLines(WCoord coords) {
+		return lineCells[coords.x][coords.y].Size();
 	}
-	EnvLineSeg* GetLine(btui32 index) {
-		return &lines[index];
+	EnvLineSeg* GetLine(WCoord coords, btui32 index) {
+		return &lines[(lineCells[coords.x][coords.y])[index]];
 	}
 
 	void GetFloorsAndCeilings(CellSpace& csinf, btf32 in_height, EnvTriSurfaceSet* set) {
@@ -209,7 +214,14 @@ namespace env
 		mem::bvunset((uint32_t&)eCells.flags[x][y], (uint32_t)bit);
 	}
 
-	void GetNearestSurfaceHeight(btf32& out_height, CellSpace& csinf, btf32 in_height)
+	void GetNearestCeilingHeight(btf32& out_height, CellSpace& cs, btf32 in_height)
+	{
+		out_height = 0.f;
+		EnvTriSurfaceSet surfset;
+		GetFloorsAndCeilings(cs, in_height, &surfset);
+		out_height = surfset.nearest_ceil_h_above;
+	}
+	void GetNearestSurfaceHeight(btf32& out_height, CellSpace& cs, btf32 in_height)
 	{
 		out_height = 0.f;
 
@@ -223,10 +235,8 @@ namespace env
 		//		(csinf.offsetx + 0.5f)),
 		//	(csinf.offsety + 0.5f)) / TERRAIN_HEIGHT_DIVISION;
 
-		btf32 u, v, w;
-		btf32 height;
 		EnvTriSurfaceSet surfset;
-		GetFloorsAndCeilings(csinf, in_height, &surfset);
+		GetFloorsAndCeilings(cs, in_height, &surfset);
 
 		// todo: need special treatment if there are no triangles on us at all
 		// are we outside of any geometry
@@ -236,6 +246,26 @@ namespace env
 		// or inside
 		else {
 			out_height = surfset.nearest_flor_h_above;
+		}
+	}
+	void GetNearestSurfaceHeight(btf32& out_height, EnvTri** out_tri, CellSpace& cs, btf32 in_height)
+	{
+		out_height = 0.f;
+		*out_tri = nullptr;
+
+		EnvTriSurfaceSet surfset;
+		GetFloorsAndCeilings(cs, in_height, &surfset);
+
+		// todo: need special treatment if there are no triangles on us at all
+		// are we outside of any geometry
+		if (surfset.nearest_ceil_h_below < surfset.nearest_flor_h_below) {
+			out_height = surfset.nearest_flor_h_below;
+			*out_tri = surfset.nearest_flor_below;
+		}
+		// or inside
+		else {
+			out_height = surfset.nearest_flor_h_above;
+			*out_tri = surfset.nearest_flor_above;
 		}
 	}
 
@@ -316,6 +346,126 @@ namespace env
 				if (LineTraceUtil_CheckCollideEnv(coordX, coordY, height_b, height_a, axisLerp)) return true;
 			}
 		}
+		return false;
+	}
+	
+	// https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+	// Tricks of the Windows Game Programming Gurus (2nd Edition)
+	// https://www.amazon.com/dp/0672323699
+	// Returns 1 if the lines intersect, otherwise 0. In addition, if the lines 
+	// intersect the intersection point may be stored in the floats i_x and i_y.
+	char LineSegIntersection(float p0_x, float p0_y, float p1_x, float p1_y,
+		float p2_x, float p2_y, float p3_x, float p3_y, float *i_x, float *i_y)
+	{
+		float s1_x, s1_y, s2_x, s2_y;
+		s1_x = p1_x - p0_x;     s1_y = p1_y - p0_y;
+		s2_x = p3_x - p2_x;     s2_y = p3_y - p2_y;
+
+		float s, t;
+		s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / (-s2_x * s1_y + s1_x * s2_y);
+		t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
+
+		if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+		{
+			// Collision detected
+			if (i_x != NULL)
+				*i_x = p0_x + (t * s1_x);
+			if (i_y != NULL)
+				*i_y = p0_y + (t * s1_y);
+			return 1;
+		}
+
+		return 0; // No collision
+	}
+
+	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2, btf32 height_a, btf32 height_b)
+	{
+		btui32 bound_min_x = (btui32)floorf(m::Min2(x1, x2));
+		btui32 bound_min_y = (btui32)floorf(m::Min2(y1, y2));
+		btui32 bound_max_x = (btui32)ceilf(m::Max2(x1, x2));
+		btui32 bound_max_y = (btui32)ceilf(m::Max2(y1, y2));
+
+		// make sure the bounds are within the world
+		if (bound_min_x < WORLD_SIZE && bound_min_y < WORLD_SIZE
+			&& bound_max_x < WORLD_SIZE && bound_max_y < WORLD_SIZE) {
+			// for every cell within the bounds
+			for (int x = bound_min_x; x <= bound_max_x; ++x) {
+				for (int y = bound_min_y; y <= bound_max_y; ++y) {
+					for (int i = 0; i < lineCells[x][y].Size(); ++i) {
+						EnvLineSeg* seg = &lines[(lineCells[x][y])[i]];
+						m::Vector2 isec;
+						int piss = LineSegIntersection(x1, y1, x2, y2, seg->pos_a.x, seg->pos_a.y, seg->pos_b.x, seg->pos_b.y, &isec.x, &isec.y);
+						if (piss) return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2, btf32 height_a, btf32 height_b, LineTraceHit* out_hit)
+	{
+		btui32 bound_min_x = (btui32)floorf(m::Min2(x1, x2));
+		btui32 bound_min_y = (btui32)floorf(m::Min2(y1, y2));
+		btui32 bound_max_x = (btui32)ceilf(m::Max2(x1, x2));
+		btui32 bound_max_y = (btui32)ceilf(m::Max2(y1, y2));
+
+		btf32 closest_hit = INFINITY;
+
+		bool hit = false;
+		m::Vector2 intersection_point;
+		btf32 intersection_height;
+
+		// make sure the bounds are within the world
+		if (bound_min_x < WORLD_SIZE && bound_min_y < WORLD_SIZE
+			&& bound_max_x < WORLD_SIZE && bound_max_y < WORLD_SIZE) {
+			// for every cell within the bounds
+			for (int x = bound_min_x; x <= bound_max_x; ++x) {
+				for (int y = bound_min_y; y <= bound_max_y; ++y) {
+					for (int i = 0; i < lineCells[x][y].Size(); ++i) {
+						EnvLineSeg* seg = &lines[(lineCells[x][y])[i]];
+
+						m::Vector2 isec;
+						int piss = LineSegIntersection(x1, y1, x2, y2, seg->pos_a.x, seg->pos_a.y, seg->pos_b.x, seg->pos_b.y, &isec.x, &isec.y);
+						if (piss) {
+							// height collision (not quite accurate)
+							btf32 lena = m::Length(m::Vector2(x2, y2) - m::Vector2(x1, y1));
+							btf32 lenb = m::Length(seg->pos_b - seg->pos_a);
+
+							btf32 lenpoint1a = m::Length(isec - m::Vector2(x1, y1)) / lena;
+							btf32 lenpoint1b = m::Length(isec - m::Vector2(x2, y2)) / lena;
+							btf32 lenpoint2a = m::Length(isec - seg->pos_a) / lenb;
+							btf32 lenpoint2b = m::Length(isec - seg->pos_b) / lenb;
+
+							btf32 comp_heighta = height_a * lenpoint1a + height_b * lenpoint1b;
+							btf32 comp_heightbtop = seg->h_b_top * lenpoint2a + seg->h_a_top * lenpoint2b;
+							btf32 comp_heightbbot = seg->h_b_bot * lenpoint2a + seg->h_a_bot * lenpoint2b;
+
+							// hit
+							if (comp_heightbtop >= comp_heighta && comp_heightbbot <= comp_heighta) { // height compare
+								if (closest_hit > lenpoint1a) {
+									closest_hit = lenpoint1a;
+									hit = true;
+									intersection_point = isec;
+									intersection_height = comp_heighta;
+
+									//out_hit->pos = isec;
+									//out_hit->h = comp_heighta;
+									//return true;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if (hit) {
+			out_hit->pos = intersection_point;
+			out_hit->h = intersection_height;
+			return true;
+		}
+
 		return false;
 	}
 	bool LineTraceBh(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
@@ -529,21 +679,6 @@ namespace env
 		}
 	}
 
-	btf32 Max2(btf32 a, btf32 b, btf32 c)
-	{
-		btf32 max = a;
-		if (b > max) max = b;
-		if (c > max) max = c;
-		return max;
-	}
-	btf32 Min2(btf32 a, btf32 b, btf32 c)
-	{
-		btf32 min = a;
-		if (b < min) min = b;
-		if (c < min) min = c;
-		return min;
-	}
-
 	// Check if vertices are identical
 	bool VertCompare(btui32 a, btui32 b) {
 		return a == b;
@@ -596,49 +731,152 @@ namespace env
 			tri->b = mesh->Ices()[i * 3 + 1];
 			tri->c = mesh->Ices()[i * 3 + 2];
 
-			// Check if it's clockwise
-			if ((points[tri->b].pos.y - points[tri->a].pos.y) * (points[tri->c].pos.x - points[tri->b].pos.x)
-				- (points[tri->c].pos.y - points[tri->b].pos.y) * (points[tri->b].pos.x - points[tri->a].pos.x) < 0.f)
-				tri->facing_up = true;
-			else tri->facing_up = false;
+			m::Vector3 tri_a = m::Vector3(points[tri->a].pos.x, points[tri->a].h, points[tri->a].pos.y);
+			m::Vector3 tri_b = m::Vector3(points[tri->b].pos.x, points[tri->b].h, points[tri->b].pos.y);
+			m::Vector3 tri_c = m::Vector3(points[tri->c].pos.x, points[tri->c].h, points[tri->c].pos.y);
+			// get the edges of this triangle
+			m::Vector3 dir_ab = m::Normalize(tri_a - tri_b);
+			m::Vector3 dir_ac = m::Normalize(tri_a - tri_c);
+			// get the normal of this triangle
+			m::Vector3 dir_nor = m::Cross(dir_ab, dir_ac);
 
-			// c2 collision tris
-			c2Poly* poly = &triCollides[i];
-			poly->count = 3;
-			/*poly->verts[0].x = mesh->Vces()[i * 3].pos.x;
-			poly->verts[0].y = mesh->Vces()[i * 3].pos.z;
-			poly->verts[1].x = mesh->Vces()[i * 3 + 1].pos.x;
-			poly->verts[1].y = mesh->Vces()[i * 3 + 1].pos.z;
-			poly->verts[2].x = mesh->Vces()[i * 3 + 2].pos.x;
-			poly->verts[2].y = mesh->Vces()[i * 3 + 2].pos.z;*/
-			poly->verts[0].x = points[tri->a].pos.x;
-			poly->verts[0].y = points[tri->a].pos.y;
-			poly->verts[1].x = points[tri->b].pos.x;
-			poly->verts[1].y = points[tri->b].pos.y;
-			poly->verts[2].x = points[tri->c].pos.x;
-			poly->verts[2].y = points[tri->c].pos.y;
-			c2MakePoly(poly);
+			if (fabsf(dir_nor.y) <= 0.000001f) {
+				tri->vertical = true;
+				tri->facing_up = false; // just for the sake of it
+			}
+			else {
+				tri->vertical = false;
+				tri->slope.x = dir_nor.x;
+				tri->slope.y = dir_nor.z;
+
+				// Check if it's clockwise
+				if ((points[tri->b].pos.y - points[tri->a].pos.y) * (points[tri->c].pos.x - points[tri->b].pos.x)
+					- (points[tri->c].pos.y - points[tri->b].pos.y) * (points[tri->b].pos.x - points[tri->a].pos.x) < 0.f)
+					tri->facing_up = true;
+				else tri->facing_up = false;
+
+				// c2 collision tris
+				c2Poly* poly = &triCollides[i];
+				poly->count = 3;
+				/*poly->verts[0].x = mesh->Vces()[i * 3].pos.x;
+				poly->verts[0].y = mesh->Vces()[i * 3].pos.z;
+				poly->verts[1].x = mesh->Vces()[i * 3 + 1].pos.x;
+				poly->verts[1].y = mesh->Vces()[i * 3 + 1].pos.z;
+				poly->verts[2].x = mesh->Vces()[i * 3 + 2].pos.x;
+				poly->verts[2].y = mesh->Vces()[i * 3 + 2].pos.z;*/
+				poly->verts[0].x = points[tri->a].pos.x;
+				poly->verts[0].y = points[tri->a].pos.y;
+				poly->verts[1].x = points[tri->b].pos.x;
+				poly->verts[1].y = points[tri->b].pos.y;
+				poly->verts[2].x = points[tri->c].pos.x;
+				poly->verts[2].y = points[tri->c].pos.y;
+				c2MakePoly(poly);
+			}
 		}
+
+		// todo: temp as fuck
+		lines = (EnvLineSeg*)malloc(256 * sizeof(EnvLineSeg));
 
 		// precompute triangle cells
 		// for all triangles
 		for (int i = 0; i < tricount; ++i) {
-			btui32 bound_min_x = (btui32)floorf(Min2(points[tris[i].a].pos.x, points[tris[i].b].pos.x, points[tris[i].c].pos.x));
-			btui32 bound_min_y = (btui32)floorf(Min2(points[tris[i].a].pos.y, points[tris[i].b].pos.y, points[tris[i].c].pos.y));
-			btui32 bound_max_x = (btui32)ceilf(Max2(points[tris[i].a].pos.x, points[tris[i].b].pos.x, points[tris[i].c].pos.x));
-			btui32 bound_max_y = (btui32)ceilf(Max2(points[tris[i].a].pos.y, points[tris[i].b].pos.y, points[tris[i].c].pos.y));
-			// make sure the bounds are within the world
-			if (bound_min_x < WORLD_SIZE && bound_min_y < WORLD_SIZE
-				&& bound_max_x < WORLD_SIZE && bound_max_y < WORLD_SIZE) {
-				// for every cell within the bounds
-				for (int x = bound_min_x; x <= bound_max_x; ++x) {
-					for (int y = bound_min_y; y <= bound_max_y; ++y) {
-						c2AABB box;
-						box.min.x = x - 0.5f; box.min.y = y - 0.5f;
-						box.max.x = x + 0.5f; box.max.y = y + 0.5f;
-						c2x transform = c2xIdentity();
-						if (c2AABBtoPoly(box, &triCollides[i], &transform) == 1)
-							triCells[x][y].Add(i);
+			// If this triangle represents a wall, create a line segment for it
+			if (tris[i].vertical) {
+				EnvTri* tri = &tris[i];
+
+				bool same_ab = points[tri->a].pos.x == points[tri->b].pos.x
+					&& points[tri->a].pos.y == points[tri->b].pos.y;
+				bool same_bc = points[tri->b].pos.x == points[tri->c].pos.x
+					&& points[tri->b].pos.y == points[tri->c].pos.y;
+				bool same_ca = points[tri->c].pos.x == points[tri->a].pos.x
+					&& points[tri->c].pos.y == points[tri->a].pos.y;
+
+				if (!same_ab && !same_bc && !same_ca) {
+					printf("Could not calculate wall triangle!\n");
+				}
+				// if two points are vertically aligned, we can proceed
+				else {
+					btui32 point_stack[2];
+					btui32 point_straggler;
+
+					if (same_ab) {
+						point_stack[0] = tri->a;
+						point_stack[1] = tri->b;
+						point_straggler = tri->c;
+					}
+					if (same_bc) {
+						point_stack[0] = tri->b;
+						point_stack[1] = tri->c;
+						point_straggler = tri->a;
+					}
+					if (same_ca) {
+						point_stack[0] = tri->c;
+						point_stack[1] = tri->a;
+						point_straggler = tri->b;
+					}
+
+					// sort the stack so 1 is higher
+					if (points[point_stack[0]].h > points[point_stack[1]].h) {
+						btui32 swap = point_stack[0];
+						point_stack[0] = point_stack[1];
+						point_stack[1] = swap;
+					}
+
+					// search for lines with the same XZ coords
+					bool found_same = false;
+					for (int j = 0; j < linecount; ++j) {
+						EnvLineSeg* seg = &lines[j];
+
+						// direct index would be easier...
+						// Look for matching vertices
+						// A matches stack
+						if ((lines[j].pos_a == points[point_stack[0]].pos && lines[j].pos_b == points[point_straggler].pos)) {
+							found_same = true;
+							printf("Found matching line! Merging...\n");
+							// modify line height
+							if (points[point_stack[1]].h > lines[j].h_a_top) lines[j].h_a_top = points[point_stack[1]].h;
+							if (points[point_stack[0]].h < lines[j].h_a_bot) lines[j].h_a_bot = points[point_stack[0]].h;
+						}
+						// B matches stack (B never matches the stack, for some reason)
+						else if ((lines[j].pos_b == points[point_stack[0]].pos && lines[j].pos_a == points[point_straggler].pos)) {
+							found_same = true;
+							printf("Found matching line! Merging...\n");
+							// modify line height
+							if (points[point_stack[1]].h > lines[j].h_b_top) lines[j].h_b_top = points[point_stack[1]].h;
+							if (points[point_stack[0]].h < lines[j].h_b_bot) lines[j].h_b_bot = points[point_stack[0]].h;
+						}
+					}
+					// if we didnt find any matches, set a new line
+					if (!found_same) {
+						lines[linecount].pos_a = points[point_straggler].pos;
+						lines[linecount].h_a_bot = points[point_straggler].h;
+						lines[linecount].h_a_top = points[point_straggler].h;
+						lines[linecount].pos_b = points[point_stack[0]].pos;
+						lines[linecount].h_b_bot = points[point_stack[0]].h;
+						lines[linecount].h_b_top = points[point_stack[1]].h;
+						++linecount;
+					}
+				}
+			}
+			// Only add this triangle to any cells if its not a stupid useless wall triangle
+			else {
+				btui32 bound_min_x = (btui32)floorf(m::Min3(points[tris[i].a].pos.x, points[tris[i].b].pos.x, points[tris[i].c].pos.x));
+				btui32 bound_min_y = (btui32)floorf(m::Min3(points[tris[i].a].pos.y, points[tris[i].b].pos.y, points[tris[i].c].pos.y));
+				btui32 bound_max_x = (btui32)ceilf(m::Max3(points[tris[i].a].pos.x, points[tris[i].b].pos.x, points[tris[i].c].pos.x));
+				btui32 bound_max_y = (btui32)ceilf(m::Max3(points[tris[i].a].pos.y, points[tris[i].b].pos.y, points[tris[i].c].pos.y));
+				// make sure the bounds are within the world
+				if (bound_min_x < WORLD_SIZE && bound_min_y < WORLD_SIZE
+					&& bound_max_x < WORLD_SIZE && bound_max_y < WORLD_SIZE) {
+					// for every cell within the bounds
+					for (int x = bound_min_x; x <= bound_max_x; ++x) {
+						for (int y = bound_min_y; y <= bound_max_y; ++y) {
+							c2AABB box;
+							box.min.x = x - 0.5f; box.min.y = y - 0.5f;
+							box.max.x = x + 0.5f; box.max.y = y + 0.5f;
+							c2x transform = c2xIdentity();
+							if (c2AABBtoPoly(box, &triCollides[i], &transform) == 1)
+								triCells[x][y].Add(i);
+						}
 					}
 				}
 			}
@@ -812,9 +1050,6 @@ namespace env
 			#endif
 		}
 
-		// todo: temp as fuck
-		lines = (EnvLineSeg*)malloc(256 * sizeof(EnvLineSeg));
-
 		// Determine triangle edges with no neighbors
 		for (int i = 0; i < pointcount; ++i) {
 			points[i].nor.x = 0.f;
@@ -858,7 +1093,7 @@ namespace env
 			//m::Vector2 v2 = lineLineIntersection(points[tri->a].pos, points[tri->b].pos, points[tri->a].pos, points[tri->c].pos);
 			if (tri->open_edge_ab) {
 				// if there was any ledge
-				if (point_nearest_h_below[tri->a] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->b] != WORLD_HEIGHT_MIN) {
+				/*if (point_nearest_h_below[tri->a] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->b] != WORLD_HEIGHT_MIN) {
 					lines[linecount].pos_a = points[tri->a].pos;
 					lines[linecount].h_a_top = points[tri->a].h;
 					lines[linecount].h_a_bot = point_nearest_h_below[tri->a];
@@ -866,14 +1101,14 @@ namespace env
 					lines[linecount].h_b_top = points[tri->b].h;
 					lines[linecount].h_b_bot = point_nearest_h_below[tri->b];
 					++linecount;
-				}
+				}*/
 				//temporary solution
 				points[tri->a].nor += normal_ab;
 				points[tri->b].nor += normal_ab;
 			}
 			if (tri->open_edge_bc) {
 				// if there was any ledge
-				if (point_nearest_h_below[tri->b] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->c] != WORLD_HEIGHT_MIN) {
+				/*if (point_nearest_h_below[tri->b] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->c] != WORLD_HEIGHT_MIN) {
 					lines[linecount].pos_a = points[tri->b].pos;
 					lines[linecount].h_a_top = points[tri->b].h;
 					lines[linecount].h_a_bot = point_nearest_h_below[tri->b];
@@ -881,14 +1116,14 @@ namespace env
 					lines[linecount].h_b_top = points[tri->c].h;
 					lines[linecount].h_b_bot = point_nearest_h_below[tri->c];
 					++linecount;
-				}
+				}*/
 				//temporary solution
 				points[tri->b].nor += normal_bc;
 				points[tri->c].nor += normal_bc;
 			}
 			if (tri->open_edge_ca) {
 				// if there was any ledge
-				if (point_nearest_h_below[tri->c] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->a] != WORLD_HEIGHT_MIN) {
+				/*if (point_nearest_h_below[tri->c] != WORLD_HEIGHT_MIN && point_nearest_h_below[tri->a] != WORLD_HEIGHT_MIN) {
 					lines[linecount].pos_a = points[tri->c].pos;
 					lines[linecount].h_a_top = points[tri->c].h;
 					lines[linecount].h_a_bot = point_nearest_h_below[tri->c];
@@ -896,7 +1131,7 @@ namespace env
 					lines[linecount].h_b_top = points[tri->a].h;
 					lines[linecount].h_b_bot = point_nearest_h_below[tri->a];
 					++linecount;
-				}
+				}*/
 				//temporary solution
 				points[tri->c].nor += normal_ca;
 				points[tri->a].nor += normal_ca;
@@ -912,6 +1147,40 @@ namespace env
 			line->csn_rotation = m::Vec2ToAngRH(m::Normalize(line->pos_b - line->pos_a));
 		}
 
+		// precompute line cells
+		// for all lines
+		for (int i = 0; i < linecount; ++i) {
+			btui32 bound_min_x = (btui32)floorf(m::Min2(lines[i].pos_a.x, lines[i].pos_b.x));
+			btui32 bound_min_y = (btui32)floorf(m::Min2(lines[i].pos_a.y, lines[i].pos_b.y));
+			btui32 bound_max_x = (btui32)ceilf(m::Max2(lines[i].pos_a.x, lines[i].pos_b.x));
+			btui32 bound_max_y = (btui32)ceilf(m::Max2(lines[i].pos_a.y, lines[i].pos_b.y));
+			// make sure the bounds are within the world
+			if (bound_min_x < WORLD_SIZE && bound_min_y < WORLD_SIZE
+				&& bound_max_x < WORLD_SIZE && bound_max_y < WORLD_SIZE) {
+				// for every cell within the bounds
+				for (int x = bound_min_x; x <= bound_max_x; ++x) {
+					for (int y = bound_min_y; y <= bound_max_y; ++y) {
+						c2AABB box;
+						box.min.x = x - 0.5f; box.min.y = y - 0.5f;
+						box.max.x = x + 0.5f; box.max.y = y + 0.5f;
+
+						c2Ray ray;
+						ray.p = c2V(lines[i].pos_a.x, lines[i].pos_a.y);
+						m::Vector2 dir = m::Normalize(lines[i].pos_b - lines[i].pos_a);
+						btf32 len = m::Length(lines[i].pos_b - lines[i].pos_a);
+						ray.d = c2V(dir.x, dir.y);
+						ray.t = len;
+
+						c2Raycast raycast;
+						// If the line segment and box intersect, add the line to the cell
+						if (c2RaytoAABB(ray, box, &raycast)) {
+							lineCells[x][y].Add(i);
+						}
+					}
+				}
+			}
+		}
+
 		delete[] point_nearest_h_below;
 
 		wldMeshTerrain.GenerateComplexEnv(eCells.terrain_height, eCells.terrain_material,
@@ -920,14 +1189,6 @@ namespace env
 			eCells.terrain_height_se, eCells.terrain_height_sw);
 		//wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
 
-	}
-	void GenerateTerrainMeshEditor()
-	{
-		wldMeshTerrain.GenerateComplexEnv(eCells.terrain_height, eCells.terrain_material,
-			(btui32*)&eCells.flags, eflag::EF_INVISIBLE,
-			eCells.terrain_height_ne, eCells.terrain_height_nw,
-			eCells.terrain_height_se, eCells.terrain_height_sw);
-		//wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
 	}
 	void Free()
 	{
@@ -963,87 +1224,101 @@ bool path::PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest)
 
 	//todo calculate these
 	btID tri_start = env::GetTriAtPos(x, y);
-
-	// TODO: compare point distances
-	//btf32 fa = m::Length(m::Vector2(x - env::points[env::tris[tri_start].a].pos.x, y - env::points[env::tris[tri_start].a].pos.y));
-	//btf32 fb = m::Length(m::Vector2(x - env::points[env::tris[tri_start].a].pos.x, y - env::points[env::tris[tri_start].a].pos.y));
-	//btf32 fc = m::Length(m::Vector2(x - env::points[env::tris[tri_start].a].pos.x, y - env::points[env::tris[tri_start].a].pos.y));
-
 	btID tri_dest = env::GetTriAtPos(xDest, yDest);
+	if (tri_start != ID_NULL && tri_dest != ID_NULL)
+	{
+		pathNodeTest node_start;
+		pathNodeTest node_dest;
+		btf32 distances[3];
+		
+		// Find nearest node to our starting position
+		distances[0] = m::Length(m::Vector2(x - env::points[env::tris[tri_start].a].pos.x, y - env::points[env::tris[tri_start].a].pos.y));
+		distances[1] = m::Length(m::Vector2(x - env::points[env::tris[tri_start].b].pos.x, y - env::points[env::tris[tri_start].b].pos.y));
+		distances[2] = m::Length(m::Vector2(x - env::points[env::tris[tri_start].c].pos.x, y - env::points[env::tris[tri_start].c].pos.y));
+		switch (m::MinIndex(3u, distances)) {
+		case 0u: node_start.point = env::tris[tri_start].a; break;
+		case 1u: node_start.point = env::tris[tri_start].b; break;
+		case 2u: node_start.point = env::tris[tri_start].c; break;
+		}
+		// Find nearest node to our destination
+		distances[0] = m::Length(m::Vector2(x - env::points[env::tris[tri_dest].a].pos.x, y - env::points[env::tris[tri_dest].a].pos.y));
+		distances[1] = m::Length(m::Vector2(x - env::points[env::tris[tri_dest].b].pos.x, y - env::points[env::tris[tri_dest].b].pos.y));
+		distances[2] = m::Length(m::Vector2(x - env::points[env::tris[tri_dest].c].pos.x, y - env::points[env::tris[tri_dest].c].pos.y));
+		switch (m::MinIndex(3u, distances)) {
+		case 0u: node_dest.point = env::tris[tri_dest].a; break;
+		case 1u: node_dest.point = env::tris[tri_dest].b; break;
+		case 2u: node_dest.point = env::tris[tri_dest].c; break;
+		}
 
-	pathNodeTest node_start;
-	//node_start.owner_tri = tri_start;
-	node_start.point = env::tris[tri_start].a; // todo: actually find the closest point, but for now just use the first
-	pathNodeTest node_dest;
-	//node_dest.owner_tri = tri_dest;
-	node_dest.point = env::tris[tri_dest].a; // todo: actually find the closest point, but for now just use the first
+		// set intial node to point to itself, just in case
+		node_from_cache[node_start.point] = node_start.point;
 
-	// set intial node to point to itself, just in case
-	node_from_cache[node_start.point] = node_start.point;
+		std::queue<pathNodeTest> openSet;
+		openSet.push(node_start);
+		// while there are still nodes to analyse
+		while (!openSet.empty()) {
+			pathNodeTest current = openSet.front();
+			openSet.pop();
+			// if we've reached the destination point
+			if (current.point == node_dest.point)
+				break;
 
-	std::queue<pathNodeTest> openSet;
-	openSet.push(node_start);
-	// while there are still nodes to analyse
-	while(!openSet.empty()) {
-		pathNodeTest current = openSet.front();
-		openSet.pop();
-		// if we've reached the destination point
-		if (current.point == node_dest.point)
-			break;
+			// Get the point we're examining for neighbors
+			env::EnvVert* point_this = &env::points[current.point];
 
-		// Get the point we're examining for neighbors
-		env::EnvVert* point_this = &env::points[current.point];
-
-		// for each neighbor of this point
-		for (int i = 0; i < point_this->neighborcount; ++i) {
-			// make sure the neighboring point hasn't been checked already (INT_NULL)
-			if (node_from_cache[point_this->neighbors[i]] == INT_NULL) {
-				pathNodeTest node;
-				node.point = point_this->neighbors[i];
-				// Add this to the queue
-				openSet.push(node);
-				// set where we came from
-				node_from_cache[point_this->neighbors[i]] = current.point;
+			// for each neighbor of this point
+			for (int i = 0; i < point_this->neighborcount; ++i) {
+				// make sure the neighboring point hasn't been checked already (INT_NULL)
+				if (node_from_cache[point_this->neighbors[i]] == INT_NULL) {
+					pathNodeTest node;
+					node.point = point_this->neighbors[i];
+					// Add this to the queue
+					openSet.push(node);
+					// set where we came from
+					node_from_cache[point_this->neighbors[i]] = current.point;
+				}
 			}
 		}
-	}
 
-	//temp
-	for (int i = 0; i < PATH_NUM_NODES; ++i) {
-		path->pos_x[i] = 0.f;
-		path->pos_y[i] = 0.f;
-	}
-	path->len = 0u; // reset the path
-
-
-	// construct path vector by tracing backwards from the destination point
-	// Add destination node
-	path->pos_x[path->len] = xDest;
-	path->pos_y[path->len] = yDest;
-	++path->len;
-	btui32 vert_examine = node_dest.point;
-	while (vert_examine != node_start.point) {
-		if (path->len < PATH_NUM_NODES) {
-			if (node_from_cache[vert_examine] == INT_NULL) {
-				printf("Path led us to node that hasn't been examined!\n");
-				return false;
-			}
-			printf("Path added node %i\n", vert_examine);
-			// Set this path node
-			path->pos_x[path->len] = env::points[vert_examine].pos.x + env::points[vert_examine].nor.x * 0.5f; // todo: replace 0.5 with agent size
-			path->pos_y[path->len] = env::points[vert_examine].pos.y + env::points[vert_examine].nor.y * 0.5f;
-			++path->len;
-			// backtrace previous point from this point
-			vert_examine = node_from_cache[vert_examine];
+		//temp
+		for (int i = 0; i < PATH_NUM_NODES; ++i) {
+			path->pos_x[i] = 0.f;
+			path->pos_y[i] = 0.f;
 		}
-		else return false; // return if we maxed out the path
+		path->len = 0u; // reset the path
+
+
+		// construct path vector by tracing backwards from the destination point
+		// Add destination node
+		path->pos_x[path->len] = xDest;
+		path->pos_y[path->len] = yDest;
+		++path->len;
+		btui32 vert_examine = node_dest.point;
+		while (vert_examine != node_start.point) {
+			if (path->len < PATH_NUM_NODES) {
+				if (node_from_cache[vert_examine] == INT_NULL) {
+					printf("Path led us to node that hasn't been examined!\n");
+					return false;
+				}
+				printf("Path added node %i\n", vert_examine);
+				// Set this path node
+				path->pos_x[path->len] = env::points[vert_examine].pos.x + env::points[vert_examine].nor.x * 0.5f; // todo: replace 0.5 with agent size
+				path->pos_y[path->len] = env::points[vert_examine].pos.y + env::points[vert_examine].nor.y * 0.5f;
+				++path->len;
+				// backtrace previous point from this point
+				vert_examine = node_from_cache[vert_examine];
+			}
+			else return false; // return if we maxed out the path
+		}
+		// Original position
+		//path->pos_x[path->len] = x;
+		//path->pos_y[path->len] = y;
+		//++path->len;
+
+		delete[] node_from_cache;
+
+		return true;
 	}
-	// Original position
-	//path->pos_x[path->len] = x;
-	//path->pos_y[path->len] = y;
-	//++path->len;
-
-	delete[] node_from_cache;
-
-	return true;
+	// Could not find a triangle under the target
+	return false;
 }

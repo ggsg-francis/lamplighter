@@ -3,6 +3,10 @@
 
 #include "memory.hpp"
 
+#include "ec_actor.h"
+#include "ec_misc.h"
+#include "objects_items.h"
+
 typedef struct EntAddr
 {
 	EntityType type;
@@ -63,11 +67,11 @@ extern void(*fpDraw[ENTITY_TYPE_COUNT])(btID id, void* self);
 //  ok
 #define ENT_VOID(a) (GetEntityPtr(a))
 // not ok
-#define ACTOR(a) ((Actor*)GetEntityPtr(a))
+#define ACTOR(a) ((ECActor*)GetEntityPtr(a))
 // not ok
-#define ENTITY(a) ((Entity*)GetEntityPtr(a))
+#define ENTITY(a) ((ECCommon*)GetEntityPtr(a))
 // not ok
-#define ITEM(a) ((RestingItem*)GetEntityPtr(a))
+#define ITEM(a) ((ECSingleItem*)GetEntityPtr(a))
 
 // Get address of item instance by index
 #define GETITEMINST(a) ((HeldItem*)GetItemInstance(a))
@@ -109,5 +113,9 @@ Projectile* GetProj(PrjID id);
 
 extern mem::objbuf_caterpillar block_proj; // Projectile buffer
 extern Projectile proj[BUF_SIZE];
+
+
+void MakeEntity(EntityType type);
+
 
 #endif // END OF FILE

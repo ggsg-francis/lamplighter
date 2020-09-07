@@ -1,15 +1,16 @@
 #include "objects_items.h"
 #include "audio.hpp"
 // not desirable but necessary for draw functions
-#include "objects_entities.h"
+#include "ec_actor.h"
+#include "ec_misc.h"
 #include "core.h"
 #include "index.h"
 
-bool HeldConUse(btID id, Actor* owner);
+bool HeldConUse(btID id, ECActor* owner);
 
 //-------------------------------- HELD ITEM MISC
 
-void HeldItemTick(btID id, btf32 dt, btID owner_id, Actor* owner)
+void HeldItemTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 {
 	//
 }
@@ -22,7 +23,7 @@ void HeldItemDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle a
 	self->t_item.TranslateLocal(m::Vector3(0.f, 0.f, 0.1f + acv::items[itemid]->f_radius)); // set pose
 	DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldItemOnEquip(btID id, Actor* owner)
+void HeldItemOnEquip(btID id, ECActor* owner)
 {
 	//
 }
@@ -49,21 +50,21 @@ bool HeldItemBlockMove(btID id)
 
 //-------------------------------- HELD ITEM MELEE
 
-void HeldMelTick(btID id, btf32 dt, btID owner_id, Actor* owner)
+void HeldMelTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 
 	if (self->swinging == HeldItem::SWINGSTATE_IDLE)
 	{
-		if (owner->inputBV.get(Actor::IN_ACTN_A))
+		if (owner->inputBV.get(ECActor::IN_ACTN_A))
 			self->ePose = HeldItem::HOLD_POSE_SWING_OVERHEAD;
-		else if (owner->inputBV.get(Actor::IN_ACTN_B))
+		else if (owner->inputBV.get(ECActor::IN_ACTN_B))
 			self->ePose = HeldItem::HOLD_POSE_SWING_SIDE;
-		else if (owner->inputBV.get(Actor::IN_ACTN_C))
+		else if (owner->inputBV.get(ECActor::IN_ACTN_C))
 			self->ePose = HeldItem::HOLD_POSE_THRUST;
 
 		//if (owner->inputBV.get(Actor::IN_USE_HIT))
-		if (owner->inputBV.get(Actor::IN_USE))
+		if (owner->inputBV.get(ECActor::IN_USE))
 		{
 			self->swinging = HeldItem::SWINGSTATE_ATTACK;
 			aud::PlaySnd(aud::FILE_SWING, self->t_item.pos_glm);
@@ -76,7 +77,7 @@ void HeldMelTick(btID id, btf32 dt, btID owner_id, Actor* owner)
 		if (self->swingState > 0.4f && self->swingState < 0.75f) {
 			// if has enemy target, damage it
 			if (owner->atk_target != BUF_NULL) {
-				Entity* ent = (Entity*)GetEntityPtr(owner->atk_target);
+				ECCommon* ent = (ECCommon*)GetEntityPtr(owner->atk_target);
 				// if me and my enemy are close enough in height and distance
 				// TODO: distance check should be based on weapon hit range
 				if (m::Length(owner->t.position - ent->t.position) < 1.f && fabs(owner->t.height - ent->t.height) < 1.f) {
@@ -135,7 +136,7 @@ void HeldMelDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 
 	DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldMelOnEquip(btID id, Actor* owner)
+void HeldMelOnEquip(btID id, ECActor* owner)
 {
 }
 m::Vector3 HeldMelGetLHPos(btID id)
@@ -177,14 +178,14 @@ bool HeldMelBlockMove(btID id)
 
 //-------------------------------- HELD ITEM GUN
 
-void HeldGunTick(btID id, btf32 dt, btID owner_id, Actor* owner)
+void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 
 	bool bauto = (bool)((acv::ItemRecordGun*)acv::items[self->id_item_template])->b_automatic;
 	bool bgetfire;
-	if (bauto) bgetfire = owner->inputBV.get(Actor::IN_USE);
-	else bgetfire = owner->inputBV.get(Actor::IN_USE_HIT);
+	if (bauto) bgetfire = owner->inputBV.get(ECActor::IN_USE);
+	else bgetfire = owner->inputBV.get(ECActor::IN_USE_HIT);
 
 	if (bgetfire && self->ePose == HeldItem::HOLDSTATE_AIM && self->fire_time < tickCount)
 	{
@@ -208,7 +209,7 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, Actor* owner)
 
 			self->pitch = owner->viewPitch.Deg() - self->pitch_velocity * 0.125f;
 
-			#ifdef DEF_AUTOAIM
+			#if DEF_AUTOAIM
 			if (owner->atk_target != BUF_NULL)
 			{
 				Entity* target = (Entity*)GetEntityPtr(owner->atk_target);
@@ -244,14 +245,14 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, Actor* owner)
 		}
 	}
 
-	if (owner->inputBV.get(Actor::IN_ACTN_A))
+	if (owner->inputBV.get(ECActor::IN_ACTN_A))
 			self->ePose = HeldItem::HOLDSTATE_AIM;
-	else if (owner->inputBV.get(Actor::IN_ACTN_B))
+	else if (owner->inputBV.get(ECActor::IN_ACTN_B))
 		self->ePose = HeldItem::HOLDSTATE_IDLE;
-	else if (owner->inputBV.get(Actor::IN_ACTN_C))
+	else if (owner->inputBV.get(ECActor::IN_ACTN_C))
 		self->ePose = HeldItem::HOLDSTATE_INSPECT;
 
-	#ifdef DEF_AUTOAIM
+	#if DEF_AUTOAIM
 	if (owner->atk_target != BUF_NULL)
 	{
 		Entity* target = (Entity*)GetEntityPtr(owner->atk_target);
@@ -346,7 +347,7 @@ void HeldGunDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 		DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
 
-void HeldGunOnEquip(btID id, Actor* owner)
+void HeldGunOnEquip(btID id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 	self->loc = m::Vector3(0.3f, 1.1f, 0.f);
@@ -389,7 +390,7 @@ bool HeldGunBlockMove(btID id)
 
 //-------------------------------- HELD ITEM MAGIC
 
-void HeldMgcTick(btID id, btf32 dt, btID owner_id, Actor * owner)
+void HeldMgcTick(btID id, btf32 dt, btID owner_id, ECActor * owner)
 {
 	//
 }
@@ -403,7 +404,7 @@ void HeldMgcDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 	self->t_item.Rotate(glm::radians(-35.f), m::Vector3(1, 0, 0));
 	DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldMgcOnEquip(btID id, Actor* owner)
+void HeldMgcOnEquip(btID id, ECActor* owner)
 {
 	//
 }
@@ -430,10 +431,10 @@ bool HeldMgcBlockMove(btID id)
 
 //-------------------------------- HELD ITEM CONSUME
 
-bool HeldConUse(btID id, Actor* owner)
+bool HeldConUse(btID id, ECActor* owner)
 {
 	// dont let AIs spend ammo (temp)
-	#ifdef DEF_NPC_INFINITE_CONS
+	#if DEF_NPC_INFINITE_CONS
 	if (!owner->aiControlled) {
 		#endif
 		HeldItem* self = GETITEMINST(id);
@@ -448,15 +449,15 @@ bool HeldConUse(btID id, Actor* owner)
 			owner->inventory.DestroyID(id);
 			return false;
 		}
-		#ifdef DEF_NPC_INFINITE_CONS
+		#if DEF_NPC_INFINITE_CONS
 	}
 	else return true;
 	#endif
 }
-void HeldConTick(btID id, btf32 dt, btID owner_id, Actor* owner)
+void HeldConTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
-	if (owner->inputBV.get(Actor::IN_USE_HIT) && self->uses > 0u)
+	if (owner->inputBV.get(ECActor::IN_USE_HIT) && self->uses > 0u)
 	{
 		owner->state.AddSpell(owner_id, ((acv::ItemRecordCon*)acv::items[self->id_item_template])->id_effect);
 		//if (self->uses > 1u) --self->uses;
@@ -475,7 +476,7 @@ void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 	self->t_item.Rotate(glm::radians(45.f), m::Vector3(1, 0, 0));
 	DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldConOnEquip(btID id, Actor* owner)
+void HeldConOnEquip(btID id, ECActor* owner)
 {
 	// TODO: add real self-duping property
 	/*
@@ -506,13 +507,13 @@ void HeldConInit(btID id)
 void(*fpItemInit[ITEM_TYPE_COUNT])(btID) {
 	HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldConInit
 };
-void(*fpItemTick[ITEM_TYPE_COUNT])(btID, btf32, btID, Actor*) {
+void(*fpItemTick[ITEM_TYPE_COUNT])(btID, btf32, btID, ECActor*) {
 	HeldItemTick, HeldItemTick, HeldMelTick, HeldGunTick, HeldMgcTick, HeldConTick
 };
 void(*fpItemDraw[ITEM_TYPE_COUNT])(btID, btID, m::Vector2, btf32, m::Angle, m::Angle) {
 	HeldItemDraw, HeldItemDraw, HeldMelDraw, HeldGunDraw, HeldMgcDraw, HeldConDraw
 };
-void(*fpItemOnEquip[ITEM_TYPE_COUNT])(btID, Actor*) {
+void(*fpItemOnEquip[ITEM_TYPE_COUNT])(btID, ECActor*) {
 	HeldItemOnEquip, HeldItemOnEquip, HeldMelOnEquip, HeldGunOnEquip, HeldMgcOnEquip, HeldConOnEquip
 };
 m::Vector3(*fpItemGetLeftHandPos[ITEM_TYPE_COUNT])(btID) {
@@ -533,13 +534,13 @@ bool(*fpItemBlockMove[ITEM_TYPE_COUNT])(btID) {
 void ItemInit(btID item) {
 	fpItemInit[GetItemInstanceType(item)](item);
 }
-void ItemTick(btID item, btf32 b, btID owner_id, Actor* c) {
+void ItemTick(btID item, btf32 b, btID owner_id, ECActor* c) {
 	fpItemTick[GetItemInstanceType(item)](item, b, owner_id, c);
 }
 void ItemDraw(btID item, btID b, m::Vector2 c, btf32 d, m::Angle e, m::Angle f) {
 	fpItemDraw[GetItemInstanceType(item)](item, b, c, d, e, f);
 }
-void ItemOnEquip(btID item, Actor* b) {
+void ItemOnEquip(btID item, ECActor* b) {
 	fpItemOnEquip[GetItemInstanceType(item)](item, b);
 }
 m::Vector3 ItemLHPos(btID item) {

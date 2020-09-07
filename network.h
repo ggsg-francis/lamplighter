@@ -24,9 +24,6 @@ enum paktype : btui8
 
 typedef btui8 btPacket[PACKET_SIZE];
 
-struct Entity;
-struct Chara;
-
 namespace network
 {
 	// Network ID

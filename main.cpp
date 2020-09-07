@@ -100,7 +100,7 @@ bool step_pause = false;
 // Convert device input to chara input
 inline void TranslateInput()
 {
-	#if defined DEF_OLDSKOOL || defined DEF_3PP
+	#if DEF_3PP
 	#ifdef DEF_NMP
 	for (btID i = 0u; i < NUM_PLAYERS; ++i)
 	{
@@ -351,7 +351,7 @@ void RegenFramebuffers()
 	// Left screen
 	glGenFramebuffers(1, &framebuffer_1);
 	rendertexture_1.InitRenderBuffer(framebuffer_1, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
-	#ifndef DEF_DEPTH_BUFFER_RW
+	#if !DEF_DEPTH_BUFFER_RW
 	depthbuffer_1.InitDepthBufferW(framebuffer_1, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
 	#else
 	depthbuffer_1.InitDepthBufferRW(framebuffer_1, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
@@ -360,7 +360,7 @@ void RegenFramebuffers()
 	// Right screen
 	glGenFramebuffers(1, &framebuffer_2);
 	rendertexture_2.InitRenderBuffer(framebuffer_2, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
-	#ifndef DEF_DEPTH_BUFFER_RW
+	#if !DEF_DEPTH_BUFFER_RW
 	depthbuffer_2.InitDepthBufferW(framebuffer_2, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
 	#else
 	depthbuffer_2.InitDepthBufferRW(framebuffer_2, graphics::FrameSizeX(), graphics::FrameSizeY(), false);
@@ -633,7 +633,7 @@ render:
 	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
 	glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
 	glBindTexture(GL_TEXTURE_2D, screenTexture.glID);
-	#ifdef DEF_DEPTH_BUFFER_RW
+	#if DEF_DEPTH_BUFFER_RW
 	glActiveTexture(GL_TEXTURE7); // activate the texture unit first before binding texture
 	glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "depthTexture"), 7);
 	glBindTexture(GL_TEXTURE_2D, depthbuffer_1.glID);
@@ -666,7 +666,7 @@ render:
 		glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
 		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "screenTexture"), 0);
 		glBindTexture(GL_TEXTURE_2D, screenTexture.glID);
-		#ifdef DEF_DEPTH_BUFFER_RW
+		#if DEF_DEPTH_BUFFER_RW
 		glActiveTexture(GL_TEXTURE7); // activate the texture unit first before binding texture
 		glUniform1i(glGetUniformLocation(graphics::GetShader(graphics::S_POST).ID, "depthTexture"), 7);
 		glBindTexture(GL_TEXTURE_2D, depthbuffer_1.glID);

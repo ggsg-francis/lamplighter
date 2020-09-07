@@ -16,7 +16,7 @@
 #include "core.h"
 #include "maths.hpp"
 
-#include "objects_entities.h"
+#include "entity.h"
 
 // Enough c++ nerds said never to use macros, so here are some macros
 #define PACKET_WRITE(pak, ind, val, type) (*((type*)&pak[ind])=val)

@@ -39,6 +39,8 @@ namespace m
 
 	Vector2 Vector2::operator=(const btf32& f) { return Vector2(f, f); }
 
+	bool Vector2::operator==(const Vector2 f) { return x == f.x && y == f.y; }
+
 	//-------------------------------- VECTOR3 OPERATORS
 
 	Vector3 Vector3::operator+(const Vector3& v) { return Vector3(x + v.x, y + v.y, z + v.z); }
@@ -395,20 +397,43 @@ namespace m
 		return val;
 	}
 
-	/*btf32 MaxF(btui32 num, ...)
-	{
-		va_list args;
-		__crt_va_start(args, num);
-		btf32 max = 0.f;
-		btf32 fget;
-		for (btui32 x = 0; x < num; x++)
-		{
-			fget = __crt_va_arg(args, btf32);
-			if (fget > max) max = fget;
-		}
-		__crt_va_end(args);
+	btf32 Min2(btf32 a, btf32 b) {
+		btf32 min = a;
+		if (b < min) min = b;
+		return min;
+	}
+	btf32 Max2(btf32 a, btf32 b) {
+		btf32 max = a;
+		if (b > max) max = b;
 		return max;
-	}*/
+	}
+	btf32 Min3(btf32 a, btf32 b, btf32 c) {
+		btf32 min = a;
+		if (b < min) min = b;
+		if (c < min) min = c;
+		return min;
+	}
+	btf32 Max3(btf32 a, btf32 b, btf32 c) {
+		btf32 max = a;
+		if (b > max) max = b;
+		if (c > max) max = c;
+		return max;
+	}
+	btui32 MinIndex(btui32 size, btf32* array) {
+		btui32 min = 0;
+		for (btui32 i = 1; i < size; ++i) {
+			if (array[i] < array[min]) min = i;
+		}
+		return min;
+	}
+	btui32 MaxIndex(btui32 size, btf32* array) {
+		btui32 max = 0;
+		for (btui32 i = 1; i < size; ++i) {
+			if (array[i] > array[max]) max = i;
+		}
+		return max;
+	}
+
 	btf32 Quadratic(const btf32 a = -1.f, const btf32 b = 0.f, const btf32 c = 1.f, const btf32 x = 0.f)
 	{
 		//f(x) = ax 2 + bx + c

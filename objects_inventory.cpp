@@ -1,7 +1,7 @@
 #include "objects_inventory.h"
 #include "core.h"
 #include "index.h"
-#include "objects_entities.h"
+#include "objects_items.h"
 
 graphics::GUIText text_inventory_temp;
 graphics::GUIBox guibox_selection;

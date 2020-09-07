@@ -25,11 +25,6 @@ namespace fac
 struct CellGroup;
 struct CellSpace;
 
-struct Entity;
-struct Actor;
-struct RestingItem;
-struct HeldItem;
-
 extern btui64 tickCount;
 
 namespace core
@@ -94,11 +89,8 @@ namespace core
 
 	extern btui64 spawnz_time_temp;
 
-	// TODO: MOVE THIS SECTION TO INDEX
-
 	extern unsigned int activePlayer;
 	extern btID players[2];
-	extern btID viewtarget[2];
 
 	int CellEntityCount(int x, int y);
 	btID CellEntity(int x, int y, int e);
@@ -107,9 +99,6 @@ namespace core
 		bool wantattack, bool use_hit, bool wantattack2,
 		bool run, bool aim, bool action_a, bool action_b, bool action_c,
 		bool crouch, bool jump);
-
-	void SetViewTargetID(btID ID, btui32 player);
-	btID GetViewTargetID(btui32 player);
 
 	//void EntDeintersect(Entity* ENT, CellSpace& CSI);
 	void ActorCastProj(btID id);

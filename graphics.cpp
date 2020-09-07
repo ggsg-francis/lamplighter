@@ -9,7 +9,6 @@
 #include "cfg.h"
 
 #include "maths.hpp"
-#include "Transform.h"
 
 //-------------------------------- VERTEX ATTRIBUTES
 
@@ -244,7 +243,7 @@ namespace graphics
 		gPtr->shaders[S_MEAT].Init("shaders/vert_3d.glsl", "shaders/_frag_meat.glsl");
 
 		gPtr->shaders[S_GUI].Init("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
-		#ifndef DEF_DEPTH_BUFFER_RW
+		#if !DEF_DEPTH_BUFFER_RW
 		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
 		#else
 		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag_db.glsl");
@@ -500,36 +499,16 @@ namespace graphics
 	}
 	void SetMatProj(btf32 fovMult)
 	{
-		#ifdef DEF_OLDSKOOL
-		glm::mat4 mdlproj = glm::mat4(1.0f);
-		mdlproj = glm::scale(mdlproj, glm::vec3(.25, .25, .0125)); // pitch
-		mdlproj = glm::rotate(mdlproj, glm::radians(-90.f), glm::vec3(1, 0, 0)); // pitch
-
-		//glm::scale(mdlproj, glm::vec3(0.1f, 0.1f, 0.1f));
-
-		mat_proj = mdlproj;
-		#else
-		#ifdef DEF_3PP
+		#if DEF_3PP
 		mat_proj = glm::perspective(glm::radians(60.f), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
 		#else
 		mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
 		#endif
-		#endif // DEF_OLDSKOOL
 	}
 	void SetMatView(void* t, void* p, void* t2)
 	{
-		#ifdef DEF_OLDSKOOL
-
-		view = m::Vector3(((Transform3D*)t)->pos_glm * glm::vec3(1.f, 1.f, -1.f));
-
-		// do nothing?
-		glm::mat4 mdlproj = glm::mat4(1.0f);
-		mdlproj = glm::translate(mdlproj, glm::vec3(-view.x, 0, -view.z - (view.y * 0.5f)));
-		mat_view = mdlproj;
-		#else // !DEF_OLDSKOOL
 		view = *(m::Vector3*)p * m::Vector3(1.f, 1.f, -1.f);
 		mat_view = glm::lookAt(*(glm::vec3*)p * m::Vector3(1.f, 1.f, -1.f), *(glm::vec3*)t * m::Vector3(1.f, 1.f, -1.f), glm::vec3(0.f, 1.f, 0.f));
-		#endif // !DEF_OLDSKOOL
 	}
 	// Lightsource
 	void SetMatProjLight()
@@ -540,17 +519,6 @@ namespace graphics
 	{
 		mat_view = glm::lookAt(glm::vec3(x - (vx * SHADOW_HALF), y - (vy * SHADOW_HALF), z - (vz * SHADOW_HALF)),
 			glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, 1.0f));
-	}
-
-	void SetMatViewEditor(void* t)
-	{
-		// this is not.... good.....
-		#define T ((Transform3D*)t)
-		view = m::Vector3((T->pos_glm + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), T->GetRotation())) * glm::vec3(1.f, 1.f, -1.f));
-		mat_view = glm::lookAt((T->pos_glm + (T->GetForward() * -2.f)) * glm::vec3(1.f, 1.f, -1.f),
-			T->pos_glm * glm::vec3(1.f, 1.f, -1.f),
-			(glm::vec3)T->GetUp() * glm::vec3(1.f, 1.f, -1.f));
-		#undef T
 	}
 
 	glm::mat4 GetMatProj()
@@ -887,7 +855,7 @@ namespace graphics
 	void FMNearestMip() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		#ifndef DEF_CUSTOM_MIPMAP
+		#if !DEF_CUSTOM_MIPMAP
 		glGenerateMipmap(GL_TEXTURE_2D);
 		#endif
 	}
@@ -898,12 +866,12 @@ namespace graphics
 	void FMLinearMip() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		#ifndef DEF_CUSTOM_MIPMAP
+		#if !DEF_CUSTOM_MIPMAP
 		glGenerateMipmap(GL_TEXTURE_2D);
 		#endif
 	}
 	void FMFoliage() {
-		#ifdef DEF_OLDSKOOL
+		#if DEF_OLDSKOOL
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		#else
@@ -971,7 +939,7 @@ namespace graphics
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width / 2, height / 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_mip);
 
 		// Custom Mip test
-		#ifdef DEF_CUSTOM_MIPMAP
+		#if DEF_CUSTOM_MIPMAP
 		if (fm == eLINEAR_MIPMAP || fm == eNEAREST_MIPMAP)
 		{
 			graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
@@ -1036,7 +1004,7 @@ namespace graphics
 						buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
 						buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
 						// Get minimum alpha
-						#ifdef DEF_CUSTOM_MIPMAP_FOLIAGE_MIN
+						#if DEF_CUSTOM_MIPMAP_FOLIAGE_MIN
 						buffer_array[i][x * (width / division) + y].a = m::Min<btui8>(4u,
 							#else
 						buffer_array[i][x * (width / division) + y].a = m::Max<btui8>(4u,
@@ -1055,7 +1023,7 @@ namespace graphics
 		}
 		#endif
 
-		#ifdef DEF_OLDSKOOL
+		#if DEF_OLDSKOOL
 		if (fm == eLINEAR) fm = eNEAREST;
 		if (fm == eLINEAR_MIPMAP) fm = eNEAREST_MIPMAP;
 		#endif
@@ -1076,16 +1044,16 @@ namespace graphics
 		//unsigned int rendertexture;
 		glGenTextures(1, &glID);
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-		#ifdef DEF_MULTISAMPLE // Multisampled
+		#if DEF_MULTISAMPLE // Multisampled
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, glID); // "Bind" the newly created texture : all future texture functions will modify this texture
-		#ifdef DEF_HDR // HDR Texture
+		#if DEF_HDR // HDR Texture
 		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, DEF_MULTISAMPLE_DEPTH, GL_RGBA16F, x, y, GL_TRUE); //create a blank image
 		#else // Not HDR Texture
 		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, DEF_MULTISAMPLE_DEPTH, GL_RGBA, x, y, GL_TRUE); //create a blank image
 		#endif
 		#else // Not Multisampled
 		glBindTexture(GL_TEXTURE_2D, glID); // "Bind" the newly created texture : all future texture functions will modify this texture
-		#ifdef DEF_HDR // HDR Texture
+		#if DEF_HDR // HDR Texture
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, x, y, 0, GL_RGBA, GL_FLOAT, NULL); //create a blank image
 		#else // Not HDR Texture
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); //create a blank image
@@ -1094,7 +1062,7 @@ namespace graphics
 		EMClamp();
 		linear ? FMLinear() : FMNearest();
 		//attach this texture to the framebuffer
-		#ifdef DEF_MULTISAMPLE
+		#if DEF_MULTISAMPLE
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, glID, 0);
 		#else
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glID, 0);
@@ -1107,14 +1075,14 @@ namespace graphics
 		// create a color attachment texture
 		glGenTextures(1, &glID);
 		glBindTexture(GL_TEXTURE_2D, glID);
-		#ifdef DEF_HDR // HDR Texture
+		#if DEF_HDR // HDR Texture
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, GL_RGBA, GL_FLOAT, NULL); //create a blank image
 		#else // Not HDR Texture
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, graphics::FrameSizeX(), graphics::FrameSizeY(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 		#endif
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		#ifdef DEF_LINEAR_FB
+		#if DEF_LINEAR_FB
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		#else
@@ -1122,7 +1090,7 @@ namespace graphics
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		#endif
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glID, 0);	// we only need a color buffer
-		#ifdef DEF_MULTISAMPLE
+		#if DEF_MULTISAMPLE
 		glEnable(GL_MULTISAMPLE); // Enable multisampling for anti-aliasing
 		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); // Enable ATOC for texture alpha
 		#endif // DEF_MULTISAMPLE
@@ -1166,7 +1134,7 @@ namespace graphics
 		//render buffer object (depth)
 		glGenRenderbuffers(1, &glID);
 		glBindRenderbuffer(GL_RENDERBUFFER, glID);
-		#ifdef DEF_MULTISAMPLE
+		#if DEF_MULTISAMPLE
 		glRenderbufferStorageMultisample(GL_RENDERBUFFER, DEF_MULTISAMPLE_DEPTH, GL_DEPTH24_STENCIL8, x, y);
 		#else
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, x, y);
@@ -1702,7 +1670,7 @@ namespace graphics
 					bool triangulate_alternate = false;
 
 					// Triangulate based on longest height difference
-					#ifdef DEF_TERRAIN_USE_EROSION_TRIANGULATION
+					#if DEF_TERRAIN_USE_EROSION_TRIANGULATION
 					if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) < abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
 						triangulate_alternate = true;
 					#else
@@ -1914,7 +1882,7 @@ namespace graphics
 					// | 3--2  | 3--2
 
 					// Triangulate based on longest height difference
-					#ifdef DEF_TERRAIN_USE_EROSION_TRIANGULATION
+					#if DEF_TERRAIN_USE_EROSION_TRIANGULATION
 					//if (abs((int)hmap[x][y] - (int)hmap[x + 1][y + 1]) < abs((int)hmap[x + 1][y] - (int)hmap[x][y + 1]))
 					if (abs((int)hmap_ne[x][y] - (int)hmap_sw[x][y]) < abs((int)hmap_nw[x][y] - (int)hmap_se[x][y]))
 						triangulate_alternate = true;

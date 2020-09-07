@@ -1,0 +1,713 @@
+#include "ec_common.h"
+
+#include "archive.hpp"
+#include "index.h"
+#include "core.h"
+#include "audio.hpp"
+
+void Transform3D::Translate(glm::vec3 offset) {
+	pos_glm += offset;
+	position = pos_glm;
+}
+void Transform3D::Translate(m::Vector3 offset) {
+	pos_glm += glm::vec3(offset.x, offset.y, offset.z);
+	position += offset;
+}
+void Transform3D::TranslateLocal(glm::vec3 offset) {
+	position += m::RotateVector(offset, rotation);
+	pos_glm.x = position.x;
+	pos_glm.y = position.y;
+	pos_glm.z = position.z;
+}
+void Transform3D::TranslateLocal(m::Vector3 offset) {
+	position += m::RotateVector(offset, rotation);
+	pos_glm.x = position.x;
+	pos_glm.y = position.y;
+	pos_glm.z = position.z;
+}
+void Transform3D::Rotate(float angle, m::Vector3 axis) {
+	SetRotation(m::Rotate(rotation, angle, axis));
+}
+void Transform3D::SetPosition(m::Vector3 v) {
+	position = v;
+	pos_glm.x = v.x;
+	pos_glm.y = v.y;
+	pos_glm.z = v.z;
+}
+void Transform3D::SetRotation(m::Quaternion q) {
+	rotation = q;
+	rot_glm.x = q.x;
+	rot_glm.y = q.y;
+	rot_glm.z = q.z;
+	rot_glm.w = q.w;
+}
+void Transform3D::SetRotation(float rot) {
+	m::Quaternion q = m::Rotate(m::Quaternion(0, 0, 0, 1), rot, m::Vector3(0, 1, 0));
+	rotation = q;
+	rot_glm.x = q.x;
+	rot_glm.y = q.y;
+	rot_glm.z = q.z;
+	rot_glm.w = q.w;
+}
+void Transform3D::SetScale(m::Vector3 v) {
+	scale = v;
+	sca_glm.x = v.x;
+	sca_glm.y = v.y;
+	sca_glm.z = v.z;
+}
+m::Vector3 Transform3D::GetPosition() {
+	return position;
+}
+m::Quaternion Transform3D::GetRotation() {
+	return rotation;
+}
+m::Vector3 Transform3D::GetScale() {
+	return scale;
+}
+m::Vector3 Transform3D::GetRight() {
+	return m::RotateVector(m::Vector3(1, 0, 0), rotation);
+}
+m::Vector3 Transform3D::GetUp() {
+	return m::RotateVector(m::Vector3(0, 1, 0), rotation);
+}
+m::Vector3 Transform3D::GetForward() {
+	return m::RotateVector(m::Vector3(0, 0, 1), rotation);
+}
+glm::mat4 Transform3D::getModelMatrix() {
+	glm::mat4 model = glm::mat4(1.0f); // Create identity matrix
+	model = glm::scale(model, glm::vec3(1.f, 1.f, -1.f)); // See if we can remove this extra transformation!
+	model = glm::translate(model, pos_glm);
+	model *= glm::mat4_cast(rot_glm);
+	model = glm::scale(model, sca_glm);
+	return model;
+}
+graphics::Matrix4x4 Transform3D::getMatrix() {
+	glm::mat4 model = glm::mat4(1.0f); // Create identity matrix
+	model = glm::scale(model, glm::vec3(1.f, 1.f, -1.f)); // See if we can remove this extra transformation!
+	model = glm::translate(model, pos_glm);
+	model *= glm::mat4_cast(rot_glm);
+	model = glm::scale(model, sca_glm);
+	graphics::Matrix4x4 model2;
+	model2[0][0] = model[0][0];
+	model2[0][1] = model[0][1];
+	model2[0][2] = model[0][2];
+	model2[0][3] = model[0][3];
+
+	model2[1][0] = model[1][0];
+	model2[1][1] = model[1][1];
+	model2[1][2] = model[1][2];
+	model2[1][3] = model[1][3];
+
+	model2[2][0] = model[2][0];
+	model2[2][1] = model[2][1];
+	model2[2][2] = model[2][2];
+	model2[2][3] = model[2][3];
+
+	model2[3][0] = model[3][0];
+	model2[3][1] = model[3][1];
+	model2[3][2] = model[3][2];
+	model2[3][3] = model[3][3];
+	return model2;
+}
+
+void ActiveState::Damage(btui32 amount, btf32 angle)
+{
+	//aud::PlaySnd(aud::FILE_SWING_CONNECT, );
+	// if it's enough to reduce us to or below zero
+	if (amount >= damagestate) {
+		//stateFlags.unset((ActiveFlags)(eALIVE | eDIED_THIS_TICK));
+		stateFlags.unset(eALIVE);
+		stateFlags.set(eDIED_REPORT);
+		damagestate = 0u;
+	}
+	else {
+		damagestate -= amount;
+	}
+	// TODO: include AI 'notify attack' function call here
+}
+void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, btui32 magnitude)
+{
+	StatusEffect effect;
+	effect.effect_caster_id = caster;
+	effect.effect_type = type;
+	effect.effect_duration = duration;
+	effect.effect_magnitude = magnitude;
+	effects.Add(effect);
+
+	aud::PlaySnd(aud::FILE_EFFECT, m::Vector3(ENTITY(caster)->t.position.x, ENTITY(caster)->t.height, ENTITY(caster)->t.position.y));
+
+	// TODO: include AI 'notify attack' function call here
+}
+void ActiveState::AddSpell(btID caster, btID spell)
+{
+	AddEffect(caster, (StatusEffectType)acv::spells[spell].target_effect_type,
+		acv::spells[spell].target_effect_duration,
+		acv::spells[spell].target_effect_magnitude);
+	// TODO: this only works in the case of cast on self, should deal with this properly but dont know how best to yet
+	if (core::players[0] == caster)
+	{
+		char string[64] = "Got Effect: ";
+		strcat(string, (char*)acv::spells[spell].name);
+		core::GUISetMessag(0, string);
+	}
+	else if (core::players[1] == caster)
+	{
+		char string[64] = "Got Effect: ";
+		strcat(string, (char*)acv::spells[spell].name);
+		core::GUISetMessag(1, string);
+	}
+}
+void ActiveState::TickEffects(btf32 dt)
+{
+	int jshdf = effects.Size();
+	for (btui32 i = 0; i < effects.Size(); ++i)
+	{
+		if (effects.Used(i))
+		{
+			switch (effects[i].effect_type)
+			{
+			case EFFECT_DAMAGE_HP:
+				// magnitude multiplied by delta time so that it functions as a value per second
+				Damage(effects[i].effect_magnitude, 0.f);
+				break;
+			case EFFECT_RESTORE_HP:
+				damagestate += (btui16)effects[i].effect_magnitude;
+				if (damagestate >= STATE_DAMAGE_MAX) damagestate = STATE_DAMAGE_MAX;
+				break;
+			}
+			effects[i].effect_duration -= dt; // tick down the effect timer
+			if (effects[i].effect_duration < 0.f) // if the timer has run out
+			{
+				effects.Remove(i); // remove the effect
+			}
+		}
+	}
+}
+
+#include "3rdparty\cute_c2.h"
+#include "collision.h"
+
+// TODO: temmmmmmmmmmmmmmpppppppp
+// temporary because the physics functions really shouldnt
+// be using if ACTOR anymore, its jank
+#include "ec_actor.h"
+
+#define ACTOR_NO_COLLIDE_HEIGHT 0.0625f
+
+void Entity_PhysLineDeintersect(ECCommon* entity, env::EnvLineSeg* seg, btf32 radius)
+{
+	hit_info hit;
+	m::Vector2 offsettemp(0.f, 0.f);
+	// Get the offset between us and the line
+	m::Vector2 localvec(entity->t.position.x - seg->csn_position.x, entity->t.position.y - seg->csn_position.y);
+	// Rotate the offset vector by the negative line rotation so it is axis-aligned
+	localvec = m::Rotate(localvec, -seg->csn_rotation);
+	// Perform Bounding Box checks from here...
+	// If we're touching the wall plane
+	if (localvec.y < radius && localvec.y > -radius) {
+		// if we're not within the wall space, deal with the end semicircles
+		if (localvec.x > seg->csn_scale.x) {
+			// Circle collision
+			// Are we within this wall's height range?
+			if (!((seg->h_b_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_b_bot <= entity->t.height + entity->height)
+				|| (seg->h_b_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_b_bot >= entity->t.height + entity->height))) {
+				m::Vector2 offset = localvec - m::Vector2(seg->csn_scale.x, 0);
+				if (m::Length(offset) < radius) {
+					hit.hit = true;
+					m::Vector2 pushBy = m::Normalize(offset) * (0.5f - m::Length(offset));
+					pushBy = m::Rotate(pushBy, seg->csn_rotation);
+					offsettemp += pushBy;
+					hit.surface = m::Normalize(pushBy);
+				}
+			}
+		}
+		else if (localvec.x < -seg->csn_scale.x) {
+			// Are we within this wall's height range?
+			if (!((seg->h_a_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_a_bot <= entity->t.height + entity->height)
+				|| (seg->h_a_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_a_bot >= entity->t.height + entity->height))) {
+				// Circle collision
+				m::Vector2 offset = localvec - m::Vector2(-seg->csn_scale.x, 0);
+				if (m::Length(offset) < radius) {
+					hit.hit = true;
+					m::Vector2 pushBy = m::Normalize(offset) * (0.5f - m::Length(offset));
+					pushBy = m::Rotate(pushBy, seg->csn_rotation);
+					offsettemp += pushBy;
+					hit.surface = m::Normalize(pushBy);
+				}
+			}
+		}
+		// If we're within the segment, deal with the straight face
+		else {
+			btf32 lerpval = ((localvec.x / seg->csn_scale.x) * 0.5f) + 0.5f;
+			// MIGHT be backwards
+			btf32 height_lerp_top = m::Lerp(seg->h_a_top, seg->h_b_top, lerpval);
+			btf32 height_lerp_bot = m::Lerp(seg->h_a_bot, seg->h_b_bot, lerpval);
+			// Are we within this wall's height range?
+			if (!((height_lerp_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && height_lerp_bot <= entity->t.height + entity->height)
+				|| (height_lerp_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && height_lerp_bot >= entity->t.height + entity->height))) {
+				hit.hit = true;
+				// If we're on the front face of the wall
+				if (localvec.y >= 0) {
+					hit.surface = m::AngToVec2RH(seg->csn_rotation + glm::radians(90.f));
+					m::Vector2 temp(0.f, 0.f);
+					temp.y = radius - localvec.y;
+					temp = m::Rotate(temp, seg->csn_rotation);
+					offsettemp += temp;
+				}
+				// Back face
+				else {
+					hit.surface = m::AngToVec2RH(seg->csn_rotation + glm::radians(-90.f));
+					m::Vector2 temp(0.f, 0.f);
+					temp.y = localvec.y + radius;
+					temp = m::Rotate(temp, seg->csn_rotation);
+					offsettemp -= temp;
+				}
+			}
+		}
+	}
+
+	hit.depenetrate = offsettemp;
+
+	if (hit.hit) {
+		// modify position
+		entity->t.position += hit.depenetrate;
+		// modify velocity
+		btf32 velLen = m::Length(entity->t.velocity);
+		btf32 dir = m::Dot(entity->t.velocity, m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x)));
+		if (m::Length(entity->t.velocity) > 0.f) {
+			#if DEF_WALL_SLIDE_PRESERVE_SPEED
+			// Maintain speed along new vector
+			entity->t.velocity = m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x) * dir) * velLen;
+			#else
+			// Simple velocity reduction
+			entity->t.velocity = m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x)) * dir;
+			#endif
+		}
+		//entity->Collide(hit);
+	}
+}
+void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
+{
+	btf32 offsetx, offsety;
+	bool overlapN, overlapS, overlapE, overlapW;
+
+	//-------------------------------- ENTITY COLLISION CHECK
+
+	// exploding item
+	/*
+	if (GetEntityType(id) == ENTITY_TYPE_RESTING_ITEM) {
+	RestingItem* item = ITEM(id);
+	HeldItem* iteminst = (HeldItem*)GetItemInstance(item->item_instance);
+	if (mem::bvget<btui16>(acv::items[iteminst->id_item_template]->bv_base, (btui16)acv::ItemRecord::eDETONATEABLE)) {
+	for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x) {
+	for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y) {
+	// De-intersect against other entities
+	for (int e = 0; e < core::CellEntityCount(x, y); e++) {
+	if (core::CellEntity(x, y, e) != ID_NULL) {
+	if (GetEntityExists(core::CellEntity(x, y, e))) {
+	m::Vector2 vec = ent->t.position - ENTITY(core::CellEntity(x, y, e))->t.position;
+	float dist = m::Length(vec);
+	btf32 combined_radius = ent->radius + ENTITY(core::CellEntity(x, y, e))->radius;
+	if (dist < combined_radius && dist > 0.f) {
+	// explode
+	ENTITY(core::CellEntity(x, y, e))->state.Damage(900, 0.f);
+	ent->state.Damage(1000, 0.f);
+	aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
+	}
+	}
+	} // End for each entity in cell
+	} // End if entity count of this cell is bigger than zero
+	} // End for each cell group Y
+	} // End for each cell group X
+	}
+	}*/
+
+	if (ent->properties.get(ECCommon::eCOLLIDE_ENT)) {
+		for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x) {
+			for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y) {
+				// De-intersect against other entities
+				for (int e = 0; e < core::CellEntityCount(x, y); e++) {
+					if (core::CellEntity(x, y, e) != ID_NULL) {
+						if (GetEntityExists(core::CellEntity(x, y, e)) && ENTITY(core::CellEntity(x, y, e))->properties.get(ECCommon::eCOLLIDE_ENT)) {
+							m::Vector2 vec = ent->t.position - ENTITY(core::CellEntity(x, y, e))->t.position;
+							float dist = m::Length(vec);
+							btf32 combined_radius = ent->radius + ENTITY(core::CellEntity(x, y, e))->radius;
+							if (dist < combined_radius && dist > 0.f) {
+								// TEMP! if same type
+								if (GetEntityType(id) == GetEntityType(core::CellEntity(x, y, e))) {
+									ent->t.position += m::Normalize(vec) * (combined_radius - dist) * 0.5f;
+									ENTITY(core::CellEntity(x, y, e))->t.position -= m::Normalize(vec) * (combined_radius - dist) * 0.5f;
+								}
+							}
+						}
+					} // End for each entity in cell
+				} // End if entity count of this cell is bigger than zero
+			} // End for each cell group Y
+		} // End for each cell group X
+	} // end does collide entities check
+
+	//-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
+
+	// Line test
+	WCoord coords;
+	for (int cell = 0; cell < eCELL_COUNT; ++cell) {
+		coords.x = ent->t.csi.c[cell].x;
+		coords.y = ent->t.csi.c[cell].y;
+		// check against all triangles
+		for (int i = 0; i < env::GetNumLines(coords); ++i) {
+			env::EnvLineSeg* seg = env::GetLine(coords, i);
+			Entity_PhysLineDeintersect(ent, seg, 0.5f);
+		}
+	}
+
+	#if DEF_GRID
+	offsetx = ent->t.position.x - ent->t.csi.c[eCELL_I].x;
+	offsety = ent->t.position.y - ent->t.csi.c[eCELL_I].y;
+
+	overlapN = offsety > 0.f;
+	overlapS = offsety < 0.f;
+	overlapE = offsetx > 0.f;
+	overlapW = offsetx < 0.f;
+
+
+	// STRAIGHT EDGE COLLISION CHECK
+
+	btf32 height_terrain;
+	// North
+	if (overlapN) {
+		height_terrain = m::Lerp(
+			(btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u],
+			(btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u],
+			offsetx) / TERRAIN_HEIGHT_DIVISION;
+		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
+			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
+			ent->t.velocity.y = 0.f;
+		}
+	}
+	// South
+	if (overlapS) {
+		height_terrain = m::Lerp(
+			(btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u],
+			(btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u],
+			offsetx) / TERRAIN_HEIGHT_DIVISION;
+		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
+			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
+			ent->t.velocity.y = 0.f;
+		}
+	}
+	// East
+	if (overlapE) {
+		height_terrain = m::Lerp(
+			(btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y],
+			(btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y],
+			offsety) / TERRAIN_HEIGHT_DIVISION;
+		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
+			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
+			ent->t.velocity.x = 0.f;
+		}
+	}
+	// West
+	if (overlapW) {
+		height_terrain = m::Lerp(
+			(btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y],
+			(btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y],
+			offsety) / TERRAIN_HEIGHT_DIVISION;
+		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
+			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
+			ent->t.velocity.x = 0.f;
+		}
+	}
+
+	// CORNER COLLISION CHECK
+
+	// TODO: Something up with the corner checks, not sure what
+
+	// North-east
+	if (((btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
+		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapN && overlapE) {
+		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, 0.5f);
+		if (m::Length(offset) < 0.5f)
+			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+	}
+	// North-west
+	if (((btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
+		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapN && overlapW) {
+		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, 0.5f);
+		if (m::Length(offset) < 0.5f)
+			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+	}
+	// South-east
+	if (((btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
+		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapS && overlapE) {
+		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, -0.5f);
+		if (m::Length(offset) < 0.5f)
+			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+	}
+	// South-west
+	if (((btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
+		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapS && overlapW) {
+		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, -0.5f);
+		if (m::Length(offset) < 0.5f)
+			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+	}
+	#endif
+
+}
+
+#undef ACTOR_NO_COLLIDE_HEIGHT
+
+void Entity_CheckGrounded(btID id, ECCommon* ent)
+{
+	btf32 th;
+	env::GetNearestSurfaceHeight(th, ent->t.csi, ent->t.height);
+
+	if (ent->t.height + ent->t.height_velocity >= th + 1.f)
+	{
+		ent->grounded = false;
+		ent->slideVelocity *= 0.f;
+		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
+			((ECActor*)ent)->jump_state = ECActor::eJUMP_JUMP;
+	}
+	else if (ent->t.height_velocity > 0.f)
+	{
+		ent->grounded = false;
+		ent->slideVelocity *= 0.f;
+	}
+	else if (!ent->grounded)
+	{
+		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
+			ent->grounded = RayEntity(id, ((ECActor*)ent)->aniStandHeight);
+		else
+			ent->grounded = RayEntity(id, 0.f);
+		if (ent->grounded)
+		{
+			ent->slideVelocity = ent->t.velocity;
+			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
+				ActorOnHitGround((ECActor*)ent);
+			}
+		}
+	}
+}
+void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
+{
+	// Regenerate csi
+
+	CellSpace cs_last = ent->t.csi;
+	core::GetCellSpaceInfo(ent->t.position, ent->t.csi);
+	// If the new CS is different, remove us from the last cell and add us to the new one
+	/*if (cs_last.c[eCELL_I].x != ent->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != ent->t.csi.c[eCELL_I].y)
+	{
+	core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
+	core::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
+	}*/
+
+	Entity_CheckGrounded(id, ent);
+
+	if (!ent->grounded)
+	{
+		// Add gravity
+		ent->t.height_velocity -= 0.20f * dt;
+		// Velocity reduction (Air drag)
+		if (ent->properties.get(ECCommon::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
+
+		// ceiling collision
+		btf32 ceil_height;
+		env::GetNearestCeilingHeight(ceil_height, ent->t.csi, ent->t.height);
+		if (ceil_height < ent->t.height + ent->height) {
+			ent->t.height = ceil_height - ent->height;
+			ent->t.height_velocity = 0.f;
+		}
+	}
+	else
+	{
+		// floor collision
+		btf32 ground_height;
+		env::EnvTri* triptr = nullptr;
+		env::GetNearestSurfaceHeight(ground_height, &triptr, ent->t.csi, ent->t.height);
+		m::Vector2 slope(0.f, 0.f);
+		if (triptr != nullptr)
+			slope = triptr->slope * 4.f;
+		#if DEF_GRID
+		env::GetSlope(slope.x, slope.y, ent->t.csi);
+		#endif
+		// look at how long this is
+		switch (acv::props[env::eCells.prop[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]].floorType) {
+		case acv::PropRecord::FLOOR_QUICKSAND:
+		{
+			btf32 distBelowSand = 0.f;
+			ent->t.height -= 0.12f * dt;
+
+			// slow height velocity
+			ent->t.height_velocity *= 0.9f;
+			ent->slideVelocity *= 0.9f;
+
+			// Multiplier reduces the depth at which you can't move
+			distBelowSand = (ent->t.height - ground_height) * 1.4f;
+			if (-distBelowSand > ent->height) {
+				ent->state.Damage(1000, 0);
+			}
+			distBelowSand = m::Clamp(distBelowSand, 0.f, 1.f);
+			ent->t.velocity *= distBelowSand;
+		}
+		break;
+		case acv::PropRecord::FLOOR_ICE: // same as normal ground but dont slow slide
+		{
+			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
+				if (ent->t.height < ground_height + ((ECActor*)ent)->aniStandHeight * 0.25f)
+					ent->t.height = ground_height + ((ECActor*)ent)->aniStandHeight * 0.25f;
+				else
+					ent->t.height = m::Lerp(ent->t.height, ground_height + ((ECActor*)ent)->aniStandHeight, 6.f * dt);
+			}
+			else {
+				ent->t.height = ground_height;
+				ent->t.velocity *= 0.f; // Remove slide on non actors
+			}
+
+			m::Vector2 surfMod(1.f, 1.f);
+
+			// a reasonable implementation would look like this
+			ent->slideVelocity += ent->t.velocity * 0.1f;
+			// Slide speed cap
+			btf32 slide_len = m::Length(ent->slideVelocity);
+			if (slide_len > 3.f * dt)
+				ent->slideVelocity = m::Normalize(ent->slideVelocity) * 3.f * dt;
+
+			//ent->slideVelocity += ent->t.velocity * 1.1f;
+
+			// Don't slide uphill
+			if (ent->slideVelocity.x > 0.f && slope.x > 0.f) {
+				surfMod.x = 0.5f;
+				slope.x = 0.f;
+			}
+			else if (ent->slideVelocity.x < 0.f && slope.x < 0.f) {
+				surfMod.x = 0.5f;
+				slope.x = 0.f;
+			}
+			if (ent->slideVelocity.y > 0.f && slope.y > 0.f) {
+				surfMod.y = 0.5f;
+				slope.y = 0.f;
+			}
+			else if (ent->slideVelocity.y < 0.f && slope.y < 0.f) {
+				surfMod.y = 0.5f;
+				slope.y = 0.f;
+			}
+
+			// Slide reduction per second multiplied by frame length
+			btf32 slide_reduce = 0.005f * dt;
+
+			//if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
+			//	if (((ECActor*)ent)->aniCrouch)
+			//		slide_reduce *= 0.125f; // Slide longer if crouching
+
+			// Linear slide reduction (with slope adjustment)
+			m::Vector2 slideMag = (btf32)m::Length(ent->slideVelocity);
+			slideMag.y = slideMag.x;
+			if (slideMag.x > slide_reduce / (abs(slope.x) + surfMod.x)) {
+				slideMag.x -= slide_reduce / (abs(slope.x) + surfMod.x);
+			}
+			else slideMag.x = 0.f;
+			if (slideMag.y > slide_reduce / (abs(slope.y) + surfMod.y)) {
+				slideMag.y -= slide_reduce / (abs(slope.y) + surfMod.y);
+			}
+			else slideMag.y = 0.f;
+			ent->slideVelocity = m::Normalize(ent->slideVelocity) * slideMag;
+
+			// No height velocity when on the ground!
+			ent->t.height_velocity = 0.f;
+		}
+		break;
+		case acv::PropRecord::FLOOR_LAVA:
+			if (ent->state.stateFlags.get(ActiveState::eALIVE)) {
+				ent->state.Damage(1000u, 0.f);
+				char string[64] = "You got burnt by lava R.I.P.";
+				core::GUISetMessag(0, string);
+			}
+			// no break, use default physics
+			goto defaul;
+		case acv::PropRecord::FLOOR_ACID:
+			if (ent->state.stateFlags.get(ActiveState::eALIVE)) {
+				ent->state.Damage(1000u, 0.f);
+				remove("save/save.bin");
+				char string[64] = "The acid desintegrated your save file";
+				core::GUISetMessag(0, string);
+			}
+			// no break, use default physics
+		defaul:
+		default:
+		{
+			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
+				ent->t.height = ground_height + ((ECActor*)ent)->aniStandHeight;
+				// this will work, but we need to address the sprint-jump problem
+				//if (ent->t.height < ground_height + ((ECActor*)ent)->aniStandHeight * 0.4f)
+				//	ent->t.height = ground_height + ((ECActor*)ent)->aniStandHeight * 0.4f;
+				//else
+				//	ent->t.height = m::Lerp(ent->t.height, ground_height + ((ECActor*)ent)->aniStandHeight, 6.f * dt);
+			}
+			else {
+				ent->t.height = ground_height;
+				ent->t.velocity *= 0.f; // Remove slide on non actors
+			}
+
+			m::Vector2 surfMod(1.f, 1.f);
+
+			// Don't slide uphill
+			if (ent->slideVelocity.x > 0.f && slope.x > 0.f) {
+				surfMod.x = 0.5f;
+				slope.x = 0.f;
+			}
+			else if (ent->slideVelocity.x < 0.f && slope.x < 0.f) {
+				surfMod.x = 0.5f;
+				slope.x = 0.f;
+			}
+			if (ent->slideVelocity.y > 0.f && slope.y > 0.f) {
+				surfMod.y = 0.5f;
+				slope.y = 0.f;
+			}
+			else if (ent->slideVelocity.y < 0.f && slope.y < 0.f) {
+				surfMod.y = 0.5f;
+				slope.y = 0.f;
+			}
+
+			btf32 slide_reduce = 0.18f * dt; // Slide reduction per second multiplied by frame length
+
+			if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
+				if (((ECActor*)ent)->aniCrouch)
+					slide_reduce *= 0.25f; // Slide longer if crouching
+
+			// Linear slide reduction (with slope adjustment)
+			m::Vector2 slideMag = (btf32)m::Length(ent->slideVelocity);
+			slideMag.y = slideMag.x;
+			if (slideMag.x > slide_reduce / (abs(slope.x) + surfMod.x)) {
+				slideMag.x -= slide_reduce / (abs(slope.x) + surfMod.x);
+			}
+			else slideMag.x = 0.f;
+			if (slideMag.y > slide_reduce / (abs(slope.y) + surfMod.y)) {
+				slideMag.y -= slide_reduce / (abs(slope.y) + surfMod.y);
+			}
+			else slideMag.y = 0.f;
+			ent->slideVelocity = m::Normalize(ent->slideVelocity) * slideMag;
+
+			// No height velocity when on the ground!
+			ent->t.height_velocity = 0.f;
+		}
+		break;
+		}
+
+		ent->t.position += ent->slideVelocity;
+	}
+
+	// Apply velocity
+	ent->t.position += ent->t.velocity;
+	ent->t.height += ent->t.height_velocity;
+
+	Entity_Collision(id, ent, ent->t.csi);
+
+	// duplicate of start of function
+	core::GetCellSpaceInfo(ent->t.position, ent->t.csi);
+	// If the new CS is different, remove us from the last cell and add us to the new one
+	if (cs_last.c[eCELL_I].x != ent->t.csi.c[eCELL_I].x || cs_last.c[eCELL_I].y != ent->t.csi.c[eCELL_I].y)
+	{
+		core::RemoveEntityCell(cs_last.c[eCELL_I].x, cs_last.c[eCELL_I].y, id);
+		core::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
+	}
+}

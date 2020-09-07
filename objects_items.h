@@ -8,11 +8,12 @@
 #include "env.h"
 #include "input.h"
 #include "memory.h"
-#include "Transform.h"
 #include "maths.hpp"
 #include "graphics.hpp"
 
-struct Actor;
+#include "ec_common.h"
+
+struct ECActor;
 
 namespace m
 {
@@ -22,11 +23,11 @@ namespace m
 // Initialize this item instance
 void ItemInit(btID item);
 // Tick this item instance
-void ItemTick(btID item, btf32 DT, btID OWNER_ID, Actor* OWNER);
+void ItemTick(btID item, btf32 DT, btID OWNER_ID, ECActor* OWNER);
 // Render graphics of this item instance
 void ItemDraw(btID item, btID ITEMID, m::Vector2 OWNER_POSITION, btf32 OWNER_HEIGHT, m::Angle OWNER_YAW, m::Angle OWNER_PITCH);
 // Tell this item instance that it's just been equipped
-void ItemOnEquip(btID item, Actor* b);
+void ItemOnEquip(btID item, ECActor* b);
 // Get left hand position
 m::Vector3 ItemLHPos(btID item);
 // Get right hand position

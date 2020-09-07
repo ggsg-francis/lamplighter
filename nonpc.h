@@ -3,29 +3,25 @@
 
 #include "core.h"
 #include "index.h"
-#include "objects_entities.h"
+#include "entity.h"
 
-void NPCFocusEnemy(Actor* actor)
+void NPCFocusEnemy(ECActor* actor)
 {
 	m::Vector2 TargetVector = ENTITY(actor->ai_target_ent)->t.position - actor->t.position;
 	m::Vector2 TargetVectorVertical = m::Vector2(m::Length(TargetVector), ENTITY(actor->ai_target_ent)->t.height - actor->t.height);
 	float distance_to_target = m::Length(TargetVector);
 
-	actor->inputBV.unset(Actor::IN_USE);
+	actor->inputBV.unset(ECActor::IN_USE);
 
 	btf32 attack_dist = 1.5f;
 	// if its a ranged weapon, set the attack range higher
-	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
-	{
+	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN) {
 		attack_dist = 30.f;
 	}
 
 	if (distance_to_target < attack_dist) // if enemy is close enough to swing at
 	{
-		//compute rotation
-		//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
-		//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
-
+		actor->input.x = 0.f;
 		actor->input.y = 0.f;
 
 		if (actor->ai_ally_ent != BUF_NULL)
@@ -33,23 +29,10 @@ void NPCFocusEnemy(Actor* actor)
 			m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
 			float distance_to_ally = m::Length(AllyVector);
 			float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
-
-			if (distance_to_ally < 10.f) // if ally is close, spread
-				if (offsetLR_ally > 0.5f) actor->input.x = -1.f;
-				else if (offsetLR_ally < -0.5f) actor->input.x = 1.f;
-				else actor->input.x = 0.f;
-			else if (actor->state.damagestate > 600u) // if ally is far and hitpoints high, move in
-				if (offsetLR_ally > 0.5f) { actor->input.x = -0.5f; actor->input.y = 1.f; }
-				else if (offsetLR_ally < -0.5f) { actor->input.x = 0.5f; actor->input.y = 1.f; }
-				else actor->input.x = 1.f;
-			else // if low on hp, retreat
-				if (offsetLR_ally > 0.5f) { actor->input.x = 1.f; actor->input.y = -1.f; }
-				else if (offsetLR_ally < -0.5f) { actor->input.x = -1.f; actor->input.y = -1.f; }
-				else actor->input.x = -1.f;
 		}
 		else
 		{
-			actor->input.x = 0.f;
+			//actor->input.x = 0.f;
 		}
 
 		btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
@@ -66,9 +49,7 @@ void NPCFocusEnemy(Actor* actor)
 		if (angle22 > 70.f) angle22 = 70.f;
 		actor->ai_vp_target = angle22;
 
-		//actor->input.y = 0.f; actor->input.x = 1.f;
-
-		actor->inputBV.set(Actor::IN_USE);
+		actor->inputBV.set(ECActor::IN_USE);
 	}
 	else
 	{
@@ -87,25 +68,13 @@ void NPCFocusEnemy(Actor* actor)
 			// if ally is farther than enemy
 			if (distance_to_ally > distance_to_target || distance_to_ally < 4.f)
 			{
-				if (distance_to_ally > ally_follow_dist)
-					if (offsetLR_ally > 0.5f) actor->input.x = 1.f;
-					else if (offsetLR_ally < -0.5f) actor->input.x = -1.f;
-					else actor->input.x = 0.f;
-				else actor->input.x = 0.f;
-
 				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 				//actor->viewYaw.Set(angle2);
 				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
 				actor->ai_vy_target = angle2;
-
-				actor->input.y = 1.f;
 			}
 			else
 			{
-				if (distance_to_ally > ally_follow_dist) actor->input.y = 1.f;
-				else actor->input.y = 0.f;
-				actor->input.x = 0.f;
-
 				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(AllyVector)));
 
 				//actor->viewYaw.Set(angle2);
@@ -122,17 +91,13 @@ void NPCFocusEnemy(Actor* actor)
 			//actor->viewYaw.Set(angle2);
 			//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
 			actor->ai_vy_target = angle2;
-
-			actor->input.y = 1.f;// actor->input.x = 0.f;
-
-			actor->input.x = 0.f;
 		}
 	}
 }
 
-void NPCFollowAlly(Actor* actor)
+void NPCFollowAlly(ECActor* actor)
 {
-	Entity* target = ENTITY(actor->ai_ally_ent);
+	ECCommon* target = ENTITY(actor->ai_ally_ent);
 	m::Vector2 TargetVector = target->t.position - actor->t.position;
 	btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 	float distance_to_target = m::Length(TargetVector);
@@ -179,19 +144,19 @@ void NPCFollowAlly(Actor* actor)
 	}
 	actor->ai_vy_target = angle2; // look at thing
 
-	actor->inputBV.unset(Actor::IN_USE);
+	actor->inputBV.unset(ECActor::IN_USE);
 }
 
-void NPCIdle(Actor* actor)
+void NPCIdle(ECActor* actor)
 {
 	actor->input.y = 0.f;
 	actor->input.x = 0.f;
-	actor->inputBV.unset(Actor::IN_USE);
+	actor->inputBV.unset(ECActor::IN_USE);
 }
 
 void NPCTick(btID id)
 {
-	Actor* actor = ACTOR(id);
+	ECActor* actor = ACTOR(id);
 
 	actor->input.y = 1.f;
 	actor->input.x = -1.f;
@@ -223,8 +188,8 @@ void NPCTick(btID id)
 	// makes npc only point its gun if its looking at an enemy
 	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
 	{
-		actor->inputBV.setto(Actor::ActorInput::IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
-		actor->inputBV.setto(Actor::ActorInput::IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
+		actor->inputBV.setto(ECActor::ActorInput::IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
+		actor->inputBV.setto(ECActor::ActorInput::IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
 	}
 
 	if (actor->ai_target_ent == BUF_NULL)
