@@ -218,8 +218,6 @@ namespace graphics
 			matTransform, // GUI shader
 			bLit_TEMP,
 			texShadowMap,
-			texLightMap,
-			texSkyMap,
 			texTerrain1, // Terrain shader
 			texTerrain2, // Terrain shader
 			texTerrain3, // Terrain shader
@@ -264,8 +262,6 @@ namespace graphics
 			"transform",
 			"lit",
 			"tshadow",
-			"tlm",
-			"ts",
 			"tt1",
 			"tt2",
 			"tt3",
@@ -291,8 +287,8 @@ namespace graphics
 		enum TIndex : GLint
 		{
 			TXTR_DIFFUSE0,
-			TXTR_LIGHTMAP,
-			TXTR_SKY,
+			TXTR_UNUSED_1,
+			TXTR_UNUSED_2,
 			TXTR_UNKN_3, // Doesnt seem to be used for anything
 			TXTR_UNKN_4, // Doesnt seem to be used for anything
 			TXTR_SHADOWMAP,

@@ -32,6 +32,8 @@ namespace core
 		a_unused,
 	};
 
+	// still useful to have really
+	/*
 	void flood_fill_temp(btui16 srcx, btui16 srcy, btui16 x, btui16 y, graphics::colour col)
 	{
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
@@ -51,23 +53,13 @@ namespace core
 				}
 			}
 		}
-	}
+	}*/
 
 	GLuint shadowtex;
 	glm::mat4 shadowmat_temp;
 	void SetShadowTexture(btui32 id)
 	{
 		shadowtex = id;
-	}
-
-	void UpdateGlobalShaderParams()
-	{
-		for (int i = graphics::S_UTIL_FIRST_LIT; i <= graphics::S_UTIL_LAST_LIT; ++i)
-		{
-			graphics::GetShader((graphics::eShader)i).Use();
-			graphics::GetShader((graphics::eShader)i).SetTexture(graphics::Shader::texLightMap, t_EnvLightmap.glID, graphics::Shader::TXTR_LIGHTMAP);
-			graphics::GetShader((graphics::eShader)i).SetTexture(graphics::Shader::texSkyMap, acv::GetT(acv::t_sky).glID, graphics::Shader::TXTR_SKY);
-		}
 	}
 
 	void UpdateOtherShaderParams(btf32 time2, m::Vector3 sunVec)
@@ -175,30 +167,6 @@ namespace core
 
 		env::LoadBin();
 
-		//-------------------------------- Lightmap
-
-		t_EnvLightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(255u, 0u, 0u, 255u));
-		for (btui32 x = 0u; x < WORLD_SIZE; ++x)
-		{
-			for (btui32 y = 0u; y < WORLD_SIZE; ++y)
-			{
-				t_EnvLightmap.SetPixelChannelA(x, y, env::eCells.terrain_height[x][y]);
-				if (env::Get(x, y, env::eflag::EF_LIGHTSRC))
-					flood_fill_temp(x, y, x, y, graphics::colour(0u, 255u, 0u, 0u));
-			}
-		}
-		t_EnvLightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
-
-		//-------------------------------- Heightmap
-
-		t_EnvHeightmap.Init(WORLD_SIZE, WORLD_SIZE, graphics::colour(0u, 0u, 0u, 0u));
-
-		for (btui16 x = 0; x < WORLD_SIZE; x++)
-			for (btui16 y = 0; y < WORLD_SIZE; y++)
-				t_EnvHeightmap.SetPixelChannelR(x, y, env::eCells.terrain_height[x][y]);
-
-		t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
-
 		//-------------------------------- Spawnz
 
 		if (!cfg::bEditMode) {
@@ -240,7 +208,6 @@ namespace core
 		fac::SetAllegiance(fac::playerhunter, fac::playerhunter, fac::allied);
 
 		graphics::SetMatProj(); // does not need to be continually called
-		UpdateGlobalShaderParams();
 	}
 	void End()
 	{
@@ -537,8 +504,6 @@ namespace core
 					else
 						++env::eCells.terrain_height_sw[GetCellX][GetCellY];
 				}
-				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
-				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 				env::GenerateTerrainMesh();
 			}
 			else if (input::GetHit(input::key::INV_CYCLE_L))
@@ -600,8 +565,6 @@ namespace core
 					else
 						--env::eCells.terrain_height_sw[GetCellX][GetCellY];
 				}
-				t_EnvHeightmap.SetPixelChannelR(GetCellX, GetCellY, env::eCells.terrain_height[GetCellX][GetCellY]);
-				t_EnvHeightmap.ReBindGL(graphics::eLINEAR, graphics::eCLAMP);
 				env::GenerateTerrainMesh();
 			}
 

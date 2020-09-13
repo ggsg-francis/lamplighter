@@ -12,12 +12,6 @@
 
 namespace core
 {
-	// Environment lightmap texture
-	// R: Unused | G: Lightsources | B: Unused | A: Unused
-	graphics::ModifiableTexture t_EnvLightmap;
-	// R: Height | G: Unused | B: Unused | A: Unused
-	graphics::ModifiableTexture t_EnvHeightmap;
-
 	//--------------------------- GLOBAL VARIABLES
 
 	btf64 networkTimerTemp;
