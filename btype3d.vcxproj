@@ -316,6 +316,7 @@
     <ClInclude Include="ec_common.h" />
     <ClInclude Include="ec_misc.h" />
     <ClInclude Include="global_project.h" />
+    <ClInclude Include="graphics_shadersource_gl.h" />
     <ClInclude Include="graphics_structures.h" />
     <ClInclude Include="index.h" />
     <ClInclude Include="network.h" />

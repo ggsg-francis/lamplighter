@@ -112,6 +112,7 @@
     <ClInclude Include="input.h">
       <Filter>framework</Filter>
     </ClInclude>
+    <ClInclude Include="graphics_shadersource_gl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">

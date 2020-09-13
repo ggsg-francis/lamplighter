@@ -339,9 +339,8 @@ namespace graphics
 		};
 		GLint location[LOCATION_COUNT];
 	public:
-		Shader();
 		// constructor generates the shader on the fly
-		void Init(const char*, const char*, const char* = nullptr);
+		void Init(const char* vertexSource, const char* fragmentSource, const char* geometrySource = nullptr);
 		// Set this shader as current for rendering
 		void Use();
 		// Utility uniform functions

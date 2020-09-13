@@ -1,5 +1,6 @@
 //TOP INCLUDE
 #include "graphics.hpp"
+//#include "graphics_shadersource_gl.h"
 
 //would like to drop this include
 #include "glm/gtc\matrix_transform.hpp"
@@ -227,26 +228,26 @@ namespace graphics
 		guibox.Init();
 		guitxt.Init();
 
-		gPtr->shaders[S_SOLID].Init("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
-		//gPtr->shaders[S_SOLID_CHARA].Init("shaders/vert_3d.glsl", "shaders/frag_solid_chara.glsl");
-		gPtr->shaders[S_SOLID_CHARA].Init("shaders/vert_3d.glsl", "shaders/frag_solid.glsl");
+		#include "graphics_shadersource_gl.h"
 
-		gPtr->shaders[S_SOLID_BLEND].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
-		gPtr->shaders[S_SOLID_BLEND_CHARA].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid_chara.glsl");
-		//gPtr->shaders[S_SOLID_BLEND_CHARA].Init("shaders/vert_3d_blend.glsl", "shaders/frag_solid.glsl");
+		gPtr->shaders[S_SOLID].Init(shader_vert_3d, shader_frag_3d);
+		gPtr->shaders[S_SOLID_CHARA].Init(shader_vert_3d, shader_frag_3d_chara);
 
-		gPtr->shaders[S_SOLID_DEFORM].Init("shaders/vert_3d_deform.glsl", "shaders/frag_solid.glsl");
-		gPtr->shaders[S_SOLID_DEFORM_CHARA].Init("shaders/vert_3d_deform.glsl", "shaders/frag_solid_chara.glsl");
+		gPtr->shaders[S_SOLID_BLEND].Init(shader_vert_3d_blend, shader_frag_3d);
+		gPtr->shaders[S_SOLID_BLEND_CHARA].Init(shader_vert_3d_blend, shader_frag_3d_chara);
 
-		gPtr->shaders[S_SOLID_TERRAIN].Init("shaders/vert_3d_terrain.glsl", "shaders/frag_terrain.glsl");
+		gPtr->shaders[S_SOLID_DEFORM].Init(shader_vert_3d_deform, shader_frag_3d);
+		gPtr->shaders[S_SOLID_DEFORM_CHARA].Init(shader_vert_3d_deform, shader_frag_3d_chara);
 
-		gPtr->shaders[S_MEAT].Init("shaders/vert_3d.glsl", "shaders/_frag_meat.glsl");
+		gPtr->shaders[S_SOLID_TERRAIN].Init(shader_vert_3d_terrain, shader_frag_3d_terrain);
 
-		gPtr->shaders[S_GUI].Init("shaders/gui_vert.glsl", "shaders/gui_frag.glsl");
+		gPtr->shaders[S_MEAT].Init(shader_vert_3d, shader_frag_3d_meat);
+
+		gPtr->shaders[S_GUI].Init(shader_vert_gui, shader_frag_gui);
 		#if !DEF_DEPTH_BUFFER_RW
-		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag.glsl");
+		gPtr->shaders[S_POST].Init(shader_vert_framebuffer, shader_frag_framebuffer);
 		#else
-		gPtr->shaders[S_POST].Init("shaders/fb_vert.glsl", "shaders/fb_frag_db.glsl");
+		gPtr->shaders[S_POST].Init(shader_vert_framebuffer, shader_frag_framebuffer_depth_buffer);
 		#endif
 
 		#ifndef DEF_ARCHIVER
@@ -572,57 +573,11 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// SHADER ------------------------------------------------------------------------------------------------------------------------
 
-	Shader::Shader()
+	void Shader::Init(const char* vertexSource, const char* fragmentSource, const char* geometrySource)
 	{
-	}
-	void Shader::Init(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
-	{
-		// 1. retrieve the vertex/fragment source code from filePath
-		std::string vertexCode;
-		std::string fragmentCode;
-		std::string geometryCode;
-		std::ifstream vShaderFile;
-		std::ifstream fShaderFile;
-		std::ifstream gShaderFile;
-		// ensure ifstream objects can throw exceptions:
-		vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		gShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		try
-		{
-			// open files
-			vShaderFile.open(vertexPath);
-			fShaderFile.open(fragmentPath);
-			std::stringstream vShaderStream, fShaderStream;
-			// read file's buffer contents into streams
-			vShaderStream << vShaderFile.rdbuf();
-			fShaderStream << fShaderFile.rdbuf();
-			// close file handlers
-			vShaderFile.close();
-			fShaderFile.close();
-			// convert stream into string
-			vertexCode = vShaderStream.str();
-			fragmentCode = fShaderStream.str();
-			// if geometry shader path is present, also load a geometry shader
-			if (geometryPath != nullptr)
-			{
-				gShaderFile.open(geometryPath);
-				std::stringstream gShaderStream;
-				gShaderStream << gShaderFile.rdbuf();
-				gShaderFile.close();
-				geometryCode = gShaderStream.str();
-			}
-		}
-		catch (std::ifstream::failure e)
-		{
-			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
-		}
-		const char* vShaderCode = vertexCode.c_str();
-		const char * fShaderCode = fragmentCode.c_str();
-		// 2. compile shaders
+		const char* vShaderCode = vertexSource;
+		const char* fShaderCode = fragmentSource;
 		unsigned int vertex, fragment;
-		//int success;
-		//char infoLog[512];
 		// vertex shader
 		vertex = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(vertex, 1, &vShaderCode, NULL);
@@ -635,9 +590,8 @@ namespace graphics
 		CheckCompileErrors(fragment, "FRAGMENT");
 		// if geometry shader is given, compile geometry shader
 		unsigned int geometry;
-		if (geometryPath != nullptr)
-		{
-			const char * gShaderCode = geometryCode.c_str();
+		if (geometrySource != nullptr) {
+			const char * gShaderCode = geometrySource;
 			geometry = glCreateShader(GL_GEOMETRY_SHADER);
 			glShaderSource(geometry, 1, &gShaderCode, NULL);
 			glCompileShader(geometry);
@@ -647,43 +601,20 @@ namespace graphics
 		ID = glCreateProgram();
 		glAttachShader(ID, vertex);
 		glAttachShader(ID, fragment);
-		if (geometryPath != nullptr)
+		if (geometrySource != nullptr)
 			glAttachShader(ID, geometry);
 		glLinkProgram(ID);
 		CheckCompileErrors(ID, "PROGRAM");
 		// delete the shaders as they're linked into our program now and no longer necessery
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
-		if (geometryPath != nullptr)
+		if (geometrySource != nullptr)
 			glDeleteShader(geometry);
-		///*
-		std::cout << "SHADER VERT: " << vertexPath << " FRAG: " << fragmentPath << std::endl;
-		for (btui32 i = 0u; i < LOCATION_COUNT; ++i)
-		{
+
+		// Search for all shader properties
+		for (btui32 i = 0u; i < LOCATION_COUNT; ++i) {
 			location[i] = glGetUniformLocation(ID, names[i]);
-			if (location[i] != -1)
-				std::cout << "Got shader property ID: " << location[i] << " STR: " << names[i] << std::endl;
-		}//*/
-		/*
-		location[matModel] = glGetUniformLocation(ID, "matm");
-		location[uiMatrixCount] = glGetUniformLocation(ID, "mc");
-		location[matModelA] = glGetUniformLocation(ID, "matma");
-		location[matModelB] = glGetUniformLocation(ID, "matmb");
-		location[matModelC] = glGetUniformLocation(ID, "matmc");
-		location[matModelD] = glGetUniformLocation(ID, "matmd");
-		location[matView] = glGetUniformLocation(ID, "matv");
-		location[matProject] = glGetUniformLocation(ID, "matp");
-		location[fBlendState] = glGetUniformLocation(ID, "blendState");
-		location[fWindowX] = glGetUniformLocation(ID, "wx");
-		location[fWindowY] = glGetUniformLocation(ID, "wy");
-		location[fTime] = glGetUniformLocation(ID, "ft");
-		location[matLightProj] = glGetUniformLocation(ID, "lightProj");
-		location[vecPCam] = glGetUniformLocation(ID, "pcam");
-		location[vecVSun] = glGetUniformLocation(ID, "vsun");
-		location[matTransform] = glGetUniformLocation(ID, "transform");
-		location[fLit_TEMP] = glGetUniformLocation(ID, "lit");
-		location[texShadowMap] = glGetUniformLocation(ID, "tshadow");
-		//*/
+		}
 	}
 	void Shader::Use()
 	{
