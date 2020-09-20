@@ -1076,8 +1076,10 @@ namespace graphics
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glID, 0);	// we only need a color buffer
 		#if DEF_MULTISAMPLE
 		glEnable(GL_MULTISAMPLE); // Enable multisampling for anti-aliasing
-		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); // Enable ATOC for texture alpha
-		#endif // DEF_MULTISAMPLE
+		#if DEF_MULTISAMPLE_ATOC
+		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); // Use multisampling for texture alpha
+		#endif
+		#endif
 	}
 	void Texture::InitDepthBufferRW(GLuint fbuf, int x, int y, bool linear)
 	{

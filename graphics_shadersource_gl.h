@@ -1398,7 +1398,7 @@ void main() {
 	//if (FragColor.a < 0.5) discard;
 
 	//vec3 txtr = clamp((texture(texture_diffuse1, TexCoords).rgb * 4.), 0., 1.);
-	vec3 txtr = texture(texture_diffuse1, TexCoords).rgb;
+	vec4 txtr = texture(texture_diffuse1, TexCoords);
 	FragColor.rgb =  c_a * txtr.r;
 	FragColor.rgb += c_b * txtr.g;
 	FragColor.rgb += c_c * txtr.b;
@@ -1453,6 +1453,8 @@ void main() {
 	float fog_mix = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start), 0.f, 1.f);
 	float fog_mix_half = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start) * 0.5f, 0.f, 1.f);
 	FragColor.rgb = mix(FragColor.rgb, cFog, mix(fog_mix, fog_mix_half, Col.g));
+
+	FragColor.a = txtr.a;
 }
 )"
 
@@ -1461,7 +1463,7 @@ void main() {
 	// fresnel
 	///*
 	vec3 vd = Pos - pcam;
-	//FragColor.rgb = vec3(   pow(max(dot(normalize(Normal), -normalize(vd)), 0.0), 16.0)     );
+	//FragColor.rgb = vec3(   pow(max(dot(normalize(Normal), -normalize(vd)), 0.0), 16.0));
 	//float fres = clamp(dot(normalize(Normal), -normalize(vd)) * 3.5f - 0.8f, 0.f, 1.f);
 	float fres = clamp(dot(normalize(Normal), -normalize(vd)) * 3.f - 0.5f, 0.f, 1.f);
 	//*/
