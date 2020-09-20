@@ -220,6 +220,23 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// INITIALIZATION ----------------------------------------------------------------------------------------------------------------
 
+	void MakeShaderSrc(char** outstring, btui32 num, ...) {
+		btui32 ssize = 0u;
+		// Iterate through the strings
+		va_list args;
+		va_start(args, num);
+		for (btui32 i = 0; i < num; ++i) {
+			char* workingstr = va_arg(args, char*);
+			btui32 oldsize = ssize;
+			ssize += strlen(workingstr);
+			*outstring = (char*)realloc(*outstring, ssize + 1);
+			memset(&(*outstring)[oldsize], 0, ssize - oldsize);
+			strcat(*outstring, workingstr);
+			//memcpy(&(*outstring)[oldsize], workingstr, ssize - oldsize); // dont know why this doesnt work
+		}
+		va_end(args);
+	}
+
 	void Init()
 	{
 		gPtr = new Graphics();
@@ -230,26 +247,62 @@ namespace graphics
 
 		#include "graphics_shadersource_gl.h"
 
-		gPtr->shaders[S_SOLID].Init(shader_vert_3d, shader_frag_3d);
-		gPtr->shaders[S_SOLID_CHARA].Init(shader_vert_3d, shader_frag_3d_chara);
+		// Make vertex shader sources
 
-		gPtr->shaders[S_SOLID_BLEND].Init(shader_vert_3d_blend, shader_frag_3d);
-		gPtr->shaders[S_SOLID_BLEND_CHARA].Init(shader_vert_3d_blend, shader_frag_3d_chara);
+		char* vert_3d = nullptr;
+		char* vert_3d_blend = nullptr;
+		char* vert_3d_deform = nullptr;
+		char* vert_3d_terrain = nullptr;
+		MakeShaderSrc(&vert_3d, 2, SSRC_VERSION, SSRC_VERT_3D);
+		MakeShaderSrc(&vert_3d_blend, 2, SSRC_VERSION, SSRC_VERT_3D_BLEND);
+		MakeShaderSrc(&vert_3d_deform, 2, SSRC_VERSION, SSRC_VERT_3D_DEFORM);
+		MakeShaderSrc(&vert_3d_terrain, 2, SSRC_VERSION, SSRC_VERT_3D_TERRAIN);
 
-		gPtr->shaders[S_SOLID_DEFORM].Init(shader_vert_3d_deform, shader_frag_3d);
-		gPtr->shaders[S_SOLID_DEFORM_CHARA].Init(shader_vert_3d_deform, shader_frag_3d_chara);
+		// Make fragment shader sources
 
-		gPtr->shaders[S_SOLID_TERRAIN].Init(shader_vert_3d_terrain, shader_frag_3d_terrain);
+		char* frag_3d = nullptr;
+		char* frag_3d_chara = nullptr;
+		char* frag_3d_terrain = nullptr;
+		char* frag_3d_meat = nullptr;
+		MakeShaderSrc(&frag_3d, 4, SSRC_VERSION, SSRC_VAR_FRAG_3D, SSRC_FNC_SHADOW, SSRC_MAIN_FRAG_3D);
+		MakeShaderSrc(&frag_3d_chara, 5, SSRC_VERSION, SSRC_VAR_FRAG_3D, SHADER_VAR_FRAG_3D_CHARA, SSRC_FNC_SHADOW, SSRC_MAIN_FRAG_3D_CHARA);
+		MakeShaderSrc(&frag_3d_terrain, 4, SSRC_VERSION, SSRC_VAR_FRAG_3D_TERRAIN, SSRC_FNC_SHADOW, SSRC_MAIN_FRAG_3D_TERRAIN);
+		MakeShaderSrc(&frag_3d_meat, 4, SSRC_VERSION, SSRC_VAR_FRAG_3D_MEAT, SSRC_FNC_SHADOW, SSRC_MAIN_FRAG_3D_MEAT);
 
-		gPtr->shaders[S_MEAT].Init(shader_vert_3d, shader_frag_3d_meat);
+		// Compile shaders
 
-		gPtr->shaders[S_GUI].Init(shader_vert_gui, shader_frag_gui);
+		gPtr->shaders[S_SOLID].Init(vert_3d, frag_3d);
+		gPtr->shaders[S_SOLID_CHARA].Init(vert_3d, frag_3d_chara);
+
+		gPtr->shaders[S_SOLID_BLEND].Init(vert_3d_blend, frag_3d);
+		gPtr->shaders[S_SOLID_BLEND_CHARA].Init(vert_3d_blend, frag_3d_chara);
+
+		gPtr->shaders[S_SOLID_DEFORM].Init(vert_3d_deform, frag_3d);
+		gPtr->shaders[S_SOLID_DEFORM_CHARA].Init(vert_3d_deform, frag_3d_chara);
+
+		gPtr->shaders[S_SOLID_TERRAIN].Init(vert_3d_terrain, frag_3d_terrain);
+
+		gPtr->shaders[S_MEAT].Init(vert_3d, frag_3d_meat);
+
+		// Free the shader sources
+
+		free(vert_3d);
+		free(vert_3d_blend);
+		free(vert_3d_deform);
+		free(vert_3d_terrain);
+
+		free(frag_3d);
+		free(frag_3d_chara);
+		free(frag_3d_terrain);
+		free(frag_3d_meat);
+
+		gPtr->shaders[S_GUI].Init(SHADER_VERT_GUI, SHADER_FRAG_GUI);
 		#if !DEF_DEPTH_BUFFER_RW
-		gPtr->shaders[S_POST].Init(shader_vert_framebuffer, shader_frag_framebuffer);
+		gPtr->shaders[S_POST].Init(SHADER_VERT_FRAMEBUFFER, SHADER_FRAG_FRAMEBUFFER);
 		#else
-		gPtr->shaders[S_POST].Init(shader_vert_framebuffer, shader_frag_framebuffer_depth_buffer);
+		gPtr->shaders[S_POST].Init(SHADER_VERT_FRAMEBUFFER, SHADER_FRAG_FRAMEBUFFER_DEPTH_BUFFER);
 		#endif
-
+		
 		#ifndef DEF_ARCHIVER
 		gPtr->bEditMode = cfg::bEditMode;
 		gPtr->bSplitScreen = cfg::bSplitScreen;

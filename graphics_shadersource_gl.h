@@ -1,7 +1,247 @@
+#define SSRC_VERSION R"(
+#version 330 core
+)"
+
+//________________________________________________________________________________________________________________________________
+// SHADER VARIABLES --------------------------------------------------------------------------------------------------------------
+
+#define SSRC_VAR_FRAG_3D R"(
+out vec4 FragColor;
+
+in vec2 TexCoords;
+in vec3 Normal;
+in vec3 Pos;
+in vec4 Col;
+in vec4 LightSpacePos;
+in vec3 LC; // Light Colour
+
+uniform uint id; // identity
+uniform bool idn; // id null
+uniform vec3 pcam;
+
+uniform float ft; // Time
+
+uniform sampler2D texture_diffuse1;
+uniform sampler2D tlm; // texture lightmap
+uniform sampler2D thm; // texture heightmap
+uniform sampler2D ts; // texture sky
+uniform sampler2D tshadow; // texture shadow
+
+uniform vec3 vsun = normalize(vec3(-1, 1, -1));
+uniform vec3 cFog = vec3(0.1, 0.1, 0.1);
+uniform float fFogDens = 0.f;
+
+uniform bool lit = true;
+
+// lower value = more blending
+// Standard
+//const float shadowDepthBlend = 2048.f;
+// smooth
+const float shadowDepthBlend = 512.f;
+)"
+
+#define SHADER_VAR_FRAG_3D_CHARA R"(
+uniform vec3 c_a = vec3(112. / 256., 103. / 256., 85.  / 256.);
+uniform vec3 c_b = vec3(178. / 256., 107. / 256., 22.  / 256.);
+uniform vec3 c_c = vec3(152. / 256., 144. / 256., 127. / 256.);
+)"
+
+#define SSRC_VAR_FRAG_3D_MEAT R"(
+out vec4 FragColor;
+
+in vec2 TexCoords;
+in vec3 Normal;
+in vec3 Pos;
+in vec4 Col;
+in vec4 LightSpacePos;
+in vec4 ViewSpacePos;
+
+uniform uint id; // identity
+uniform bool idn; // id null
+uniform vec3 pcam;
+
+uniform float ft; // Time
+
+uniform sampler2D texture_diffuse1;
+uniform sampler2D tlm; // texture lightmap
+uniform sampler2D thm; // texture heightmap
+uniform sampler2D ts; // texture sky
+uniform sampler2D tshadow; // texture shadow
+
+uniform vec3 vsun = normalize(vec3(-1, 1, -1));
+
+uniform bool lit = true;
+
+const float scalar = 100.f;
+
+// lower value = more blending
+// Standard
+//const float shadowDepthBlend = 2048.f;
+// smooth
+const float shadowDepthBlend = 512.f;
+
+const int indexMat4x4PSX[16] = int[]
+(
+	-4,	0,	-3,	1,
+	2,	-2,	3,	-1,
+	-3,	1,	-4,	0,
+	3,	-1,	2,	-2
+);
+)"
+
+#define SSRC_VAR_FRAG_3D_TERRAIN R"(
+out vec4 FragColor;
+
+in vec2 TexCoords;
+in vec3 Normal;
+in vec3 Pos;
+in vec4 Col;
+in float TBlend[8];
+in vec4 LightSpacePos;
+in vec3 LC; // Light Colour
+
+uniform uint id; // identity
+uniform bool idn; // id null
+uniform vec3 pcam;
+
+uniform float ft; // Time
+
+uniform sampler2D tt1;
+uniform sampler2D tt2;
+uniform sampler2D tt3;
+uniform sampler2D tt4;
+uniform sampler2D tt5;
+uniform sampler2D tt6;
+uniform sampler2D tt7;
+uniform sampler2D tt8;
+uniform sampler2D tlm; // texture lightmap
+uniform sampler2D thm; // texture heightmap
+uniform sampler2D ts; // texture sky
+uniform sampler2D tshadow; // texture shadow
+
+uniform vec3 vsun = normalize(vec3(-1, 1, -1));
+uniform vec3 cFog = vec3(0.1, 0.1, 0.1);
+uniform float fFogDens = 0.f;
+
+uniform bool lit = true;
+
+// lower value = more blending
+// Standard
+//const float shadowDepthBlend = 2048.f;
+// smooth
+const float shadowDepthBlend = 512.f;
+)"
+
+
+//________________________________________________________________________________________________________________________________
+// SHADER FUNCTIONS --------------------------------------------------------------------------------------------------------------
+
+#define SHADER_FNC_DITHER R"(
+const int indexMatrix4x4old[16] = int[](
+	0,8,2,10,
+	12,4,14,6,
+	3,11,1,9,
+	15,7,13,5);
+
+const int indexMatrix4x4[16] = int[](
+	1,8,2,10,
+	12,4,14,6,
+	3,11,1,9,
+	14,7,13,5);
+	
+const int indexMat4x4PSX[16] = int[]
+(
+	-4,	0,	-3,	1,
+	2,	-2,	3,	-1,
+	-3,	1,	-4,	0,
+	3,	-1,	2,	-2
+);
+
+// normally the first one is zero
+const int indexMatrix8x8[64] = int[](
+	0,32,8,40,2,34,10,42,
+	48,16,56,24,50,18,58,26,
+	12,44,4,36,14,46,6,38,
+	60,28,52,20,62,30,54,22,
+	3,35,11,43,1,33,9,41,
+	51,19,59,27,49,17,57,25,
+	15,47,7,39,13,45,5,37,
+	63,31,55,23,61,29,53,21);
+
+float dither(float color, float index_value) {
+	float closestColor = (color < 0.5) ? 0 : 1;
+	float secondClosestColor = 1 - closestColor;
+	float distance = abs(closestColor - color);
+	return (distance < index_value) ? closestColor : secondClosestColor;
+}
+)"
+
+#define SSRC_FNC_SHADOW R"(
+float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize) {
+	vec2 nearestpoint = (round(projCoords.xy * tsize.x) - 0.5) / tsize.x; // also seems to work, for some reason
+	vec2 offset = (projCoords.xy - nearestpoint) / texelSize.x; // known to work
+	return mix( // X1xX2 x X3xX4 (Y lerp)
+		mix( // X1, X2 Lerp
+			1 - clamp((projCoords.z - texture(tshadow, nearestpoint).r) * shadowDepthBlend, 0.0, 1.0),                          // Shadow A
+			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 0) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow B
+			abs(offset.x)),
+		mix( // X3, X4 Lerp
+			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(0, 1) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow C
+			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 1) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow D
+			abs(offset.x)),
+		abs(offset.y));
+}
+float ShadowCalculation(vec4 fragPosLightSpace) {
+	float shadow = 0.0;
+	if (length(Pos - pcam) < 12.f)
+	{
+		// perform perspective divide
+		vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+		// transform to [0,1] range (coord Z represents current fragment from light's perspective)
+		projCoords = projCoords * 0.5 + 0.5;
+
+		float currentDepth = projCoords.z;
+
+		// texture parameters
+		ivec2 tsize = textureSize(tshadow, 0);
+		vec2 texelSize = 1.0 / textureSize(tshadow, 0);
+
+		// circle pattern
+		float offsetamt = 1.f * texelSize.x;
+		float offsetamtdiag = 0.707107f * texelSize.x;
+		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
+		if (shadow < 3.5f && shadow > 0.5f)
+		{
+			shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
+			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
+			shadow /= 9;
+		}
+		else
+		{
+			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
+			shadow /= 5;
+		}
+
+		// Blend into clip distance
+		shadow += 1 - clamp((12.f - length(Pos - pcam)) / 6.f, 0, 1);
+	}
+	else shadow = 1.f;
+	//else shadow = 0.f; // For debugging
+
+	return shadow;
+}
+)"
+
 //________________________________________________________________________________________________________________________________
 // FRAMEBUFFER -------------------------------------------------------------------------------------------------------------------
 
-char* shader_vert_framebuffer = R"(
+#define SHADER_VERT_FRAMEBUFFER R"(
 #version 330 core
 
 layout (location = 0) in vec2 in_pos;
@@ -15,9 +255,9 @@ void main() {
     gl_Position = transform * vec4(in_pos.x, in_pos.y, 0.0, 1.0);
     TexCoords = in_uv;
 }
-)";
+)"
 
-char* shader_frag_framebuffer = R"(
+#define SHADER_FRAG_FRAMEBUFFER R"(
 #version 330 core
 
 in vec2 TexCoords;
@@ -25,8 +265,8 @@ in vec2 TexCoords;
 out vec4 FragColor;
 
 uniform sampler2D uf_txtr;
-uniform float uf_wx = 640.f;
-uniform float uf_wy = 480.f;
+uniform float wx = 640.f;
+uniform float wy = 480.f;
 
 void main() { 
 	// blur part
@@ -36,8 +276,8 @@ void main() {
 	vec3 sampleTex[18];
 
 	// 0.9 is like photoshop 0.5px blur
-	float ofsx = 0.5f / uf_wx;
-	float ofsy = 0.5f / uf_wy;
+	float ofsx = 0.5f / wx;
+	float ofsy = 0.5f / wy;
 	
 	sampleTex[0] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, ofsy)));
 	sampleTex[1] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f,  ofsy)));
@@ -77,9 +317,9 @@ void main() {
 	//FragColor = FragColor - (0.045 * (1 - FragColor));
 	FragColor *= 1.2f;
 }
-)";
+)"
 
-char* shader_frag_framebuffer_colourdistort = R"(
+#define SHADER_FRAG_FRAMEBUFFER_COLOURDISTORT R"(
 #version 330 core
 out vec4 FragColor;
   
@@ -386,9 +626,9 @@ void main()
 	
 	//FragColor = vec4(0.5f);
 }
-)";
+)"
 
-char* shader_frag_framebuffer_depth_buffer = R"(
+#define SHADER_FRAG_FRAMEBUFFER_DEPTH_BUFFER R"(
 #version 330 core
 out vec4 FragColor;
 
@@ -655,12 +895,12 @@ void main()
 	FragColor = c;
 	//*/
 }
-)";
+)"
 
 //________________________________________________________________________________________________________________________________
 // GUI ---------------------------------------------------------------------------------------------------------------------------
 
-char* shader_vert_gui = R"(
+#define SHADER_VERT_GUI R"(
 #version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aColor;
@@ -677,9 +917,9 @@ void main()
 	ourColor = aColor;
 	TexCoord = aTexCoord;
 }
-)";
+)"
 
-char* shader_frag_gui = R"(
+#define SHADER_FRAG_GUI R"(
 #version 330 core
 out vec4 FragColor;
   
@@ -698,13 +938,12 @@ void main()
 	//	discard;
 	//else FragColor.a = 1.0;
 }
-)";
+)"
 
 //________________________________________________________________________________________________________________________________
 // VERTEX 3D ---------------------------------------------------------------------------------------------------------------------
 
-char* shader_vert_3d = R"(
-#version 330 core
+#define SSRC_VERT_3D R"(
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
@@ -730,13 +969,12 @@ uniform float ft; // Time
 
 uniform sampler2D tshadow; // texture shadow
 
-uniform vec3 vsun = normalize(vec3(-1,1,-1));
-uniform vec3 cSun = vec3(0.f,0.f,0.f);
-//uniform vec3 cAmb = vec3(-0.2,-0.2,-0.3);
-uniform vec3 cAmb = vec3(0.,0.,-0.05);
-uniform vec3 cFog = vec3(0.1,0.1,0.1);
-uniform vec3 cLit = vec3(1.5f,1.5f,1.5f);
-uniform vec3 edgcol = vec3(0.5f,0.5f,0.5f);
+uniform vec3 vsun;
+uniform vec3 cSun;
+uniform vec3 cAmb;
+uniform vec3 cFog;
+uniform vec3 cLit;
+uniform vec3 edgcol;
 
 uniform bool lit = true;
 
@@ -793,10 +1031,9 @@ void main()
 		LC = vec3(3.f, 0.f, 0.f);
 	}
 }
-)";
+)"
 
-char* shader_vert_3d_blend = R"(
-#version 330 core
+#define SSRC_VERT_3D_BLEND R"(
 layout (location = 0) in vec3 aPos1;
 layout (location = 1) in vec3 aPos2;
 layout (location = 2) in vec3 aNor1;
@@ -825,12 +1062,12 @@ uniform float ft; // Time
 
 uniform sampler2D tshadow; // texture shadow
 
-uniform vec3 vsun = normalize(vec3(-1,1,-1));
-uniform vec3 cSun = vec3(0.15,0.1,0.1);
-uniform vec3 cAmb = vec3(0.,0.,-0.05);
-uniform vec3 cFog = vec3(0.1,0.1,0.1);
-uniform vec3 cLit = vec3(1.5f,1.5f,1.5f);
-uniform vec3 edgcol = vec3(0.5f,0.5f,0.5f);
+uniform vec3 vsun;
+uniform vec3 cSun;
+uniform vec3 cAmb;
+uniform vec3 cFog;
+uniform vec3 cLit;
+uniform vec3 edgcol;
 
 uniform bool lit = true;
 
@@ -887,10 +1124,9 @@ void main()
 		LC = vec3(3.f, 0.f, 0.f);
 	}
 }
-)";
+)"
 
-char* shader_vert_3d_deform = R"(
-#version 330 core
+#define SSRC_VERT_3D_DEFORM R"(
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
@@ -924,12 +1160,12 @@ uniform float ft; // Time
 
 uniform sampler2D tshadow; // texture shadow
 
-uniform vec3 vsun = normalize(vec3(-1,1,-1));
-uniform vec3 cSun = vec3(0.15,0.1,0.1);
-uniform vec3 cAmb = vec3(0.,0.,-0.05);
-uniform vec3 cFog = vec3(0.1,0.1,0.1);
-uniform vec3 cLit = vec3(1.5f,1.5f,1.5f);
-uniform vec3 edgcol = vec3(0.5f,0.5f,0.5f);
+uniform vec3 vsun;
+uniform vec3 cSun;
+uniform vec3 cAmb;
+uniform vec3 cFog;
+uniform vec3 cLit;
+uniform vec3 edgcol;
 
 uniform bool lit = true;
 
@@ -1032,10 +1268,9 @@ void main()
 	//LC = vec3((1 - aDeform[1]) - aDeform[0]) * 5.f;
 	//LC = vec3((1 - aDeform[1])) * 5.f;
 }
-)";
+)"
 
-char* shader_vert_3d_terrain = R"(
-#version 330 core
+#define SSRC_VERT_3D_TERRAIN R"(
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoords;
@@ -1124,111 +1359,13 @@ void main()
 		LC = vec3(1.5f);
 	}
 }
-)";
+)"
 
 //________________________________________________________________________________________________________________________________
 // FRAGMENT 3D -------------------------------------------------------------------------------------------------------------------
 
-char* shader_frag_3d = R"(
-#version 330 core
-out vec4 FragColor;
-
-in vec2 TexCoords;
-in vec3 Normal;
-in vec3 Pos;
-in vec4 Col;
-in vec4 LightSpacePos;
-in vec3 LC; // Light Colour
-
-uniform uint id; // identity
-uniform bool idn; // id null
-uniform vec3 pcam;
-
-uniform float ft; // Time
-
-uniform sampler2D texture_diffuse1;
-uniform sampler2D tlm; // texture lightmap
-uniform sampler2D thm; // texture heightmap
-uniform sampler2D ts; // texture sky
-uniform sampler2D tshadow; // texture shadow
-
-uniform vec3 vsun = normalize(vec3(-1, 1, -1));
-uniform vec3 cFog = vec3(0.1, 0.1, 0.1);
-uniform float fFogDens = 0.f;
-
-uniform bool lit = true;
-
-// lower value = more blending
-// Standard
-//const float shadowDepthBlend = 2048.f;
-// smooth
-const float shadowDepthBlend = 512.f;
-
-float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize)
-{
-	vec2 nearestpoint = (round(projCoords.xy * tsize.x) - 0.5) / tsize.x; // also seems to work, for some reason
-	vec2 offset = (projCoords.xy - nearestpoint) / texelSize.x; // known to work
-	return mix( // X1xX2 x X3xX4 (Y lerp)
-		mix( // X1, X2 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint).r) * shadowDepthBlend, 0.0, 1.0),                          // Shadow A
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 0) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow B
-			abs(offset.x)),
-		mix( // X3, X4 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(0, 1) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow C
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 1) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow D
-			abs(offset.x)),
-		abs(offset.y));
-}
-
-float ShadowCalculation(vec4 fragPosLightSpace)
-{
-	float shadow = 0.0;
-	if (length(Pos - pcam) < 12.f)
-	{
-		// perform perspective divide
-		vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-		// transform to [0,1] range (coord Z represents current fragment from light's perspective)
-		projCoords = projCoords * 0.5 + 0.5;
-
-		float currentDepth = projCoords.z;
-
-		// texture parameters
-		ivec2 tsize = textureSize(tshadow, 0);
-		vec2 texelSize = 1.0 / textureSize(tshadow, 0);
-
-		// circle pattern
-		float offsetamt = 1.f * texelSize.x;
-		float offsetamtdiag = 0.707107f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		if (shadow < 3.5f && shadow > 0.5f)
-		{
-			shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			shadow /= 9;
-		}
-		else
-		{
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			shadow /= 5;
-		}
-
-		// Blend into clip distance
-		shadow += 1 - clamp((12.f - length(Pos - pcam)) / 6.f, 0, 1);
-	}
-	else shadow = 1.f;
-	//else shadow = 0.f; // For debugging
-
-	return shadow;
-}
-
-void main()
-{
+#define SSRC_MAIN_FRAG_3D R"(
+void main() {
 	FragColor = texture(texture_diffuse1, TexCoords);
 	if (FragColor.a < 0.5) discard;
 
@@ -1253,185 +1390,10 @@ void main()
 	float fog_mix_half = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start) * 0.5f, 0.f, 1.f);
 	FragColor.rgb = mix(FragColor.rgb, cFog, mix(fog_mix, fog_mix_half, Col.g));
 }
-)";
+)"
 
-char* shader_frag_3d_chara = R"(
-#version 330 core
-out vec4 FragColor;
-
-in vec2 TexCoords;
-in vec3 Normal;
-in vec3 Pos;
-in vec4 Col;
-in vec4 LightSpacePos;
-in vec3 LC; // Light Colour
-
-uniform uint id; // identity
-uniform bool idn; // id null
-uniform vec3 pcam;
-
-uniform float ft; // Time
-
-uniform sampler2D texture_diffuse1;
-uniform sampler2D tlm; // texture lightmap
-uniform sampler2D thm; // texture heightmap
-uniform sampler2D ts; // texture sky
-uniform sampler2D tshadow; // texture shadow
-
-uniform vec3 vsun = normalize(vec3(-1,1,-1));
-uniform vec3 cFog = vec3(0.1,0.1,0.1);
-uniform float fFogDens = 0.f;
-
-
-uniform vec3 c_a = vec3(112. / 256., 103. / 256., 85.  / 256.);
-uniform vec3 c_b = vec3(178. / 256., 107. / 256., 22.  / 256.);
-uniform vec3 c_c = vec3(152. / 256., 144. / 256., 127. / 256.);
-
-
-uniform bool lit = true;
-
-const int indexMatrix4x4old[16] = int[](
-	0,8,2,10,
-	12,4,14,6,
-	3,11,1,9,
-	15,7,13,5);
-
-const int indexMatrix4x4[16] = int[](
-	1,8,2,10,
-	12,4,14,6,
-	3,11,1,9,
-	14,7,13,5);
-	
-const int indexMat4x4PSX[16] = int[]
-(
-	-4,	0,	-3,	1,
-	2,	-2,	3,	-1,
-	-3,	1,	-4,	0,
-	3,	-1,	2,	-2
-);
-
-// normally the first one is zero
-const int indexMatrix8x8[64] = int[](
-	0,32,8,40,2,34,10,42,
-	48,16,56,24,50,18,58,26,
-	12,44,4,36,14,46,6,38,
-	60,28,52,20,62,30,54,22,
-	3,35,11,43,1,33,9,41,
-	51,19,59,27,49,17,57,25,
-	15,47,7,39,13,45,5,37,
-	63,31,55,23,61,29,53,21);
-
-float dither(float color, float index_value) {
-	float closestColor = (color < 0.5) ? 0 : 1;
-	float secondClosestColor = 1 - closestColor;
-	float distance = abs(closestColor - color);
-	return (distance < index_value) ? closestColor : secondClosestColor;
-}
-
-float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize)
-{
-	vec2 nearestpoint = (round(projCoords.xy * tsize.x) - 0.5) / tsize.x; // also seems to work, for some reason
-	vec2 offset = (projCoords.xy - nearestpoint) / texelSize.x; // known to work
-	return mix( // X1xX2 x X3xX4 (Y lerp)
-		mix( // X1, X2 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint).r) * 512.f, 0.0, 1.0),                          // Shadow A
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 0) * texelSize).r) * 512.f, 0.0, 1.0), // Shadow B
-			abs(offset.x)),
-		mix( // X3, X4 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(0, 1) * texelSize).r) * 512.f, 0.0, 1.0), // Shadow C
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 1) * texelSize).r) * 512.f, 0.0, 1.0), // Shadow D
-			abs(offset.x)),
-		abs(offset.y));
-}
-
-float ShadowCalculation(vec4 fragPosLightSpace)
-{
-	float shadow = 0.0;
-	if (length(Pos - pcam) < 12.f)
-	{
-		// perform perspective divide
-		vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-		// transform to [0,1] range (coord Z represents current fragment from light's perspective)
-		projCoords = projCoords * 0.5 + 0.5;
-		
-		float currentDepth = projCoords.z;
-
-		// texture parameters
-		ivec2 tsize = textureSize(tshadow, 0);
-		vec2 texelSize = 1.0 / textureSize(tshadow, 0);
-		
-		//shadow = GetShadowBilinear(projCoords, tsize, texelSize);
-		
-		// circle pattern
-		///*
-		float offsetamt = 1.f * texelSize.x;
-		float offsetamtdiag = 0.707107f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		if (shadow < 3.5f && shadow > 0.5f)
-		{
-			shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			
-			shadow /= 9;
-		}
-		else
-		{
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			shadow /= 5;
-			//shadow = 1;
-		}
-		//*/
-		//hex pattern
-		/*
-		float oHexA = 1.5f * texelSize.x;
-		float oHexB = 1.29904f * texelSize.x;
-		float oHexC = 0.75f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow /= 7;
-		//*/
-		
-		// double hex pattern
-		/*
-		float oHexA = 1.5f * texelSize.x;
-		float oHexB = 1.29904f * texelSize.x;
-		float oHexC = 0.75f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow /= 13;
-		//*/
-		
-		// Blend into clip distance
-		shadow += 1 - clamp((12.f - length(Pos - pcam)) / 1.f, 0, 1);
-	}
-	else shadow = 1.f;
-	//else shadow = 0.f; // For debugging
-	
-    return shadow;
-}
-
-void main()
-{
+#define SSRC_MAIN_FRAG_3D_CHARA R"(
+void main() {
 	//FragColor = texture(texture_diffuse1, TexCoords);
 	//if (FragColor.a < 0.5) discard;
 
@@ -1492,179 +1454,10 @@ void main()
 	float fog_mix_half = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start) * 0.5f, 0.f, 1.f);
 	FragColor.rgb = mix(FragColor.rgb, cFog, mix(fog_mix, fog_mix_half, Col.g));
 }
-)";
+)"
 
-char* shader_frag_3d_meat = R"(
-#version 330 core
-out vec4 FragColor;
-
-in vec2 TexCoords;
-in vec3 Normal;
-in vec3 Pos;
-in vec4 Col;
-in vec4 LightSpacePos;
-in vec4 ViewSpacePos;
-
-uniform uint id; // identity
-uniform bool idn; // id null
-uniform vec3 pcam;
-
-uniform float ft; // Time
-
-uniform sampler2D texture_diffuse1;
-uniform sampler2D tlm; // texture lightmap
-uniform sampler2D thm; // texture heightmap
-uniform sampler2D ts; // texture sky
-uniform sampler2D tshadow; // texture shadow
-
-uniform vec3 vsun = normalize(vec3(-1, 1, -1));
-
-uniform bool lit = true;
-
-const float scalar = 100.f;
-
-const int indexMatrix4x4old[16] = int[](
-	0, 8, 2, 10,
-	12, 4, 14, 6,
-	3, 11, 1, 9,
-	15, 7, 13, 5);
-
-const int indexMatrix4x4[16] = int[](
-	1, 8, 2, 10,
-	12, 4, 14, 6,
-	3, 11, 1, 9,
-	14, 7, 13, 5);
-
-const int indexMat4x4PSX[16] = int[]
-(
-	-4, 0, -3, 1,
-	2, -2, 3, -1,
-	-3, 1, -4, 0,
-	3, -1, 2, -2
-	);
-
-// normally the first one is zero
-const int indexMatrix8x8[64] = int[](
-	0, 32, 8, 40, 2, 34, 10, 42,
-	48, 16, 56, 24, 50, 18, 58, 26,
-	12, 44, 4, 36, 14, 46, 6, 38,
-	60, 28, 52, 20, 62, 30, 54, 22,
-	3, 35, 11, 43, 1, 33, 9, 41,
-	51, 19, 59, 27, 49, 17, 57, 25,
-	15, 47, 7, 39, 13, 45, 5, 37,
-	63, 31, 55, 23, 61, 29, 53, 21);
-
-float dither(float color, float index_value) {
-	float closestColor = (color < 0.5) ? 0 : 1;
-	float secondClosestColor = 1 - closestColor;
-	float distance = abs(closestColor - color);
-	return (distance < index_value) ? closestColor : secondClosestColor;
-}
-
-float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize)
-{
-	vec2 nearestpoint = (round(projCoords.xy * tsize.x) - 0.5) / tsize.x; // also seems to work, for some reason
-	vec2 offset = (projCoords.xy - nearestpoint) / texelSize.x; // known to work
-	return mix( // X1xX2 x X3xX4 (Y lerp)
-		mix( // X1, X2 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint).r) * 2048.f, 0.0, 1.0),                          // Shadow A
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 0) * texelSize).r) * 2048.f, 0.0, 1.0), // Shadow B
-			abs(offset.x)),
-		mix( // X3, X4 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(0, 1) * texelSize).r) * 2048.f, 0.0, 1.0), // Shadow C
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 1) * texelSize).r) * 2048.f, 0.0, 1.0), // Shadow D
-			abs(offset.x)),
-		abs(offset.y));
-}
-
-float ShadowCalculation(vec4 fragPosLightSpace)
-{
-	float shadow = 0.0;
-	if (length(Pos.xz - pcam.xz) < 12.f)
-	{
-		// perform perspective divide
-		vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-		// transform to [0,1] range (coord Z represents current fragment from light's perspective)
-		projCoords = projCoords * 0.5 + 0.5;
-
-		float currentDepth = projCoords.z;
-
-		// texture parameters
-		ivec2 tsize = textureSize(tshadow, 0);
-		vec2 texelSize = 1.0 / textureSize(tshadow, 0);
-
-		//shadow = GetShadowBilinear(projCoords, tsize, texelSize);
-
-		// circle pattern
-		///*
-		float offsetamt = 1.f * texelSize.x;
-		float offsetamtdiag = 0.707107f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		if (shadow < 3.5f && shadow > 0.5f)
-		{
-			shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-
-			shadow /= 9;
-		}
-		else
-		{
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			shadow /= 5;
-			//shadow = 1;
-		}
-		//*/
-		//hex pattern
-		/*
-		float oHexA = 1.5f * texelSize.x;
-		float oHexB = 1.29904f * texelSize.x;
-		float oHexC = 0.75f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow /= 7;
-		//*/
-
-		// double hex pattern
-		/*
-		float oHexA = 1.5f * texelSize.x;
-		float oHexB = 1.29904f * texelSize.x;
-		float oHexC = 0.75f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(0.f, -oHexA, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, -oHexC, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-oHexB, oHexC, 0.f), tsize, texelSize);
-		shadow /= 13;
-		//*/
-
-		// Blend into clip distance
-		shadow += 1 - clamp((12.f - length(Pos.xz - pcam.xz)) / 6.f, 0, 1);
-	}
-	else shadow = 1.f;
-	//else shadow = 0.f; // For debugging
-
-	return shadow;
-}
-
-void main()
-{
+#define SSRC_MAIN_FRAG_3D_MEAT R"(
+void main() {
 	// fresnel
 	///*
 	vec3 vd = Pos - pcam;
@@ -1788,116 +1581,10 @@ void main()
 		FragColor.rgb *= ndotl * 2.f;
 	}
 }
-)";
+)"
 
-char* shader_frag_3d_terrain = R"(
-#version 330 core
-out vec4 FragColor;
-
-in vec2 TexCoords;
-in vec3 Normal;
-in vec3 Pos;
-in vec4 Col;
-in float TBlend[8];
-in vec4 LightSpacePos;
-in vec3 LC; // Light Colour
-
-uniform uint id; // identity
-uniform bool idn; // id null
-uniform vec3 pcam;
-
-uniform float ft; // Time
-
-uniform sampler2D tt1;
-uniform sampler2D tt2;
-uniform sampler2D tt3;
-uniform sampler2D tt4;
-uniform sampler2D tt5;
-uniform sampler2D tt6;
-uniform sampler2D tt7;
-uniform sampler2D tt8;
-uniform sampler2D tlm; // texture lightmap
-uniform sampler2D thm; // texture heightmap
-uniform sampler2D ts; // texture sky
-uniform sampler2D tshadow; // texture shadow
-
-uniform vec3 vsun = normalize(vec3(-1, 1, -1));
-uniform vec3 cFog = vec3(0.1, 0.1, 0.1);
-uniform float fFogDens = 0.f;
-
-uniform bool lit = true;
-
-// lower value = more blending
-// Standard
-//const float shadowDepthBlend = 2048.f;
-// smooth
-const float shadowDepthBlend = 512.f;
-
-float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize)
-{
-	vec2 nearestpoint = (round(projCoords.xy * tsize.x) - 0.5) / tsize.x; // also seems to work, for some reason
-	vec2 offset = (projCoords.xy - nearestpoint) / texelSize.x; // known to work
-	return mix( // X1xX2 x X3xX4 (Y lerp)
-		mix( // X1, X2 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint).r) * shadowDepthBlend, 0.0, 1.0),                          // Shadow A
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 0) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow B
-			abs(offset.x)),
-		mix( // X3, X4 Lerp
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(0, 1) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow C
-			1 - clamp((projCoords.z - texture(tshadow, nearestpoint + vec2(1, 1) * texelSize).r) * shadowDepthBlend, 0.0, 1.0), // Shadow D
-			abs(offset.x)),
-		abs(offset.y));
-}
-
-float ShadowCalculation(vec4 fragPosLightSpace)
-{
-	float shadow = 0.0;
-	if (length(Pos - pcam) < 12.f)
-	{
-		// perform perspective divide
-		vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-		// transform to [0,1] range (coord Z represents current fragment from light's perspective)
-		projCoords = projCoords * 0.5 + 0.5;
-
-		float currentDepth = projCoords.z;
-
-		// texture parameters
-		ivec2 tsize = textureSize(tshadow, 0);
-		vec2 texelSize = 1.0 / textureSize(tshadow, 0);
-
-		// circle pattern
-		float offsetamt = 1.f * texelSize.x;
-		float offsetamtdiag = 0.707107f * texelSize.x;
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
-		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		if (shadow < 3.5f && shadow > 0.5f)
-		{
-			shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			shadow /= 9;
-		}
-		else
-		{
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			shadow /= 5;
-		}
-
-		// Blend into clip distance
-		shadow += 1 - clamp((12.f - length(Pos - pcam)) / 6.f, 0, 1);
-	}
-	else shadow = 1.f;
-	//else shadow = 0.f; // For debugging
-
-	return shadow;
-}
-
-void main()
-{
+#define SSRC_MAIN_FRAG_3D_TERRAIN R"(
+void main() {
 	//FragColor = mix(texture(tt1, TexCoords), texture(tt2, TexCoords), TBlend.r);
 	//FragColor = mix(texture(tt1, TexCoords), texture(tt2, TexCoords), TBlend.r);
 
@@ -1939,4 +1626,4 @@ void main()
 	float fog_solid = 0.1f; // for long distance default to 0.0015f
 	FragColor.rgb = mix(FragColor.rgb, cFog, clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start), 0.f, 1.f));
 }
-)";
+)"
