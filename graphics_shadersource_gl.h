@@ -268,12 +268,39 @@ uniform sampler2D uf_txtr;
 uniform float wx = 640.f;
 uniform float wy = 480.f;
 
+vec3 BloomAdd(float rndsz, float fmodx, float fmody, float offsetamt, vec2 pxpos) {
+	return mix(
+		mix(
+			texture(uf_txtr, floor(pxpos * rndsz) / rndsz).rgb,
+			texture(uf_txtr, floor((pxpos + vec2(offsetamt, 0)) * rndsz) / rndsz).rgb,
+			fmodx),
+		mix(
+			texture(uf_txtr, floor((pxpos + vec2(0, offsetamt)) * rndsz) / rndsz).rgb,
+			texture(uf_txtr, floor((pxpos + vec2(offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
+			fmodx),
+		fmody);
+}
+vec3 Bloom() {
+	int itercount = 4;
+	float rndsz = 32.;
+	float fmodx = (TexCoords.x - (floor(TexCoords.x * rndsz) / rndsz)) * rndsz;
+	float fmody = (TexCoords.y - (floor(TexCoords.y * rndsz) / rndsz)) * rndsz;
+	float offsetP = 1.f / rndsz;
+	vec3 bloom = vec3(0.f, 0.f, 0.f);
+	for (int x = -itercount; x < itercount; x++) {
+		for (int y = -itercount; y < itercount; y++) {
+			bloom += BloomAdd(rndsz, fmodx, fmody, offsetP, TexCoords + vec2(x * offsetP, y * offsetP));
+		}
+	}
+	return bloom / ((itercount * 2) * (itercount * 2)) * 0.5f;
+}
+
 void main() { 
 	// blur part
 	// sample diffuse colour
 	// wtf was i even doing here??
-	//vec3 sampleTex[9];
-	vec3 sampleTex[18];
+	vec3 sampleTex[9];
+	//vec3 sampleTex[18];
 
 	// 0.9 is like photoshop 0.5px blur
 	float ofsx = 0.5f / wx;
@@ -289,15 +316,22 @@ void main() {
 	sampleTex[7] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f, -ofsy)));
 	sampleTex[8] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx, -ofsy)));
 	
+
 	vec3 col = vec3(0.0);
-	for(int i = 0; i < 18; i++)
+	for(int i = 0; i < 9; i++)
 		col += sampleTex[i] / 9.f;
 	
-	col = clamp((col), 0, 1);
+	//col = clamp((col), 0, 1);	
 	
+	col += clamp((Bloom() - 0.2f) * 1.5f, 0.f, 128.f);
+	//col = mix(col, Bloom(), 0.5f);
+	//col = max(col, Bloom());
+
 	FragColor.rgb = col;
 	FragColor.a = 1.f;
 	
+
+
 	// Gamma correction
 	//*
 	const float exposure = 2.2;
@@ -310,12 +344,14 @@ void main() {
 	//*/
 	
 	//bleach overflow
-	float highestOverflow = max(max(col.r, col.g), col.b);
-	FragColor.rgb = mix(col.rgb, vec3(1.0,1.0,1.0), clamp((highestOverflow - 0.9f) * 1.75f, 0.f, 1.f));
-	
+	float highestOverflow = max(max(FragColor.r, FragColor.g), FragColor.b);
+	//FragColor.rgb = mix(FragColor.rgb, vec3(1.0,1.0,1.0), clamp((highestOverflow - 0.9f) * 1.75f, 0.f, 1.f));
+	FragColor.rgb = mix(FragColor.rgb, vec3(1.0,1.0,1.0), clamp((highestOverflow - 1.2f) * 0.75f, 0.f, 1.f));
+
+
 	//darken
 	//FragColor = FragColor - (0.045 * (1 - FragColor));
-	FragColor *= 1.2f;
+	//FragColor *= 1.2f;
 }
 )"
 
@@ -325,7 +361,7 @@ out vec4 FragColor;
   
 in vec2 TexCoords;
 
-uniform sampler2D screenTexture;
+uniform sampler2D uf_txtr;
 
 uniform float wx = 640.f;
 uniform float wy = 480.f;
@@ -377,9 +413,36 @@ float dither(float color) {
 }
 //*/
 
+vec3 BloomAdd(float rndsz, float fmodx, float fmody, float offsetamt, vec2 pxpos) {
+	return mix(
+		mix(
+			texture(uf_txtr, floor(pxpos * rndsz) / rndsz).rgb,
+			texture(uf_txtr, floor((pxpos + vec2(offsetamt, 0)) * rndsz) / rndsz).rgb,
+			fmodx),
+		mix(
+			texture(uf_txtr, floor((pxpos + vec2(0, offsetamt)) * rndsz) / rndsz).rgb,
+			texture(uf_txtr, floor((pxpos + vec2(offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
+			fmodx),
+		fmody);
+}
+vec3 Bloom() {
+	int itercount = 4;
+	float rndsz = 32.;
+	float fmodx = (TexCoords.x - (floor(TexCoords.x * rndsz) / rndsz)) * rndsz;
+	float fmody = (TexCoords.y - (floor(TexCoords.y * rndsz) / rndsz)) * rndsz;
+	float offsetP = 1.f / rndsz;
+	vec3 bloom = vec3(0.f, 0.f, 0.f);
+	for (int x = -itercount; x < itercount; x++) {
+		for (int y = -itercount; y < itercount; y++) {
+			bloom += BloomAdd(rndsz, fmodx, fmody, offsetP, TexCoords + vec2(x * offsetP, y * offsetP));
+		}
+	}
+	return bloom / ((itercount * 2) * (itercount * 2)) * 0.5f;
+}
+
 void main()
 { 
-	//FragColor = texture(screenTexture, TexCoords);
+	//FragColor = texture(uf_txtr, TexCoords);
 	
 	// blur part
 	//sample diffuse colour
@@ -390,15 +453,15 @@ void main()
 	float ofsx = 1.f / wx;
 	float ofsy = 1.f / wy;
 	
-	sampleTex[0] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, ofsy)));
-	sampleTex[1] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f,  ofsy)));
-	sampleTex[2] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx,  ofsy)));
-	sampleTex[3] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, 0.0f)));
-	sampleTex[4] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f,  0.0f)));
-	sampleTex[5] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx,  0.0f)));
-	sampleTex[6] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx,-ofsy)));
-	sampleTex[7] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f, -ofsy)));
-	sampleTex[8] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx, -ofsy)));
+	sampleTex[0] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, ofsy)));
+	sampleTex[1] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f,  ofsy)));
+	sampleTex[2] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx,  ofsy)));
+	sampleTex[3] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, 0.0f)));
+	sampleTex[4] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f,  0.0f)));
+	sampleTex[5] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx,  0.0f)));
+	sampleTex[6] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx,-ofsy)));
+	sampleTex[7] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f, -ofsy)));
+	sampleTex[8] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx, -ofsy)));
 	
 	// extra samples
 	// Since I am going to come back to this some day and wonder wtf is going on here
@@ -407,16 +470,16 @@ void main()
 	int modx = int(mod(gl_FragCoord.x, 2));
 	int mody = int(mod(gl_FragCoord.y, 2));
 	// Right hand side
-	sampleTex[9] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-2 - modx), ofsy)));
-	sampleTex[10] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-2 - modx), 0.0f)));
-	sampleTex[11] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-2 - modx), -ofsy)));
-	sampleTex[12] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-4 - modx), ofsy)));
-	sampleTex[13] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-4 - modx), 0.f)));
-	sampleTex[14] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx * (-4 - modx), -ofsy)));
+	sampleTex[9] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx * (-2 - modx), ofsy)));
+	sampleTex[10] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx * (-2 - modx), 0.0f)));
+	sampleTex[11] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx * (-2 - modx), -ofsy)));
+	sampleTex[12] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx * (-4 - modx), ofsy)));
+	sampleTex[13] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx * (-4 - modx), 0.f)));
+	sampleTex[14] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx * (-4 - modx), -ofsy)));
 	// Top side
-	sampleTex[15] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, ofsy * (-2 - mody))));
-	sampleTex[16] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f,  ofsy * (-2 - mody))));
-	sampleTex[17] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx,  ofsy * (-2 - mody))));
+	sampleTex[15] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, ofsy * (-2 - mody))));
+	sampleTex[16] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f,  ofsy * (-2 - mody))));
+	sampleTex[17] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx,  ofsy * (-2 - mody))));
 	
 	vec3 col = vec3(0.0);
 	for(int i = 0; i < 18; i++)
@@ -439,148 +502,8 @@ void main()
 	//col.g = min(brightness, difG);
 	//col.b = min(brightness, difB);
 	
-	//*
-	float rndsz = 8.;
-	float fmodx = (TexCoords.x - (floor(TexCoords.x * rndsz) / rndsz)) * rndsz;
-	float fmody = (TexCoords.y - (floor(TexCoords.y * rndsz) / rndsz)) * rndsz;
-	float offsetamt = 1.f / rndsz;
-	
-	vec3 bloom = mix(
-		mix(
-			texture(screenTexture, floor(TexCoords * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, 0)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody);
-	bloom += mix( // x+
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, 0)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 2, 0)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 2, offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.6;
-	bloom += mix( // x-
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt, 0)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(0, 0)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(0, offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.6;
-	bloom += mix( // y+
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, offsetamt * 2)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, offsetamt * 2)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.6;
-	bloom += mix( // y-
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, -offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, -offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, 0)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, 0)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.6;
-	bloom += mix( // x+ y+
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 2, offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, offsetamt * 2)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 2, offsetamt * 2)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.4;
-	bloom += mix( // x+ y-
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, -offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 2, -offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, 0)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 2, 0)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.4;
-	bloom += mix( // x- y+
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(0, offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt, offsetamt * 2)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(0, offsetamt * 2)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.4;
-	bloom += mix( // x- y-
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt, -offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(0, -offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt, 0)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(0, 0)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.4;
-		
-	bloom += mix( // x++
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 2, 0)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 3, 0)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 2, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt * 3, offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.25;
-	bloom += mix( // x--
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt * 2, 0)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt, 0)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt * 2, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(-offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.25;
-	bloom += mix( // y++
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, offsetamt * 2)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, offsetamt * 2)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, offsetamt * 3)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, offsetamt * 3)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.25;
-	bloom += mix( // y--
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, -offsetamt * 2)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, -offsetamt * 2)) * rndsz) / rndsz).rgb,
-			fmodx),
-		mix(
-			texture(screenTexture, floor((TexCoords + vec2(0, -offsetamt)) * rndsz) / rndsz).rgb,
-			texture(screenTexture, floor((TexCoords + vec2(offsetamt, -offsetamt)) * rndsz) / rndsz).rgb,
-			fmodx),
-		fmody) * 0.25;
-			
-	//FragColor.rgb += clamp(bloom * 0.5f - 0.15f, 0, 100);
-	//FragColor.rgb += clamp(bloom * 0.5f - 0.15f, 0, 100);
-	col += bloom * 0.062f;
-	//*/
+	// BOX BLUR BLOOM
+	col += Bloom();
 	
 	FragColor.rgb = col;
 	FragColor.a = 1.f;
@@ -600,7 +523,7 @@ void main()
 	col.rgb = mix(col.rgb, vec3(1,1,1), clamp((highestOverflow - 0.9f) * 0.75f, 0.f, 1.f));
 	
 	//darken
-	FragColor = FragColor - (0.045 * (1 - FragColor));
+	//FragColor = FragColor - (0.045 * (1 - FragColor));
 	
 	//FragColor.rgb = col - 0.5f;
 	
@@ -610,7 +533,7 @@ void main()
 	//FragColor = vec4(col, 1.0);
 	//FragColor = vec4(red, grn, blu, 1.0);
 	
-	//FragColor = texture(screenTexture, TexCoords);
+	//FragColor = texture(uf_txtr, TexCoords);
 	//FragColor -= texture(noise, TexCoords);
 	
 	// Dither
@@ -634,7 +557,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D screenTexture;
+uniform sampler2D uf_txtr;
 uniform sampler2D depthTexture;
 
 uniform float wx = 640.f;
@@ -689,7 +612,7 @@ float dither(float color) {
 
 void main()
 {
-	//FragColor = texture(screenTexture, TexCoords);
+	//FragColor = texture(uf_txtr, TexCoords);
 
 	// blur part
 	//sample diffuse colour
@@ -700,15 +623,15 @@ void main()
 	float ofsx = 0.5f / wx;
 	float ofsy = 0.5f / wy;
 
-	sampleTex[0] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, ofsy)));
-	sampleTex[1] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f, ofsy)));
-	sampleTex[2] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx, ofsy)));
-	sampleTex[3] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, 0.0f)));
-	sampleTex[4] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f, 0.0f)));
-	sampleTex[5] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx, 0.0f)));
-	sampleTex[6] = vec3(texture(screenTexture, TexCoords.st + vec2(-ofsx, -ofsy)));
-	sampleTex[7] = vec3(texture(screenTexture, TexCoords.st + vec2(0.0f, -ofsy)));
-	sampleTex[8] = vec3(texture(screenTexture, TexCoords.st + vec2(ofsx, -ofsy)));
+	sampleTex[0] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, ofsy)));
+	sampleTex[1] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f, ofsy)));
+	sampleTex[2] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx, ofsy)));
+	sampleTex[3] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, 0.0f)));
+	sampleTex[4] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f, 0.0f)));
+	sampleTex[5] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx, 0.0f)));
+	sampleTex[6] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, -ofsy)));
+	sampleTex[7] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f, -ofsy)));
+	sampleTex[8] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx, -ofsy)));
 
 	vec3 col = vec3(0.0);
 	for (int i = 0; i < 18; i++)
@@ -722,32 +645,32 @@ void main()
 	float fmody = (TexCoords.y - (floor(TexCoords.y * rndsz) / rndsz)) * rndsz;
 	float offsetamt = 1.f / rndsz;
 
-	//vec3 bloom = texture(screenTexture, floor(TexCoords * rndsz) / rndsz).rgb;
-	vec3 bloom;// = texture(screenTexture, TexCoords).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.004f, 0.75f *    0.01f)).rgb;//
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.004f, 0.75f *    0.01f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.004f, 0.75f *   -0.01f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.004f, 0.75f *   -0.01f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.01f, 0.75f *   0.004f)).rgb;//
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.01f, 0.75f *   0.004f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.01f, 0.75f *  -0.004f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.01f, 0.75f *  -0.004f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.002f, 0.75f *   0.005f)).rgb;//
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.002f, 0.75f *   0.005f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.002f, 0.75f *  -0.005f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.002f, 0.75f *  -0.005f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.005f, 0.75f *   0.002f)).rgb;//
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.005f, 0.75f *   0.002f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.005f, 0.75f *  -0.002f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.005f, 0.75f *  -0.002f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.001f, 0.75f *  0.0025f)).rgb;//
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.001f, 0.75f *  0.0025f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.001f, 0.75f * -0.0025f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.001f, 0.75f * -0.0025f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.0025f, 0.75f *   0.001f)).rgb;//
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.0025f, 0.75f *   0.001f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f *  0.0025f, 0.75f *  -0.001f)).rgb;
-	bloom += texture(screenTexture, TexCoords + vec2(0.75f * -0.0025f, 0.75f *  -0.001f)).rgb;
+	//vec3 bloom = texture(uf_txtr, floor(TexCoords * rndsz) / rndsz).rgb;
+	vec3 bloom;// = texture(uf_txtr, TexCoords).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.004f, 0.75f *    0.01f)).rgb;//
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.004f, 0.75f *    0.01f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.004f, 0.75f *   -0.01f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.004f, 0.75f *   -0.01f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.01f, 0.75f *   0.004f)).rgb;//
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.01f, 0.75f *   0.004f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.01f, 0.75f *  -0.004f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.01f, 0.75f *  -0.004f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.002f, 0.75f *   0.005f)).rgb;//
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.002f, 0.75f *   0.005f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.002f, 0.75f *  -0.005f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.002f, 0.75f *  -0.005f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.005f, 0.75f *   0.002f)).rgb;//
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.005f, 0.75f *   0.002f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.005f, 0.75f *  -0.002f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.005f, 0.75f *  -0.002f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.001f, 0.75f *  0.0025f)).rgb;//
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.001f, 0.75f *  0.0025f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.001f, 0.75f * -0.0025f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.001f, 0.75f * -0.0025f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.0025f, 0.75f *   0.001f)).rgb;//
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.0025f, 0.75f *   0.001f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f *  0.0025f, 0.75f *  -0.001f)).rgb;
+	bloom += texture(uf_txtr, TexCoords + vec2(0.75f * -0.0025f, 0.75f *  -0.001f)).rgb;
 	bloom /= 24.0;
 
 	//FragColor.rgb += clamp(bloom * 0.5f - 0.15f, 0, 100);
@@ -757,7 +680,7 @@ void main()
 	//*/
 
 
-	col = texture(screenTexture, TexCoords).rgb;
+	col = texture(uf_txtr, TexCoords).rgb;
 
 
 	float offsetxdep = 1.0 / wx;
@@ -851,14 +774,14 @@ void main()
 
 
 
-	//FragColor = texture(screenTexture, TexCoords);
+	//FragColor = texture(uf_txtr, TexCoords);
 	//FragColor.rgb = vec3(texture(depthTexture, TexCoords).r);
 
 	//normal
 	//FragColor = vec4(col, 1.0);
 	//FragColor = vec4(red, grn, blu, 1.0);
 
-	//FragColor = texture(screenTexture, TexCoords);
+	//FragColor = texture(uf_txtr, TexCoords);
 	//FragColor -= texture(noise, TexCoords);
 
 	// Dither
@@ -891,7 +814,7 @@ void main()
 	uv.y = r * sin(phi) + 0.5;
 	}
 	else { uv = TexCoords.xy; }
-	vec4 c = texture2D(screenTexture, uv);
+	vec4 c = texture2D(uf_txtr, uv);
 	FragColor = c;
 	//*/
 }
