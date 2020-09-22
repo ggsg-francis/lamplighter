@@ -13,11 +13,12 @@
 #define SIZE_32 4
 #define SIZE_64 8
 
-extern mem::ObjBuf<EntAddr, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> block_entity;
-extern mem::ObjBuf<ECSingleItem, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_resting_item;
-extern mem::ObjBuf<ECActor, EntityType, ENTITY_TYPE_NULL, BUF_SIZE> buf_chara;
+extern mem::ObjBuf<HeldItem, ItemType, ENTITY_TYPE_NULL, BUF_SIZE>* buf_iteminst;
 
-extern mem::ObjBuf<HeldItem, ItemType, ENTITY_TYPE_NULL, BUF_SIZE> buf_iteminst;
+extern mem::objbuf_caterpillar block_proj; // Projectile buffer
+extern Projectile proj[BUF_SIZE];
+
+extern btui64 tickCount;
 
 namespace core
 {
@@ -44,46 +45,31 @@ void SaveState()
 	printf("SAVE FUNCTION CALLED ON TICK %i\n", tickCount);
 
 	// clean all unused item instances
-	for (btID index_item = 0; index_item <= buf_iteminst.index_end; index_item++) // For every item
-	{
-		if (buf_iteminst.Used(index_item))
-		{
-			btui32 item_reference_count = 0u;
-			for (btID index_ent = 0; index_ent <= block_entity.index_end; index_ent++) // For every entity
-			{
-				if (block_entity.Used(index_ent))
-				{
-					// if this entity has an inventory
-					if (GetEntityType(index_ent) == ENTITY_TYPE_ACTOR)
-					{
-						// for every invntory slot
-						for (btui32 inv_slot = 0; inv_slot < ACTOR(index_ent)->inventory.items.Size(); ++inv_slot)
-						{
-							// if this slot contains this item
-							if (ACTOR(index_ent)->inventory.items[inv_slot] == index_item)
-							{
-								item_reference_count++;
-								goto item_done; // we found our reference so can skip the rest
-							}
-						}
-					}
-					else if (GetEntityType(index_ent) == ENTITY_TYPE_RESTING_ITEM)
-					{
-						// if this entity hold this item
-						if (ITEM(index_ent)->item_instance == index_item)
-						{
-							item_reference_count++;
-							goto item_done; // we found our reference so can skip the rest
-						}
-					}
+	// this is a hack and i know it
+	for (btID index_item = 0; index_item <= buf_iteminst->index_end; index_item++) { // For every item
+		if (!buf_iteminst->Used(index_item)) continue;
+		btui32 item_reference_count = 0u;
+		for (btID index_ent = 0; index_ent <= GetLastEntity(); index_ent++) { // For every entity
+			if (!GetEntityExists(index_ent)) continue;
+			// if this entity has an inventory
+			if (GetEntityType(index_ent) == ENTITY_TYPE_ACTOR) {
+				// for every invntory slot
+				for (btui32 inv_slot = 0; inv_slot < ACTOR(index_ent)->inventory.items.Size(); ++inv_slot) {
+					// if this slot contains this item
+					if (ACTOR(index_ent)->inventory.items[inv_slot] != index_item) continue;
+					item_reference_count++;
+					goto item_done; // we found our reference so can skip the rest
 				}
 			}
-		item_done:
-			if (item_reference_count == 0u)
-			{
-				core::DestroyItem(index_item);
-				std::cout << "Destroyed Item with no references!" << std::endl;
+			else if (GetEntityType(index_ent) == ENTITY_TYPE_RESTING_ITEM && ITEM(index_ent)->item_instance == index_item) {
+				item_reference_count++;
+				goto item_done; // we found our reference so can skip the rest
 			}
+		}
+	item_done:
+		if (item_reference_count == 0u) {
+			core::DestroyItem(index_item);
+			std::cout << "Destroyed Item with no references!" << std::endl;
 		}
 	}
 
@@ -97,24 +83,28 @@ void SaveState()
 		fwrite(&FILE_VER, SIZE_32, 1, file);
 
 		// Actual game state
+		fwrite(&tickCount, SIZE_64, 1, file);
 		fwrite(&core::players, SIZE_16, NUM_PLAYERS, file);
-		fwrite(&core::spawnz_time_temp, SIZE_64, 1, file);
+		btui64 temp = 0;
+		fwrite(&temp, SIZE_64, 1, file);
 
 		//-------------------------------- ENTITIES
 
-		fwrite(&block_entity.index_end, SIZE_16, 1, file);
-		fwrite(block_entity.TypeRW(), SIZE_8, (size_t)(block_entity.index_end + 1u), file);
-		fwrite(&block_entity.Data(0), sizeof(EntAddr), (size_t)(block_entity.index_end + 1u), file);
-
-		fwrite(&buf_resting_item.index_end, SIZE_16, 1, file);
-		fwrite(buf_resting_item.TypeRW(), SIZE_8, (size_t)(buf_resting_item.index_end + 1u), file);
-
-		fwrite(&buf_chara.index_end, SIZE_16, 1, file);
-		fwrite(buf_chara.TypeRW(), SIZE_8, (size_t)(buf_chara.index_end + 1u), file);
-
-		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
+		btui32 ent_count = GetLastEntity();
+		fwrite(&ent_count, SIZE_32, 1, file);
+		for (btID i = 0; i <= ent_count; i++) // For every entity
 		{
-			if (block_entity.Used(i))
+			// Could probably just write the type straight up as type_null means unused now
+			bool ent_exists = GetEntityExists(i);
+			fwrite(&ent_exists, SIZE_8, 1, file);
+			if (ent_exists) {
+				EntityType type = GetEntityType(i);
+				fwrite(&type, SIZE_8, 1, file);
+			}
+		}
+		for (btID i = 0; i <= ent_count; i++) // For every entity
+		{
+			if (GetEntityExists(i))
 			{
 				ECCommon* entptr = ENTITY(i);
 				fwrite(&entptr->name, 32, 1, file);
@@ -127,10 +117,10 @@ void SaveState()
 				fwrite(&entptr->height, SIZE_32, 1, file);
 				fwrite(&entptr->t.position.x, SIZE_32, 1, file);
 				fwrite(&entptr->t.position.y, SIZE_32, 1, file);
-				fwrite(&entptr->t.velocity.x, SIZE_32, 1, file);
-				fwrite(&entptr->t.velocity.y, SIZE_32, 1, file);
-				fwrite(&entptr->t.height, SIZE_32, 1, file);
-				fwrite(&entptr->t.height_velocity, SIZE_32, 1, file);
+				fwrite(&entptr->velocity.x, SIZE_32, 1, file);
+				fwrite(&entptr->velocity.y, SIZE_32, 1, file);
+				fwrite(&entptr->t.altitude, SIZE_32, 1, file);
+				fwrite(&entptr->altitude_velocity, SIZE_32, 1, file);
 				fwrite(&entptr->t.yaw, SIZE_32, 1, file);
 				fwrite(&entptr->t.csi, sizeof(CellSpace), 1, file);
 				fwrite(&entptr->slideVelocity.x, SIZE_32, 1, file);
@@ -193,12 +183,12 @@ void SaveState()
 
 		//-------------------------------- ITEMS
 
-		fwrite(&buf_iteminst.index_end, SIZE_16, 1, file);
-		fwrite(buf_iteminst.TypeRW(), SIZE_8, (size_t)(buf_iteminst.index_end + 1u), file);
+		fwrite(&buf_iteminst->index_end, SIZE_16, 1, file);
+		fwrite(buf_iteminst->TypeRW(), SIZE_8, (size_t)(buf_iteminst->index_end + 1u), file);
 
-		for (btID i = 0; i <= buf_iteminst.index_end; i++) // For every item
+		for (btID i = 0; i <= buf_iteminst->index_end; i++) // For every item
 		{
-			if (buf_iteminst.Used(i))
+			if (buf_iteminst->Used(i))
 			{
 				HeldItem* itemptr = GETITEMINST(i);
 
@@ -226,6 +216,11 @@ void SaveState()
 			}
 		}
 
+		//-------------------------------- PROJECTILES
+
+		fwrite(&block_proj, sizeof(block_proj), 1, file);
+		fwrite(&proj, sizeof(proj), 1, file);
+
 		//-------------------------------- WEATHER
 
 		fwrite(&weather::w.col_sun_from, SIZE_32 * 3, 1, file);
@@ -246,6 +241,8 @@ void SaveState()
 	{
 		printf("Couldn't open/make the save file for some fucked reason.");
 	}
+
+	core::GUISetMessag(0, "Game saved!");
 }
 void LoadStateFileV001()
 {
@@ -259,24 +256,30 @@ void LoadStateFileV001()
 		fread(&FILE_VER, SIZE_32, 1, file);
 
 		// Actual game state
+		fread(&tickCount, SIZE_64, 1, file);
 		fread(&core::players, SIZE_16, NUM_PLAYERS, file);
-		fread(&core::spawnz_time_temp, SIZE_64, 1, file);
+		btui64 temp = 0;
+		fread(&temp, SIZE_64, 1, file);
 
 		//-------------------------------- ENTITIES
 
-		fread(&block_entity.index_end, SIZE_16, 1, file);
-		fread(block_entity.TypeRW(), SIZE_8, (size_t)(block_entity.index_end + 1u), file);
-		fread(&block_entity.Data(0), sizeof(EntAddr), (size_t)(block_entity.index_end + 1u), file);
-
-		fread(&buf_resting_item.index_end, SIZE_16, 1, file);
-		fread(buf_resting_item.TypeRW(), SIZE_8, (size_t)(buf_resting_item.index_end + 1u), file);
-
-		fread(&buf_chara.index_end, SIZE_16, 1, file);
-		fread(buf_chara.TypeRW(), SIZE_8, (size_t)(buf_chara.index_end + 1u), file);
-
-		for (btID i = 0; i <= block_entity.index_end; i++) // For every entity
+		btui32 ent_count = 0u;
+		fread(&ent_count, SIZE_32, 1, file);
+		for (btID i = 0; i <= ent_count; i++) // For every entity
 		{
-			if (block_entity.Used(i))
+			// Could probably just write the type straight up as type_null means unused now
+			bool ent_exists = false;
+			fread(&ent_exists, SIZE_8, 1, file);
+			if (ent_exists) {
+				EntityType type = ENTITY_TYPE_NULL;
+				fread(&type, SIZE_8, 1, file);
+				IndexSpawnEntityFixedID(type, i);
+			}
+		}
+
+		for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
+		{
+			if (GetEntityExists(i))
 			{
 				ECCommon* entptr = ENTITY(i);
 				fread(&entptr->name, 32, 1, file);
@@ -289,10 +292,10 @@ void LoadStateFileV001()
 				fread(&entptr->height, SIZE_32, 1, file);
 				fread(&entptr->t.position.x, SIZE_32, 1, file);
 				fread(&entptr->t.position.y, SIZE_32, 1, file);
-				fread(&entptr->t.velocity.x, SIZE_32, 1, file);
-				fread(&entptr->t.velocity.y, SIZE_32, 1, file);
-				fread(&entptr->t.height, SIZE_32, 1, file);
-				fread(&entptr->t.height_velocity, SIZE_32, 1, file);
+				fread(&entptr->velocity.x, SIZE_32, 1, file);
+				fread(&entptr->velocity.y, SIZE_32, 1, file);
+				fread(&entptr->t.altitude, SIZE_32, 1, file);
+				fread(&entptr->altitude_velocity, SIZE_32, 1, file);
 				fread(&entptr->t.yaw, SIZE_32, 1, file);
 				fread(&entptr->t.csi, sizeof(CellSpace), 1, file);
 				fread(&entptr->slideVelocity.x, SIZE_32, 1, file);
@@ -355,39 +358,46 @@ void LoadStateFileV001()
 
 		//-------------------------------- ITEMS
 
-		fread(&buf_iteminst.index_end, SIZE_16, 1, file);
-		fread(buf_iteminst.TypeRW(), SIZE_8, (size_t)(buf_iteminst.index_end + 1u), file);
+		fread(&buf_iteminst->index_end, SIZE_16, 1, file);
+		fread(buf_iteminst->TypeRW(), SIZE_8, (size_t)(buf_iteminst->index_end + 1u), file);
 
-		for (btID i = 0; i <= buf_iteminst.index_end; i++) // For every entity
+		for (btID i = 0; i <= buf_iteminst->index_end; i++) // For every entity
 		{
-			if (buf_iteminst.Used(i))
+			if (buf_iteminst->Used(i))
 			{
 				btID template_temp;
 				fread(&template_temp, SIZE_16, 1, file);
 
-				GETITEMINST(i)->id_item_template = template_temp;
+				HeldItem* itemptr = GETITEMINST(i);
 
-				fread(&GETITEMINST(i)->ePose, SIZE_8, 1, file);
-				fread(&GETITEMINST(i)->loc, SIZE_32 * 3, 1, file);
-				fread(&GETITEMINST(i)->loc_velocity, SIZE_32 * 3, 1, file);
-				fread(&GETITEMINST(i)->pitch, SIZE_32, 1, file);
-				fread(&GETITEMINST(i)->pitch_velocity, SIZE_32, 1, file);
-				fread(&GETITEMINST(i)->yaw, SIZE_32, 1, file);
-				fread(&GETITEMINST(i)->yaw_velocity, SIZE_32, 1, file);
+				itemptr->id_item_template = template_temp;
 
-				fread(&GETITEMINST(i)->swinging, SIZE_8, 1, file);
-				fread(&GETITEMINST(i)->swingState, SIZE_32, 1, file);
+				fread(&itemptr->ePose, SIZE_8, 1, file);
+				fread(&itemptr->loc, SIZE_32 * 3, 1, file);
+				fread(&itemptr->loc_velocity, SIZE_32 * 3, 1, file);
+				fread(&itemptr->pitch, SIZE_32, 1, file);
+				fread(&itemptr->pitch_velocity, SIZE_32, 1, file);
+				fread(&itemptr->yaw, SIZE_32, 1, file);
+				fread(&itemptr->yaw_velocity, SIZE_32, 1, file);
 
-				fread(&GETITEMINST(i)->ang_aim_offset_temp, SIZE_32, 1, file);
-				fread(&GETITEMINST(i)->ang_aim_pitch, SIZE_32, 1, file);
-				fread(&GETITEMINST(i)->fire_time, SIZE_64, 1, file);
-				fread(&GETITEMINST(i)->id_ammoInstance, SIZE_16, 1, file);
+				fread(&itemptr->swinging, SIZE_8, 1, file);
+				fread(&itemptr->swingState, SIZE_32, 1, file);
 
-				fread(&GETITEMINST(i)->charge, SIZE_32, 1, file);
+				fread(&itemptr->ang_aim_offset_temp, SIZE_32, 1, file);
+				fread(&itemptr->ang_aim_pitch, SIZE_32, 1, file);
+				fread(&itemptr->fire_time, SIZE_64, 1, file);
+				fread(&itemptr->id_ammoInstance, SIZE_16, 1, file);
 
-				fread(&GETITEMINST(i)->uses, SIZE_32, 1, file);
+				fread(&itemptr->charge, SIZE_32, 1, file);
+
+				fread(&itemptr->uses, SIZE_32, 1, file);
 			}
 		}
+
+		//-------------------------------- PROJECTILES
+
+		fread(&block_proj, sizeof(block_proj), 1, file);
+		fread(&proj, sizeof(proj), 1, file);
 
 		//-------------------------------- WEATHER
 
@@ -419,15 +429,17 @@ void LoadState()
 		fread(&FILE_VER, SIZE_32, 1, file); // Load file version
 		fclose(file); // Close file
 
-		switch (FILE_VER)
-		{
+		switch (FILE_VER) {
 		case 001u:
 			LoadStateFileV001();
 			break;
 		}
 
 		core::RegenCellRefs();
+		core::CheckPlayerAI();
 	}
+
+	core::GUISetMessag(0, "Game loaded!");
 }
 
 #undef SIZE_8

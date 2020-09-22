@@ -179,7 +179,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>..\libraries\lib;..\libraries\lib_physx</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;SDL2main.lib;SDL2.lib;ltrrender.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
     <Bscmake />
@@ -253,7 +253,7 @@
       <AdditionalLibraryDirectories>..\libraries\lib;..\libraries\lib_physx</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
-      <AdditionalDependencies>opengl32.lib;SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;SDL2main.lib;SDL2.lib;ltrrender.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_NMP|x64'">
@@ -280,11 +280,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="archive_read_write.cpp" />
-    <ClCompile Include="collision.cpp" />
     <ClCompile Include="core_save_load.cpp" />
     <ClCompile Include="ec_actor.cpp" />
     <ClCompile Include="ec_common.cpp" />
     <ClCompile Include="ec_misc.cpp" />
+    <ClCompile Include="gui.cpp" />
     <ClCompile Include="index.cpp" />
     <ClCompile Include="network.cpp" />
     <ClCompile Include="audio.cpp" />
@@ -303,14 +303,15 @@
     <ClCompile Include="objects_inventory.cpp" />
     <ClCompile Include="objects_items.cpp" />
     <ClCompile Include="objects_activators.cpp" />
+    <ClCompile Include="render.cpp" />
     <ClCompile Include="test_zone.cpp" />
     <ClCompile Include="weather.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdparty\cute_c2.h" />
     <ClInclude Include="3rdparty\cute_sound.h" />
+    <ClInclude Include="3rdparty\miniaudio.h" />
     <ClInclude Include="archive_read_write.h" />
-    <ClInclude Include="collision.h" />
     <ClInclude Include="core_save_load.h" />
     <ClInclude Include="ec_actor.h" />
     <ClInclude Include="ec_common.h" />
@@ -318,6 +319,7 @@
     <ClInclude Include="global_project.h" />
     <ClInclude Include="graphics_shadersource_gl.h" />
     <ClInclude Include="graphics_structures.h" />
+    <ClInclude Include="gui.h" />
     <ClInclude Include="index.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="audio.hpp" />
@@ -338,6 +340,7 @@
     <ClInclude Include="objects_items.h" />
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="objects_activators.h" />
+    <ClInclude Include="render.h" />
     <ClInclude Include="test_zone.h" />
     <ClInclude Include="weather.h" />
   </ItemGroup>

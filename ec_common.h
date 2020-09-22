@@ -1,7 +1,5 @@
 #pragma once
 
-#include "entity.h"
-
 #include "memory.hpp"
 #include "maths.hpp"
 #include "env.h" // for cellspace
@@ -24,9 +22,7 @@ class Transform2D
 public:
 	// world space position
 	m::Vector2 position;
-	m::Vector2 velocity;
-	btf32 height = 0.f;
-	btf32 height_velocity = 0.f;
+	btf32 altitude = 0.f;
 	m::Angle yaw;
 	CellSpace csi; // Where we are in cell space
 };
@@ -124,7 +120,9 @@ typedef struct StatusEffect {
 	btui16 effect_type;
 	btf32 effect_duration;
 	btui32 effect_magnitude;
-	btui32 reserved;
+	//btui32 reserved;
+	btID effect_icon;
+	btui16 reserved;
 } StatusEffect;
 
 // TODO: merge with entity?? should be able to produce sfx
@@ -148,7 +146,7 @@ struct ActiveState
 	mem::Buffer32<StatusEffect> effects;
 
 	void Damage(btui32 AMOUNT, btf32 ANGLE);
-	void AddEffect(btID CASTER, StatusEffectType TYPE, btf32 DURATION, btui32 MAGNITUDE);
+	void AddEffect(btID CASTER, StatusEffectType TYPE, btf32 DURATION, btui32 MAGNITUDE, btID icon);
 	void AddSpell(btID CASTER, btID SPELL);
 	void TickEffects(btf32 DELTA_TIME);
 };
@@ -158,6 +156,7 @@ struct ECCommon
 {
 	bti8 name[32];
 
+	// Entity base properties
 	enum EntityFlags : btui8
 	{
 		// Basic properties
@@ -174,16 +173,16 @@ struct ECCommon
 		ePREFAB_FULLSOLID = eCOLLIDE_ENV | eCOLLIDE_ENT | eCOLLIDE_PRJ | eCOLLIDE_MAG,
 		ePREFAB_ITEM = eCOLLIDE_ENV | eCOLLIDE_ENT | eNO_TICK | ePHYS_DRAG,
 	};
-	// Entity base properties
 	mem::bv<btui8, EntityFlags> properties;
 
 	fac::faction faction;
 	ActiveState state;
-	//btui8 statebuffer[32 - sizeof(ActiveState)]; // reserved space for save / load data
 
 	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
 	btf32 height = 1.9f; // Height of the entity cylinder
 	Transform2D t;
+	m::Vector2 velocity;
+	btf32 altitude_velocity = 0.f;
 	// foot slide for slippery surfaces / knockback etc.
 	m::Vector2 slideVelocity;
 	bool grounded = true;
@@ -199,3 +198,5 @@ struct hit_info {
 
 // Handle this entitiy's position, receives desired motion
 void Entity_PhysicsTick(ECCommon* ENTITY, btID ID, btf32 DELTA_TIME);
+
+char* EntityName(void* ent);

@@ -15,6 +15,7 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="maths.cpp" />
+    <ClCompile Include="cfg.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h" />
@@ -27,5 +28,6 @@
     <ClInclude Include="graphics_structures.h" />
     <ClInclude Include="maths.hpp" />
     <ClInclude Include="archiver_loop.h" />
+    <ClInclude Include="cfg.h" />
   </ItemGroup>
 </Project>

@@ -56,15 +56,13 @@ namespace acv
 		m_world_phys,
 		m_world,
 		t_sky, // role is indeterminate so name is vague
-		m_skymoon,
-		t_skymoon,
+		t_debug_loaded_y,
+		t_debug_loaded_n,
 		// Chara textures
 		t_skin_template,
 		t_skin2,
 		t_skin3,
 		t_skin4,
-		// Err....
-		t_watermark,
 		// Other shit
 		mb_smoke_trail_segment,
 		t_smoke_trail,
@@ -84,7 +82,9 @@ namespace acv
 		t_gui_box,
 		t_gui_select_box,
 		t_gui_icon_pick_up,
+		t_gui_icon_hold_hand,
 		t_gui_hurt,
+		t_gui_guide,
 	};
 
 	// art assets archive
@@ -179,6 +179,8 @@ namespace acv
 		btui16 target_effect_type;
 		btf32 target_effect_duration;
 		btui32 target_effect_magnitude;
+		btID icon;
+		btui16 filler2;
 	} Spell;
 
 	typedef struct ProjectileRecord {

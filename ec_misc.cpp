@@ -22,9 +22,44 @@ void RestingItemTick(btID id, void* ent, btf32 dt)
 	}
 
 	self->matrix = graphics::Matrix4x4();
-	graphics::MatrixTransform(self->matrix, m::Vector3(self->t.position.x, self->t.height + acv::items[((HeldItem*)GetItemInstance(self->item_instance))->id_item_template]->f_model_height, self->t.position.y), self->t.yaw.Rad());
+	// upright version
+	//graphics::MatrixTransform(self->matrix, m::Vector3(self->t.position.x, self->t.height + acv::items[((HeldItem*)GetItemInstance(self->item_instance))->id_item_template]->f_model_height, self->t.position.y), self->t.yaw.Rad());
 
 	Entity_PhysicsTick(self, id, dt);
+
+	// TODO: finding tri is done again in physics tick, reuse it somehow
+
+	btf32 ground_height;
+	m::Vector2 slope(0.f, 0.f);
+	#if DEF_GRID
+	env::GetHeight(ground_height, self ->t.csi);
+	env::GetSlope(slope.x, slope.y, self->t.csi);
+	#else
+	env::EnvTri* triptr = nullptr;
+	env::GetNearestSurfaceHeight(ground_height, &triptr, self->t.csi, self->t.altitude);
+	if (triptr != nullptr && self->grounded)
+		slope = triptr->slope;
+	#endif
+
+	// Construct normals from the triangle slope
+	m::Vector3 nor = m::NormalFromSlope(slope);
+	m::Vector2 dir = m::AngToVec2(self->t.yaw.Rad());
+	m::Vector3 cross = m::Cross(nor, m::Vector3(-dir.y, 0.f, dir.x));
+
+	// TODO: definitions are temporary, this should be an item property
+
+	// align to surface
+	#if DEF_PROJECT == PROJECT_BC
+	graphics::MatrixTransform(self->matrix, m::Vector3(self->t.position.x,
+		self->t.altitude + acv::items[((HeldItem*)GetItemInstance(self->item_instance))->id_item_template]->f_model_height,
+		self->t.position.y), cross, nor);
+	#endif
+	// align to surface sideways
+	#if DEF_PROJECT == DEF_PROJECT_EXPLORE
+	graphics::MatrixTransform(self->matrix, m::Vector3(self->t.position.x,
+		self->t.altitude + acv::items[((HeldItem*)GetItemInstance(self->item_instance))->id_item_template]->f_model_height,
+		self->t.position.y), cross, m::Cross(cross, nor));
+	#endif
 }
 
 void RestingItemDraw(btID id, void* ent)
@@ -32,24 +67,28 @@ void RestingItemDraw(btID id, void* ent)
 	ECSingleItem* self = (ECSingleItem*)ent;
 	// Draw the mesh of our item id
 	//DrawMesh(ent, acv::GetM(acv::items[index::GetItem(item->item_instance)->item_template]->id_mesh), acv::GetT(acv::items[index::GetItem(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->t_item.getMatrix());
-	if (id == ACTOR(core::players[core::activePlayer])->viewtarget)
-	{
-		graphics::GetShader(graphics::S_SOLID).Use();
-		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, false);
-		DrawMesh(id, acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
-		graphics::GetShader(graphics::S_SOLID).SetBool(graphics::Shader::bLit_TEMP, true);
-	}
+	if (m::Length(graphics::GetViewPos() - m::Vector3(self->t.position.x, self->t.altitude, -self->t.position.y)) > 5.f)
+		DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh_lod), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
 	else
-	{
-		if (m::Length(graphics::GetViewPos() - m::Vector3(self->t.position.x, self->t.height, -self->t.position.y)) > 5.f)
-			DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh_lod), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
-		else
-			DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
-
-
-		//DrawMesh(item->id, acv::GetM(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(item->item_instance)->id_item_template]->id_tex), SS_NORMAL, item->matrix);
-	}
+		DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
 }
 
-void TickEditorPawn(btID id, void* ent, btf32 dt) {}
-void DrawEditorPawn(btID id, void* ent) {}
+void TarBubbleTick(btID id, void* ent, btf32 dt)
+{
+	
+}
+
+void TarBubbleDraw(btID id, void* ent)
+{
+
+}
+
+void WallBugTick(btID id, void* ent, btf32 dt)
+{
+
+}
+
+void WallBugDraw(btID id, void* ent)
+{
+
+}

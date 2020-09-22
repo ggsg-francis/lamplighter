@@ -195,12 +195,25 @@ namespace mem
 			}
 			return BUF_NULL;
 		}
+		void AddForceID(Type_Signifier _type, btID id) {
+			if (Used(id)) {
+				printf("Tried to overwrite buffer object! Bastard!\n");
+				return;
+			}
+			type[id] = _type;
+			if (id > index_end) index_end = id;
+		}
 		// Clear this space on the buffer
 		void Remove(btID index) {
 			type[index] = type_null;
 			if (index == index_end) {
 				--index_end; // Go back one step
 				while (!Used(index_end)) --index_end; // Continue rolling back until we reach the next last full space
+			}
+		}
+		void Clear() {
+			for (btID i = 0; i < SIZE; i++) { // For every space in the buffer
+				type[i] = type_null;
 			}
 		}
 		DataType& Data(int index) {

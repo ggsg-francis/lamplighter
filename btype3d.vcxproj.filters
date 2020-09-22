@@ -55,9 +55,6 @@
     <ClInclude Include="archive_read_write.h">
       <Filter>framework</Filter>
     </ClInclude>
-    <ClInclude Include="collision.h">
-      <Filter>framework</Filter>
-    </ClInclude>
     <ClInclude Include="core.h">
       <Filter>gamework</Filter>
     </ClInclude>
@@ -115,6 +112,13 @@
     <ClInclude Include="graphics_shadersource_gl.h">
       <Filter>framework</Filter>
     </ClInclude>
+    <ClInclude Include="render.h" />
+    <ClInclude Include="gui.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\miniaudio.h">
+      <Filter>framework\3rdparty</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
@@ -144,9 +148,6 @@
       <Filter>framework</Filter>
     </ClCompile>
     <ClCompile Include="archive_read_write.cpp">
-      <Filter>framework</Filter>
-    </ClCompile>
-    <ClCompile Include="collision.cpp">
       <Filter>framework</Filter>
     </ClCompile>
     <ClCompile Include="core.cpp">
@@ -189,6 +190,10 @@
       <Filter>framework</Filter>
     </ClCompile>
     <ClCompile Include="input.cpp">
+      <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="render.cpp" />
+    <ClCompile Include="gui.cpp">
       <Filter>framework</Filter>
     </ClCompile>
   </ItemGroup>

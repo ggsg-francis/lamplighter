@@ -3,25 +3,21 @@
 
 #include "global.h"
 
-struct EntityComponent {
-	virtual char* Name();
-	virtual void Tick();
-	virtual void Draw();
-	virtual void RFile(void* file, btui32 version);
-	virtual void WFile(void* file, btui32 version);
+#include "ec_common.h"
+#include "ec_actor.h"
+#include "ec_misc.h"
+
+enum EntityType : btui8 {
+	// Types
+	ENTITY_TYPE_TAR_BUBBLE,
+	ENTITY_TYPE_RESTING_ITEM,
+	ENTITY_TYPE_ACTOR,
+	ENTITY_TYPE_WALL_BUG,
+	// Utilities
+	ENTITY_TYPE_COUNT,
+	ENTITY_TYPE_NULL = 255u,
 };
 
-struct Entity {
-	// Contains the data of this entity
-	EntityComponent* component;
-	template <typename ComponentType> void Init();
-	void End();
-};
-template <typename ComponentType> inline void Entity::Init() {
-	component = new ComponentType;
-}
-inline void Entity::End() {
-	delete component;
-}
+void InitEntityMeta();
 
 #endif

@@ -3,9 +3,6 @@
 #include "index.h"
 #include "objects_items.h"
 
-graphics::GUIText text_inventory_temp;
-graphics::GUIBox guibox_selection;
-
 void Inventory::AddNew(btID item_template)
 {
 	btID id = core::SpawnItem(item_template);
@@ -82,17 +79,12 @@ btui32 Inventory::CountItemsOfTemplate(btID item_template)
 }
 btID Inventory::GetItemOfAmmunitionType(btui8 ammo_type)
 {
-	for (btui32 i = 0; i < items.Size(); ++i)
-	{
-		if (items.Used(i))
-		{
-			if (GetItemInstanceType(items[i]) == ITEM_TYPE_CONS)
-			{
-				if (((acv::ItemRecordCon*)acv::items[((HeldItem*)GetItemInstance(items[i]))->id_item_template])->id_projectile != ID_NULL)
-				{
+	for (btui32 i = 0; i < items.Size(); ++i) {
+		if (items.Used(i)) {
+			if (GetItemInstanceType(items[i]) == ITEM_TYPE_CONS) {
+				if (((acv::ItemRecordCon*)acv::items[((HeldItem*)GetItemInstance(items[i]))->id_item_template])->id_projectile != ID_NULL) {
 					// TODO: again, this is the fucking worst, i mean jus look at it...
-					if (ammo_type == acv::projectiles[((acv::ItemRecordCon*)acv::items[((HeldItem*)GetItemInstance(items[i]))->id_item_template])->id_projectile].ammunition_type)
-					{
+					if (ammo_type == acv::projectiles[((acv::ItemRecordCon*)acv::items[((HeldItem*)GetItemInstance(items[i]))->id_item_template])->id_projectile].ammunition_type) {
 						return items[i];
 					}
 				}
@@ -101,41 +93,11 @@ btID Inventory::GetItemOfAmmunitionType(btui8 ammo_type)
 	}
 	return ID_NULL;
 }
-void Inventory::Draw(btui16 active_slot)
+btui32 Inventory::GetFirstEmptySpace()
 {
-	int p1_x_start = -(int)graphics::FrameSizeX() / 2;
-	int p1_y_start = -(int)graphics::FrameSizeY() / 2;
-
-	const bti32 invspace = 38;
-
-	graphics::GUIText text;
-
-	bti32 offset = p1_x_start + 96 - 16;
-	for (btui16 i = 0; i < items.Size(); i++)
-	{
-		if (items.Used(i))
-		{
-			if (i == active_slot)
-				graphics::DrawGUITexture(&acv::GetT(acv::items[GETITEMINST(items[i])->id_item_template]->id_icon), offset + i * invspace, p1_y_start + 30, 64, 64);
-			else
-				graphics::DrawGUITexture(&acv::GetT(acv::items[GETITEMINST(items[i])->id_item_template]->id_icon), offset + i * invspace, p1_y_start + 24, 64, 64);
-		}
+	// For all spaces in the inventory, even ones past the last used ID
+	for (btui32 i = 0; i < 64; ++i) {
+		if (!items.Used(i)) return i;
 	}
-	// Draw Count GUI on top
-	for (btui16 i = 0; i < items.Size(); i++)
-	{
-		if (items.Used(i))
-		{
-			// get item type
-			if (GetItemInstanceType(items[i]) == ITEM_TYPE_CONS)
-			{
-				char textbuffer[8];
-				_itoa(GETITEMINST(items[i])->uses, textbuffer, 10);
-				text.ReGen(textbuffer, offset + i * invspace - 16, offset + i * invspace + 32, p1_y_start + 20);
-				text.Draw(&acv::GetT(acv::t_gui_font));
-			}
-		}
-	}
-	guibox_selection.ReGen((offset + active_slot * invspace) - 12, (offset + active_slot * invspace) + 12, p1_y_start + 12, p1_y_start + 36, 8, 8);
-	guibox_selection.Draw(&acv::GetT(acv::t_gui_select_box));
+	return ID_NULL;
 }

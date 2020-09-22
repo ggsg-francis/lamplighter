@@ -28,8 +28,8 @@
 
 void ActorOnHitGround(ECActor* chr)
 {
-	if (chr->foot_state == ECActor::eL_DOWN) aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, chr->fpCurrentL);
-	else aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_B, chr->fpCurrentR);
+	if (chr->foot_state == ECActor::eL_DOWN) aud::PlaySnd3D(aud::FILE_FOOTSTEP_SNOW_A, chr->fpCurrentL);
+	else aud::PlaySnd3D(aud::FILE_FOOTSTEP_SNOW_B, chr->fpCurrentR);
 	// Swap feet
 	if (chr->foot_state == ECActor::eL_DOWN) chr->foot_state = ECActor::eR_DOWN;
 	else if (chr->foot_state == ECActor::eR_DOWN) chr->foot_state = ECActor::eL_DOWN;
@@ -40,21 +40,20 @@ void ActorTryHoldHand(btID id_self, btID id)
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
 	ECActor* actr = (ECActor*)GetEntityPtr(id);
 
-	// check our inventory if we're not holding anything
-	if (!self->inventory.items.Used(self->inv_active_slot)) {
-		// check other actor's inventory
-		if (!actr->inventory.items.Used(actr->inv_active_slot)) {
-			if (self->aniHandHoldTarget == id)
-				self->aniHandHoldTarget = ID_NULL;
-			else
-				self->aniHandHoldTarget = id;
-			if (actr->aniHandHoldTarget == id_self)
-				actr->aniHandHoldTarget = ID_NULL;
-			else
-				actr->aniHandHoldTarget = id_self;
-		}
+	btui32 id1 = self->inventory.GetFirstEmptySpace();
+	btui32 id2 = actr->inventory.GetFirstEmptySpace();
+	if (id1 != ID_NULL && id2 != ID_NULL) {
+		self->inv_active_slot = id1;
+		actr->inv_active_slot = id2;
+		if (self->aniHandHoldTarget == id)
+			self->aniHandHoldTarget = ID_NULL;
+		else
+			self->aniHandHoldTarget = id;
+		if (actr->aniHandHoldTarget == id_self)
+			actr->aniHandHoldTarget = ID_NULL;
+		else
+			actr->aniHandHoldTarget = id_self;
 	}
-
 }
 
 void ActorTakeItem(btID id_self, btID id)
@@ -88,8 +87,8 @@ void ActorDropItem(btID id_self, btID slot)
 		m::Vector2 throwDir = m::AngToVec2(self->viewYaw.Rad());
 		btID item_entity = core::SpawnEntityItem(self->inventory.items[slot],
 			self->t.position + (throwDir * (self->radius + acv::items[((HeldItem*)GetItemInstance(self->inventory.items[slot]))->id_item_template]->f_radius)),
-			self->t.height, self->viewYaw.Deg());
-		ENTITY(item_entity)->t.velocity = throwDir * 0.05f + self->t.velocity;
+			self->t.altitude, self->viewYaw.Deg());
+		ENTITY(item_entity)->velocity = throwDir * 0.05f + self->velocity;
 		self->inventory.TransferItemSendIndex(slot);
 		ActorDecrEquipSlot(id_self);
 	}
@@ -105,7 +104,7 @@ void ActorDropAllItems(btID id_self)
 			core::SpawnEntityItem(self->inventory.items[slot], m::Vector2(
 				m::Random(self->t.position.x - 0.5f, self->t.position.x + 0.5f),
 				m::Random(self->t.position.y - 0.5f, self->t.position.y + 0.5f)),
-				self->t.height,
+				self->t.altitude,
 				m::Random(0.f, 360.f));
 			self->inventory.TransferItemSendIndex(slot);
 			ActorDecrEquipSlot(id_self);
@@ -151,7 +150,11 @@ m::Vector3 Actor_SetFootPos(m::Vector2 position, btf32 in_height)
 	CellSpace cs;
 	core::GetCellSpaceInfo(position, cs);
 	btf32 height;
+	#if DEF_GRID
+	env::GetHeight(height, cs);
+	#else
 	env::GetNearestSurfaceHeight(height, cs, in_height);
+	#endif
 	return m::Vector3(position.x, height + 0.075f, position.y);
 }
 
@@ -176,21 +179,19 @@ void Actor_AnimateLegs(ECActor* chr)
 	m::Vector3 tempFPL(0.f);
 	m::Vector3 tempFPR(0.f);
 
-	m::Vector2 velocityOffset = chr->t.velocity - chr->slideVelocity;
-
 	// If on the ground
 	if (chr->grounded) {
-		chr->lastGroundFootPos = Actor_SetFootPos(chr->t.position, chr->t.height);
+		chr->lastGroundFootPos = Actor_SetFootPos(chr->t.position, chr->t.altitude);
 		// If we're standing still, play idle anim
-		if (m::Length(chr->input) < 0.01f) {
+		if (m::Length(chr->velocity) < 0.005f) {
 			if (chr->foot_state == ECActor::eL_DOWN) {
-				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * -0.15f), chr->t.height);
-				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * 0.15f), chr->t.height);
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * -0.15f), chr->t.altitude);
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * 0.15f), chr->t.altitude);
 				chr->aniTimer = 0.5f;
 			}
 			if (chr->foot_state == ECActor::eR_DOWN) {
-				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * 0.15f), chr->t.height);
-				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * -0.15f), chr->t.height);
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.15f) + (vecfw * 0.15f), chr->t.altitude);
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.15f) + (vecfw * -0.15f), chr->t.altitude);
 				chr->aniTimer = 1.5f;
 			}
 		}
@@ -198,29 +199,29 @@ void Actor_AnimateLegs(ECActor* chr)
 		else {
 			#define STEP_LEN 0.35f
 			// Generate offset timer
-			btf32 aniTimerNew = chr->aniTimer + (0.5f / STEP_LEN) * m::Length(velocityOffset);
+			btf32 aniTimerNew = chr->aniTimer + (0.5f / STEP_LEN) * m::Length(chr->velocity);
 			// Check for footsound time (only if not sneaking)
 			if (!chr->aniCrouch) {
 				if (chr->aniTimer < 1.f && aniTimerNew > 1.f)
-					aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_A, chr->fpCurrentL);
+					aud::PlaySnd3D(aud::FILE_FOOTSTEP_SNOW_A, chr->fpCurrentL);
 				else if (chr->aniTimer < 2.f && aniTimerNew > 2.f)
-					aud::PlaySnd(aud::FILE_FOOTSTEP_SNOW_B, chr->fpCurrentR);
+					aud::PlaySnd3D(aud::FILE_FOOTSTEP_SNOW_B, chr->fpCurrentR);
 			}
 			// Apply change to timer
 			chr->aniTimer = aniTimerNew;
 			// Timer rollover
 			if (chr->aniTimer > 2.f) chr->aniTimer -= 2.f;
 			// Create foot target positions
-			m::Vector2 voNorm = m::Normalize(velocityOffset);
+			m::Vector2 voNorm = m::Normalize(chr->velocity);
 			if (chr->aniTimer < 1.f) {
-				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer)), chr->t.height);
-				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer)), chr->t.height);
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer)), chr->t.altitude);
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer)), chr->t.altitude);
 				tempFPL.y += m::QuadraticFootstep(0.3f, (chr->aniTimer - 0.5f) * 2.f);
 				chr->foot_state = ECActor::eR_DOWN;
 			}
 			else {
-				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer - 1.f)), chr->t.height);
-				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer - 1.f)), chr->t.height);
+				tempFPL = Actor_SetFootPos(chr->t.position + (vecrt * 0.05f) + (voNorm * m::Lerp(STEP_LEN, -STEP_LEN, chr->aniTimer - 1.f)), chr->t.altitude);
+				tempFPR = Actor_SetFootPos(chr->t.position + (vecrt * -0.05f) + (voNorm * m::Lerp(-STEP_LEN, STEP_LEN, chr->aniTimer - 1.f)), chr->t.altitude);
 				tempFPR.y += m::QuadraticFootstep(0.3f, (chr->aniTimer - 1.5f) * 2.f);
 				chr->foot_state = ECActor::eL_DOWN;
 			}
@@ -231,32 +232,32 @@ void Actor_AnimateLegs(ECActor* chr)
 	else {
 		// Set left foot
 		if (chr->foot_state == ECActor::eL_DOWN) {
-			if (chr->t.height_velocity > 0.f)
+			if (chr->altitude_velocity > 0.f)
 				tempFPR = chr->lastGroundFootPos;
 			else
 				tempFPR = chr->t_body.GetPosition() + m::Vector3(
-					chr->t.velocity.x * -velocityStepMult * 0.5f,
+					chr->velocity.x * -velocityStepMult * 0.5f,
 					LEGLEN(chr->actorBase, 0) * -0.4f,
-					chr->t.velocity.y * -velocityStepMult * 0.5f);
+					chr->velocity.y * -velocityStepMult * 0.5f);
 			tempFPL = chr->t_body.GetPosition() + m::Vector3(
-				chr->t.velocity.x * -velocityStepMult * -0.5f,
+				chr->velocity.x * -velocityStepMult * -0.5f,
 				LEGLEN(chr->actorBase, 0) * -0.65f,
-				chr->t.velocity.y * -velocityStepMult * -0.5f);
+				chr->velocity.y * -velocityStepMult * -0.5f);
 			chr->aniTimer = 0.f;
 		}
 		// Set right foot
 		else {
-			if (chr->t.height_velocity > 0.f)
+			if (chr->altitude_velocity > 0.f)
 				tempFPL = chr->lastGroundFootPos;
 			else
 				tempFPL = chr->t_body.GetPosition() + m::Vector3(
-					chr->t.velocity.x * -velocityStepMult * 0.5f,
+					chr->velocity.x * -velocityStepMult * 0.5f,
 					LEGLEN(chr->actorBase, 0) * -0.4f,
-					chr->t.velocity.y * -velocityStepMult * 0.5f);
+					chr->velocity.y * -velocityStepMult * 0.5f);
 			tempFPR = chr->t_body.GetPosition() + m::Vector3(
-				chr->t.velocity.x * -velocityStepMult * -0.5f,
+				chr->velocity.x * -velocityStepMult * -0.5f,
 				LEGLEN(chr->actorBase, 0) * -0.65f,
-				chr->t.velocity.y * -velocityStepMult * -0.5f);
+				chr->velocity.y * -velocityStepMult * -0.5f);
 			chr->aniTimer = 1.f;
 		}
 	}
@@ -269,18 +270,27 @@ void Actor_AnimateLegs(ECActor* chr)
 	Actor_ClampLegs(chr);
 }
 
-char* ActorName(void* ent) {
-	return (char*)((ECActor*)ent)->name;
-};
-
 void ActorTick(btID id, void* ent, btf32 dt)
 {
 	ECActor* chr = (ECActor*)ent;
 
 	// Update view target (used to pick up items and stuff)
-	chr->viewtarget = core::GetClosestEntityButDifferent(id);
+	chr->viewtarget = core::GetEntityViewTarget(id);
 
 	chr->input = m::Normalize(chr->input);
+
+	// modify input to keep holding characters together
+	if (chr->aniHandHoldTarget != ID_NULL) {
+		ECActor* actor = ACTOR(chr->aniHandHoldTarget);
+		m::Vector2 destpos = actor->t.position;
+		//if (chr->aniHandHoldTarget > id)
+		//	destpos = actor->t.position + (m::AngToVec2(chr->t.yaw.Rad() + glm::radians(90.f) * 0.75f));
+		//else
+		//	destpos = actor->t.position + (m::AngToVec2(chr->t.yaw.Rad() - glm::radians(90.f) * 0.75f));
+		if (m::Length(destpos - chr->t.position) > 0.85f) {
+			chr->input += (destpos - chr->t.position);
+		}
+	}
 
 	// apply crouch input
 	if (chr->inputBV.get(ECActor::IN_CROUCH))
@@ -296,19 +306,16 @@ void ActorTick(btID id, void* ent, btf32 dt)
 	if (slide > 1.f) chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, 1.f, 0.3f);
 	else chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, slide, 0.3f);
 
-	// hold hands check if our target is bullshit
+	// hold hands check if our target is bullshit (gone, or too far away, or has started holding an item
 	if (chr->aniHandHoldTarget != ID_NULL)
-		if (!GetEntityExists(chr->aniHandHoldTarget) || m::Length(ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position) > 1.4f)
+		if (!GetEntityExists(chr->aniHandHoldTarget) ||
+			m::Length(ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position) > 1.4f ||
+			ACTOR(chr->aniHandHoldTarget)->inventory.items.Used(ACTOR(chr->aniHandHoldTarget)->inv_active_slot) ||
+			chr->inventory.items.Used(chr->inv_active_slot)) // or we started holding a thing
 			chr->aniHandHoldTarget = ID_NULL;
 	// or if our target is ourself somehow
 	if (chr->aniHandHoldTarget == id)
 		chr->aniHandHoldTarget = ID_NULL;
-	// modify input to keep holding characters together
-	if (chr->aniHandHoldTarget != ID_NULL)
-		if (m::Length(ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position) > 0.85f)
-		{
-			chr->input += (ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position);
-		}
 
 	bool canJump = true;
 
@@ -324,10 +331,10 @@ void ActorTick(btID id, void* ent, btf32 dt)
 			if (chr->grounded) {
 				// Enter jump
 				if (chr->aniCrouch) // jump higher out of a crouch position
-					chr->t.height_velocity = 0.135f;
+					chr->altitude_velocity = 0.135f;
 				else
-					chr->t.height_velocity = 0.1f;
-				chr->t.velocity = chr->input * dt * chr->speed + chr->slideVelocity;
+					chr->altitude_velocity = 0.1f;
+				chr->velocity = chr->input * dt * chr->speed + chr->slideVelocity;
 				chr->aniCrouch = false;
 				chr->jump_state = ECActor::eJUMP_JUMP;
 			}
@@ -336,13 +343,13 @@ void ActorTick(btID id, void* ent, btf32 dt)
 				chr->t.height_velocity += 0.005f; // hover
 			#endif
 			else if (chr->jump_state == ECActor::eJUMP_SPRINT)
-				chr->t.height_velocity -= 0.01f; // anti-hover
+				chr->altitude_velocity -= 0.01f; // anti-hover
 		}
 		// Sprint
-		else if (chr->grounded && chr->aniRun && m::Length(chr->t.velocity) > 0.5f * dt) {
+		else if (chr->grounded && chr->aniRun && m::Length(chr->velocity) > 0.5f * dt) {
 			// Enter sprint jump
-			chr->t.height_velocity = 0.038f; // enter jump
-			chr->t.velocity = chr->input * dt * (chr->speed * 1.1f) + (chr->slideVelocity * 0.9f);
+			chr->altitude_velocity = 0.038f; // enter jump
+			chr->velocity = chr->input * dt * (chr->speed * 1.1f) + (chr->slideVelocity * 0.9f);
 			chr->aniCrouch = false;
 			chr->jump_state = ECActor::eJUMP_SPRINT;
 		}
@@ -368,14 +375,14 @@ void ActorTick(btID id, void* ent, btf32 dt)
 			if (can_move)
 			{
 				if (!chr->aniCrouch)
-					chr->t.velocity = m::Lerp(chr->t.velocity, chr->input * dt * chr->speed, 0.3f);
+					chr->velocity = m::Lerp(chr->velocity, chr->input * dt * chr->speed, 0.3f);
 				else
-					chr->t.velocity = m::Lerp(chr->t.velocity, chr->input * dt * chr->speed * 0.5f, 0.3f);
+					chr->velocity = m::Lerp(chr->velocity, chr->input * dt * chr->speed * 0.5f, 0.3f);
 			}
 			else
 			{
 				chr->input = m::Vector2(0.f, 0.f);
-				chr->t.velocity = m::Lerp(chr->t.velocity, m::Vector2(0.f, 0.f), 0.2f);
+				chr->velocity = m::Lerp(chr->velocity, m::Vector2(0.f, 0.f), 0.2f);
 			}
 		}
 		if (can_turn)
@@ -431,9 +438,9 @@ void ActorTick(btID id, void* ent, btf32 dt)
 
 		// Set head transform
 		if (!chr->aniCrouch)
-			chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.height - (chr->aniSlideResponse * 0.25f) + BODYLEN * 0.985f + walk_height_offset, chr->t.position.y));
+			chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.altitude - (chr->aniSlideResponse * 0.25f) + BODYLEN * 0.985f + walk_height_offset, chr->t.position.y));
 		else
-			chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.height - (chr->aniSlideResponse * 0.25f) + BODYLEN * 0.85f + walk_height_offset, chr->t.position.y));
+			chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.altitude - (chr->aniSlideResponse * 0.25f) + BODYLEN * 0.85f + walk_height_offset, chr->t.position.y));
 
 		chr->t_head.Rotate(chr->viewYaw.Rad(), m::Vector3(0, 1, 0));
 		chr->t_head.Rotate(chr->viewPitch.Rad(), m::Vector3(1, 0, 0));
@@ -446,7 +453,7 @@ void ActorTick(btID id, void* ent, btf32 dt)
 
 		// Set body transform
 		//t_body.SetPosition(m::Vector3(chr->t.position.x, 0.1f + chr->t.height + 0.6f - (m::Length(chr->slideVelocity) * 0.5f), chr->t.position.y));
-		chr->t_body.SetPosition(m::Vector3(chr->ani_body_lean.x, chr->t.height - (chr->aniSlideResponse * 0.125f) + walk_height_offset, chr->ani_body_lean.y));
+		chr->t_body.SetPosition(m::Vector3(chr->ani_body_lean.x, chr->t.altitude - (chr->aniSlideResponse * 0.125f) + walk_height_offset, chr->ani_body_lean.y));
 		chr->t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 
 
@@ -466,7 +473,7 @@ void ActorTick(btID id, void* ent, btf32 dt)
 		chr->t_body = Transform3D();
 		chr->t_head = Transform3D();
 
-		chr->t_body.SetPosition(m::Vector3(chr->t.position.x, chr->t.height, chr->t.position.y));
+		chr->t_body.SetPosition(m::Vector3(chr->t.position.x, chr->t.altitude, chr->t.position.y));
 		chr->t_body.Rotate(chr->t.yaw.Rad(), m::Vector3(0, 1, 0));
 		chr->t_body.Rotate(glm::radians(90.f), m::Vector3(1, 0, 0));
 
@@ -518,16 +525,14 @@ void ActorDraw(btID id, void* ent)
 		vecup_upper * -1.f);
 	DrawMeshDeform(id,
 		acv::GetMD(acv::actor_templates[chr->actorBase].m_body),
-		acv::GetT(acv::actor_templates[chr->actorBase].t_body), SS_CHARA, 2u,
+		acv::GetT(acv::actor_templates[chr->actorBase].t_body), SS_NORMAL, 2u,
 		matBodyLo, matBodyUp, graphics::Matrix4x4(), graphics::Matrix4x4());
 
-	#ifndef DEF_NMP
-	if (chr->state.stateFlags.get(ActiveState::eALIVE))
-	{
-		//DrawMeshDeform(chr->id, acv::GetMD(acv::md_equip_body_robe_01), acv::GetT(acv::t_equip_body_robe_01), SS_NORMAL, 4u,
-		//matBodyLo, matBodyUp, matLegUpL, matLegUpR);
-	}
-	#endif
+	//if (chr->state.stateFlags.get(ActiveState::eALIVE))
+	//{
+	//	DrawMeshDeform(chr->id, acv::GetMD(acv::md_equip_body_robe_01), acv::GetT(acv::t_equip_body_robe_01), SS_NORMAL, 4u,
+	//		matBodyLo, matBodyUp, matLegUpL, matLegUpR);
+	//}
 
 	//-------------------------------- DRAW ARMS
 
@@ -550,7 +555,7 @@ void ActorDraw(btID id, void* ent)
 		// Draw held item
 		ItemDraw(chr->inventory.items[chr->inv_active_slot],
 			GETITEMINST(chr->inventory.items[chr->inv_active_slot])->id_item_template,
-			chr->t.position, chr->t.height + 0.3f, chr->viewYaw, chr->viewPitch);
+			chr->t.position, chr->t.altitude + 0.3f, chr->viewYaw, chr->viewPitch);
 
 		// Get hand positions
 		m::Vector3 handPosR = ItemRHPos(chr->inventory.items[chr->inv_active_slot]);
@@ -573,7 +578,7 @@ void ActorDraw(btID id, void* ent)
 		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (ARMLEN(chr->actorBase, 0) - len), vecfw, vecup);
 		// Draw arm
 		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_NORMAL, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 
 		// Arm left
@@ -587,7 +592,7 @@ void ActorDraw(btID id, void* ent)
 		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (ARMLEN(chr->actorBase, 0) - len), vecfw, vecup);
 		// Draw arm
-		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_NORMAL, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
 
 		#undef ELBOW_DIR_R 
 		#undef ELBOW_DIR_L
@@ -641,7 +646,7 @@ void ActorDraw(btID id, void* ent)
 		graphics::MatrixTransformXFlip(matLegFootR, jointPosR - vecfw * (ARMLEN(chr->actorBase, 0) - len), vecfw, vecup);
 		// Draw arm
 		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_NORMAL, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 
 		// Arm left
@@ -655,11 +660,12 @@ void ActorDraw(btID id, void* ent)
 		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup);
 		graphics::MatrixTransform(matLegFootL, jointPosL - vecfw * (ARMLEN(chr->actorBase, 0) - len), vecfw, vecup);
 		// Draw arm
-		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_NORMAL, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
 
 		#undef ELBOW_DIR_R 
 		#undef ELBOW_DIR_L
 
+		#if !DEF_GRID
 		// debug draw path
 		if (chr->ai_pathing) {
 			for (int i = 0; i < chr->ai_path.len; ++i) {
@@ -667,17 +673,18 @@ void ActorDraw(btID id, void* ent)
 				//core::GetCellSpaceInfo();
 				//env::GetHeight();
 				graphics::Matrix4x4 mattt;
-				graphics::MatrixTransform(mattt, m::Vector3(chr->ai_path.pos_x[chr->ai_path_current_index], chr->t.height, chr->ai_path.pos_y[chr->ai_path_current_index]));
+				graphics::MatrixTransform(mattt, m::Vector3(chr->ai_path.pos_x[chr->ai_path_current_index], chr->t.altitude, chr->ai_path.pos_y[chr->ai_path_current_index]));
 				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_debug_bb), SS_NORMAL, mattt);
 			}
 		}
+		#endif
 	}
 
 	//-------------------------------- DRAW LEGS
 
 	if (chr->state.stateFlags.get(ActiveState::eALIVE))
 	{
-		btf32 velocityAmt = m::Length(chr->t.velocity - chr->slideVelocity);
+		btf32 velocityAmt = m::Length(chr->velocity - chr->slideVelocity);
 
 		m::Vector3 newpos = chr->t_body.GetPosition();
 

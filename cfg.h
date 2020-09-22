@@ -3,34 +3,39 @@
 
 #include "global.h"
 
+struct Config {
+	// INTERNALLY SET
+
+	// third person toggle
+	bool b3PP = true;
+
+	// VARIABLES LOADED FROM FILE
+
+	unsigned int iFullscreen = 0u;
+	bool bHost = false;
+	bool bEditMode = false;
+	bool bSplitScreen = false;
+	bool bCrossHairs = true;
+
+	// Config variables loaded from a file
+	// Window size
+	unsigned int iWinX = 640;
+	unsigned int iWinY = 480;
+
+	unsigned int iPort = 1111;
+
+	// Camera stuff
+	float fCameraFOV = 80.f;
+	float fCameraSensitivity = 0.f;
+	float fCameraNearClip = 0.1f;
+	float fCameraFarClip = 100.f;
+
+	char sConnAddr[HOSTNAME_MAX_LEN];
+};
+extern Config config;
+
 namespace cfg
 {
-	// Is fullscreen
-	extern unsigned int iFullscreen;
-	// In the case that this is the networked mode, take the server role
-	extern bool bHost;
-	// Run as editor
-	extern bool bEditMode;
-	// Use 2-player splitscreen mode (vs singleplayer mode)
-	extern bool bSplitScreen;
-	// Draw crosshairs
-	extern bool bCrossHairs;
-
-	//config variables loaded from a file
-	//window size
-	extern unsigned int iWinX;
-	extern unsigned int iWinY;
-
-	extern unsigned int iPort;
-
-	//camera stuff
-	extern float fCameraFOV;
-	extern float fCameraSensitivity;
-	extern float fCameraNearClip;
-	extern float fCameraFarClip;
-
-	extern char sConnAddr[HOSTNAME_MAX_LEN];
-
 	void LoadCfg();
 }
 

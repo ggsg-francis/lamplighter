@@ -5,12 +5,11 @@
 
 // Compiler configuration definitions
 
-// Alter the generic RPG engine into a multiplayer focused one optimised for the mech game
 // this is done in the project configuration setting now
 //#define DEF_NMP
 
 #ifdef _MSC_VER
-#define DEF_USE_CS // Use cute sound
+//#define DEF_USE_CS // Use cute sound
 #endif
 
 #ifdef DEF_NMP
@@ -41,14 +40,18 @@
 #define WORLD_SIZE_MAXINT_OLD 2047
 #define WORLD_SIZE_SQUARED (WORLD_SIZE * WORLD_SIZE)
 
+#if DEF_PROJECT == DEF_PROJECT_EXPLORE
 //#define SCREEN_UPSCALE_THRESHOLD 1024u
 #define SCREEN_UPSCALE_THRESHOLD 1664u
+#elif DEF_PROJECT == PROJECT_BC
+#define SCREEN_UPSCALE_THRESHOLD 640u
+#endif
 #define SCREEN_POSTPROCESS_DOWNSAMPLE_DIVISION 4
 
 // Release version
-#define VERSION_MAJOR 17u
-#define VERSION_MINOR 0u
-#define VERSION_COMMENT "prototype"
+#define VERSION_MAJOR 19u
+#define VERSION_MINOR DEF_PROJECT
+#define VERSION_COMMENT DEF_PROJECTNAME_V
 
 #define MD_MATRIX_COUNT 4u
 
@@ -84,6 +87,9 @@
 // Terrain vertical precision per 1 unit
 #define TERRAIN_HEIGHT_DIVISION 4.f
 #define TERRAIN_UV_SCALE 0.125f
+
+// https://scaryreasoner.wordpress.com/2009/02/28/checking-sizeof-at-compile-time/
+#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 #define CEILING(x,y) (((x) + (y) - 1) / (y))
 
@@ -145,13 +151,7 @@ extern "C" {
 		btui16 y;
 	} WCoord;
 
-	#define ENTITY_TYPE_NULL 255u
-
-	typedef btui8 EntityType;
-	#define ENTITY_TYPE_EDITOR_PAWN 0u
-	#define ENTITY_TYPE_RESTING_ITEM 1u
-	#define ENTITY_TYPE_ACTOR 2u
-	#define ENTITY_TYPE_COUNT 3u
+	// TODO: these should probably go to their respective places too
 
 	typedef btui8 ItemType;
 	#define ITEM_TYPE_MISC 0u

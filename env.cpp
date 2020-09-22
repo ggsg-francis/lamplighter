@@ -8,18 +8,20 @@
 #include "graphics.hpp"
 #include "archive.hpp"
 
-#include "collision.h"
-
 #include <queue>
 #include <vector>
 
+#if !DEF_GRID
 #define CUTE_C2_IMPLEMENTATION
 #include "3rdparty\cute_c2.h"
+#endif
 
-#define NUM_COMPOSITES 8u
+#define NUM_COMPOSITES 32u
 
+#if !DEF_GRID
 #define WORLD_HEIGHT_MAX INFINITY
 #define WORLD_HEIGHT_MIN -INFINITY
+#endif
 
 namespace env
 {
@@ -32,6 +34,8 @@ namespace env
 	//graphics::CompositeMesh wldMesh;
 	btID wldTxtr[NUM_COMPOSITES];
 	btui32 wldNumTextures = 0u;
+
+	#if !DEF_GRID
 
 	mem::idbuf triCells[WORLD_SIZE][WORLD_SIZE];
 	mem::idbuf lineCells[WORLD_SIZE][WORLD_SIZE];
@@ -201,6 +205,8 @@ namespace env
 		return ID_NULL;
 	}
 
+	#endif
+
 	bool Get(btui32 x, btui32 y, eflag::flag bit)
 	{
 		return mem::bvget((uint32_t)eCells.flags[x][y], (uint32_t)bit);
@@ -214,6 +220,32 @@ namespace env
 		mem::bvunset((uint32_t&)eCells.flags[x][y], (uint32_t)bit);
 	}
 
+	#if DEF_GRID
+	void GetHeight(btf32& out_height, CellSpace& csinf)
+	{
+		// BILINEAR
+		/*
+		out_height = m::Lerp(
+			m::Lerp((btf32)eCells.terrain_height[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+			(btf32)eCells.terrain_height[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y],
+				fabs(csinf.offsetx)),
+			m::Lerp((btf32)eCells.terrain_height[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y],
+			(btf32)eCells.terrain_height[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y],
+				fabs(csinf.offsetx)),
+			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
+		//*/
+
+		// BILINEAR2
+		out_height = m::Lerp(
+			m::Lerp((btf32)eCells.terrain_height_sw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+			(btf32)eCells.terrain_height_se[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+				(csinf.offsetx + 0.5f)),
+			m::Lerp((btf32)eCells.terrain_height_nw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+			(btf32)eCells.terrain_height_ne[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
+				(csinf.offsetx + 0.5f)),
+			(csinf.offsety + 0.5f)) / TERRAIN_HEIGHT_DIVISION;
+	}
+	#else
 	void GetNearestCeilingHeight(btf32& out_height, CellSpace& cs, btf32 in_height)
 	{
 		out_height = 0.f;
@@ -224,16 +256,6 @@ namespace env
 	void GetNearestSurfaceHeight(btf32& out_height, CellSpace& cs, btf32 in_height)
 	{
 		out_height = 0.f;
-
-		// BILINEAR2
-		//out_height = m::Lerp(
-		//	m::Lerp((btf32)eCells.terrain_height_sw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
-		//	(btf32)eCells.terrain_height_se[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
-		//		(csinf.offsetx + 0.5f)),
-		//	m::Lerp((btf32)eCells.terrain_height_nw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
-		//	(btf32)eCells.terrain_height_ne[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y],
-		//		(csinf.offsetx + 0.5f)),
-		//	(csinf.offsety + 0.5f)) / TERRAIN_HEIGHT_DIVISION;
 
 		EnvTriSurfaceSet surfset;
 		GetFloorsAndCeilings(cs, in_height, &surfset);
@@ -268,26 +290,23 @@ namespace env
 			*out_tri = surfset.nearest_flor_above;
 		}
 	}
-
-	void GetSlope(btf32& out_slope_x, btf32& out_slope_y, CellSpace& csinf)
-	{
-		out_slope_x = 0.f;
-		out_slope_y = 0.f;
-
-		//*
+	#endif
+	#if DEF_GRID
+	void GetSlope(btf32& out_slope_x, btf32& out_slope_y, CellSpace& csinf) {
+		// Slope X
 		out_slope_x = (btf32)(env::eCells.terrain_height_ne[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]
 			- env::eCells.terrain_height_nw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]);
 		out_slope_x += (btf32)(env::eCells.terrain_height_se[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]
 			- env::eCells.terrain_height_sw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]);
-		out_slope_x /= 2.f;
-
+		out_slope_x /= (TERRAIN_HEIGHT_DIVISION * 2.f);
+		// Slope Y
 		out_slope_y = (btf32)(env::eCells.terrain_height_ne[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]
 			- env::eCells.terrain_height_se[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]);
 		out_slope_y += (btf32)(env::eCells.terrain_height_nw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]
 			- env::eCells.terrain_height_sw[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y]);
-		out_slope_y /= 2.f;
-		//*/
+		out_slope_y /= (TERRAIN_HEIGHT_DIVISION * 2.f);
 	}
+	#endif
 
 	forceinline bool LineTraceUtil_CheckCollideEnv(int x, int y, btf32 height_a, btf32 height_b, btf32 lerp)
 	{
@@ -348,7 +367,7 @@ namespace env
 		}
 		return false;
 	}
-	
+	#if !DEF_GRID
 	// https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
 	// Tricks of the Windows Game Programming Gurus (2nd Edition)
 	// https://www.amazon.com/dp/0672323699
@@ -377,7 +396,6 @@ namespace env
 
 		return 0; // No collision
 	}
-
 	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2, btf32 height_a, btf32 height_b)
 	{
 		btui32 bound_min_x = (btui32)floorf(m::Min2(x1, x2));
@@ -402,7 +420,6 @@ namespace env
 		}
 		return false;
 	}
-
 	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2, btf32 height_a, btf32 height_b, LineTraceHit* out_hit)
 	{
 		btui32 bound_min_x = (btui32)floorf(m::Min2(x1, x2));
@@ -468,6 +485,8 @@ namespace env
 
 		return false;
 	}
+	#endif
+	#if DEF_GRID
 	bool LineTraceBh(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
 	{
 		int x, y, diff_x, diff_y, diff_abs_x, diff_abs_y;
@@ -491,6 +510,74 @@ namespace env
 		}
 		return true;
 	}
+	bool LineTrace_Bresenham_Bak(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b)
+	{
+		int x, y, diff_x, diff_y, diff_abs_x, diff_abs_y, difference, end;
+		// Calculate the difference between each point
+		diff_x = x2 - x1;
+		diff_y = y2 - y1;
+		// Get absolute differences
+		diff_abs_x = abs(diff_x);
+		diff_abs_y = abs(diff_y);
+		// If X difference is longer
+		if (diff_abs_y <= diff_abs_x) {
+			//
+			difference = 2 * diff_abs_y - diff_abs_x;
+			// If the line travels positively, start at the beginning and go to the end
+			if (diff_x >= 0) {
+				x = x1; y = y1; end = x2;
+			}
+			// If the line travels negatively, take the reverse order
+			else {
+				x = x2; y = y2; end = x1;
+			}
+			// Check start point
+			if (LineTraceUtil_CheckCollideEnv(x, y, height_a, height_b, 0.f)) return false;
+			// Loop until we reach the end (loop along the X axis)
+			for (int i = 0; x < end; i++) {
+				x = x + 1;
+				if (difference < 0)
+					difference = difference + 2 * diff_abs_y;
+				else {
+					if ((diff_x < 0 && diff_y < 0) || (diff_x > 0 && diff_y > 0))
+						y = y + 1;
+					else
+						y = y - 1;
+					difference = difference + 2 * (diff_abs_y - diff_abs_x);
+				}
+				if (LineTraceUtil_CheckCollideEnv(x, y, height_a, height_b, 0.f)) return false;
+			}
+		}
+		// If Y difference is longer
+		else {
+			//
+			difference = 2 * diff_abs_x - diff_abs_y;
+			if (diff_y >= 0) {
+				x = x1; y = y1; end = y2;
+			}
+			else {
+				x = x2; y = y2; end = y1;
+			}
+			// Check start point
+			if (LineTraceUtil_CheckCollideEnv(x, y, height_a, height_b, 0.f)) return false;
+			// Loop until we reach the end (loop along the Y axis)
+			for (int i = 0; y < end; i++) {
+				y = y + 1;
+				if (difference <= 0)
+					difference = difference + 2 * diff_abs_x;
+				else {
+					if ((diff_x < 0 && diff_y < 0) || (diff_x > 0 && diff_y > 0))
+						x = x + 1;
+					else
+						x = x - 1;
+					difference = difference + 2 * (diff_abs_x - diff_abs_y);
+				}
+				if (LineTraceUtil_CheckCollideEnv(x, y, height_a, height_b, 0.f)) return false;
+			}
+		}
+		return true;
+	}
+	#endif
 
 	void Tick()
 	{
@@ -499,12 +586,12 @@ namespace env
 
 	void DrawProps()
 	{
-		//for (btui32 i = 0u; i < wldNumTextures; ++i)
-		//{
-		//	DrawCompositeMesh(ID_NULL, wldMeshes[i], acv::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
-		//}
-		
-		
+		#if DEF_GRID
+		for (btui32 i = 0u; i < wldNumTextures; ++i)
+		{
+			DrawCompositeMesh(ID_NULL, wldMeshes[i], acv::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
+		}
+		#endif
 		//graphics::SetFrontFaceInverse();
 		//graphics::Matrix4x4 matr;
 		//graphics::MatrixTransform(matr, 0.f, 0.f, 0.f);
@@ -517,18 +604,21 @@ namespace env
 	}
 	void DrawTerrain()
 	{
-		
+		#if !DEF_GRID
 		DrawMesh(ID_NULL, acv::GetM(acv::m_world), acv::GetT(acv::t_terrain_01), SS_NORMAL, graphics::Matrix4x4());
 		//DrawMesh(ID_NULL, acv::GetM(acv::m_world_phys), acv::GetT(acv::t_terrain_01), SS_NORMAL, graphics::Matrix4x4());
-		//DrawTerrainMesh(ID_NULL, wldMeshTerrain,
-		//	acv::GetT(acv::t_terrain_01), acv::GetT(acv::t_terrain_02),
-		//	acv::GetT(acv::t_terrain_03), acv::GetT(acv::t_terrain_04),
-		//	acv::GetT(acv::t_terrain_05), acv::GetT(acv::t_terrain_06),
-		//	acv::GetT(acv::t_terrain_07), acv::GetT(acv::t_terrain_08),
-		//	graphics::Matrix4x4());
+		#else
+		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
+			acv::GetT(acv::t_terrain_01), acv::GetT(acv::t_terrain_02),
+			acv::GetT(acv::t_terrain_03), acv::GetT(acv::t_terrain_04),
+			acv::GetT(acv::t_terrain_05), acv::GetT(acv::t_terrain_06),
+			acv::GetT(acv::t_terrain_07), acv::GetT(acv::t_terrain_08),
+			graphics::Matrix4x4());
+		#endif
 	}
 	void DrawDebugGizmos(CellSpace* cs)
 	{
+		#if !DEF_GRID
 		btID tri_id = GetTriAtPos(cs->c[eCELL_I].x + cs->offsetx, cs->c[eCELL_I].y + cs->offsety);
 		if (tri_id != ID_NULL) {
 			EnvTri* tri = &tris[GetTriAtPos(cs->c[eCELL_I].x + cs->offsetx, cs->c[eCELL_I].y + cs->offsety)];
@@ -565,6 +655,7 @@ namespace env
 				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
 			}
 		}
+		#endif
 	}
 	void DrawTerrainDebug()
 	{
@@ -678,7 +769,7 @@ namespace env
 			//wldMeshes[i].Unload();
 		}
 	}
-
+	#if !DEF_GRID
 	// Check if vertices are identical
 	bool VertCompare(btui32 a, btui32 b) {
 		return a == b;
@@ -701,8 +792,10 @@ namespace env
 			&& *out < env::points[b].h) // If above the previously recorded below
 			*out = env::points[b].h;
 	}
+	#endif
 	void GenerateTerrainMesh()
 	{
+		#if !DEF_GRID		
 		graphics::Mesh* mesh = &acv::GetM(acv::m_world_phys);
 
 		pointcount = mesh->VcesSize();
@@ -739,6 +832,7 @@ namespace env
 			m::Vector3 dir_ac = m::Normalize(tri_a - tri_c);
 			// get the normal of this triangle
 			m::Vector3 dir_nor = m::Cross(dir_ab, dir_ac);
+			dir_nor = m::Normalize(dir_nor); // test
 
 			if (fabsf(dir_nor.y) <= 0.000001f) {
 				tri->vertical = true;
@@ -1182,20 +1276,22 @@ namespace env
 		}
 
 		delete[] point_nearest_h_below;
+		#endif
 
 		wldMeshTerrain.GenerateComplexEnv(eCells.terrain_height, eCells.terrain_material,
 			(btui32*)&eCells.flags, eflag::EF_INVISIBLE,
 			eCells.terrain_height_ne, eCells.terrain_height_nw,
 			eCells.terrain_height_se, eCells.terrain_height_sw);
 		//wldMeshTerrain.GenerateFromHMap(eCells.terrain_height, eCells.terrain_material);
-
 	}
 	void Free()
 	{
+		#if !DEF_GRID
 		delete[] points;
 		delete[] tris;
 		delete[] triCollides;
 		delete[] lines;
+		#endif
 	}
 }
 
@@ -1211,18 +1307,127 @@ NodeFromDir node_cache[WORLD_SIZE][WORLD_SIZE];
 
 #define INT_NULL 0b11111111111111111111111111111111
 
+#if !DEF_GRID
 struct pathNodeTest {
 	btui32 point;
 	//btID owner_tri;
 };
+#endif
+#if DEF_GRID
+bool path::PathFind(Path* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest)
+#else
 bool path::PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest)
+#endif
 {
+	#if DEF_GRID
+	
+	std::queue<WCoord> openSet;
+	WCoord node; node.x = x; node.y = y;
+	openSet.push(node);
+	std::vector<WCoord> usedSet;
+	usedSet.push_back(node);
+	while(!openSet.empty())
+	{
+		WCoord current = openSet.front();
+		openSet.pop();
+		if (current.x == xDest && current.y == yDest)
+			break;
+		// N
+		if (current.y < WORLD_SIZE_MAXINT && node_cache[current.x][current.y + 1] == ND_UNSET)
+		{
+			// if next tile is not too high compared to this one
+			if (env::eCells.terrain_height[current.x][current.y + 1] < env::eCells.terrain_height[current.x][current.y] + 4u)
+			{
+				WCoord next; next.x = current.x; next.y = current.y + 1;
+				openSet.push(next);
+				node_cache[current.x][current.y + 1] = ND_FROM_SOUTH;
+				usedSet.push_back(next);
+			}
+		}
+		// S
+		if (current.y > 0 && node_cache[current.x][current.y - 1] == ND_UNSET)
+		{
+			// if next tile is not too high compared to this one
+			if (env::eCells.terrain_height[current.x][current.y - 1] < env::eCells.terrain_height[current.x][current.y] + 4u)
+			{
+				WCoord next; next.x = current.x; next.y = current.y - 1;
+				openSet.push(next);
+				node_cache[current.x][current.y - 1] = ND_FROM_NORTH;
+				usedSet.push_back(next);
+			}
+		}
+		// E
+		if (current.x < WORLD_SIZE_MAXINT && node_cache[current.x + 1][current.y] == ND_UNSET)
+		{
+			// if next tile is not too high compared to this one
+			if (env::eCells.terrain_height[current.x + 1][current.y] < env::eCells.terrain_height[current.x][current.y] + 4u)
+			{
+				WCoord next; next.x = current.x + 1; next.y = current.y;
+				openSet.push(next);
+				node_cache[current.x + 1][current.y] = ND_FROM_WEST;
+				usedSet.push_back(next);
+			}
+		}
+		// W
+		if (current.x > 0 && node_cache[current.x - 1][current.y] == ND_UNSET)
+		{
+			// if next tile is not too high compared to this one
+			if (env::eCells.terrain_height[current.x - 1][current.y] < env::eCells.terrain_height[current.x][current.y] + 4u)
+			{
+				WCoord next; next.x = current.x - 1; next.y = current.y;
+				openSet.push(next);
+				node_cache[current.x - 1][current.y] = ND_FROM_EAST;
+				usedSet.push_back(next);
+			}
+		}
+	}
+
+	path->len = 0u; // reset the path
+
+	// construct path vector
+	WCoord current; current.x = xDest; current.y = yDest;
+	// Add destination node
+	path->nodes[path->len] = current;
+	++path->len;
+	while (current.x != x || current.y != y)
+	{
+		if (path->len < PATH_NUM_NODES)
+		{
+			path->nodes[path->len] = current;
+			++path->len;
+			switch (node_cache[current.x][current.y])
+			{
+			case ND_FROM_NORTH:
+				++current.y;
+				break;
+			case ND_FROM_SOUTH:
+				--current.y;
+				break;
+			case ND_FROM_EAST:
+				++current.x;
+				break;
+			case ND_FROM_WEST:
+				--current.x;
+				break;
+			}
+		}
+		else return false; // return if we maxed out the path
+	}
+
+	// clear modified cache
+	for (int i = 0; i < usedSet.size(); ++i)
+		node_cache[usedSet[i].x][usedSet[i].y] = ND_UNSET;
+
+	return true;
+	
+	#else
+	
 	btui32* node_from_cache = new btui32[env::pointcount];
 	for (int i = 0; i < env::pointcount; ++i) {
 		node_from_cache[i] = INT_NULL;
 	}
 
-	//todo calculate these
+	// todo: use height to find the right floor triangles
 	btID tri_start = env::GetTriAtPos(x, y);
 	btID tri_dest = env::GetTriAtPos(xDest, yDest);
 	if (tri_start != ID_NULL && tri_dest != ID_NULL)
@@ -1321,4 +1526,6 @@ bool path::PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest)
 	}
 	// Could not find a triangle under the target
 	return false;
+	
+	#endif
 }

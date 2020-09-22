@@ -20,8 +20,10 @@ namespace core
 	btID players[2];
 	m::Vector3 viewTarget[2];
 	m::Vector3 viewPosition[2];
+	// todo: wrap all of the gui globals into a structure
 	// for measuring HP changes for gui display
-	btui16 player_hp[2]{ 1000u, 1000u };
+	btui16 guiPlayerHP[2]{ 1000u, 1000u };
+	btf32 guiInvTimer[2]{ 0.f, 0.f };
 
 	//env::EnvNode editor_node_copy;
 	btui32 editor_flags_copy;
@@ -39,6 +41,12 @@ namespace core
 	btui32 editor_zoom = 5u;
 	m::Angle editor_cam_pitch = m::Angle(60.f);
 	m::Angle editor_cam_yaw = m::Angle(0.f);
+	
+	#if DEF_PROJECT == PROJECT_BC
+	bool bShowGuide = false;
+	bti32 guideW = 0;
+	graphics::GUIText text_guidehelp;
+	#endif
 
 	struct ReferenceCell
 	{

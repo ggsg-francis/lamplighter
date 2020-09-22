@@ -108,6 +108,10 @@ struct ECActor : public ECCommon
 	path::Path ai_path;
 	btui8 ai_path_current_index = 0u;
 	bool ai_pathing = false;
+
+	int TestFn() {
+		return 2;
+	}
 };
 
 void ActorOnHitGround(ECActor* chr);
@@ -118,6 +122,5 @@ void ActorDropAllItems(btID id_self);
 void ActorSetEquipSlot(btID id_self, btui32 slot);
 void ActorIncrEquipSlot(btID id_self);
 void ActorDecrEquipSlot(btID id_self);
-char* ActorName(void* ent);
 void ActorTick(btID id, void* ent, btf32 dt);
 void ActorDraw(btID id, void* ent);

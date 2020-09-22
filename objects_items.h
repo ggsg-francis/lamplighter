@@ -11,14 +11,9 @@
 #include "maths.hpp"
 #include "graphics.hpp"
 
-#include "ec_common.h"
+#include "entity.h"
 
 struct ECActor;
-
-namespace m
-{
-	class Vector3;
-};
 
 // Initialize this item instance
 void ItemInit(btID item);

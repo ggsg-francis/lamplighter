@@ -37,8 +37,8 @@ namespace weather
 			float r3 = lo_hue + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (hi_hue - lo_hue)));
 
 			w.stat_overcast_level = m::Random(0.f, 1.f);
-			if (cfg::bEditMode) w.stat_overcast_level = 0.f; // Overcast override
-			w.stat_overcast_level = 0.f; // Overcast override
+			if (config.bEditMode) w.stat_overcast_level = 0.f; // Overcast override
+			//w.stat_overcast_level = 0.f; // Overcast override
 
 			if (w.stat_overcast_level > 0.5f)
 			{
@@ -66,8 +66,7 @@ namespace weather
 			if (w.stat_overcast_level > 0.8f)
 				w.fog_level_dest = m::Random(0.01f, 0.15f);
 			else
-				//w.fog_level_dest = 0.015f;
-				w.fog_level_dest = 0.0015f;
+				w.fog_level_dest = 0.015f;
 			// temp fog override
 			//fog_level_dest = m::Random(0.01f, 0.15f);
 		}

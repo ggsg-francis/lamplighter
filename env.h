@@ -37,6 +37,8 @@ struct CellSpace
 
 namespace env
 {
+	#if !DEF_GRID
+	
 	struct EnvVert {
 		m::Vector2 pos;
 		btf32 h;
@@ -99,6 +101,8 @@ namespace env
 	};
 	void GetFloorsAndCeilings(CellSpace& csinf, btf32 in_height, EnvTriSurfaceSet* set);
 
+	#endif
+
 	// Environment flags
 	namespace eflag
 	{
@@ -109,7 +113,7 @@ namespace env
 			EF_IMPASSABLE = (0x1u),
 			EF_INVISIBLE = (0x1u << 0x1u),
 			EF_2 = (0x1u << 0x2u),
-			EF_3 = (0x1u << 0x3u), // If the tile is to be treated as a round object like a tree
+			EF_FPP_HERE = (0x1u << 0x3u), // If the tile is to be treated as a round object like a tree
 			// Shape information
 			EF_TEMP_1 = (0x1u << 0x4u),
 			EF_TEMP_2 = (0x1u << 0x5u),
@@ -186,13 +190,17 @@ namespace env
 	void Set(btui32 x, btui32 y, eflag::flag bit);
 	void UnSet(btui32 x, btui32 y, eflag::flag bit);
 
+	#if DEF_GRID
+	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
+	void GetSlope(btf32& OUT_SLOPE_X, btf32& OUT_SLOPE_Y, CellSpace& CELL_SPACE);
+	#else
 	// Get the height of the nearest ceiling above this point
 	void GetNearestCeilingHeight(btf32& out_height, CellSpace& cell_space, btf32 in_height);
 	// Get the height of the ground.
 	// In_height represents the origin point so we can exist underneath other triangles
 	void GetNearestSurfaceHeight(btf32& out_height, CellSpace& cell_space, btf32 in_height);
 	void GetNearestSurfaceHeight(btf32& out_height, EnvTri** out_tri, CellSpace& cell_space, btf32 in_height);
-	void GetSlope(btf32& out_slope_x, btf32& out_slope_y, CellSpace& cell_space);
+	#endif
 
 	struct LineTraceHit {
 		m::Vector2 pos;
@@ -201,8 +209,10 @@ namespace env
 	// returns true if it hits a wall
 	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2, btf32 height_a, btf32 height_b);
 	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2, btf32 height_a, btf32 height_b, LineTraceHit* out_hit);
+	#if DEF_GRID
 	// returns true, counter-intuitively, if it DOESNT hit anything
 	bool LineTraceBh(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b);
+	#endif
 
 	void Tick();
 	void DrawProps();
@@ -226,12 +236,19 @@ namespace path
 {
 	struct Path
 	{
-		//WCoord nodes[PATH_NUM_NODES];
+		#if DEF_GRID
+		WCoord nodes[PATH_NUM_NODES];
+		#else
 		btf32 pos_x[PATH_NUM_NODES];
 		btf32 pos_y[PATH_NUM_NODES];
+		#endif
 		btui8 len;
 	};
+	#if DEF_GRID
+	bool PathFind(Path* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest);
+	#else
 	bool PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest);
+	#endif
 }
 
 #endif

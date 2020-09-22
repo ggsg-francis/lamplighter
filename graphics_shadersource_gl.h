@@ -257,6 +257,7 @@ void main() {
 }
 )"
 
+#if DEF_PROJECT == DEF_PROJECT_EXPLORE
 #define SHADER_FRAG_FRAMEBUFFER R"(
 #version 330 core
 
@@ -281,8 +282,8 @@ vec3 BloomAdd(float rndsz, float fmodx, float fmody, float offsetamt, vec2 pxpos
 		fmody);
 }
 vec3 Bloom() {
-	int itercount = 4;
-	float rndsz = 32.;
+	int itercount = 6;
+	float rndsz = 24.;
 	float fmodx = (TexCoords.x - (floor(TexCoords.x * rndsz) / rndsz)) * rndsz;
 	float fmody = (TexCoords.y - (floor(TexCoords.y * rndsz) / rndsz)) * rndsz;
 	float offsetP = 1.f / rndsz;
@@ -323,9 +324,7 @@ void main() {
 	
 	//col = clamp((col), 0, 1);	
 	
-	col += clamp((Bloom() - 0.2f) * 1.5f, 0.f, 128.f);
-	//col = mix(col, Bloom(), 0.5f);
-	//col = max(col, Bloom());
+	//col += clamp((Bloom()) * 0.75f, 0.f, 128.f);
 
 	FragColor.rgb = col;
 	FragColor.a = 1.f;
@@ -345,8 +344,7 @@ void main() {
 	
 	//bleach overflow
 	float highestOverflow = max(max(FragColor.r, FragColor.g), FragColor.b);
-	//FragColor.rgb = mix(FragColor.rgb, vec3(1.0,1.0,1.0), clamp((highestOverflow - 0.9f) * 1.75f, 0.f, 1.f));
-	FragColor.rgb = mix(FragColor.rgb, vec3(1.0,1.0,1.0), clamp((highestOverflow - 1.2f) * 0.75f, 0.f, 1.f));
+	FragColor.rgb = mix(FragColor.rgb, vec3((FragColor.r + FragColor.g + FragColor.b) / 3.f), clamp((highestOverflow - 0.9f) * 0.5f, 0.f, 1.f));
 
 
 	//darken
@@ -354,8 +352,9 @@ void main() {
 	//FragColor *= 1.2f;
 }
 )"
-
-#define SHADER_FRAG_FRAMEBUFFER_COLOURDISTORT R"(
+#elif DEF_PROJECT == PROJECT_BC
+// Colour distorted framebuffer
+#define SHADER_FRAG_FRAMEBUFFER R"(
 #version 330 core
 out vec4 FragColor;
   
@@ -426,7 +425,7 @@ vec3 BloomAdd(float rndsz, float fmodx, float fmody, float offsetamt, vec2 pxpos
 		fmody);
 }
 vec3 Bloom() {
-	int itercount = 4;
+	int itercount = 8;
 	float rndsz = 32.;
 	float fmodx = (TexCoords.x - (floor(TexCoords.x * rndsz) / rndsz)) * rndsz;
 	float fmody = (TexCoords.y - (floor(TexCoords.y * rndsz) / rndsz)) * rndsz;
@@ -440,8 +439,7 @@ vec3 Bloom() {
 	return bloom / ((itercount * 2) * (itercount * 2)) * 0.5f;
 }
 
-void main()
-{ 
+void main() { 
 	//FragColor = texture(uf_txtr, TexCoords);
 	
 	// blur part
@@ -503,7 +501,7 @@ void main()
 	//col.b = min(brightness, difB);
 	
 	// BOX BLUR BLOOM
-	col += Bloom();
+	//col += Bloom();
 	
 	FragColor.rgb = col;
 	FragColor.a = 1.f;
@@ -550,6 +548,7 @@ void main()
 	//FragColor = vec4(0.5f);
 }
 )"
+#endif
 
 #define SHADER_FRAG_FRAMEBUFFER_DEPTH_BUFFER R"(
 #version 330 core
@@ -832,10 +831,11 @@ layout(location = 2) in vec2 aTexCoord;
 out vec3 ourColor;
 out vec2 TexCoord;
 uniform mat4 transform;
+uniform mat4 offset;
 
 void main()
 {
-	gl_Position = transform * vec4(aPos, 1.0);
+	gl_Position = transform * offset * vec4(aPos, 1.0);
 	//gl_Position = vec4(aPos, 1.0);
 	ourColor = aColor;
 	TexCoord = aTexCoord;
@@ -1218,9 +1218,6 @@ uniform vec3 pcam;
 
 uniform float ft; // Time
 
-uniform sampler2D tlm; // texture lightmap
-uniform sampler2D thm; // texture heightmap
-uniform sampler2D ts; // texture sky
 uniform sampler2D tshadow; // texture shadow
 
 uniform vec3 vsun = normalize(vec3(-1, 1, -1));
@@ -1264,17 +1261,12 @@ void main()
 		vec3 halfwayDir = normalize(vsun - normalize(-vd));
 		vec3 edge_light = edgcol * pow(max(dot(normalize(Normal), halfwayDir), 0.0), 2.0);
 
-		vec4 lightmap = texture(tlm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
-
 		float xoffs = -Pos.z + 0.5f - round(-Pos.z + 0.5f);
 		float yoffs = -Pos.x + 0.5f - round(-Pos.x + 0.5f);
 
-		float light_value = (1 - clamp((((Pos.y / 64.) - lightmap.a))*32., 0., 1.)) * lightmap.g;
-
 		LC = (cAmb * ndotl_amb) // Ambient light
-								//+ (cSun * ndotl + edge_light) // Sunlight (and rim light)
-			+ (cSun * ndotl) // Sunlight (and rim light)
-			+ (cLit * light_value); // err
+			//+ (cSun * ndotl + edge_light) // Sunlight (and rim light)
+			+ (cSun * ndotl); // Sunlight
 	}
 	else
 	{

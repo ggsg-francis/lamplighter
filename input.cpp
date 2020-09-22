@@ -147,7 +147,7 @@ namespace input
 
 	void Init()
 	{
-		if (!cfg::bEditMode) {
+		if (!config.bEditMode) {
 			ScancodeTransfer[SDL_SCANCODE_ESCAPE] = key::QUIT;
 			ScancodeTransfer[SDL_SCANCODE_W] = key::DIR_F;
 			ScancodeTransfer[SDL_SCANCODE_S] = key::DIR_B;
@@ -160,7 +160,7 @@ namespace input
 			ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
 			ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;
 			ScancodeTransfer[SDL_SCANCODE_3] = key::ACTION_C;
-			ScancodeTransfer[SDL_SCANCODE_R] = key::DROP_HELD;
+			ScancodeTransfer[SDL_SCANCODE_F] = key::DROP_HELD;
 			ScancodeTransfer[SDL_SCANCODE_Z] = key::INV_CYCLE_L;
 			ScancodeTransfer[SDL_SCANCODE_X] = key::INV_CYCLE_R;
 			ScancodeTransfer[SDL_SCANCODE_F1] = key::FUNCTION_1;
@@ -312,60 +312,52 @@ namespace input
 		}
 	}
 
-	void ClearHitsAndDelta()
-	{
+	void ClearHitsAndDelta() {
 		BUF_LOCALSET.mouse_x = 0.f;
 		BUF_LOCALSET.mouse_y = 0.f;
 		BUF_LOCALSET.keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000u;
 	}
 
-	void ClearAll()
-	{
+	void ClearAll() {
 		BUF_LOCALSET.keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000u;
 		BUF_LOCALSET.keyBitsHeld = 0b0000000000000000000000000000000000000000000000000000000000000000u;
 	}
 
 	#ifdef DEF_NMP
-	void CycleBuffers()
-	{
+	void CycleBuffers() {
 		buf[network::nid][0] = buf[network::nid][1];
 	}
 	#endif
 
 	#ifdef DEF_NMP
-	bool GetHeld(btui32 index, key::Key2 i)
-	{
+	bool GetHeld(btui32 index, key::Key2 i) {
 		return mem::bvget<btui64>(buf[index][INPUT_BUF_GET].keyBitsHeld, 1u << (btui64)i);
 	}
-	bool GetHit(btui32 index, key::Key2 i)
-	{
+	bool GetHit(btui32 index, key::Key2 i) {
 		return mem::bvget<btui64>(buf[index][INPUT_BUF_GET].keyBitsHit, 1u << (btui64)i);
 	}
 	#endif
-	bool GetHeld(key::Key2 i)
-	{
+	bool GetHeld(key::Key2 i) {
 		return mem::bvget<btui64>(BUF_LOCALGET.keyBitsHeld, (btui64)1u << (btui64)i);
 	}
-	bool GetHit(key::Key2 i)
-	{
+	bool GetHit(key::Key2 i) {
 		return mem::bvget<btui64>(BUF_LOCALGET.keyBitsHit, (btui64)1u << (btui64)i);
 	}
-	void Set(key::Key2 i)
-	{
+	bool GetAnyHit() {
+		return mem::bvget<btui64>(BUF_LOCALGET.keyBitsHit, (btui64)0b1111111111111111111111111111111111111111111111111111111111111111);
+	}
+	void Set(key::Key2 i) {
 		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i);
 		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i);
 	}
-	void Unset(key::Key2 i)
-	{
+	void Unset(key::Key2 i) {
 		mem::bvunset<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i);
 	}
-	void SetTo(key::Key2 i, bool b)
-	{
+	void SetTo(key::Key2 i, bool b) {
 		mem::bvsetto<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i, b);
 		mem::bvsetto<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i, b);
 	}
-	void SetHit(key::Key2 i)
-	{
+	void SetHit(key::Key2 i) {
 		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i);
 	}
 }

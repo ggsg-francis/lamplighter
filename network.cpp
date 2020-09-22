@@ -143,17 +143,17 @@ namespace network
 		int err = SDLNet_Init();
 		if (err == -1) goto exiterr;
 		// Open UDP socket
-		socket_connection = SDLNet_UDP_Open((Uint16)cfg::iPort); // pass 0 to open on any available port
+		socket_connection = SDLNet_UDP_Open((Uint16)config.iPort); // pass 0 to open on any available port
 		if (!socket_connection) goto exiterr;
 
-		if (cfg::bHost) // if acting as server
+		if (config.bHost) // if acting as server
 		{
 			IPaddress addr; // broadcast
 
 			btui32 seed = (btui32)time(NULL); // Server decides the seed
 			srand(seed); //initialize the random seed
 
-			int found_other = SDLNet_ResolveHost(&addr, NULL, (Uint16)cfg::iPort);
+			int found_other = SDLNet_ResolveHost(&addr, NULL, (Uint16)config.iPort);
 			if (found_other == -1) goto exiterr;
 			int channel = SDLNet_UDP_Bind(socket_connection, -1, &addr);
 
@@ -219,9 +219,9 @@ namespace network
 		{
 			IPaddress addr; // listen
 			addr.host = INADDR_BROADCAST;
-			addr.port = (Uint16)cfg::iPort;
+			addr.port = (Uint16)config.iPort;
 
-			int found_other = SDLNet_ResolveHost(&addr, cfg::sConnAddr, (Uint16)cfg::iPort);
+			int found_other = SDLNet_ResolveHost(&addr, config.sConnAddr, (Uint16)config.iPort);
 			if (found_other == -1) {
 				printf("Could not find the host!\n");
 				goto exiterr;

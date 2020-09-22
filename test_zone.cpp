@@ -91,46 +91,6 @@ btui8 c;
 btui32 b;
 });
 
-struct EntityMkII {
-	// Contains the data of this entity
-	void* component;
-	// Return a string which will be printed to the screen when this entity is looked at
-	char*(*Name)(void* self);
-	// Tick this entity
-	void(*Tick)(btID id, void* self, btf32 dt);
-	// Render graphics of this entity
-	void(*Draw)(btID id, void* self);
-	// Read / write
-	void(*RFile)(btID id, void* self, FILE* file, btui32 version);
-	void(*WFile)(btID id, void* self, FILE* file, btui32 version);
-	// initialize function pointers
-	template <typename ComponentType> void Init(
-		char*(*_Name)(void*),
-		void(*_Tick)(btID, void*, btf32),
-		void(*_Draw)(btID, void*),
-		void(*_RFile)(btID id, void* self, FILE* file, btui32 version),
-		void(*_WFile)(btID id, void* self, FILE* file, btui32 version)) {
-		component = new ComponentType;
-		Name = _Name;
-		Tick = _Tick;
-		Draw = _Draw;
-		RFile = _RFile;
-		WFile = _WFile;
-	}
-	// Free from memory
-	void End() {
-		delete component;
-	}
-};
-
-
-
-
-
-
-
-
-
 void InitTest() {
-	//
+	
 }

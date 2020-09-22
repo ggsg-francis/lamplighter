@@ -20,17 +20,17 @@ namespace weather
 		glm::vec3 col_foggy_fog = glm::vec3(0.35f * 0.75f, 0.37f * 0.75f, 0.4f * 0.75f);
 
 		//current
-		glm::vec3 col_sun = glm::vec3(0.f, 0.f, 0.f);
-		glm::vec3 col_amb = glm::vec3(0.f, 0.f, 0.f);
-		glm::vec3 col_fog = glm::vec3(0.f, 0.f, 0.f);
+		glm::vec3 col_sun = glm::vec3(1.f, 1.f, 1.f);
+		glm::vec3 col_amb = glm::vec3(1.f, 1.f, 1.f);
+		glm::vec3 col_fog = glm::vec3(1.f, 1.f, 1.f);
 
-		glm::vec3 col_sun_from = glm::vec3(0.f, 0.f, 0.f);
-		glm::vec3 col_amb_from = glm::vec3(0.f, 0.f, 0.f);
-		glm::vec3 col_fog_from = glm::vec3(0.f, 0.f, 0.f);
+		glm::vec3 col_sun_from = glm::vec3(1.f, 1.f, 1.f);
+		glm::vec3 col_amb_from = glm::vec3(1.f, 1.f, 1.f);
+		glm::vec3 col_fog_from = glm::vec3(1.f, 1.f, 1.f);
 
-		glm::vec3 col_sun_dest = glm::vec3(0.f, 0.f, 0.f);
-		glm::vec3 col_amb_dest = glm::vec3(0.f, 0.f, 0.f);
-		glm::vec3 col_fog_dest = glm::vec3(0.f, 0.f, 0.f);
+		glm::vec3 col_sun_dest = glm::vec3(1.f, 1.f, 1.f);
+		glm::vec3 col_amb_dest = glm::vec3(1.f, 1.f, 1.f);
+		glm::vec3 col_fog_dest = glm::vec3(1.f, 1.f, 1.f);
 
 		float fog_level = 0.f;
 		float fog_level_from = 0.f;
@@ -39,8 +39,8 @@ namespace weather
 		//start at 1 to trigger a weather transition right at the start
 		float recalc_ticker = 1.f;
 
-		float stat_tod;
-		float stat_overcast_level;
+		float stat_tod = 0.f;
+		float stat_overcast_level = 0.f;
 	};
 
 	extern Weather w;

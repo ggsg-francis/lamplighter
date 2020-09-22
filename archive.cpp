@@ -140,7 +140,7 @@ namespace acv
 
 	//#ifndef DEF_ARCHIVER
 
-	forceinline void AssetAccessCheck(btui32& index) {
+	forceinline void AssetAccessCheck(btui32 index) {
 		// Load the asset if needed
 		if (!acv::assets[index].loaded)
 			acv::LoadAsset(index);
@@ -148,30 +148,38 @@ namespace acv
 	}
 
 	graphics::Texture& GetT(btui32 index) {
-		AssetAccessCheck(index);
-		if (index < acv::assetCount && acv::assets[index].type == ASSET_TEXTURE_FILE)
+		if (index < acv::assetCount && acv::assets[index].type == ASSET_TEXTURE_FILE) {
+			AssetAccessCheck(index);
 			return *(graphics::Texture*)acv::assets[index].asset;
+		}
+		AssetAccessCheck(DEFAULT_TEXTURE);
 		return *(graphics::Texture*)acv::assets[DEFAULT_TEXTURE].asset;
 	}
 
 	graphics::Mesh& GetM(btui32 index) {
-		AssetAccessCheck(index);
-		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESH_FILE)
+		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESH_FILE) {
+			AssetAccessCheck(index);
 			return *(graphics::Mesh*)acv::assets[index].asset;
+		}
+		AssetAccessCheck(DEFAULT_MESH);
 		return *(graphics::Mesh*)acv::assets[DEFAULT_MESH].asset;
 	}
 
 	graphics::MeshBlend& GetMB(btui32 index) {
-		AssetAccessCheck(index);
-		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHBLEND_FILE)
+		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHBLEND_FILE) {
+			AssetAccessCheck(index);
 			return *(graphics::MeshBlend*)acv::assets[index].asset;
+		}
+		AssetAccessCheck(DEFAULT_MESHBLEND);
 		return *(graphics::MeshBlend*)acv::assets[DEFAULT_MESHBLEND].asset;
 	}
 
 	graphics::MeshDeform& GetMD(btui32 index) {
-		AssetAccessCheck(index);
-		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHDEFORM_FILE)
+		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHDEFORM_FILE) {
+			AssetAccessCheck(index);
 			return *(graphics::MeshDeform*)acv::assets[index].asset;
+		}
+		AssetAccessCheck(DEFAULT_MESHDEFORM);
 		return *(graphics::MeshDeform*)acv::assets[DEFAULT_MESHDEFORM].asset;
 	}
 
@@ -186,8 +194,6 @@ namespace acv
 	bool IsMeshBlend(btui32 index) {
 		return acv::assets[index].type == ASSET_MESHBLEND_FILE;
 	}
-
-	graphics::ModifiableTexture skin_t[4];
 
 	// put in network code
 	void GetSum(char* fn, btui8* out_sum)

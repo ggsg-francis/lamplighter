@@ -251,6 +251,7 @@
     <ClCompile Include="archiver_main.cpp" />
     <ClCompile Include="archiver_graphics_convert.cpp" />
     <ClCompile Include="archive_read_write.cpp" />
+    <ClCompile Include="cfg.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="maths.cpp" />
@@ -259,6 +260,7 @@
   <ItemGroup>
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="archiver_loop.h" />
+    <ClInclude Include="cfg.h" />
     <ClInclude Include="global-archiver.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="archiver_graphics_convert.h" />

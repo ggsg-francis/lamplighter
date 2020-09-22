@@ -7,17 +7,28 @@ struct ECSingleItem : public ECCommon
 {
 	btID item_instance;
 	graphics::Matrix4x4 matrix;
+
+	int TestFn() {
+		return 10;
+	}
 };
 
-char* RestingItemName(void* ent);
+char* RestingItemName(void* ent); // <- this seems really unneeded...
 void RestingItemTick(btID id, void* ent, btf32 dt);
 void RestingItemDraw(btID id, void* ent);
 
-// todo remove this
-struct EditorPawn : public ECCommon
+struct ECTarBubble : public ECCommon
 {
-	Transform3D t_body, t_head;
+	btf32 tb_state;
 };
 
-void TickEditorPawn(btID id, void* ent, btf32 dt);
-void DrawEditorPawn(btID id, void* ent);
+void TarBubbleTick(btID id, void* ent, btf32 dt);
+void TarBubbleDraw(btID id, void* ent);
+
+struct ECWallBug : public ECCommon
+{
+	btf32 test;
+};
+
+void WallBugTick(btID id, void* ent, btf32 dt);
+void WallBugDraw(btID id, void* ent);

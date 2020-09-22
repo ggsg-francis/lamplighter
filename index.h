@@ -3,30 +3,40 @@
 
 #include "memory.hpp"
 
-#include "ec_actor.h"
-#include "ec_misc.h"
+#include "entity.h"
 #include "objects_items.h"
-
-typedef struct EntAddr
-{
-	EntityType type;
-	btID type_buffer_index;
-} EntAddr;
 
 //-------------------------------- ENTITIES
 
+// Return a string which will be printed to the screen when this entity is looked at
+char* EntityName(btID id);
+// Tick this entity
+void EntityTick(btID id, btf32 dt);
+// Render graphics of this entity
+void EntityDraw(btID id);
+// Set properties of an entity so that we can use it in-game
+void IndexRegisterEntityMeta(EntityType type, btui32 size,
+	char*(*_fpName)(void*), void(*_fpTick)(btID, void*, btf32), void(*_fpDraw)(btID, void*));
+// Make an entity at this specified address
+void IndexSpawnEntityFixedID(EntityType TYPE, btID ID);
 // Make an entity, return ID
-btID InitEntity(EntityType TYPE);
+btID IndexSpawnEntity(EntityType TYPE);
 // Get whether an entity with this ID exists
 bool GetEntityExists(btID ID);
 // Get the ID of the last entity
 btID GetLastEntity();
 // Get the pointer address of the entity at X ID
 void* GetEntityPtr(btID ID);
+// Replaces the old ENTITY() etc. macros
+template <typename Type> Type* GetEntity(btID id) {
+	return (Type*)GetEntityPtr(id);
+}
 // Get the type of the entity at ID
 EntityType GetEntityType(btID ID);
 //
-void IndexFreeEntity(btID ID);
+void IndexDeleteEntity(btID ID);
+//
+void IndexClearEntities();
 
 //-------------------------------- ITEMS
 
@@ -56,13 +66,6 @@ void FreeActivator(btID ID);
 
 //-------------------------------- OTHER STUFF
 
-// Return a string which will be printed to the screen when this entity is looked at
-extern char*(*fpName[ENTITY_TYPE_COUNT])(void* self);
-// Tick this entity
-extern void(*fpTick[ENTITY_TYPE_COUNT])(btID id, void* self, btf32 dt);
-// Render graphics of this entity
-extern void(*fpDraw[ENTITY_TYPE_COUNT])(btID id, void* self);
-
 // TODO: working on reducing the use of these functions
 //  ok
 #define ENT_VOID(a) (GetEntityPtr(a))
@@ -83,6 +86,7 @@ typedef struct _prjid { btID id; } PrjID;
 PrjID MakePrjID(int i);
 
 void IndexInitialize();
+void IndexEnd();
 
 // Transform structure used for game simulation (C version)
 typedef struct
@@ -113,9 +117,5 @@ Projectile* GetProj(PrjID id);
 
 extern mem::objbuf_caterpillar block_proj; // Projectile buffer
 extern Projectile proj[BUF_SIZE];
-
-
-void MakeEntity(EntityType type);
-
 
 #endif // END OF FILE

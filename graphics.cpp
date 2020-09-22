@@ -94,8 +94,7 @@ typedef btui16 version_t;
 namespace graphics
 {
 	// TODO: MOVE TO MATHS!!!
-	m::Vector3 operator*(const m::Vector3& vector, const Matrix4x4& matrix)
-	{
+	m::Vector3 operator*(const m::Vector3& vector, const Matrix4x4& matrix) {
 		return m::Vector3(
 			(vector.x * matrix[0][0] + vector.y * matrix[0][1] + vector.z * matrix[0][2] + matrix[0][3]), // X
 			(vector.x * matrix[1][0] + vector.y * matrix[1][1] + vector.z * matrix[1][2] + matrix[1][3]), // Y
@@ -170,6 +169,8 @@ namespace graphics
 	{
 		btui32 frameSizeX = 320u;
 		btui32 frameSizeY = 240u;
+		btui32 GUIframeSizeX = 320u;
+		btui32 GUIframeSizeY = 240u;
 		Shader shaders[S_COUNT];
 		bool bEditMode = false;
 		bool bSplitScreen = false;
@@ -180,15 +181,12 @@ namespace graphics
 	btui32 FrameSizeX() { return gPtr->frameSizeX; }
 	btui32 FrameSizeY() { return gPtr->frameSizeY; }
 
-	void SetFrameSize(btui32 x, btui32 y)
-	{
-		if (!gPtr->bEditMode)
-		{
+	void SetFrameSize(btui32 x, btui32 y) {
+		if (!gPtr->bEditMode) {
 			btui32 scale = x / SCREEN_UPSCALE_THRESHOLD + 1u;
 			gPtr->frameSizeY = y / scale;
 			#ifndef DEF_NMP
-			if (gPtr->bSplitScreen)
-			{
+			if (gPtr->bSplitScreen) {
 				gPtr->frameSizeX = x / (scale * 2u);
 				x *= 0.5f;
 			}
@@ -206,6 +204,12 @@ namespace graphics
 			gPtr->frameSizeX = x;
 			gPtr->frameSizeY = y;
 		}
+		gPtr->GUIframeSizeX = gPtr->frameSizeX;
+		gPtr->GUIframeSizeY = gPtr->frameSizeY;
+	}
+	void SetGUIFrameSize(btui32 x, btui32 y) {
+		gPtr->GUIframeSizeX = x;
+		gPtr->GUIframeSizeY = y;
 	}
 
 	glm::mat4 mat_proj;
@@ -237,8 +241,7 @@ namespace graphics
 		va_end(args);
 	}
 
-	void Init()
-	{
+	void Init() {
 		gPtr = new Graphics();
 
 		guibmp.Init();
@@ -304,43 +307,46 @@ namespace graphics
 		#endif
 		
 		#ifndef DEF_ARCHIVER
-		gPtr->bEditMode = cfg::bEditMode;
-		gPtr->bSplitScreen = cfg::bSplitScreen;
-		gPtr->fCameraFOV = cfg::fCameraFOV;
-		gPtr->fCameraNearClip = cfg::fCameraNearClip;
-		gPtr->fCameraFarClip = cfg::fCameraFarClip;
-		SetFrameSize(cfg::iWinX, cfg::iWinY);
+		gPtr->bEditMode = config.bEditMode;
+		gPtr->bSplitScreen = config.bSplitScreen;
+		gPtr->fCameraFOV = config.fCameraFOV;
+		gPtr->fCameraNearClip = config.fCameraNearClip;
+		gPtr->fCameraFarClip = config.fCameraFarClip;
+		SetFrameSize(config.iWinX, config.iWinY);
 		#else
 		SetFrameSize(ARCHIVER_WINDOW_W, ARCHIVER_WINDOW_H);
 		#endif
+
+		glEnable(GL_CULL_FACE); // Enable face culling
+		glCullFace(GL_FRONT); // Set culling mode
 	}
 
-	void End()
-	{
+	void End() {
 		delete gPtr;
+	}
+
+	void SetSplitScreen(bool b) {
+		gPtr->bSplitScreen = b;
+		SetFrameSize(config.iWinX, config.iWinY);
 	}
 
 	//________________________________________________________________________________________________________________________________
 	// MATRIX ------------------------------------------------------------------------------------------------------------------------
 
-	FRow4 operator*(const FRow4& row, const btf32 mult)
-	{
+	FRow4 operator*(const FRow4& row, const btf32 mult) {
 		return FRow4(row[0] * mult, row[1] * mult, row[2] * mult, row[3] * mult);
 	};
-	FRow4 operator+(const FRow4& row_a, const FRow4& row_b)
-	{
+	FRow4 operator+(const FRow4& row_a, const FRow4& row_b) {
 		return FRow4(row_a[0] + row_b[0], row_a[1] + row_b[1], row_a[2] + row_b[2], row_a[3] + row_b[3]);
 	};
 
-	Matrix4x4 MatrixTranslate(Matrix4x4 const& m, m::Vector3 const& v)
-	{
+	Matrix4x4 MatrixTranslate(Matrix4x4 const& m, m::Vector3 const& v) {
 		Matrix4x4 result = m;
 		result[3] = m[0] * v.x + m[1] * v.y + m[2] * v.z + m[3];
 		return result;
 		//matrix[3] = matrix[0] * pos.x + matrix[1] * pos.y + matrix[2] * pos.z + matrix[3];
 	}
-	Matrix4x4 MatrixRotate(Matrix4x4 const& m, btf32 angle, m::Vector3 const& v)
-	{
+	Matrix4x4 MatrixRotate(Matrix4x4 const& m, btf32 angle, m::Vector3 const& v) {
 		btf32 const c = cos(angle);
 		btf32 const s = sin(angle);
 
@@ -367,8 +373,7 @@ namespace graphics
 		result[3] = m[3];
 		return result;
 	}
-	Matrix4x4 MatrixScale(Matrix4x4 const& m, m::Vector3 const& v)
-	{
+	Matrix4x4 MatrixScale(Matrix4x4 const& m, m::Vector3 const& v) {
 		Matrix4x4 Result;
 		Result[0] = m[0] * v.x;
 		Result[1] = m[1] * v.y;
@@ -376,8 +381,7 @@ namespace graphics
 		Result[3] = m[3];
 		return Result;
 	}
-	Matrix4x4 MatrixLookAt(Matrix4x4 const& matrix, m::Vector3 const& src, m::Vector3 const& targ, m::Vector3 const& up)
-	{
+	Matrix4x4 MatrixLookAt(Matrix4x4 const& matrix, m::Vector3 const& src, m::Vector3 const& targ, m::Vector3 const& up) {
 		m::Vector3 f = m::Normalize(targ - src);
 		m::Vector3 s = m::Normalize(m::Cross(f, up));
 		m::Vector3 u = m::Cross(s, f);
@@ -397,18 +401,15 @@ namespace graphics
 		matr[3][2] = m::Dot(f, src);
 		return matr;
 	}
-	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos)
-	{
+	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 	}
-	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos)
-	{
+	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 	}
-	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, btf32 yaw)
-	{
+	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, btf32 yaw) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 
@@ -419,8 +420,7 @@ namespace graphics
 		matrix[1] = m[1] * (c + (1 - c));
 		matrix[2] = m[0] * s + m[2] * c;
 	}
-	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, btf32 yaw, btf32 pitch)
-	{
+	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, btf32 yaw, btf32 pitch) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 
@@ -438,8 +438,7 @@ namespace graphics
 		matrix[1] = m[1] * c + m[2] * s;
 		matrix[2] = m[1] * -s + m[2] * c;
 	}
-	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
-	{
+	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0)) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 
@@ -457,8 +456,7 @@ namespace graphics
 		matrix[1][0] = vLoUp.x; matrix[1][1] = vLoUp.y; matrix[1][2] = -vLoUp.z;
 		matrix[2][0] = vForw.x; matrix[2][1] = vForw.y; matrix[2][2] = -vForw.z;
 	}
-	void MatrixTransformForwardUp(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
-	{
+	void MatrixTransformForwardUp(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0)) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 
@@ -476,8 +474,7 @@ namespace graphics
 		matrix[1][0] = vForw.x; matrix[1][1] = vForw.y; matrix[1][2] = -vForw.z;
 		matrix[2][0] = -vLoUp.x; matrix[2][1] = -vLoUp.y; matrix[2][2] = vLoUp.z;
 	}
-	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
-	{
+	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0)) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 
@@ -497,8 +494,7 @@ namespace graphics
 
 		matrix[0] = matrix[0] * -1.f;
 	}
-	void MatrixTransformXFlipForwardUp(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0))
-	{
+	void MatrixTransformXFlipForwardUp(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0)) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 
@@ -518,95 +514,72 @@ namespace graphics
 
 		matrix[0] = matrix[0] * -1.f;
 	}
-	Matrix4x4 MatrixGetMirror(Matrix4x4& matrix)
-	{
+	Matrix4x4 MatrixGetMirror(Matrix4x4& matrix) {
 		Matrix4x4 rmat = matrix;
 		rmat[0] = rmat[0] * -1.f;
 		return rmat;
 	}
-	m::Vector3 MatrixGetPosition(Matrix4x4& matrix)
-	{
+	m::Vector3 MatrixGetPosition(Matrix4x4& matrix) {
 		return m::Vector3(matrix[3][0], matrix[3][1], -matrix[3][2]);
 	}
-	m::Vector3 MatrixGetForward(Matrix4x4& matrix)
-	{
+	m::Vector3 MatrixGetForward(Matrix4x4& matrix) {
 		return m::Vector3(matrix[2][0], matrix[2][1], -matrix[2][2]);
 	}
-	m::Vector3 MatrixGetRight(Matrix4x4& matrix)
-	{
+	m::Vector3 MatrixGetRight(Matrix4x4& matrix) {
 		return m::Vector3(matrix[0][0], matrix[0][1], -matrix[0][2]);
 	}
-	m::Vector3 MatrixGetUp(Matrix4x4& matrix)
-	{
+	m::Vector3 MatrixGetUp(Matrix4x4& matrix) {
 		return m::Vector3(matrix[1][0], matrix[1][1], -matrix[1][2]);
 	}
 
 	m::Vector3 view;
 	m::Vector3 focus;
-	m::Vector3 GetViewPos()
-	{
+	m::Vector3 GetViewPos() {
 		return view;
 	}
-	m::Vector3 GetFocalCenter()
-	{
+	m::Vector3 GetFocalCenter() {
 		return focus;
 	}
-	void SetMatProj(btf32 fovMult)
-	{
-		#if DEF_3PP
-		mat_proj = glm::perspective(glm::radians(60.f), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
-		#else
-		mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV), (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);
-		#endif
-	}
-	void SetMatView(void* t, void* p, void* t2)
-	{
+	void SetMatProj(btf32 fovMult) {
+		mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV) * fovMult, (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);	}
+	void SetMatView(void* t, void* p, void* t2) {
 		view = *(m::Vector3*)p * m::Vector3(1.f, 1.f, -1.f);
 		mat_view = glm::lookAt(*(glm::vec3*)p * m::Vector3(1.f, 1.f, -1.f), *(glm::vec3*)t * m::Vector3(1.f, 1.f, -1.f), glm::vec3(0.f, 1.f, 0.f));
 	}
 	// Lightsource
-	void SetMatProjLight()
-	{
+	void SetMatProjLight() {
 		mat_proj = glm::ortho(-SHADOW_WIDTH, SHADOW_WIDTH, -SHADOW_WIDTH, SHADOW_WIDTH, 0.f, SHADOW_FAR);
 	}
-	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz)
-	{
+	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz) {
 		mat_view = glm::lookAt(glm::vec3(x - (vx * SHADOW_HALF), y - (vy * SHADOW_HALF), z - (vz * SHADOW_HALF)),
 			glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
-	glm::mat4 GetMatProj()
-	{
+	glm::mat4 GetMatProj() {
 		return mat_proj;
 	}
-	glm::mat4 GetMatView()
-	{
+	glm::mat4 GetMatView() {
 		return mat_view;
 	}
 
 	//________________________________________________________________________________________________________________________________
 	// UTILITY FUNCTIONS -------------------------------------------------------------------------------------------------------------
 
-	void SetFrontFace()
-	{
+	void SetFrontFace() {
 		glFrontFace(GL_CW);
 	}
-	void SetFrontFaceInverse()
-	{
+	void SetFrontFaceInverse() {
 		glFrontFace(GL_CCW);
 	}
-	void SetRenderSolid()
-	{
+	void SetRenderSolid() {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-	void SetRenderWire()
-	{
+	void SetRenderWire() {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
 
 	// good, but replace the std::vectors
-	void BindBuffers(std::vector<Vertex> &vertices, std::vector<btui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO)
-	{
+	void BindBuffers(std::vector<Vertex> &vertices, std::vector<btui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO) {
 		glBindVertexArray(VAO); // Bind this vertex array
 		glBindBuffer(GL_ARRAY_BUFFER, VBO); // Create vertex buffer in opengl
 		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
@@ -626,8 +599,7 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// SHADER ------------------------------------------------------------------------------------------------------------------------
 
-	void Shader::Init(const char* vertexSource, const char* fragmentSource, const char* geometrySource)
-	{
+	void Shader::Init(const char* vertexSource, const char* fragmentSource, const char* geometrySource) {
 		const char* vShaderCode = vertexSource;
 		const char* fShaderCode = fragmentSource;
 		unsigned int vertex, fragment;
@@ -669,78 +641,60 @@ namespace graphics
 			location[i] = glGetUniformLocation(ID, names[i]);
 		}
 	}
-	void Shader::Use()
-	{
+	void Shader::Use() {
 		glUseProgram(ID);
 	}
-	void Shader::SetBool(const PIndex index, bool value) const
-	{
+	void Shader::SetBool(const PIndex index, bool value) const {
 		glUniform1i(location[index], (int)value);
 	}
-	void Shader::SetInt(const PIndex index, int value) const
-	{
+	void Shader::SetInt(const PIndex index, int value) const {
 		glUniform1i(location[index], value);
 	}
-	void Shader::SetUint(const PIndex index, unsigned int value) const
-	{
+	void Shader::SetUint(const PIndex index, unsigned int value) const {
 		glUniform1ui(location[index], value);
 	}
-	void Shader::SetFloat(const PIndex index, float value) const
-	{
+	void Shader::SetFloat(const PIndex index, float value) const {
 		glUniform1f(location[index], value);
 	}
-	void Shader::setVec2(const std::string &name, const glm::vec2 &value) const
-	{
+	void Shader::setVec2(const std::string &name, const glm::vec2 &value) const {
 		glUniform2fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
 	}
-	void Shader::setVec2(const std::string &name, float x, float y) const
-	{
+	void Shader::setVec2(const std::string &name, float x, float y) const {
 		glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y);
 	}
-	void Shader::setVec3(const PIndex index, const glm::vec3 &value) const
-	{
+	void Shader::setVec3(const PIndex index, const glm::vec3 &value) const {
 		glUniform3fv(location[index], 1, &value[0]);
 	}
-	void Shader::setVec3(const PIndex index, float x, float y, float z) const
-	{
+	void Shader::setVec3(const PIndex index, float x, float y, float z) const {
 		glUniform3f(location[index], x, y, z);
 	}
-	void Shader::setVec4(const std::string &name, const glm::vec4 &value) const
-	{
+	void Shader::setVec4(const std::string &name, const glm::vec4 &value) const {
 		glUniform4fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
 	}
-	void Shader::setVec4(const std::string &name, float x, float y, float z, float w)
-	{
+	void Shader::setVec4(const std::string &name, float x, float y, float z, float w) {
 		glUniform4f(glGetUniformLocation(ID, name.c_str()), x, y, z, w);
 	}
-	void Shader::setMat2(const std::string &name, const glm::mat2 &mat) const
-	{
+	void Shader::setMat2(const std::string &name, const glm::mat2 &mat) const {
 		glUniformMatrix2fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
-	void Shader::setMat3(const std::string &name, const glm::mat3 &mat) const
-	{
+	void Shader::setMat3(const std::string &name, const glm::mat3 &mat) const {
 		glUniformMatrix3fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
-	void Shader::setMat4(const PIndex index, const Matrix4x4& mat) const
-	{
+	void Shader::setMat4(const PIndex index, const Matrix4x4& mat) const {
 		glUniformMatrix4fv(location[index], 1, GL_FALSE, &mat[0][0]);
 	}
-	void Shader::SetTexture(const PIndex index, GLuint texture, TIndex textureIndex)
-	{
+	void Shader::SetTexture(const PIndex index, GLuint texture, TIndex textureIndex) {
 		glActiveTexture(temp[textureIndex]); // active proper texture unit before binding
 		//glActiveTexture(GL_TEXTURE5); // active proper texture unit before binding
 		glUniform1i(location[index], textureIndex);
 		glBindTexture(GL_TEXTURE_2D, texture); // Bind the texture
 	}
-	void Shader::CheckCompileErrors(GLuint shader, const std::string type)
-	{
+	void Shader::CheckCompileErrors(GLuint shader, const std::string type) {
 		GLint success;
 		GLchar infoLog[1024];
-		if (type != "PROGRAM")
-		{
+		if (type != "PROGRAM") {
 			glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-			if (!success)
-			{
+			if (!success) {
 				glGetShaderInfoLog(shader, 1024, NULL, infoLog);
 				std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
 			}
@@ -748,90 +702,20 @@ namespace graphics
 		else
 		{
 			glGetProgramiv(shader, GL_LINK_STATUS, &success);
-			if (!success)
-			{
+			if (!success) {
 				glGetProgramInfoLog(shader, 1024, NULL, infoLog);
 				std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
 			}
 		}
 	}
 
-	Shader& GetShader(eShader id)
-	{
+	Shader& GetShader(eShader id) {
 		return gPtr->shaders[id];
 	}
 
 	//________________________________________________________________________________________________________________________________
 	// TEXTURE -----------------------------------------------------------------------------------------------------------------------
 
-	ModifiableTexture::~ModifiableTexture()
-	{
-		delete[] buffer;
-		//glDeleteTextures(1, &glID);
-	}
-	void ModifiableTexture::Init(btui16 sx, btui16 sy, colour col)
-	{
-		glGenTextures(1, &glID); // Initialize GL texture
-
-		width = sx;
-		height = sy;
-		// Read pixel buffer
-		buffer = new colour[width * height];
-		for (btui32 i = 0u; i < (btui32)(width * height); ++i)
-		{
-			buffer[i] = col;
-		}
-	}
-	void ModifiableTexture::LoadFile(char * fn)
-	{
-		glGenTextures(1, &glID); // Initialize GL texture
-		FILE *file = fopen(fn, "rb"); // Open the file
-		if (file)
-		{
-			// Seek the beginning of the file
-			fseek(file, 0, SEEK_SET);
-			// Read version
-			version_t v;
-			fread(&v, sizeof(version_t), 1, file);
-			TextureFilterMode fm;
-			TextureEdgeMode em;
-			fread(&fm, 1, 1, file);
-			fread(&em, 1, 1, file);
-			// Read dimensions
-			fread(&width, sizeof(btui16), 1, file);
-			fread(&height, sizeof(btui16), 1, file);
-			// Read pixel buffer
-			buffer = new colour[width * height];
-			//if (sizeof(graphics::colour) * width * height > sizeof(buffer)) return;
-			fread(buffer, sizeof(graphics::colour), width * height, file);
-
-			fclose(file);
-		}
-	}
-	void ModifiableTexture::SetPixel(btui16 x, btui16 y, colour c)
-	{
-		buffer[x * width + y] = c;
-	}
-	void ModifiableTexture::SetPixelChannelR(btui16 x, btui16 y, btui8 val)
-	{
-		buffer[x * width + y].r = val;
-	}
-	void ModifiableTexture::SetPixelChannelG(btui16 x, btui16 y, btui8 val)
-	{
-		buffer[x * width + y].g = val;
-	}
-	void ModifiableTexture::SetPixelChannelB(btui16 x, btui16 y, btui8 val)
-	{
-		buffer[x * width + y].b = val;
-	}
-	void ModifiableTexture::SetPixelChannelA(btui16 x, btui16 y, btui8 val)
-	{
-		buffer[x * width + y].a = val;
-	}
-	colour ModifiableTexture::GetPixel(btui16 x, btui16 y)
-	{
-		return buffer[x * width + y];
-	}
 	void FMNearest() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -885,19 +769,52 @@ namespace graphics
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	}
 	void(*SetEdgeMode[])() = { EMRepeat, EMRepeatMirror, EMClamp, EMRepeatXClampY, EMClampXRepeatY };
-	void ModifiableTexture::ReBindGL(TextureFilterMode filter_mode, TextureEdgeMode edge_mode)
-	{
+
+	#if DEF_SWR
+	void Texture::Init(btui16 sx, btui16 sy, colour col) {
+		glGenTextures(1, &glID); // Initialize GL texture
+
+		width = sx;
+		height = sy;
+		// Read pixel buffer
+		buffer2 = new colour[width * height];
+		for (btui32 i = 0u; i < (btui32)(width * height); ++i) {
+			buffer2[i] = col;
+		}
+	}
+	void Texture::SetPixel(btui16 x, btui16 y, colour c) {
+		buffer2[x * width + y] = c;
+	}
+	void Texture::SetPixelChannelR(btui16 x, btui16 y, btui8 val) {
+		buffer2[x * width + y].r = val;
+	}
+	void Texture::SetPixelChannelG(btui16 x, btui16 y, btui8 val) {
+		buffer2[x * width + y].g = val;
+	}
+	void Texture::SetPixelChannelB(btui16 x, btui16 y, btui8 val) {
+		buffer2[x * width + y].b = val;
+	}
+	void Texture::SetPixelChannelA(btui16 x, btui16 y, btui8 val) {
+		buffer2[x * width + y].a = val;
+	}
+	colour Texture::GetPixel(btui16 x, btui16 y) {
+		return buffer2[x * width + y];
+	}
+	void Texture::InitGLTest() {
+		glGenTextures(1, &glID);
+	}
+	void Texture::ReBindGL(TextureFilterMode filter_mode, TextureEdgeMode edge_mode) {
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, glID);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer2);
 
 		SetFilterMode[filter_mode]();
 		SetEdgeMode[edge_mode]();
 	}
+	#endif
 
-	void Texture::LoadFile(void* File)
-	{
+	void Texture::LoadFile(void* File) {
 		glGenTextures(1, &glID);
 
 		FILE* file = (FILE*)File;
@@ -913,19 +830,27 @@ namespace graphics
 		fread(&width, sizeof(btui16), 1, file);
 		fread(&height, sizeof(btui16), 1, file);
 		// Read pixel buffer
+		#if DEF_SWR
+		buffer2 = new colour[width * height];
+		fread(buffer2, sizeof(graphics::colour), width * height, file);
+		#else
 		graphics::colour* buffer = new colour[width * height];
 		fread(buffer, sizeof(graphics::colour), width * height, file);
+		#endif
 
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, glID);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		#if DEF_SWR
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer2);
+		#else
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+		#endif
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width / 2, height / 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_mip);
 
 		// Custom Mip test
 		#if DEF_CUSTOM_MIPMAP
-		if (fm == eLINEAR_MIPMAP || fm == eNEAREST_MIPMAP)
-		{
+		if (fm == eLINEAR_MIPMAP || fm == eNEAREST_MIPMAP) {
 			graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
 			graphics::colour* buffer_mip02 = new colour[width / 4 * height / 4];
 			graphics::colour* buffer_mip03 = new colour[width / 8 * height / 8];
@@ -942,12 +867,9 @@ namespace graphics
 				buffer_mip01, buffer_mip02, buffer_mip03, buffer_mip04, buffer_mip05, buffer_mip06,
 				buffer_mip07, buffer_mip08, buffer_mip09, buffer_mip10, buffer_mip11, buffer_mip12 };
 			int division = 2;
-			for (int i = 1; i < 13; ++i)
-			{
-				for (int x = 0; x < width / division; ++x)
-				{
-					for (int y = 0; y < height / division; ++y)
-					{
+			for (int i = 1; i < 13; ++i) {
+				for (int x = 0; x < width / division; ++x) {
+					for (int y = 0; y < height / division; ++y) {
 						buffer_array[i][x * (width / division) + y].r = buffer[(x * division) * width + (y * division)].r;
 						buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
 						buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
@@ -960,8 +882,7 @@ namespace graphics
 			for (int i = 1; i < 13; ++i)
 				delete[] buffer_array[i];
 		}
-		else if (fm == eFOLIAGE)
-		{
+		else if (fm == eFOLIAGE) {
 			graphics::colour* buffer_mip01 = new colour[width / 2 * height / 2];
 			graphics::colour* buffer_mip02 = new colour[width / 4 * height / 4];
 			graphics::colour* buffer_mip03 = new colour[width / 8 * height / 8];
@@ -978,12 +899,9 @@ namespace graphics
 				buffer_mip01, buffer_mip02, buffer_mip03, buffer_mip04, buffer_mip05, buffer_mip06,
 				buffer_mip07, buffer_mip08, buffer_mip09, buffer_mip10, buffer_mip11, buffer_mip12 };
 			int division = 2;
-			for (int i = 1; i < 13; ++i)
-			{
-				for (int x = 0; x < width / division; ++x)
-				{
-					for (int y = 0; y < height / division; ++y)
-					{
+			for (int i = 1; i < 13; ++i) {
+				for (int x = 0; x < width / division; ++x) {
+					for (int y = 0; y < height / division; ++y) {
 						buffer_array[i][x * (width / division) + y].r = buffer[(x * division) * width + (y * division)].r;
 						buffer_array[i][x * (width / division) + y].g = buffer[(x * division) * width + (y * division)].g;
 						buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
@@ -1014,10 +932,11 @@ namespace graphics
 		SetFilterMode[fm]();
 		SetEdgeMode[em]();
 
+		#if !DEF_SWR
 		delete[] buffer;
+		#endif
 	}
-	void Texture::InitRenderBuffer(GLuint fbuf, int x, int y, bool linear)
-	{
+	void Texture::InitRenderBuffer(GLuint fbuf, int x, int y, bool linear) {
 		// Bind the framebuffer so we can set this texture to belong to it
 		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
 
@@ -1052,8 +971,7 @@ namespace graphics
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glID, 0);
 		#endif
 	}
-	void Texture::InitIntermediateTest(GLuint fbuf)
-	{
+	void Texture::InitIntermediateTest(GLuint fbuf) {
 		// Bind the framebuffer so we can set this texture to belong to it
 		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
 		// create a color attachment texture
@@ -1081,8 +999,7 @@ namespace graphics
 		#endif
 		#endif
 	}
-	void Texture::InitDepthBufferRW(GLuint fbuf, int x, int y, bool linear)
-	{
+	void Texture::InitDepthBufferRW(GLuint fbuf, int x, int y, bool linear) {
 		// Bind the framebuffer so we can set this texture to belong to it
 		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
 
@@ -1095,8 +1012,7 @@ namespace graphics
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, x, y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		if (linear)
-		{
+		if (linear) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		}
@@ -1109,8 +1025,7 @@ namespace graphics
 		//attach this texture to the framebuffer
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glID, 0);
 	}
-	void Texture::InitDepthBufferW(GLuint fbuf, int x, int y, bool linear)
-	{
+	void Texture::InitDepthBufferW(GLuint fbuf, int x, int y, bool linear) {
 		// Bind the framebuffer so we can set this texture to belong to it
 		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
 
@@ -1132,8 +1047,7 @@ namespace graphics
 		//bind rbo to framebuffer
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, glID);
 	}
-	void Texture::InitShadowBuffer(GLuint fbuf)
-	{
+	void Texture::InitShadowBuffer(GLuint fbuf) {
 		// Bind the framebuffer so we can set this texture to belong to it
 		glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
 
@@ -1151,16 +1065,17 @@ namespace graphics
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	void Texture::Unload()
-	{
+	void Texture::Unload() {
 		glDeleteTextures(1, &glID);
+		#if DEF_SWR
+		delete[] buffer2;
+		#endif
 	}
 
 	//________________________________________________________________________________________________________________________________
 	// MESH --------------------------------------------------------------------------------------------------------------------------
 
-	void Mesh::LoadFile(void* file, bool clearmem)
-	{
+	void Mesh::LoadFile(void* file, bool clearmem) {
 		//std::cout << "Loading " << fn << "... ";
 
 		//Vertex* vces; // Vertices
@@ -1213,8 +1128,7 @@ namespace graphics
 
 		glBindVertexArray(0); // Bind default vertex array
 
-		if (clearmem)
-		{
+		if (clearmem) {
 			free(vces);
 			vces = nullptr;
 			free(ices);
@@ -1223,8 +1137,7 @@ namespace graphics
 
 		std::cout << "Generated Mesh!" << std::endl;
 	}
-	void Mesh::Unload()
-	{
+	void Mesh::Unload() {
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(1, &vbo);
 		glDeleteBuffers(1, &ebo);
@@ -1235,8 +1148,7 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// MESH BLEND --------------------------------------------------------------------------------------------------------------------
 
-	void MeshBlend::LoadFile(void* file)
-	{
+	void MeshBlend::LoadFile(void* file) {
 		//std::cout << "Loading " << fn << "... ";
 
 		//-------------------------------- OPEN FILE
@@ -1296,8 +1208,7 @@ namespace graphics
 
 		std::cout << "Generated Mesh Blend!" << std::endl;
 	}
-	void MeshBlend::Unload()
-	{
+	void MeshBlend::Unload() {
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(1, &vbo);
 		glDeleteBuffers(1, &ebo);
@@ -1306,8 +1217,7 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// MESH DEFORM -------------------------------------------------------------------------------------------------------------------
 
-	void MeshDeform::LoadFile(void* file)
-	{
+	void MeshDeform::LoadFile(void* file) {
 		//std::cout << "Loading " << fn << "... ";
 
 		//-------------------------------- OPEN FILE
@@ -1354,8 +1264,7 @@ namespace graphics
 		glEnableVertexAttribArray(vdi_col); // Set Vertex colour
 		glVertexAttribPointer(vdi_col, 4u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_col);
 		// Set the matrix value array
-		for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
-		{
+		for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i) {
 			glEnableVertexAttribArray(vdi_mat + i); // Set Vertex colour
 			glVertexAttribPointer(vdi_mat + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)(vd_mat + (sizeof(btf32) * i)));
 		}
@@ -1366,8 +1275,7 @@ namespace graphics
 
 		std::cout << "Generated Mesh Deform!" << std::endl;
 	}
-	void MeshDeform::Unload()
-	{
+	void MeshDeform::Unload() {
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(1, &vbo);
 		glDeleteBuffers(1, &ebo);
@@ -1376,19 +1284,16 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// COMPOSITE MESH ----------------------------------------------------------------------------------------------------------------
 
-	CompositeMesh::CompositeMesh()
-	{
+	CompositeMesh::CompositeMesh() {
 		//int i = 0;
 	}
-	CompositeMesh::~CompositeMesh()
-	{
+	CompositeMesh::~CompositeMesh() {
 		if (vces != nullptr)
 			delete[] vces;
 		if (ices != nullptr)
 			delete[] ices;
 	}
-	void CompositeMesh::Draw(unsigned int tex, unsigned int shd)
-	{
+	void CompositeMesh::Draw(unsigned int tex, unsigned int shd) {
 		glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
 		glUniform1i(glGetUniformLocation(shd, "texture_diffuse1"), 0);
 		glBindTexture(GL_TEXTURE_2D, tex); // Bind the texture
@@ -1398,8 +1303,7 @@ namespace graphics
 	}
 	// TODO: add matrix offset
 	// read/search: c++ multiply vector3 x matrix4x4
-	void CompositeMesh::AddMesh(Mesh* mesh, Matrix4x4 position)
-	{
+	void CompositeMesh::AddMesh(Mesh* mesh, Matrix4x4 position) {
 		glm::vec3 vector;
 		glm::mat4x4 matr;
 
@@ -1438,8 +1342,7 @@ namespace graphics
 
 		//-------------------------------- INITIALIZE OPENGL BUFFER
 
-		if (old_vces_size == 0)
-		{
+		if (old_vces_size == 0) {
 			glGenVertexArrays(1, &vao); // Create vertex buffer
 			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
 		}
@@ -1464,8 +1367,7 @@ namespace graphics
 		glBindVertexArray(0); // Bind default vertex array
 	}
 
-	void CompositeMesh::AddMesh(Mesh* mesh, m::Vector3 position, MeshOrientation ori)
-	{
+	void CompositeMesh::AddMesh(Mesh* mesh, m::Vector3 position, MeshOrientation ori) {
 		glm::vec3 vector;
 		glm::mat4x4 matr;
 
@@ -1486,8 +1388,7 @@ namespace graphics
 		for (int i = 0; i < old_ices_size; ++i)
 			ices_new[i] = ices[i];
 		// Copy in the things from the new mesh
-		for (int i = old_vces_size; i < vces_size; ++i)
-		{
+		for (int i = old_vces_size; i < vces_size; ++i) {
 			vces_new[i] = mesh->Vces()[i - old_vces_size];
 			// temp
 			m::Vector3 vector = m::Vector3(vces_new[i].pos.x, vces_new[i].pos.y, vces_new[i].pos.z);
@@ -1505,8 +1406,7 @@ namespace graphics
 			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
 			*/
 
-			switch (ori)
-			{
+			switch (ori) {
 			case graphics::CompositeMesh::eNORTH:
 				vces_new[i].pos.x = vector.x + position.x;
 				vces_new[i].pos.y = vector.y + position.y;
@@ -1545,15 +1445,13 @@ namespace graphics
 
 		//-------------------------------- INITIALIZE OPENGL BUFFER
 
-		if (old_vces_size == 0)
-		{
+		if (old_vces_size == 0) {
 			glGenVertexArrays(1, &vao); // Create vertex buffer
 			glGenBuffers(1, &vbo); glGenBuffers(1, &ebo); // Generate vertex and element buffer
 		}
 	}
 
-	void CompositeMesh::ReBindGL()
-	{
+	void CompositeMesh::ReBindGL() {
 		//-------------------------------- UPDATE OPENGL BUFFER
 
 		glBindVertexArray(vao); // Bind this vertex array
@@ -1573,8 +1471,7 @@ namespace graphics
 
 		glBindVertexArray(0); // Bind default vertex array
 	}
-	void CompositeMesh::Unload()
-	{
+	void CompositeMesh::Unload() {
 		delete[] vces;
 		delete[] ices;
 	}
@@ -1582,8 +1479,7 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// TERRAIN MESH ------------------------------------------------------------------------------------------------------------------
 
-	void TerrainMesh::Draw()
-	{
+	void TerrainMesh::Draw() {
 		glBindVertexArray(vao); // Bind vertex array
 		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
 		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
@@ -1591,8 +1487,7 @@ namespace graphics
 
 	void TerrainMesh::GenerateFromHMap(
 		btui8(&hmap)[WORLD_SIZE][WORLD_SIZE],
-		btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE])
-	{
+		btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]) {
 		glm::vec3 vector;
 		glm::mat4x4 matr;
 
@@ -1610,10 +1505,8 @@ namespace graphics
 		btf32 uvscale = 0.25f;
 		int v = 0;
 		int i = 0;
-		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x)
-		{
-			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 1, i += 6)
-			{
+		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x) {
+			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 1, i += 6) {
 				// Copy in the things from the new mesh
 				vces[v].pos.x = (btf32)x;
 				vces[v].pos.z = (btf32)y;
@@ -1651,8 +1544,7 @@ namespace graphics
 				// | \|
 				// 0--1
 
-				if (x != 1023 + (tile_radius / 2) && y != 1023 + (tile_radius / 2))
-				{
+				if (x != 1023 + (tile_radius / 2) && y != 1023 + (tile_radius / 2)) {
 					bool triangulate_alternate = false;
 
 					// Triangulate based on longest height difference
@@ -1664,8 +1556,7 @@ namespace graphics
 						triangulate_alternate = true;
 					#endif
 
-					if (triangulate_alternate)
-					{
+					if (triangulate_alternate) {
 						ices[i + 0u] = v + 0u;
 						ices[i + 1u] = v + tile_radius;
 						ices[i + 2u] = v + 1u;
@@ -1725,8 +1616,7 @@ namespace graphics
 		btui8(&hmap_ne)[WORLD_SIZE][WORLD_SIZE],
 		btui8(&hmap_nw)[WORLD_SIZE][WORLD_SIZE],
 		btui8(&hmap_se)[WORLD_SIZE][WORLD_SIZE],
-		btui8(&hmap_sw)[WORLD_SIZE][WORLD_SIZE])
-	{
+		btui8(&hmap_sw)[WORLD_SIZE][WORLD_SIZE]) {
 		glm::vec3 vector;
 		glm::mat4x4 matr;
 
@@ -1744,11 +1634,9 @@ namespace graphics
 		{ // Scope
 			int datax = 0;
 			// Count edges that need tris
-			for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x, ++datax)
-			{
+			for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x, ++datax) {
 				int datay = 0;
-				for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay)
-				{
+				for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay) {
 					bool bInvisible = BVGET(x, y, flag_invisible);
 
 					// if solid face
@@ -1804,11 +1692,9 @@ namespace graphics
 		int v = 0;
 		int i = 0;
 		int datax = 0;
-		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x, ++datax)
-		{
+		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x, ++datax) {
 			int datay = 0;
-			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay)
-			{
+			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay) {
 				//-------------------------------- Generate top face
 				// if top face is visible
 				if (!BVGET(x, y, flag_invisible)) {
@@ -1829,8 +1715,7 @@ namespace graphics
 					vces[v + 3u].pos.z = (btf32)y - 0.5f;
 					vces[v + 3u].pos.y = (btf32)hmap_sw[x][y] / TERRAIN_HEIGHT_DIVISION;
 
-					for (btui32 i = 0; i < 4; ++i)
-					{
+					for (btui32 i = 0; i < 4; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.z * TERRAIN_UV_SCALE;
 						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
@@ -1848,8 +1733,7 @@ namespace graphics
 						vces[v].nor.z = vces[v].nor.z / nlen;
 					}
 
-					for (int i = 0; i < 4; ++i)
-					{
+					for (int i = 0; i < 4; ++i) {
 						vces[v + i].txtr[0] = 0.f; vces[v + i].txtr[1] = 0.f;
 						vces[v + i].txtr[2] = 0.f; vces[v + i].txtr[3] = 0.f;
 						vces[v + i].txtr[4] = 0.f; vces[v + i].txtr[5] = 0.f;
@@ -1908,8 +1792,7 @@ namespace graphics
 					vces[v + 3u].pos.x = (btf32)x - 0.5f; vces[v + 3u].pos.z = (btf32)y + 0.5f;
 					vces[v + 3u].pos.y = (btf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
 
-					for (int i = 0; i < 4; ++i)
-					{
+					for (int i = 0; i < 4; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
 
@@ -1952,8 +1835,7 @@ namespace graphics
 					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
 					vces[v + 2u].pos.y = (btf32)hmap_se[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
 
-					for (int i = 0; i < 3; ++i)
-					{
+					for (int i = 0; i < 3; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
 						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
@@ -1985,8 +1867,7 @@ namespace graphics
 					vces[v + 2u].pos.x = (btf32)x - 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
 					vces[v + 2u].pos.y = (btf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
 
-					for (int i = 0; i < 3; ++i)
-					{
+					for (int i = 0; i < 3; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
 						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
@@ -2024,8 +1905,7 @@ namespace graphics
 					vces[v + 3u].pos.x = (btf32)x + 0.5f; vces[v + 3u].pos.z = (btf32)y - 0.5f;
 					vces[v + 3u].pos.y = (btf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
 
-					for (int i = 0; i < 4; ++i)
-					{
+					for (int i = 0; i < 4; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
 						//vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
@@ -2069,8 +1949,7 @@ namespace graphics
 					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
 					vces[v + 2u].pos.y = (btf32)hmap_nw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
 
-					for (int i = 0; i < 3; ++i)
-					{
+					for (int i = 0; i < 3; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
 						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
@@ -2102,8 +1981,7 @@ namespace graphics
 					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y - 0.5f;
 					vces[v + 2u].pos.y = (btf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
 
-					for (int i = 0; i < 3; ++i)
-					{
+					for (int i = 0; i < 3; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.y * TERRAIN_UV_SCALE;
 						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
@@ -2142,8 +2020,7 @@ namespace graphics
 		free((void*)ices);
 	}
 
-	void TerrainMesh::ReBindGL()
-	{
+	void TerrainMesh::ReBindGL() {
 		//-------------------------------- UPDATE OPENGL BUFFER
 
 		glBindVertexArray(vao); // Bind this vertex array
@@ -2159,8 +2036,7 @@ namespace graphics
 		glEnableVertexAttribArray(VT_I_UVC); // Set Vertex texture coords
 		glVertexAttribPointer(VT_I_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)VT_O_UVC);
 		// Set the texture blend value array
-		for (btui32 i = 0u; i < 8u; ++i)
-		{
+		for (btui32 i = 0u; i < 8u; ++i) {
 			glEnableVertexAttribArray(VT_I_TXTR + i); // Set Vertex colour
 			glVertexAttribPointer(VT_I_TXTR + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)(VT_O_TXTR + (sizeof(btf32) * i)));
 		}
@@ -2174,11 +2050,9 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// GUI BITMAP --------------------------------------------------------------------------------------------------------------------
 
-	GUIBitmap::GUIBitmap()
-	{
+	GUIBitmap::GUIBitmap() {
 	}
-	void GUIBitmap::Init()
-	{
+	void GUIBitmap::Init() {
 		// set up vertex data (and buffer(s)) and configure vertex attributes
 		//float vertices[] = {
 		//	// positions          // colors           // texture coords
@@ -2221,25 +2095,26 @@ namespace graphics
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 		glEnableVertexAttribArray(2);
 	}
-	void GUIBitmap::SetTexture(GLuint tex)
-	{
+	void GUIBitmap::SetTexture(GLuint tex) {
 		tid = tex;
 	}
-	void GUIBitmap::SetShader(Shader* shader)
-	{
-		s = shader;
-	}
-	void GUIBitmap::Draw(int posx, int posy, int w, int h)
-	{
+	void GUIBitmap::Draw(int posx, int posy, int w, int h, btf32 opacity) {
 		// create transformations
 		glm::mat4 transform = glm::mat4(1.0f);
 		//scale to screen space
 
-		transform = glm::scale(transform, glm::vec3(2.f / FrameSizeX(), 2.f / FrameSizeY(), 1.0f));
+		transform = glm::scale(transform, glm::vec3(2.f / gPtr->GUIframeSizeX, 2.f / gPtr->GUIframeSizeY, 1.0f));
 		transform = glm::translate(transform, glm::vec3(posx, posy, 0));
 		transform = glm::scale(transform, glm::vec3(w / 2, h / 2, 1.0f));
 
+		Shader* s = &gPtr->shaders[S_GUI];
+
+		s->Use();
+		s->SetFloat(Shader::Opacity, opacity);
 		s->setMat4(Shader::GUITransform, *(graphics::Matrix4x4*)&transform);
+		s->setMat4(Shader::GUIOffset, *(graphics::Matrix4x4*)&glm::mat4(1.f));
+
+		//s->setMat4(Shader::GUITransform, *(graphics::Matrix4x4*)&transform);
 
 		//....................................... DRAW
 
@@ -2269,8 +2144,7 @@ namespace graphics
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	// (copied from ltr, yet to be optimized, integrated or fixed
 
-	Vertex createvert(float x, float y, float z, float r, float g, float b, float u, float v)
-	{
+	Vertex createvert(float x, float y, float z, float r, float g, float b, float u, float v) {
 		Vertex v2;
 
 		v2.pos.x = x;
@@ -2289,16 +2163,14 @@ namespace graphics
 	struct quad
 	{
 		float x1, x2, y1, y2, u1, u2, v1, v2;
-		quad(float _x1, float _x2, float _y1, float _y2, float _u1, float _u2, float _v1, float _v2)
-		{
+		quad(float _x1, float _x2, float _y1, float _y2, float _u1, float _u2, float _v1, float _v2) {
 			x1 = _x1; x2 = _x2;
 			y1 = _y1; y2 = _y2;
 			u1 = _u1; u2 = _u2;
 			v1 = _v1; v2 = _v2;
 		}
 	};
-	void AddQuad(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, quad p, int index)
-	{
+	void AddQuad(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, quad p, int index) {
 		// Create vertices
 		vertices.push_back(createvert(p.x1, p.y2, 0.f, 1.f, 1.f, 1.f, p.u1, p.v1)); // Top left
 		vertices.push_back(createvert(p.x2, p.y2, 0.f, 1.f, 1.f, 1.f, p.u2, p.v1)); // Top right
@@ -2318,15 +2190,19 @@ namespace graphics
 	//--------------------------------***************************************************************************
 	//--------------------------------***************************************************************************
 
-	void GUIBox::Init()
-	{
+	void GUIBox::Init() {
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO);
 		glGenBuffers(1, &EBO);
 		initialized = true;
 	}
-	void GUIBox::ReGen(bti16 _xA, bti16 _xB, bti16 _yA, bti16 _yB, btui16 mg, btui16 bl)
-	{
+	void GUIBox::End() {
+		glDeleteVertexArrays(1, &VAO);
+		glDeleteBuffers(1, &VBO);
+		glDeleteBuffers(1, &EBO);
+		initialized = false;
+	}
+	void GUIBox::ReGen(bti16 _xA, bti16 _xB, bti16 _yA, bti16 _yB, btui16 mg, btui16 bl) {
 		if (!initialized) Init();
 
 		// create transformations
@@ -2356,21 +2232,17 @@ namespace graphics
 		// create transformations
 		transform = glm::mat4(1.0f);
 		//scale to screen space
-		transform = glm::scale(transform, glm::vec3(2.f / FrameSizeX(), 2.f / FrameSizeY(), 1.0f));
+		transform = glm::scale(transform, glm::vec3(2.f / gPtr->GUIframeSizeX, 2.f / gPtr->GUIframeSizeY, 1.0f));
 	}
-	void GUIBox::Draw(Texture* t)
-	{
+	void GUIBox::Draw(Texture* t, btf32 opacity) {
 		Shader* s = &gPtr->shaders[S_GUI];
 
 		glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
 		glBindTexture(GL_TEXTURE_2D, t->glID);
 		s->Use();
-
+		s->SetFloat(Shader::Opacity, opacity);
 		s->setMat4(Shader::GUITransform, *(graphics::Matrix4x4*)&transform);
-
-		glm::mat4 mattemp = glm::mat4(1);
-
-		s->setMat4(Shader::GUIOffset, *(graphics::Matrix4x4*)&mattemp);
+		s->setMat4(Shader::GUIOffset, *(graphics::Matrix4x4*)&glm::mat4(1));
 
 		// Draw
 
@@ -2379,74 +2251,68 @@ namespace graphics
 		glDrawElements(GL_TRIANGLES, 6 * 9, GL_UNSIGNED_INT, 0);
 	}
 
-	void GUIText::Init()
-	{
+	void GUIText::Init() {
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO);
 		glGenBuffers(1, &EBO);
 		initialized = true;
 	}
-	void GUIText::SetOffset(int X, int Y)
-	{
+	void GUIText::End() {
+		glDeleteVertexArrays(1, &VAO);
+		glDeleteBuffers(1, &VBO);
+		glDeleteBuffers(1, &EBO);
+		initialized = false;
+	}
+	void GUIText::SetOffset(int X, int Y) {
 		// create transformations
 		offset = glm::mat4(1.0f);
 		//add offset
 		offset = glm::translate(offset, glm::vec3(X, Y, 0));
 	}
 
-	void GUIText::GetTextBounds()
-	{
+	void GUIText::GetTextBounds() {
 
 	}
 
 	//backup
 	//void GUIText::ReGen(char* c, unsigned int stringlength, bti16 _xa, bti16 _xb, bti16 _y)
 
-	void GUIText::ReGen(char* c, bti16 _xa, bti16 _xb, bti16 _y)
-	{
+	void GUIText::ReGen(char* _c, bti16 _xa, bti16 _xb, bti16 _y, TextAlignMode align) {
+		// this is necessary atm because we modify the string :(
+		char* c = new char[strlen(_c) + 1];
+		memcpy(c, _c, strlen(_c) + 1);
+
 		if (!initialized) Init();
-
-		xa = _xa; xb = _xb; y = _y;
-
+		int ch = 12;
 		int letterspace = 1;
-
-		//reset lines number
-		lines = 1;
-
+		
 		// create transformations
 		transform = glm::mat4(1.0f);
-
+		offset = glm::mat4(1.0f);
+		// Set initial vars
+		cnum = 0;
+		xa = _xa; xb = _xb; y = _y;
+		sizex = 0u;
+		sizey = ch;
+		
 		//manual vector version
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
-
 		//character height
-		int ch = 12;
-
 		int x = xa; int y2 = y - ch - 2;
-
-		cnum = 0;
-		width = 0;
-		lastLineWidth = 0;
-
-		sizex = sizey = 0u;
-		sizey += ch;
-
 		btui32 stringlength = strlen(c);
+		int lastLineWidth = 0;
+		int width = 0;
+		int lines = 1;
 
-		//print text
-		if (stringlength > 0)
-		{
+		// print text
+		if (stringlength > 0) {
 			lines++;
-
 			int last_space = 0;
-
 			//insert linebreaks
-			for (int i = 0; i <= stringlength; i++)
-			{
+			for (int i = 0; i <= stringlength; i++) {
 				// Convert ascii linebreaks
-				if (c[i] == CHARCODE_ASCII::CR || c[i] == CHARCODE_ASCII::LF)
-				{
+				if (c[i] == CHARCODE_ASCII::CR || c[i] == CHARCODE_ASCII::LF) {
 					c[i] = CHARCODE::LB;
 					x = xa;
 					y2 -= ch;
@@ -2454,83 +2320,72 @@ namespace graphics
 					sizey += ch;
 					lastLineWidth = 0;
 				}
-				else if (c[i] == CHARCODE::space)
-				{
-					last_space = i;
-				}
-				else
-				{
-					//line break if we've gone past the edge
-					if (x + font_kerning[c[i]] + 2 > xb)
-					{
-						if (last_space != 0) c[last_space] = CHARCODE::LB;
+				else {
+					if (c[i] == CHARCODE_ASCII::space) {
+						last_space = i;
+					}
+
+					// line break if we've gone past the edge
+					if (x + font_kerning[c[i]] + 2 > xb && last_space != 0) {
+						c[last_space] = CHARCODE::LB;
 						x = xa;
 						y2 -= ch;
 						lines++;
 						sizey += ch;
 						lastLineWidth = 0;
 					}
-					else
-					{
-						cnum++;
-						x += font_kerning[c[i]] + letterspace;
-						width += font_kerning[c[i]] + letterspace;
-						lastLineWidth += font_kerning[c[i]] + letterspace;
-						if (lastLineWidth > sizex)
-							sizex += font_kerning[c[i]] + letterspace;
-					}
+
+					cnum++;
+					x += font_kerning[c[i]] + letterspace;
+					width += font_kerning[c[i]] + letterspace;
+					lastLineWidth += font_kerning[c[i]] + letterspace;
+					if (lastLineWidth > sizex)
+						//sizex += font_kerning[c[i]] + letterspace;
+						sizex = lastLineWidth;
 				}
 			}
 
 			x = xa; y2 = y - ch - 2;
 
+			// why even reset this?
 			cnum = 0;
 			width = 0;
 			lastLineWidth = 0;
 
-			sizex = sizey = 0u;
+			// calc offsets before resetting sizes
+			int offsetx = 0;
+			//int offsety;
+			if (align == eTEXTALIGN_MID) offsetx = -(sizex / 2);
+			
+			// why even reset this?
+			sizex = 0u;
+			sizey = 0u;
 			sizey += ch;
 
 			// print
-			for (int i = 0; i <= stringlength; i++)
-			{
-				//set UV coords
-				int u = c[i] % 16;
-				int v = floor(c[i] / 16);
-				////line break if we've gone past the edge
-				//if (c[i] == CHARCODE::LB)
-				//{
-				//	x = xa;
-				//	y2 -= ch;
-				//	lines++;
-				//	sizey += ch;
-				//	lastLineWidth = 0;
-				//}
-				//else
-				//{
-				//	AddQuad(vertices, indices, quad(x, x + 8, y2, y2 + 16, (float)(u) / 16.f, (float)(u + 1) / 16.f, (float)v / 16, (float)(v + 1.f) / 16.f), cnum * 4);
-				//	cnum++;
-				//	x += font_kerning[c[i]] + letterspace;
-				//	width += font_kerning[c[i]] + letterspace;
-				//	lastLineWidth += font_kerning[c[i]] + letterspace;
-				//	if (lastLineWidth > sizex)
-				//		sizex += font_kerning[c[i]] + letterspace;
-				//}
-
-				AddQuad(vertices, indices, quad(x, x + 8, y2, y2 + 16, (float)(u) / 16.f, (float)(u + 1) / 16.f, (float)v / 16, (float)(v + 1.f) / 16.f), cnum * 4);
-				cnum++;
-				x += font_kerning[c[i]] + letterspace;
-				width += font_kerning[c[i]] + letterspace;
-				lastLineWidth += font_kerning[c[i]] + letterspace;
-				if (lastLineWidth > sizex)
-					sizex += font_kerning[c[i]] + letterspace;
-				if (c[i] == CHARCODE::LB)
-				{
+			for (int i = 0; i <= stringlength; i++) {
+				if (c[i] == CHARCODE::LB) {
 					x = xa;
 					y2 -= ch;
 					lines++;
 					sizey += ch;
 					lastLineWidth = 0;
+				}
+				else {
+					// Set UV coords
+					if (c[i] != CHARCODE::space) {
+						int u = c[i] % 16;
+						int v = floor(c[i] / 16);
+						AddQuad(vertices, indices, quad(x + offsetx, x + 16 + offsetx, y2, y2 + 16,
+							(float)(u) / 16.f, (float)(u + 1) / 16.f, (float)v / 16, (float)(v + 1.f) / 16.f),
+							cnum * 4);
+						cnum++;
+					}
+					x += font_kerning[c[i]] + letterspace;
+					width += font_kerning[c[i]] + letterspace;
+					lastLineWidth += font_kerning[c[i]] + letterspace;
+					if (lastLineWidth > sizex)
+						sizex += font_kerning[c[i]] + letterspace;
 				}
 			}
 		}
@@ -2539,8 +2394,12 @@ namespace graphics
 			//set UV coords
 			int u = 0xa1 % 16;
 			int v = floor(0xa1 / 16);
-			AddQuad(vertices, indices, quad(x, x + 8, y2, y2 + 16, (float)(u) / 16.f, (float)(u + 1) / 16.f, (float)v / 16, (float)(v + 1.f) / 16.f), cnum * 4);
+			AddQuad(vertices, indices, quad(x, x + 8, y2, y2 + 16,
+				(float)(u) / 16.f, (float)(u + 1) / 16.f,
+				(float)v / 16, (float)(v + 1.f) / 16.f), cnum * 4);
 		}
+
+		delete[] c;
 
 		BindBuffers(vertices, indices, VAO, VBO, EBO);
 
@@ -2548,17 +2407,15 @@ namespace graphics
 		transform = glm::mat4(1.0f);
 
 		//scale to screen space
-		transform = glm::scale(transform, glm::vec3(2.f / FrameSizeX(), 2.f / FrameSizeY(), 1.0f));
+		transform = glm::scale(transform, glm::vec3(2.f / gPtr->GUIframeSizeX, 2.f / gPtr->GUIframeSizeY, 1.0f));
 	}
 	//the 'scroll' boolean feels kind of clunky but it will work for now
-	void GUIText::Draw(Texture* t)
-	{
+	void GUIText::Draw(Texture* t, btf32 opacity) {
 		Shader* s = &gPtr->shaders[S_GUI];
 
 		s->Use();
-
+		s->SetFloat(Shader::Opacity, opacity);
 		s->setMat4(Shader::GUITransform, *(graphics::Matrix4x4*)&transform);
-
 		s->setMat4(Shader::GUIOffset, *(graphics::Matrix4x4*)&offset);
 
 		// Draw
@@ -2568,30 +2425,21 @@ namespace graphics
 		glDrawElements(GL_TRIANGLES, cnum * 6, GL_UNSIGNED_INT, 0);
 	}
 
-	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h, btf32 opacity)
-	{
-		Shader* shader = &gPtr->shaders[S_GUI];
-
-		// TEEEEMMP TEMP TEMP TEMP
-		guibmp.SetShader(shader);
-		shader->SetFloat(Shader::Opacity, opacity);
+	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h, btf32 opacity) {
 		guibmp.SetTexture(texture->glID);
-		guibmp.Draw(x, y, w, h);
+		guibmp.Draw(x, y, w, h, opacity);
 	}
-	void DrawGUIBox(Texture* texture, bti16 xa, bti16 xb, bti16 ya, bti16 yb, btui16 margin_size, btui16 bleed_size)
-	{
+	void DrawGUIBox(Texture* texture, bti16 xa, bti16 xb, bti16 ya, bti16 yb, btui16 margin_size, btui16 bleed_size) {
 		guibox.ReGen(xa, xb, ya, yb, margin_size, bleed_size);
 		guibox.Draw(texture);
 	}
-	void DrawGUIText(char* string, Texture* texture, bti32 xa, bti32 xb, bti32 y)
-	{
+	void DrawGUIText(char* string, Texture* texture, bti32 xa, bti32 xb, bti32 y) {
 		guitxt.ReGen(string, xa, xb, y);
 		guitxt.Draw(texture);
 	}
 }
 
-__forceinline void DrawMeshGL(btui32 mdl, btui32 ices_size, btui32 tex)
-{
+__forceinline void DrawMeshGL(btui32 mdl, btui32 ices_size, btui32 tex) {
 	glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
 	glBindTexture(GL_TEXTURE_2D, tex); // Bind the texture
 	glBindVertexArray(mdl); // Bind vertex array
@@ -2599,12 +2447,10 @@ __forceinline void DrawMeshGL(btui32 mdl, btui32 ices_size, btui32 tex)
 	glBindVertexArray(0); // Return to default
 }
 
-void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex,
-	ShaderStyle charashader, graphics::Matrix4x4 matrix)
-{
+void DrawMesh(btID id, graphics::Mesh& mdl, graphics::Texture tex,
+	ShaderStyle charashader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
-	switch (charashader)
-	{
+	switch (charashader) {
 	case SS_NORMAL:
 		shd = &graphics::GetShader(graphics::S_SOLID);
 		break;
@@ -2627,9 +2473,8 @@ void DrawMesh(btID id, graphics::Mesh& mdl, graphics::TextureBase tex,
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawParticles(graphics::Mesh& mdl, graphics::TextureBase tex,
-	graphics::Matrix4x4* matrix, btui32 count)
-{
+void DrawParticles(graphics::Mesh& mdl, graphics::Texture tex,
+	graphics::Matrix4x4* matrix, btui32 count) {
 	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID);
 
 	// Enable the shader
@@ -2646,11 +2491,9 @@ void DrawParticles(graphics::Mesh& mdl, graphics::TextureBase tex,
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
-{
+void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
-	switch (charashader)
-	{
+	switch (charashader) {
 	case SS_NORMAL:
 		shd = &graphics::GetShader(graphics::S_SOLID_BLEND);
 		break;
@@ -2676,17 +2519,15 @@ void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::Textur
 }
 
 void DrawMeshDeform(
-	btID id, graphics::MeshDeform& mdl, graphics::TextureBase tex,
+	btID id, graphics::MeshDeform& mdl, graphics::Texture tex,
 	ShaderStyle charashader, btui32 matrix_count,
 	graphics::Matrix4x4 transform_a = graphics::Matrix4x4(),
 	graphics::Matrix4x4 transform_b = graphics::Matrix4x4(),
 	graphics::Matrix4x4 transform_c = graphics::Matrix4x4(),
-	graphics::Matrix4x4 transform_d = graphics::Matrix4x4())
-{
+	graphics::Matrix4x4 transform_d = graphics::Matrix4x4()) {
 	// Get the shader reference
 	graphics::Shader* shd = nullptr;// = &graphics::GetShader(graphics::S_SOLID_DEFORM);
-	switch (charashader)
-	{
+	switch (charashader) {
 	case SS_NORMAL:
 		shd = &graphics::GetShader(graphics::S_SOLID_DEFORM);
 		break;
@@ -2713,11 +2554,9 @@ void DrawMeshDeform(
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::TextureBase tex, ShaderStyle charashader, graphics::Matrix4x4 matrix)
-{
+void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
-	switch (charashader)
-	{
+	switch (charashader) {
 	case SS_NORMAL:
 		shd = &graphics::GetShader(graphics::S_SOLID);
 		break;
@@ -2741,12 +2580,11 @@ void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::TextureB
 }
 
 void DrawTerrainMesh(btID id, graphics::TerrainMesh mdl,
-	graphics::TextureBase tex_a, graphics::TextureBase tex_b,
-	graphics::TextureBase tex_c, graphics::TextureBase tex_d,
-	graphics::TextureBase tex_e, graphics::TextureBase tex_f,
-	graphics::TextureBase tex_g, graphics::TextureBase tex_h,
-	graphics::Matrix4x4 matrix)
-{
+	graphics::Texture tex_a, graphics::Texture tex_b,
+	graphics::Texture tex_c, graphics::Texture tex_d,
+	graphics::Texture tex_e, graphics::Texture tex_f,
+	graphics::Texture tex_g, graphics::Texture tex_h,
+	graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID_TERRAIN);
 	//graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID);
 

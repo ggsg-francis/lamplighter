@@ -125,16 +125,17 @@ void ActiveState::Damage(btui32 amount, btf32 angle)
 	}
 	// TODO: include AI 'notify attack' function call here
 }
-void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, btui32 magnitude)
+void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, btui32 magnitude, btID icon)
 {
 	StatusEffect effect;
 	effect.effect_caster_id = caster;
 	effect.effect_type = type;
 	effect.effect_duration = duration;
 	effect.effect_magnitude = magnitude;
+	effect.effect_icon = icon;
 	effects.Add(effect);
 
-	aud::PlaySnd(aud::FILE_EFFECT, m::Vector3(ENTITY(caster)->t.position.x, ENTITY(caster)->t.height, ENTITY(caster)->t.position.y));
+	aud::PlaySnd3D(aud::FILE_EFFECT, m::Vector3(ENTITY(caster)->t.position.x, ENTITY(caster)->t.altitude, ENTITY(caster)->t.position.y));
 
 	// TODO: include AI 'notify attack' function call here
 }
@@ -142,7 +143,8 @@ void ActiveState::AddSpell(btID caster, btID spell)
 {
 	AddEffect(caster, (StatusEffectType)acv::spells[spell].target_effect_type,
 		acv::spells[spell].target_effect_duration,
-		acv::spells[spell].target_effect_magnitude);
+		acv::spells[spell].target_effect_magnitude,
+		acv::spells[spell].icon);
 	// TODO: this only works in the case of cast on self, should deal with this properly but dont know how best to yet
 	if (core::players[0] == caster)
 	{
@@ -185,7 +187,6 @@ void ActiveState::TickEffects(btf32 dt)
 }
 
 #include "3rdparty\cute_c2.h"
-#include "collision.h"
 
 // TODO: temmmmmmmmmmmmmmpppppppp
 // temporary because the physics functions really shouldnt
@@ -194,6 +195,8 @@ void ActiveState::TickEffects(btf32 dt)
 
 #define ACTOR_NO_COLLIDE_HEIGHT 0.0625f
 
+#if !DEF_GRID
+// TODO: same treatment to slidevelocity as regular velocity
 void Entity_PhysLineDeintersect(ECCommon* entity, env::EnvLineSeg* seg, btf32 radius)
 {
 	hit_info hit;
@@ -209,8 +212,8 @@ void Entity_PhysLineDeintersect(ECCommon* entity, env::EnvLineSeg* seg, btf32 ra
 		if (localvec.x > seg->csn_scale.x) {
 			// Circle collision
 			// Are we within this wall's height range?
-			if (!((seg->h_b_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_b_bot <= entity->t.height + entity->height)
-				|| (seg->h_b_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_b_bot >= entity->t.height + entity->height))) {
+			if (!((seg->h_b_top <= entity->t.altitude + ACTOR_NO_COLLIDE_HEIGHT && seg->h_b_bot <= entity->t.altitude + entity->height)
+				|| (seg->h_b_top >= entity->t.altitude + ACTOR_NO_COLLIDE_HEIGHT && seg->h_b_bot >= entity->t.altitude + entity->height))) {
 				m::Vector2 offset = localvec - m::Vector2(seg->csn_scale.x, 0);
 				if (m::Length(offset) < radius) {
 					hit.hit = true;
@@ -223,8 +226,8 @@ void Entity_PhysLineDeintersect(ECCommon* entity, env::EnvLineSeg* seg, btf32 ra
 		}
 		else if (localvec.x < -seg->csn_scale.x) {
 			// Are we within this wall's height range?
-			if (!((seg->h_a_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_a_bot <= entity->t.height + entity->height)
-				|| (seg->h_a_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && seg->h_a_bot >= entity->t.height + entity->height))) {
+			if (!((seg->h_a_top <= entity->t.altitude + ACTOR_NO_COLLIDE_HEIGHT && seg->h_a_bot <= entity->t.altitude + entity->height)
+				|| (seg->h_a_top >= entity->t.altitude + ACTOR_NO_COLLIDE_HEIGHT && seg->h_a_bot >= entity->t.altitude + entity->height))) {
 				// Circle collision
 				m::Vector2 offset = localvec - m::Vector2(-seg->csn_scale.x, 0);
 				if (m::Length(offset) < radius) {
@@ -243,8 +246,8 @@ void Entity_PhysLineDeintersect(ECCommon* entity, env::EnvLineSeg* seg, btf32 ra
 			btf32 height_lerp_top = m::Lerp(seg->h_a_top, seg->h_b_top, lerpval);
 			btf32 height_lerp_bot = m::Lerp(seg->h_a_bot, seg->h_b_bot, lerpval);
 			// Are we within this wall's height range?
-			if (!((height_lerp_top <= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && height_lerp_bot <= entity->t.height + entity->height)
-				|| (height_lerp_top >= entity->t.height + ACTOR_NO_COLLIDE_HEIGHT && height_lerp_bot >= entity->t.height + entity->height))) {
+			if (!((height_lerp_top <= entity->t.altitude + ACTOR_NO_COLLIDE_HEIGHT && height_lerp_bot <= entity->t.altitude + entity->height)
+				|| (height_lerp_top >= entity->t.altitude + ACTOR_NO_COLLIDE_HEIGHT && height_lerp_bot >= entity->t.altitude + entity->height))) {
 				hit.hit = true;
 				// If we're on the front face of the wall
 				if (localvec.y >= 0) {
@@ -272,20 +275,21 @@ void Entity_PhysLineDeintersect(ECCommon* entity, env::EnvLineSeg* seg, btf32 ra
 		// modify position
 		entity->t.position += hit.depenetrate;
 		// modify velocity
-		btf32 velLen = m::Length(entity->t.velocity);
-		btf32 dir = m::Dot(entity->t.velocity, m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x)));
-		if (m::Length(entity->t.velocity) > 0.f) {
+		btf32 velLen = m::Length(entity->velocity);
+		btf32 dir = m::Dot(entity->velocity, m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x)));
+		if (m::Length(entity->velocity) > 0.f) {
 			#if DEF_WALL_SLIDE_PRESERVE_SPEED
 			// Maintain speed along new vector
-			entity->t.velocity = m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x) * dir) * velLen;
+			entity->velocity = m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x) * dir) * velLen;
 			#else
 			// Simple velocity reduction
-			entity->t.velocity = m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x)) * dir;
+			entity->velocity = m::Normalize(m::Vector2(offsettemp.y, -offsettemp.x)) * dir;
 			#endif
 		}
 		//entity->Collide(hit);
 	}
 }
+#endif
 void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
 {
 	btf32 offsetx, offsety;
@@ -348,6 +352,7 @@ void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
 
 	//-------------------------------- ENVIRONMENTAL COLLISION CHECK (2ND THEREFORE PRIORITIZED)
 
+	#if !DEF_GRID
 	// Line test
 	WCoord coords;
 	for (int cell = 0; cell < eCELL_COUNT; ++cell) {
@@ -359,6 +364,7 @@ void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
 			Entity_PhysLineDeintersect(ent, seg, 0.5f);
 		}
 	}
+	#endif
 
 	#if DEF_GRID
 	offsetx = ent->t.position.x - ent->t.csi.c[eCELL_I].x;
@@ -375,46 +381,70 @@ void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
 	btf32 height_terrain;
 	// North
 	if (overlapN) {
-		height_terrain = m::Lerp(
-			(btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u],
-			(btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u],
-			offsetx) / TERRAIN_HEIGHT_DIVISION;
-		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
-			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
-			ent->t.velocity.y = 0.f;
+		if (env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+			env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u] ||
+			env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+			env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u]) {
+			height_terrain = m::Lerp(
+				(btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u],
+				(btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y + 1u],
+				offsetx) / TERRAIN_HEIGHT_DIVISION;
+			if (height_terrain > (ent->t.altitude + ACTOR_NO_COLLIDE_HEIGHT)) {
+				ent->t.position.y = ent->t.csi.c[eCELL_I].y; // + (1 - radius)
+				ent->velocity.y = 0.f;
+				ent->slideVelocity.y = 0.f;
+			}
 		}
 	}
 	// South
 	if (overlapS) {
-		height_terrain = m::Lerp(
-			(btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u],
-			(btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u],
-			offsetx) / TERRAIN_HEIGHT_DIVISION;
-		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
-			ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
-			ent->t.velocity.y = 0.f;
+		if (env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+			env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u] ||
+			env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+			env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u]) {
+			height_terrain = m::Lerp(
+				(btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u],
+				(btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y - 1u],
+				offsetx) / TERRAIN_HEIGHT_DIVISION;
+			if (height_terrain > (ent->t.altitude + ACTOR_NO_COLLIDE_HEIGHT)) {
+				ent->t.position.y = ent->t.csi.c[eCELL_I].y; // - (1 - radius)
+				ent->velocity.y = 0.f;
+				ent->slideVelocity.y = 0.f;
+			}
 		}
 	}
 	// East
 	if (overlapE) {
-		height_terrain = m::Lerp(
-			(btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y],
-			(btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y],
-			offsety) / TERRAIN_HEIGHT_DIVISION;
-		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
-			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
-			ent->t.velocity.x = 0.f;
+		if (env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+			env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y] ||
+			env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+			env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y]) {
+			height_terrain = m::Lerp(
+				(btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y],
+				(btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y],
+				offsety) / TERRAIN_HEIGHT_DIVISION;
+			if (height_terrain > (ent->t.altitude + ACTOR_NO_COLLIDE_HEIGHT)) {
+				ent->t.position.x = ent->t.csi.c[eCELL_I].x; // + (1 - radius)
+				ent->velocity.x = 0.f;
+				ent->slideVelocity.x = 0.f;
+			}
 		}
 	}
 	// West
 	if (overlapW) {
-		height_terrain = m::Lerp(
-			(btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y],
-			(btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y],
-			offsety) / TERRAIN_HEIGHT_DIVISION;
-		if (height_terrain > (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT)) {
-			ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
-			ent->t.velocity.x = 0.f;
+		if (env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+			env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y] ||
+			env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+			env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y]) {
+			height_terrain = m::Lerp(
+				(btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y],
+				(btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y],
+				offsety) / TERRAIN_HEIGHT_DIVISION;
+			if (height_terrain > (ent->t.altitude + ACTOR_NO_COLLIDE_HEIGHT)) {
+				ent->t.position.x = ent->t.csi.c[eCELL_I].x; // - (1 - radius)
+				ent->velocity.x = 0.f;
+				ent->slideVelocity.x = 0.f;
+			}
 		}
 	}
 
@@ -423,32 +453,42 @@ void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
 	// TODO: Something up with the corner checks, not sure what
 
 	// North-east
-	if (((btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
-		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapN && overlapE) {
-		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, 0.5f);
-		if (m::Length(offset) < 0.5f)
-			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+	if (env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+		env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u]) {
+		if (((btf32)env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
+		> (ent->t.altitude + ACTOR_NO_COLLIDE_HEIGHT) && overlapN && overlapE) {
+			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, 0.5f);
+			if (m::Length(offset) < 0.5f)
+				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+		}
 	}
 	// North-west
-	if (((btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
-		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapN && overlapW) {
-		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, 0.5f);
-		if (m::Length(offset) < 0.5f)
-			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
-	}
-	// South-east
-	if (((btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
-		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapS && overlapE) {
-		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, -0.5f);
-		if (m::Length(offset) < 0.5f)
-			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
-	}
-	// South-west
-	if (((btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
-		> (ent->t.height + ACTOR_NO_COLLIDE_HEIGHT) && overlapS && overlapW) {
-		m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, -0.5f);
-		if (m::Length(offset) < 0.5f)
-			ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+	if (env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+		env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u]) {
+		if (((btf32)env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y + 1u] / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.altitude + ACTOR_NO_COLLIDE_HEIGHT) && overlapN && overlapW) {
+			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, 0.5f);
+			if (m::Length(offset) < 0.5f)
+				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+		}
+	}// South-east
+	if (env::eCells.terrain_height_se[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+		env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u]) {
+		if (((btf32)env::eCells.terrain_height_nw[ent->t.csi.c[eCELL_I].x + 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.altitude + ACTOR_NO_COLLIDE_HEIGHT) && overlapS && overlapE) {
+			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(0.5f, -0.5f);
+			if (m::Length(offset) < 0.5f)
+				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+		}
+	}// South-west
+	if (env::eCells.terrain_height_sw[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y] !=
+		env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u]) {
+		if (((btf32)env::eCells.terrain_height_ne[ent->t.csi.c[eCELL_I].x - 1u][ent->t.csi.c[eCELL_I].y - 1u] / TERRAIN_HEIGHT_DIVISION)
+			> (ent->t.altitude + ACTOR_NO_COLLIDE_HEIGHT) && overlapS && overlapW) {
+			m::Vector2 offset = m::Vector2(offsetx, offsety) - m::Vector2(-0.5f, -0.5f);
+			if (m::Length(offset) < 0.5f)
+				ent->t.position += m::Normalize(offset) * (0.5f - m::Length(offset));
+		}
 	}
 	#endif
 
@@ -456,19 +496,37 @@ void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
 
 #undef ACTOR_NO_COLLIDE_HEIGHT
 
+bool RayEntity(btID ent, btf32 stand_height)
+{
+	ECCommon* entity = ENTITY(ent);
+
+	btf32 th;
+	#if DEF_GRID
+	env::GetHeight(th, entity->t.csi);
+	#else
+	env::GetNearestSurfaceHeight(th, entity->t.csi, entity->t.altitude);
+	#endif
+	if (entity->t.altitude + entity->altitude_velocity <= th + stand_height)
+		return true;
+	return false;
+}
 void Entity_CheckGrounded(btID id, ECCommon* ent)
 {
 	btf32 th;
-	env::GetNearestSurfaceHeight(th, ent->t.csi, ent->t.height);
+	#if DEF_GRID
+	env::GetHeight(th, ent->t.csi);
+	#else
+	env::GetNearestSurfaceHeight(th, ent->t.csi, ent->t.altitude);
+	#endif
 
-	if (ent->t.height + ent->t.height_velocity >= th + 1.f)
+	if (ent->t.altitude + ent->altitude_velocity >= th + 1.f)
 	{
 		ent->grounded = false;
 		ent->slideVelocity *= 0.f;
 		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
 			((ECActor*)ent)->jump_state = ECActor::eJUMP_JUMP;
 	}
-	else if (ent->t.height_velocity > 0.f)
+	else if (ent->altitude_velocity > 0.f)
 	{
 		ent->grounded = false;
 		ent->slideVelocity *= 0.f;
@@ -481,7 +539,7 @@ void Entity_CheckGrounded(btID id, ECCommon* ent)
 			ent->grounded = RayEntity(id, 0.f);
 		if (ent->grounded)
 		{
-			ent->slideVelocity = ent->t.velocity;
+			ent->slideVelocity = ent->velocity;
 			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
 				ActorOnHitGround((ECActor*)ent);
 			}
@@ -506,73 +564,86 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 	if (!ent->grounded)
 	{
 		// Add gravity
-		ent->t.height_velocity -= 0.20f * dt;
+		ent->altitude_velocity -= 0.20f * dt;
 		// Velocity reduction (Air drag)
-		if (ent->properties.get(ECCommon::ePHYS_DRAG)) ent->t.velocity *= 0.99f;
+		if (ent->properties.get(ECCommon::ePHYS_DRAG)) ent->velocity *= 0.99f;
 
+		#if !DEF_GRID
 		// ceiling collision
 		btf32 ceil_height;
-		env::GetNearestCeilingHeight(ceil_height, ent->t.csi, ent->t.height);
-		if (ceil_height < ent->t.height + ent->height) {
-			ent->t.height = ceil_height - ent->height;
-			ent->t.height_velocity = 0.f;
+		env::GetNearestCeilingHeight(ceil_height, ent->t.csi, ent->t.altitude);
+		if (ceil_height < ent->t.altitude + ent->height) {
+			ent->t.altitude = ceil_height - ent->height;
+			ent->altitude_velocity = 0.f;
 		}
+		#endif
 	}
 	else
 	{
 		// floor collision
 		btf32 ground_height;
-		env::EnvTri* triptr = nullptr;
-		env::GetNearestSurfaceHeight(ground_height, &triptr, ent->t.csi, ent->t.height);
 		m::Vector2 slope(0.f, 0.f);
-		if (triptr != nullptr)
-			slope = triptr->slope * 4.f;
 		#if DEF_GRID
+		env::GetHeight(ground_height, ent->t.csi);
 		env::GetSlope(slope.x, slope.y, ent->t.csi);
+		#else
+		env::EnvTri* triptr = nullptr;
+		env::GetNearestSurfaceHeight(ground_height, &triptr, ent->t.csi, ent->t.altitude);
+		if (triptr != nullptr) slope = triptr->slope;
 		#endif
+		slope *= 4.f; // Amplify slope for slide calculation
+
 		// look at how long this is
-		switch (acv::props[env::eCells.prop[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]].floorType) {
+		#if DEF_GRID
+		switch (acv::props[env::eCells.prop[ent->t.csi.c[eCELL_I].x][ent->t.csi.c[eCELL_I].y]].floorType)
+		#else
+		// TODO: super temporary
+		// will have to get floortype from triangles
+		acv::PropRecord::EnvPropFloorMat floor = acv::PropRecord::FLOOR_STANDARD;
+		switch (floor)
+		#endif
+		{
 		case acv::PropRecord::FLOOR_QUICKSAND:
 		{
 			btf32 distBelowSand = 0.f;
-			ent->t.height -= 0.12f * dt;
+			ent->t.altitude -= 0.12f * dt;
 
 			// slow height velocity
-			ent->t.height_velocity *= 0.9f;
+			ent->altitude_velocity *= 0.9f;
 			ent->slideVelocity *= 0.9f;
 
 			// Multiplier reduces the depth at which you can't move
-			distBelowSand = (ent->t.height - ground_height) * 1.4f;
+			distBelowSand = (ent->t.altitude - ground_height) * 1.4f;
 			if (-distBelowSand > ent->height) {
 				ent->state.Damage(1000, 0);
 			}
 			distBelowSand = m::Clamp(distBelowSand, 0.f, 1.f);
-			ent->t.velocity *= distBelowSand;
+			ent->velocity *= distBelowSand;
 		}
 		break;
 		case acv::PropRecord::FLOOR_ICE: // same as normal ground but dont slow slide
 		{
 			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
-				if (ent->t.height < ground_height + ((ECActor*)ent)->aniStandHeight * 0.25f)
-					ent->t.height = ground_height + ((ECActor*)ent)->aniStandHeight * 0.25f;
+				if (ent->t.altitude < ground_height + ((ECActor*)ent)->aniStandHeight * 0.25f)
+					ent->t.altitude = ground_height + ((ECActor*)ent)->aniStandHeight * 0.25f;
 				else
-					ent->t.height = m::Lerp(ent->t.height, ground_height + ((ECActor*)ent)->aniStandHeight, 6.f * dt);
+					ent->t.altitude = m::Lerp(ent->t.altitude, ground_height + ((ECActor*)ent)->aniStandHeight, 6.f * dt);
 			}
 			else {
-				ent->t.height = ground_height;
-				ent->t.velocity *= 0.f; // Remove slide on non actors
+				ent->t.altitude = ground_height;
+				ent->velocity *= 0.f; // Remove slide on non actors
 			}
 
 			m::Vector2 surfMod(1.f, 1.f);
 
 			// a reasonable implementation would look like this
-			ent->slideVelocity += ent->t.velocity * 0.1f;
+			ent->slideVelocity += ent->velocity * 0.1f;
 			// Slide speed cap
 			btf32 slide_len = m::Length(ent->slideVelocity);
 			if (slide_len > 3.f * dt)
 				ent->slideVelocity = m::Normalize(ent->slideVelocity) * 3.f * dt;
 
-			//ent->slideVelocity += ent->t.velocity * 1.1f;
+			//ent->slideVelocity += ent->velocity * 1.1f;
 
 			// Don't slide uphill
 			if (ent->slideVelocity.x > 0.f && slope.x > 0.f) {
@@ -613,7 +684,7 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 			ent->slideVelocity = m::Normalize(ent->slideVelocity) * slideMag;
 
 			// No height velocity when on the ground!
-			ent->t.height_velocity = 0.f;
+			ent->altitude_velocity = 0.f;
 		}
 		break;
 		case acv::PropRecord::FLOOR_LAVA:
@@ -636,7 +707,7 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 		default:
 		{
 			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
-				ent->t.height = ground_height + ((ECActor*)ent)->aniStandHeight;
+				ent->t.altitude = ground_height + ((ECActor*)ent)->aniStandHeight;
 				// this will work, but we need to address the sprint-jump problem
 				//if (ent->t.height < ground_height + ((ECActor*)ent)->aniStandHeight * 0.4f)
 				//	ent->t.height = ground_height + ((ECActor*)ent)->aniStandHeight * 0.4f;
@@ -644,8 +715,8 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 				//	ent->t.height = m::Lerp(ent->t.height, ground_height + ((ECActor*)ent)->aniStandHeight, 6.f * dt);
 			}
 			else {
-				ent->t.height = ground_height;
-				ent->t.velocity *= 0.f; // Remove slide on non actors
+				ent->t.altitude = ground_height;
+				ent->velocity *= 0.f; // Remove slide on non actors
 			}
 
 			m::Vector2 surfMod(1.f, 1.f);
@@ -688,7 +759,7 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 			ent->slideVelocity = m::Normalize(ent->slideVelocity) * slideMag;
 
 			// No height velocity when on the ground!
-			ent->t.height_velocity = 0.f;
+			ent->altitude_velocity = 0.f;
 		}
 		break;
 		}
@@ -697,8 +768,8 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 	}
 
 	// Apply velocity
-	ent->t.position += ent->t.velocity;
-	ent->t.height += ent->t.height_velocity;
+	ent->t.position += ent->velocity;
+	ent->t.altitude += ent->altitude_velocity;
 
 	Entity_Collision(id, ent, ent->t.csi);
 
@@ -711,3 +782,7 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 		core::AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, id);
 	}
 }
+
+char* EntityName(void* ent) {
+	return (char*)((ECCommon*)ent)->name;
+};

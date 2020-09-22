@@ -36,12 +36,12 @@ namespace core
 		return env::LineTraceBh(
 			entity_a->t.csi.c[eCELL_I].x, entity_a->t.csi.c[eCELL_I].y,
 			entity_b->t.csi.c[eCELL_I].x, entity_b->t.csi.c[eCELL_I].y,
-			entity_a->t.height, entity_b->t.height);
+			entity_a->t.altitude, entity_b->t.altitude);
 		#else
 		return env::LineTrace(
 			entity_a->t.position.x, entity_a->t.position.y,
 			entity_b->t.position.x, entity_b->t.position.y,
-			entity_a->t.height, entity_b->t.height);
+			entity_a->t.altitude, entity_b->t.altitude);
 		#endif
 	}
 
@@ -80,32 +80,28 @@ namespace core
 	{
 		btID current_closest = BUF_NULL;
 		btf32 closest_angle = 15.f;
-		for (int index_other = 0; index_other <= GetLastEntity(); index_other++)
-		{
+		for (int index_other = 0; index_other <= GetLastEntity(); index_other++) {
 			// If used, not me, and is alive
-			if (GetEntityExists(index_other) && index_other != index && ENTITY(index_other)->state.stateFlags.get(ActiveState::eALIVE))
-			{
-				// do I like THEM
-				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(index_other)->faction) == allegiance)
-				{
-					btf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
-					if (check_distance < dist)
+			if (GetEntityExists(index_other) && index_other != index &&
+				ENTITY(index_other)->state.stateFlags.get(ActiveState::eALIVE) &&
+				fac::GetAllegiance(ENTITY(index)->faction, ENTITY(index_other)->faction) == allegiance) {
+				btf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
+				if (check_distance < dist) {
+					ECCommon* ent = ENTITY(index);
+					ECCommon* ent_other = ENTITY(index_other);
+					// LINE TRACE
+					#if DEF_GRID
+					if (env::LineTraceBh(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y,
+						ent_other->t.csi.c[eCELL_I].x, ent_other->t.csi.c[eCELL_I].y,
+						ent->t.altitude, ent_other->t.altitude))
+						#endif
 					{
-						ECCommon* ent = ENTITY(index);
-						ECCommon* ent_other = ENTITY(index_other);
-						// LINE TRACE
-						if (env::LineTraceBh(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y,
-							ent_other->t.csi.c[eCELL_I].x, ent_other->t.csi.c[eCELL_I].y,
-							ent->t.height, ent_other->t.height))
-						{
-							m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
-							m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
-							btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
-							if (abs(angdif) < closest_angle)
-							{
-								closest_angle = angdif;
-								current_closest = index_other;
-							}
+						m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
+						m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
+						btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
+						if (abs(angdif) < closest_angle) {
+							closest_angle = angdif;
+							current_closest = index_other;
 						}
 					}
 				}
@@ -160,12 +156,12 @@ namespace core
 						if (env::LineTraceBh(
 							entity_index->t.csi.c[eCELL_I].x, entity_index->t.csi.c[eCELL_I].y,
 							entity->t.csi.c[eCELL_I].x, entity->t.csi.c[eCELL_I].y,
-							entity_index->t.height, entity->t.height))
+							entity_index->t.altitude, entity->t.altitude))
 						#else
 						if (!env::LineTrace(
 							entity_index->t.position.x, entity_index->t.position.y,
 							entity->t.position.x, entity->t.position.y,
-							entity_index->t.height, entity->t.height))
+							entity_index->t.altitude, entity->t.altitude))
 						#endif
 						{
 							current_closest = i;
@@ -178,7 +174,7 @@ namespace core
 		return current_closest;
 	}
 
-	btID GetClosestEntityButDifferent(btID index)
+	btID GetEntityViewTarget(btID index)
 	{
 		btID id = BUF_NULL;
 		btf32 closestDist = 2.f;
@@ -196,18 +192,23 @@ namespace core
 					//if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->Type() == Entity::eITEM)
 					if (refCells[x][y].ref_ents[e] != ID_NULL && refCells[x][y].ref_ents[e] != index && GetEntityExists(refCells[x][y].ref_ents[e]))
 					{
-						btf32 check_distance = m::Length(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
-						if (check_distance < closestDist)
+						// If the target is alive (likely to be temporary, soon as there is something interesting
+						// to do with dead bodies
+						if (ENTITY(refCells[x][y].ref_ents[e])->state.stateFlags.get(ActiveState::eALIVE))
 						{
-							m::Vector2 targetoffset = m::Normalize(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
-
-							m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
-
-							btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
-							if (abs(angdif) < closest_angle)
+							btf32 check_distance = m::Length(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
+							if (check_distance < closestDist)
 							{
-								closest_angle = angdif;
-								id = refCells[x][y].ref_ents[e];
+								m::Vector2 targetoffset = m::Normalize(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
+
+								m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
+
+								btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
+								if (abs(angdif) < closest_angle)
+								{
+									closest_angle = angdif;
+									id = refCells[x][y].ref_ents[e];
+								}
 							}
 						}
 					}
@@ -220,21 +221,29 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// PREFABS -----------------------------------------------------------------------------------------------------------------------
 
-	inline void spawn_setup_t(btID index, m::Vector2 pos, btf32 dir)
+	inline void PrefabCommon(btID index, m::Vector2 pos, btf32 dir)
 	{
-		ENTITY(index)->t.position = pos;
-		ENTITY(index)->t.velocity = 0.f;
-		ENTITY(index)->t.height_velocity = 0.f;
-		ENTITY(index)->t.yaw.Set(dir);
-		GetCellSpaceInfo(ENTITY(index)->t.position, ENTITY(index)->t.csi);
-		env::GetNearestSurfaceHeight(ENTITY(index)->t.height, ENTITY(index)->t.csi, ENTITY(index)->t.height);
-		AddEntityCell(ENTITY(index)->t.csi.c[eCELL_I].x, ENTITY(index)->t.csi.c[eCELL_I].y, index);
-		ENTITY(index)->state.stateFlags.set(ActiveState::eALIVE);
-		ENTITY(index)->state.damagestate = STATE_DAMAGE_MAX;
-		ENTITY(index)->radius = 0.15f;
-		ENTITY(index)->height = 0.7f;
-		if (GetEntityType(index) == ENTITY_TYPE_ACTOR)
-		{
+		ECCommon* eptr = GetEntity<ECCommon>(index);
+		eptr->t.position = pos;
+		eptr->velocity = 0.f;
+		eptr->altitude_velocity = 0.f;
+		eptr->t.yaw.Set(dir);
+		GetCellSpaceInfo(eptr->t.position, eptr->t.csi);
+		#if DEF_GRID
+		env::GetHeight(eptr->t.altitude, eptr->t.csi);
+		#else
+		env::GetNearestSurfaceHeight(eptr->t.altitude, eptr->t.csi, eptr->t.altitude);
+		#endif
+		AddEntityCell(eptr->t.csi.c[eCELL_I].x, eptr->t.csi.c[eCELL_I].y, index);
+		eptr->state.stateFlags.set(ActiveState::eALIVE);
+		eptr->state.damagestate = STATE_DAMAGE_MAX;
+		eptr->radius = 0.15f;
+		eptr->height = 0.7f;
+		eptr->properties.set(ECCommon::ePREFAB_FULLSOLID);
+		eptr->state.stateFlags.set(ActiveState::eALIVE);
+		if (GetEntityType(index) == ENTITY_TYPE_ACTOR) {
+			ACTOR(index)->foot_state = ECActor::FootState::eL_DOWN;
+			
 			ACTOR(index)->atk_target = BUF_NULL;
 			ACTOR(index)->ai_target_ent = BUF_NULL;
 			ACTOR(index)->ai_ally_ent = BUF_NULL;
@@ -339,94 +348,62 @@ namespace core
 
 	namespace prefab
 	{
-		enum prefabtype : btui8
-		{
+		enum prefabtype : btui8 {
 			prefab_player,
-			prefab_ai_player,
-			prefab_npc,
+			prefab_player_ally,
+			prefab_hunter,
 			prefab_zombie,
-			PREFAB_EDITORPAWN,
+			prefab_count,
 		};
 	}
 
-	void prefab_pc(btID id, m::Vector2 pos, btf32 dir)
-	{
-		spawn_setup_t(id, pos, dir);
+	void PrefabPlayer(btID id, m::Vector2 pos, btf32 dir) {
+		PrefabCommon(id, pos, dir);
 		NameEntity(id);
-		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ENTITY(id)->faction = fac::faction::player;
 		ACTOR(id)->aiControlled = false;
 		ACTOR(id)->speed = 1.45f; // default
 		//ACTOR(id)->speed = 2.5f; // quake
+		ACTOR(id)->inventory.AddNew(5u); // tick
+		ACTOR(id)->inventory.AddNew(5u); // tick
 		ACTOR(id)->agility = 0.f;
-
-		//ACTOR(id)->inventory.AddNew(6u); // sword
-		//ACTOR(id)->inventory.AddNew(5u); // annoying bug
-
-		ACTOR(id)->foot_state = ECActor::FootState::eL_DOWN;
+		ACTOR(id)->actorBase = 0u;
 	}
 
-	void prefab_aipc(btID id, m::Vector2 pos, btf32 dir)
-	{
-		spawn_setup_t(id, pos, dir);
+	void PrefabPlayerAlly(btID id, m::Vector2 pos, btf32 dir) {
+		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
-		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
-		//ACTOR(id)->inventory.AddNew(6u);
-		ACTOR(id)->foot_state = ECActor::FootState::eL_DOWN;
+		ACTOR(id)->actorBase = 0u;
 	}
 
-	void prefab_npc(btID id, m::Vector2 pos, btf32 dir)
-	{
-		spawn_setup_t(id, pos, dir);
+	void PrefabHunter(btID id, m::Vector2 pos, btf32 dir) {
+		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::playerhunter;
-		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.45f;
 		ACTOR(id)->agility = 0.f;
 		ACTOR(id)->inventory.AddNew(3u); // gun
 		ACTOR(id)->inventory.AddNew(4u); // ammo
-		ACTOR(id)->inventory.AddNew(4u); // ammo
-		ACTOR(id)->inventory.AddNew(4u); // ammo
-		ACTOR(id)->inventory.AddNew(4u); // ammo
-		ACTOR(id)->foot_state = ECActor::FootState::eL_DOWN;
-		//ACTOR(id)->inventory.items[ACTOR(id)->inv_active_slot];
-		//TODO: clean up this mess
+		ACTOR(id)->actorBase = 1u;
 	}
 
-	void prefab_zombie(btID id, m::Vector2 pos, btf32 dir)
-	{
-		spawn_setup_t(id, pos, dir);
+	void PrefabZombie(btID id, m::Vector2 pos, btf32 dir) {
+		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::undead;
-		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
 		ACTOR(id)->aiControlled = true;
-		ACTOR(id)->speed = 3.5f;
+		ACTOR(id)->speed = 1.2f;
 		ACTOR(id)->agility = 0.f;
-		ACTOR(id)->inventory.AddNew(4u);
-		ACTOR(id)->foot_state = ECActor::FootState::eL_DOWN;
+		ACTOR(id)->inventory.AddNew(7u); // common sword
+		ACTOR(id)->actorBase = 2u;
 	}
 
-	void prefab_editorpawn(btID id, m::Vector2 pos, btf32 dir)
-	{
-		spawn_setup_t(id, pos, dir);
-		NameEntity(id);
-		ENTITY(id)->properties.set(ECCommon::ePREFAB_FULLSOLID);
-		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		ENTITY(id)->faction = fac::faction::player;
-		ACTOR(id)->aiControlled = false;
-		ACTOR(id)->speed = 0.1f;
-	}
-
-	void(*PrefabEntity[])(btID, m::Vector2, btf32) = { prefab_pc, prefab_aipc, prefab_npc, prefab_zombie, prefab_editorpawn };
+	void(*PrefabEntity[prefab::prefab_count])(btID, m::Vector2, btf32) = { PrefabPlayer, PrefabPlayerAlly, PrefabHunter, PrefabZombie };
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- CELL STUFF -----------------------------------------------------------------------------------------

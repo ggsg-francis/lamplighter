@@ -9,18 +9,18 @@ class Inventory
 public:
 	mem::Buffer64<btID> items;
 public:
-	void AddNew(btID ITEM_TEMPLATE);
-	void DestroyIndex(btui32 INDEX);
-	void DestroyID(btID ITEM_ID);
-	void Destroy(btID ITEM_TEMPLATE);
-	btui32 TransferItemRecv(btID ITEM_ID);
-	void TransferItemSendIndex(btui32 INDEX);
-	void TransferItemSend(btID ITEM_ID);
+	void AddNew(btID item_template);
+	void DestroyIndex(btui32 index);
+	void DestroyID(btID item_id);
+	void Destroy(btID item_template);
+	btui32 TransferItemRecv(btID item_id);
+	void TransferItemSendIndex(btui32 index);
+	void TransferItemSend(btID item_id);
 	//btID GetItemOfType(ItemType TYPE);
-	btID GetItemOfTemplate(btID ITEM_TEMPLATE);
-	btui32 CountItemsOfTemplate(btID ITEM_TEMPLATE);
-	btID GetItemOfAmmunitionType(btui8 AMMO_TYPE);
-	void Draw(btui16 ACTIVE_SLOT);
+	btID GetItemOfTemplate(btID item_template);
+	btui32 CountItemsOfTemplate(btID item_template);
+	btID GetItemOfAmmunitionType(btui8 ammo_type);
+	btui32 GetFirstEmptySpace();
 };
 
 #endif // !INVENTORY

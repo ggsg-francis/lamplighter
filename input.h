@@ -155,6 +155,7 @@ namespace input
 	#endif
 	bool GetHeld(key::Key2 KEY);
 	bool GetHit(key::Key2 KEY);
+	bool GetAnyHit();
 
 	void Set(key::Key2 KEY);
 	void Unset(key::Key2 KEY);

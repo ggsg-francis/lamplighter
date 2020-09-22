@@ -354,9 +354,10 @@ namespace serializer
 
 					acv::assets[index].file_size = (ftell(fileARCHIVE) - acv::assets[index].file_pos);
 					printf("| Wrote %i bytes\n", acv::assets[index].file_size);
-					//for (int i = 0; i < acv::assets[index].file_size / 4096; ++i)
-					//	printf("*");
-					//printf("\n");
+					// File size visualizer
+					for (int i = 0; i < acv::assets[index].file_size / 4096; ++i)
+						printf("*");
+					printf("\n");
 
 					++index; // We are done with this index
 
@@ -409,7 +410,7 @@ namespace serializer
 	{
 		// If we're already going hard we may as well go full butt clench
 		// so here is weird casting and macro use at the same time
-		
+
 		#define INTERPRET_INT(TYPE) { \
 			*(TYPE*)(((char*)pTARGET) + *pOFFSET) = (TYPE)atoi(value); \
 			*pOFFSET += sizeof(TYPE); }
@@ -424,8 +425,8 @@ namespace serializer
 			*pOFFSET += dSIZE; }
 
 		#define INTERPRET_BITVEC(TYPE) { \
-			for (btui32 i = 0; i < sizeof(TYPE); ++i) if (value[i] == 'x') \
-				*(TYPE*)(((char*)pTARGET) + *pOFFSET) |= (((TYPE)1u << (TYPE)(sizeof(TYPE) - 1u)) >> (TYPE)i); \
+			for (btui32 i = 0; i < sizeof(TYPE) * 8u; ++i) if (value[i] == 'x') \
+				*(TYPE*)(((char*)pTARGET) + *pOFFSET) |= ((TYPE)1u << (TYPE)i); \
 			*pOFFSET += sizeof(TYPE); }
 
 		// Handle declaration

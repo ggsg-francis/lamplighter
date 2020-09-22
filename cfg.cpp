@@ -12,31 +12,14 @@
 #include <map>
 #include <string>
 
+Config config;
+
 namespace cfg
 {
-	unsigned int iFullscreen = 0u;
-	bool bHost = false;
-	bool bEditMode = false;
-	bool bSplitScreen = false;
-	bool bCrossHairs = true;
-
-	// Config variables loaded from a file
-	// Window size
-	unsigned int iWinX = 640;
-	unsigned int iWinY = 480;
-
-	unsigned int iPort = 1111;
-
-	// Camera stuff
-	float fCameraFOV = 80.f;
-	float fCameraSensitivity = 0.f;
-	float fCameraNearClip = 0.1f;
-	float fCameraFarClip = 100.f;
-
-	char sConnAddr[HOSTNAME_MAX_LEN];
-
 	void LoadCfg()
 	{
+		config = Config(); // set all default values
+
 		std::cout << "Loading preferences..." << std::endl;
 		FILE* file = fopen("000config.txt", "r");
 		if (file)
@@ -93,42 +76,42 @@ namespace cfg
 				case 'b':
 					//convert to bool
 					if (strcmp(variable.c_str(), "Host") == 0)
-						bHost = (bool)atoi(value.c_str());
+						config.bHost = (bool)atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "EditMode") == 0)
-						bEditMode = (bool)atoi(value.c_str());
+						config.bEditMode = (bool)atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "SplitScreen") == 0)
-						bSplitScreen = (bool)atoi(value.c_str());
+						config.bSplitScreen = (bool)atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "CrossHairs") == 0)
-						bCrossHairs = (bool)atoi(value.c_str());
+						config.bCrossHairs = (bool)atoi(value.c_str());
 					std::cout << "Configured boolean " << variable << " as " << value << std::endl;
 					break;
 				case 'i':
 					//convert to int
 					if (strcmp(variable.c_str(), "FullScreen") == 0)
-						iFullscreen = atoi(value.c_str());
+						config.iFullscreen = atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "WinX") == 0)
-						iWinX = atoi(value.c_str());
+						config.iWinX = atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "WinY") == 0)
-						iWinY = atoi(value.c_str());
+						config.iWinY = atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "Port") == 0)
-						iPort = atoi(value.c_str());
+						config.iPort = atoi(value.c_str());
 					std::cout << "Configured integer " << variable << " as " << value << std::endl;
 					break;
 				case 'f':
 					//convert to float
 					if (strcmp(variable.c_str(), "CameraFOV") == 0)
-						fCameraFOV = atof(value.c_str());
+						config.fCameraFOV = atof(value.c_str());
 					else if (strcmp(variable.c_str(), "CameraNearClip") == 0)
-						fCameraNearClip = atof(value.c_str());
+						config.fCameraNearClip = atof(value.c_str());
 					else if (strcmp(variable.c_str(), "CameraFarClip") == 0)
-						fCameraFarClip = atof(value.c_str());
+						config.fCameraFarClip = atof(value.c_str());
 					else if (strcmp(variable.c_str(), "CameraSensitivity") == 0)
-						fCameraSensitivity = atof(value.c_str());
+						config.fCameraSensitivity = atof(value.c_str());
 					std::cout << "Configured float " << variable << " as " << value << std::endl;
 					break;
 				case 's':
 					if (strcmp(variable.c_str(), "ConnAddr") == 0 && value.length() < HOSTNAME_MAX_LEN)
-						strcpy(sConnAddr, value.c_str());
+						strcpy(config.sConnAddr, value.c_str());
 					std::cout << "Configured string " << variable << " as " << value << std::endl;
 					break;
 				default:

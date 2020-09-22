@@ -1,8 +1,7 @@
 #include "objects_items.h"
 #include "audio.hpp"
 // not desirable but necessary for draw functions
-#include "ec_actor.h"
-#include "ec_misc.h"
+#include "entity.h"
 #include "core.h"
 #include "index.h"
 
@@ -67,7 +66,7 @@ void HeldMelTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 		if (owner->inputBV.get(ECActor::IN_USE))
 		{
 			self->swinging = HeldItem::SWINGSTATE_ATTACK;
-			aud::PlaySnd(aud::FILE_SWING, self->t_item.pos_glm);
+			aud::PlaySnd3D(aud::FILE_SWING, self->t_item.pos_glm);
 		}
 	}
 	else if (self->swinging == HeldItem::SWINGSTATE_ATTACK)
@@ -80,9 +79,9 @@ void HeldMelTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 				ECCommon* ent = (ECCommon*)GetEntityPtr(owner->atk_target);
 				// if me and my enemy are close enough in height and distance
 				// TODO: distance check should be based on weapon hit range
-				if (m::Length(owner->t.position - ent->t.position) < 1.f && fabs(owner->t.height - ent->t.height) < 1.f) {
-					ent->state.Damage(300u, self->yaw);
-					aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
+				if (m::Length(owner->t.position - ent->t.position) < 1.5f && fabs(owner->t.altitude - ent->t.altitude) < 1.f) {
+					ent->state.Damage(((acv::ItemRecordMel*)acv::items[self->id_item_template])->f_dam_slash, self->yaw);
+					aud::PlaySnd3D(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.altitude, ent->t.position.y));
 					ent->slideVelocity += m::AngToVec2(owner->t.yaw.Rad()) * 0.05f;
 					// exit swing early
 					self->swinging = HeldItem::SWINGSTATE_RESET;
@@ -195,12 +194,9 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 
 		if (self->id_ammoInstance != ID_NULL)
 		{
-			if (!HeldConUse(self->id_ammoInstance, owner))
-				self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::ItemRecordGun*)acv::items[self->id_item_template])->ammunition_type);
-
 			self->fire_time = tickCount + 3u;
 
-			aud::PlaySnd(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
+			aud::PlaySnd3D(aud::FILE_SHOT_SMG, self->t_item.pos_glm); // Play gunshot sound
 			//loc_velocity.z -= 0.12f;
 			self->loc_velocity.z -= m::Random(0.3f, 0.6f);
 			//pitch_velocity -= 19.f;
@@ -212,10 +208,10 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 			#if DEF_AUTOAIM
 			if (owner->atk_target != BUF_NULL)
 			{
-				Entity* target = (Entity*)GetEntityPtr(owner->atk_target);
+				ECCommon* target = (ECCommon*)GetEntityPtr(owner->atk_target);
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
-				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - self->t_item.GetPosition().y);
+				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.altitude + target->height * 0.5f) - self->t_item.GetPosition().y);
 				btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
@@ -241,7 +237,13 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 			if (owner->grounded) // if we're on the ground, 
 				owner->slideVelocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.01f; // set my velocity
 			else // if we're in the air
-				owner->t.velocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.01f; // set my velocity
+				owner->velocity += m::AngToVec2(owner->viewYaw.Rad()) * -0.01f; // set my velocity
+
+			// don't actually use the item until after we've done the rest
+			// Because otherwise if you fire the last bullet in a mag,
+			// the mag would get deleted before you can fire
+			if (!HeldConUse(self->id_ammoInstance, owner))
+				self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(((acv::ItemRecordGun*)acv::items[self->id_item_template])->ammunition_type);
 		}
 	}
 
@@ -255,12 +257,12 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 	#if DEF_AUTOAIM
 	if (owner->atk_target != BUF_NULL)
 	{
-		Entity* target = (Entity*)GetEntityPtr(owner->atk_target);
+		ECCommon* target = (ECCommon*)GetEntityPtr(owner->atk_target);
 		m::Vector2 targetoffset = m::Normalize(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z));
 		btf32 angle_yaw = m::Vec2ToAng(targetoffset);
 		self->ang_aim_offset_temp = -m::AngDif(owner->viewYaw.Deg(), glm::degrees(angle_yaw));
 
-		m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.height + target->height * 0.5f) - self->t_item.GetPosition().y);
+		m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.altitude + target->height * 0.5f) - self->t_item.GetPosition().y);
 		self->ang_aim_pitch = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(targetoffsetVertical)));
 	}
 	else
@@ -478,12 +480,14 @@ void HeldConDraw(btID id, btID itemid, m::Vector2 pos, btf32 height, m::Angle an
 }
 void HeldConOnEquip(btID id, ECActor* owner)
 {
+	#if DEF_PROJECT == PROJECT_BC
 	// TODO: add real self-duping property
-	/*
+	//*
 	HeldItem* self = GETITEMINST(id);
 	if (self->id_item_template == 5u)
 		owner->inventory.AddNew(5u); // duplicate annoying bug
-	*/
+	//*/
+	#endif
 }
 
 

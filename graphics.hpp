@@ -91,6 +91,7 @@ namespace graphics
 	btui32 FrameSizeX();
 	btui32 FrameSizeY();
 	void SetFrameSize(btui32 x, btui32 y);
+	void SetGUIFrameSize(btui32 x, btui32 y);
 
 	// TODO: MOVE TO MATHS!!!
 	struct Matrix3x3
@@ -170,6 +171,8 @@ namespace graphics
 
 	void Init();
 	void End();
+
+	void SetSplitScreen(bool);
 
 	m::Vector3 GetViewPos();
 	m::Vector3 GetFocalCenter();
@@ -407,7 +410,7 @@ namespace graphics
 		colour* buffer;
 	};
 
-	struct TextureBase
+	struct Texture
 	{
 		GLuint glID;
 		btui16 width;
@@ -416,18 +419,9 @@ namespace graphics
 		TextureFilterMode filter;
 		TextureEdgeMode edge;
 
-		void SetMode(TextureFilterMode _filter, TextureEdgeMode _edge)
-		{
-			filter = _filter; edge = _edge;
-		}
-	};
-
-	struct ModifiableTexture : TextureBase
-	{
-		colour* buffer;
-		~ModifiableTexture();
+		#if DEF_SWR
+		colour* buffer2;
 		void Init(btui16 SIZE_X, btui16 SIZE_Y, colour COLOUR);
-		void LoadFile(char* FILENAME);
 		void SetPixel(btui16 PIXEL_X, btui16 PIXEL_Y, colour COLOUR);
 		void SetPixelChannelR(btui16 PIXEL_X, btui16 PIXEL_Y, btui8 VALUE);
 		void SetPixelChannelG(btui16 PIXEL_X, btui16 PIXEL_Y, btui8 VALUE);
@@ -435,10 +429,9 @@ namespace graphics
 		void SetPixelChannelA(btui16 PIXEL_X, btui16 PIXEL_Y, btui8 VALUE);
 		colour GetPixel(btui16 PIXEL_X, btui16 PIXEL_Y);
 		void ReBindGL(TextureFilterMode FILTER_MODE, TextureEdgeMode EDGE_MODE);
-	};
+		void Texture::InitGLTest();
+		#endif
 
-	struct Texture : TextureBase
-	{
 		// Load this texture from a file
 		void LoadFile(void* ACV_FILE);
 		// Generate as a read-write capable RGBA render texture
@@ -564,14 +557,12 @@ namespace graphics
 	{
 	public:
 		GLuint tid;
-		Shader* s;
 		unsigned int VBO, VAO, EBO;
 		GUIBitmap();
 		void Init();
 		void SetTexture(GLuint TEXTURE);
-		void SetShader(Shader* SHADER);
 		//missing parameters obviously (it's obvious??)
-		void Draw(int posx, int posy, int WIDTH, int HEIGHT);
+		void Draw(int posx, int posy, int width, int height, btf32 opacity);
 	};
 
 	#define INPUT_LEN_TEMP 256
@@ -585,10 +576,15 @@ namespace graphics
 		unsigned int VBO, VAO, EBO;
 	public:
 		void Init();
-		void ReGen(bti16 XA, bti16 XB, bti16 YA, bti16 YB, btui16 MARGIN_SIZE, btui16 BLEED_SIZE = 0u);
-		void Draw(Texture* TEXTURE);
+		void End();
+		void ReGen(bti16 xa, bti16 xb, bti16 ya, bti16 yb, btui16 margin_size, btui16 bleed_size = 0u);
+		void Draw(Texture* texture, btf32 opacity = 1.f);
 	};
 
+	enum TextAlignMode {
+		eTEXTALIGN_LEFT,
+		eTEXTALIGN_MID,
+	};
 	class GUIText
 	{
 	private:
@@ -603,20 +599,17 @@ namespace graphics
 	public:
 		btui16 sizex, sizey;
 		void Init();
+		void End();
 		//set boundaries of the text box
 		void SetOffset(int X, int Y);
 		void GetTextBounds();
-		void ReGen(char* STRING, bti16 XA, bti16 XB, bti16 Y);
-		void Draw(Texture* TEXTURE);
-		int width;
-		int lastLineWidth;
-		//number of lines
-		int lines = 1;
+		void ReGen(char* string, bti16 xa, bti16 xb, bti16 y, TextAlignMode align = eTEXTALIGN_LEFT);
+		void Draw(Texture* texture, btf32 opacity = 1.f);
 	};
 
-	void DrawGUITexture(Texture* TEXTURE, bti32 X, bti32 Y, bti32 W, bti32 H, btf32 OPACITY = 1.f);
-	void DrawGUIBox(Texture* TEXTURE, bti16 XA, bti16 XB, bti16 YA, bti16 YB, btui16 MARGIN_SIZE, btui16 BLEED_SIZE = 0u);
-	void DrawGUIText(char* STRING, Texture* TEXTURE, bti32 XA, bti32 XB, bti32 Y);
+	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h, btf32 opacity = 1.f);
+	void DrawGUIBox(Texture* texture, bti16 xa, bti16 xb, bti16 ya, bti16 yb, btui16 margin_size, btui16 bleed_size = 0u);
+	void DrawGUIText(char* string, Texture* texture, bti32 xa, bti32 xb, bti32 y);
 }
 
 enum ShaderStyle
@@ -625,28 +618,28 @@ enum ShaderStyle
 	SS_CHARA,
 };
 
-void DrawMesh(btID ID, graphics::Mesh& MESH, graphics::TextureBase TEXTURE,
+void DrawMesh(btID ID, graphics::Mesh& MESH, graphics::Texture TEXTURE,
 	ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
-void DrawParticles(graphics::Mesh& MESH, graphics::TextureBase TEXTURE,
+void DrawParticles(graphics::Mesh& MESH, graphics::Texture TEXTURE,
 	graphics::Matrix4x4* MATRIX, btui32 COUNT);
 
 void DrawBlendMesh(btID ID, graphics::MeshBlend& MODEL, btf32 BLENDSTATE,
-	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+	graphics::Texture TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
 void DrawMeshDeform(btID ID, graphics::MeshDeform& MODEL,
-	graphics::TextureBase TEXTURE, ShaderStyle SHADER, btui32 MATRIX_COUNT,
+	graphics::Texture TEXTURE, ShaderStyle SHADER, btui32 MATRIX_COUNT,
 	graphics::Matrix4x4 MATRIX_A, graphics::Matrix4x4 MATRIX_B,
 	graphics::Matrix4x4 MATRIX_C, graphics::Matrix4x4 MATRIX_D);
 
 void DrawCompositeMesh(btID ID, graphics::CompositeMesh& MESH,
-	graphics::TextureBase TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
+	graphics::Texture TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
 void DrawTerrainMesh(btID ID, graphics::TerrainMesh MESH,
-	graphics::TextureBase TEXTURE_A, graphics::TextureBase TEXTURE_B,
-	graphics::TextureBase TEXTURE_C, graphics::TextureBase TEXTURE_D,
-	graphics::TextureBase TEXTURE_E, graphics::TextureBase TEXTURE_F,
-	graphics::TextureBase TEXTURE_G, graphics::TextureBase TEXTURE_H,
+	graphics::Texture TEXTURE_A, graphics::Texture TEXTURE_B,
+	graphics::Texture TEXTURE_C, graphics::Texture TEXTURE_D,
+	graphics::Texture TEXTURE_E, graphics::Texture TEXTURE_F,
+	graphics::Texture TEXTURE_G, graphics::Texture TEXTURE_H,
 	graphics::Matrix4x4 MATRIX);
 
 #endif

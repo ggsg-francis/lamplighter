@@ -6,7 +6,6 @@
 //Forward declarations
 namespace m
 {
-	class Vector3;
 	class Vector2;
 }
 class Transform2D;
@@ -32,10 +31,12 @@ namespace core
 	void Init();
 	void End();
 
+	// Clear all entities from memory
 	void ClearBuffers();
+	// Regenerate cell references
 	void RegenCellRefs();
 
-	void Tick(btf32 delta);
+	bool Tick(btf32 delta);
 	void TickGUI();
 
 	void GUISetMessag(int player, char* string);
@@ -87,8 +88,6 @@ namespace core
 	// Set shadow texture ID (TODO: hacky, get rid of this)
 	void SetShadowTexture(btui32 id);
 
-	extern btui64 spawnz_time_temp;
-
 	extern unsigned int activePlayer;
 	extern btID players[2];
 
@@ -99,6 +98,8 @@ namespace core
 		bool wantattack, bool use_hit, bool wantattack2,
 		bool run, bool aim, bool action_a, bool action_b, bool action_c,
 		bool crouch, bool jump);
+
+	void CheckPlayerAI();
 
 	//void EntDeintersect(Entity* ENT, CellSpace& CSI);
 	void ActorCastProj(btID id);
@@ -114,7 +115,7 @@ namespace core
 	btID GetViewTargetEntity(btID index, btf32 distance, fac::facalleg allegiance);
 	btID GetClosestEntityAlleg(btID index, btf32 distance, fac::facalleg allegiance);
 	btID GetClosestEntityAllegLOS(btID index, btf32 distance, fac::facalleg allegiance);
-	btID GetClosestEntityButDifferent(btID index);
+	btID GetEntityViewTarget(btID index);
 }
 
 #endif
