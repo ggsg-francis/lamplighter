@@ -95,6 +95,8 @@ namespace cfg
 						config.iWinY = atoi(value.c_str());
 					else if (strcmp(variable.c_str(), "Port") == 0)
 						config.iPort = atoi(value.c_str());
+					else if (strcmp(variable.c_str(), "NumNWPlayers") == 0)
+						config.iNumNWPlayers = atoi(value.c_str());
 					std::cout << "Configured integer " << variable << " as " << value << std::endl;
 					break;
 				case 'f':
@@ -107,6 +109,8 @@ namespace cfg
 						config.fCameraFarClip = atof(value.c_str());
 					else if (strcmp(variable.c_str(), "CameraSensitivity") == 0)
 						config.fCameraSensitivity = atof(value.c_str());
+					else if (strcmp(variable.c_str(), "Volume") == 0)
+						config.fVolume = atof(value.c_str());
 					std::cout << "Configured float " << variable << " as " << value << std::endl;
 					break;
 				case 's':
@@ -119,5 +123,8 @@ namespace cfg
 				}
 			}
 		}
+		#if DEF_PROJECT != PROJECT_BC
+		config.b3PP = false;
+		#endif
 	}
 }

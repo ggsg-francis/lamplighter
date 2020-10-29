@@ -123,16 +123,13 @@ namespace input
 	}
 
 	#ifdef DEF_NMP
-	#define INPUT_BUF_SIZE 2 // Number of input buffers to hold
-	#define INPUT_BUF_GET 0 // First element
-	#define INPUT_BUF_SET 1 // Last element
-	extern InputBuffer buf[NUM_PLAYERS][INPUT_BUF_SIZE];
-	#define BUF_LOCALSET buf[network::nid][INPUT_BUF_SET]
-	#define BUF_LOCALGET buf[network::nid][INPUT_BUF_GET]
+	extern InputBuffer input_buffer[NUM_PLAYERS];
+	#define BUF_LOCALSET input_buffer[network::nid]
+	#define BUF_LOCALGET input_buffer[network::nid]
 	#else
-	extern InputBuffer buf;
-	#define BUF_LOCALSET buf
-	#define BUF_LOCALGET buf
+	extern InputBuffer input_buffer;
+	#define BUF_LOCALSET input_buffer
+	#define BUF_LOCALGET input_buffer
 	#endif
 
 	void Init();
@@ -143,11 +140,6 @@ namespace input
 	void ClearHitsAndDelta();
 	// Clear all inputs and mouse delta
 	void ClearAll();
-
-	#ifdef DEF_NMP
-	// Swap uhhhhhhhhhhhh
-	void CycleBuffers();
-	#endif
 
 	#ifdef DEF_NMP
 	bool GetHeld(btui32 INDEX, key::Key2 KEY);

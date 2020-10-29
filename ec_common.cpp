@@ -110,14 +110,14 @@ graphics::Matrix4x4 Transform3D::getMatrix() {
 	return model2;
 }
 
-void ActiveState::Damage(btui32 amount, btf32 angle)
+void ECCommon::Damage(btui32 amount, btf32 angle)
 {
 	//aud::PlaySnd(aud::FILE_SWING_CONNECT, );
 	// if it's enough to reduce us to or below zero
 	if (amount >= damagestate) {
 		//stateFlags.unset((ActiveFlags)(eALIVE | eDIED_THIS_TICK));
-		stateFlags.unset(eALIVE);
-		stateFlags.set(eDIED_REPORT);
+		activeFlags.unset(eALIVE);
+		activeFlags.set(eDIED_REPORT);
 		damagestate = 0u;
 	}
 	else {
@@ -125,7 +125,7 @@ void ActiveState::Damage(btui32 amount, btf32 angle)
 	}
 	// TODO: include AI 'notify attack' function call here
 }
-void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, btui32 magnitude, btID icon)
+void ECCommon::AddEffect(btID caster, StatusEffectType type, btf32 duration, btui32 magnitude, btID icon)
 {
 	StatusEffect effect;
 	effect.effect_caster_id = caster;
@@ -139,49 +139,40 @@ void ActiveState::AddEffect(btID caster, StatusEffectType type, btf32 duration, 
 
 	// TODO: include AI 'notify attack' function call here
 }
-void ActiveState::AddSpell(btID caster, btID spell)
+void ECCommon::AddSpell(btID caster, btID spell)
 {
 	AddEffect(caster, (StatusEffectType)acv::spells[spell].target_effect_type,
 		acv::spells[spell].target_effect_duration,
 		acv::spells[spell].target_effect_magnitude,
 		acv::spells[spell].icon);
 	// TODO: this only works in the case of cast on self, should deal with this properly but dont know how best to yet
-	if (core::players[0] == caster)
-	{
+	if (core::players[0] == caster) {
 		char string[64] = "Got Effect: ";
 		strcat(string, (char*)acv::spells[spell].name);
 		core::GUISetMessag(0, string);
 	}
-	else if (core::players[1] == caster)
-	{
+	else if (core::players[1] == caster) {
 		char string[64] = "Got Effect: ";
 		strcat(string, (char*)acv::spells[spell].name);
 		core::GUISetMessag(1, string);
 	}
 }
-void ActiveState::TickEffects(btf32 dt)
+void ECCommon::TickEffects(btf32 dt)
 {
-	int jshdf = effects.Size();
-	for (btui32 i = 0; i < effects.Size(); ++i)
-	{
-		if (effects.Used(i))
-		{
-			switch (effects[i].effect_type)
-			{
-			case EFFECT_DAMAGE_HP:
-				// magnitude multiplied by delta time so that it functions as a value per second
-				Damage(effects[i].effect_magnitude, 0.f);
-				break;
-			case EFFECT_RESTORE_HP:
-				damagestate += (btui16)effects[i].effect_magnitude;
-				if (damagestate >= STATE_DAMAGE_MAX) damagestate = STATE_DAMAGE_MAX;
-				break;
-			}
-			effects[i].effect_duration -= dt; // tick down the effect timer
-			if (effects[i].effect_duration < 0.f) // if the timer has run out
-			{
-				effects.Remove(i); // remove the effect
-			}
+	for (btui32 i = 0; i < effects.Size(); ++i) {
+		if (!effects.Used(i)) continue; // Skip unused
+		switch (effects[i].effect_type) {
+		case EFFECT_DAMAGE_HP:
+			Damage(effects[i].effect_magnitude, 0.f);
+			break;
+		case EFFECT_RESTORE_HP:
+			damagestate += (btui16)effects[i].effect_magnitude;
+			if (damagestate >= STATE_DAMAGE_MAX) damagestate = STATE_DAMAGE_MAX;
+			break;
+		}
+		effects[i].effect_duration -= dt; // tick down the effect timer
+		if (effects[i].effect_duration < 0.f) { // if the timer has run out
+			effects.Remove(i); // remove the effect
 		}
 	}
 }
@@ -314,8 +305,8 @@ void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
 	btf32 combined_radius = ent->radius + ENTITY(core::CellEntity(x, y, e))->radius;
 	if (dist < combined_radius && dist > 0.f) {
 	// explode
-	ENTITY(core::CellEntity(x, y, e))->state.Damage(900, 0.f);
-	ent->state.Damage(1000, 0.f);
+	ENTITY(core::CellEntity(x, y, e))->Damage(900, 0.f);
+	ent->Damage(1000, 0.f);
 	aud::PlaySnd(aud::FILE_SWING_CONNECT, m::Vector3(ent->t.position.x, ent->t.height, ent->t.position.y));
 	}
 	}
@@ -326,13 +317,13 @@ void Entity_Collision(btID id, ECCommon* ent, CellSpace& csi)
 	}
 	}*/
 
-	if (ent->properties.get(ECCommon::eCOLLIDE_ENT)) {
+	if (ent->physicsFlags.get(ECCommon::eCOLLIDE_ENT)) {
 		for (btcoord x = csi.c[eCELL_I].x - 1u; x < csi.c[eCELL_I].x + 1u; ++x) {
 			for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y) {
 				// De-intersect against other entities
 				for (int e = 0; e < core::CellEntityCount(x, y); e++) {
 					if (core::CellEntity(x, y, e) != ID_NULL) {
-						if (GetEntityExists(core::CellEntity(x, y, e)) && ENTITY(core::CellEntity(x, y, e))->properties.get(ECCommon::eCOLLIDE_ENT)) {
+						if (GetEntityExists(core::CellEntity(x, y, e)) && ENTITY(core::CellEntity(x, y, e))->physicsFlags.get(ECCommon::eCOLLIDE_ENT)) {
 							m::Vector2 vec = ent->t.position - ENTITY(core::CellEntity(x, y, e))->t.position;
 							float dist = m::Length(vec);
 							btf32 combined_radius = ent->radius + ENTITY(core::CellEntity(x, y, e))->radius;
@@ -519,26 +510,22 @@ void Entity_CheckGrounded(btID id, ECCommon* ent)
 	env::GetNearestSurfaceHeight(th, ent->t.csi, ent->t.altitude);
 	#endif
 
-	if (ent->t.altitude + ent->altitude_velocity >= th + 1.f)
-	{
-		ent->grounded = false;
+	if (ent->t.altitude + ent->altitude_velocity >= th + 1.f) {
+		ent->activeFlags.unset(ECCommon::eGROUNDED);
 		ent->slideVelocity *= 0.f;
 		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
 			((ECActor*)ent)->jump_state = ECActor::eJUMP_JUMP;
 	}
-	else if (ent->altitude_velocity > 0.f)
-	{
-		ent->grounded = false;
+	else if (ent->altitude_velocity > 0.f) {
+		ent->activeFlags.unset(ECCommon::eGROUNDED);
 		ent->slideVelocity *= 0.f;
 	}
-	else if (!ent->grounded)
-	{
+	else if (!ent->activeFlags.get(ECCommon::eGROUNDED)) {
 		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
-			ent->grounded = RayEntity(id, ((ECActor*)ent)->aniStandHeight);
+			ent->activeFlags.setto(ECCommon::eGROUNDED, RayEntity(id, ((ECActor*)ent)->aniStandHeight));
 		else
-			ent->grounded = RayEntity(id, 0.f);
-		if (ent->grounded)
-		{
+			ent->activeFlags.setto(ECCommon::eGROUNDED, RayEntity(id, 0.f));
+		if (ent->activeFlags.get(ECCommon::eGROUNDED)) {
 			ent->slideVelocity = ent->velocity;
 			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
 				ActorOnHitGround((ECActor*)ent);
@@ -561,12 +548,11 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 
 	Entity_CheckGrounded(id, ent);
 
-	if (!ent->grounded)
-	{
+	if (!ent->activeFlags.get(ECCommon::eGROUNDED)) {
 		// Add gravity
 		ent->altitude_velocity -= 0.20f * dt;
 		// Velocity reduction (Air drag)
-		if (ent->properties.get(ECCommon::ePHYS_DRAG)) ent->velocity *= 0.99f;
+		if (ent->physicsFlags.get(ECCommon::ePHYS_DRAG)) ent->velocity *= 0.99f;
 
 		#if !DEF_GRID
 		// ceiling collision
@@ -615,7 +601,7 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 			// Multiplier reduces the depth at which you can't move
 			distBelowSand = (ent->t.altitude - ground_height) * 1.4f;
 			if (-distBelowSand > ent->height) {
-				ent->state.Damage(1000, 0);
+				ent->Damage(1000, 0);
 			}
 			distBelowSand = m::Clamp(distBelowSand, 0.f, 1.f);
 			ent->velocity *= distBelowSand;
@@ -688,19 +674,24 @@ void Entity_PhysicsTick(ECCommon* ent, btID id, btf32 dt)
 		}
 		break;
 		case acv::PropRecord::FLOOR_LAVA:
-			if (ent->state.stateFlags.get(ActiveState::eALIVE)) {
-				ent->state.Damage(1000u, 0.f);
-				char string[64] = "You got burnt by lava R.I.P.";
-				core::GUISetMessag(0, string);
+			if (ent->activeFlags.get(ECCommon::eALIVE)) {
+				ent->Damage(1000u, 0.f);
 			}
 			// no break, use default physics
 			goto defaul;
 		case acv::PropRecord::FLOOR_ACID:
-			if (ent->state.stateFlags.get(ActiveState::eALIVE)) {
-				ent->state.Damage(1000u, 0.f);
-				remove("save/save.bin");
-				char string[64] = "The acid desintegrated your save file";
-				core::GUISetMessag(0, string);
+			if (ent->activeFlags.get(ECCommon::eALIVE)) {
+				ent->Damage(1000u, 0.f);
+				if (id == core::players[0]) {
+					char string[64] = "The acid desintegrated your save file";
+					remove("save/save.bin");
+					core::GUISetMessag(0, string);
+				}
+				else if (id == core::players[1]) {
+					char string[64] = "The acid desintegrated your save file";
+					remove("save/save.bin");
+					core::GUISetMessag(1, string);
+				}
 			}
 			// no break, use default physics
 		defaul:

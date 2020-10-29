@@ -15,9 +15,9 @@ void RestingItemTick(btID id, void* ent, btf32 dt)
 {
 	ECSingleItem* self = (ECSingleItem*)ent;
 
-	if (self->state.stateFlags.get(ActiveState::eDIED_REPORT))
+	if (self->activeFlags.get(ECCommon::eDIED_REPORT))
 	{
-		//chr->state.stateFlags.unset(ActiveState::eDIED_REPORT);
+		//chr->state.stateFlags.unset(ECCommon::eDIED_REPORT);
 		core::DestroyEntity(id);
 	}
 
@@ -37,7 +37,7 @@ void RestingItemTick(btID id, void* ent, btf32 dt)
 	#else
 	env::EnvTri* triptr = nullptr;
 	env::GetNearestSurfaceHeight(ground_height, &triptr, self->t.csi, self->t.altitude);
-	if (triptr != nullptr && self->grounded)
+	if (triptr != nullptr && self->Grounded())
 		slope = triptr->slope;
 	#endif
 
@@ -55,7 +55,7 @@ void RestingItemTick(btID id, void* ent, btf32 dt)
 		self->t.position.y), cross, nor);
 	#endif
 	// align to surface sideways
-	#if DEF_PROJECT == DEF_PROJECT_EXPLORE
+	#if DEF_PROJECT == PROJECT_EX
 	graphics::MatrixTransform(self->matrix, m::Vector3(self->t.position.x,
 		self->t.altitude + acv::items[((HeldItem*)GetItemInstance(self->item_instance))->id_item_template]->f_model_height,
 		self->t.position.y), cross, m::Cross(cross, nor));

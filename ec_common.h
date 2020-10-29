@@ -89,8 +89,15 @@ public:
 };
 
 enum StatusEffectType : btui16 {
+	// HP effects
 	EFFECT_DAMAGE_HP,
 	EFFECT_RESTORE_HP,
+	// Stat effects
+	EFFECT_ADD_SPEED,
+	EFFECT_RMV_SPEED,
+	EFFECT_ADD_AGILITY,
+	EFFECT_RMV_AGILITY,
+	// Other stuff
 	EFFECT_SLOW_TIME,
 	EFFECT_BURDEN_ITEM,
 	EFFECT_BURN,
@@ -99,9 +106,8 @@ enum StatusEffectType : btui16 {
 	EFFECT_LEVITATE,
 	EFFECT_WATER_WALK,
 	EFFECT_WATER_BREATHE,
-	EFFECT_PARALYZE, // lunaris' spells
-	EFFECT_SPEED_INCREASE,
-	EFFECT_SPEED_DECREASE,
+	// lunaris' spells
+	EFFECT_PARALYZE,
 	EFFECT_STUN,
 	EFFECT_SLEEP,
 	EFFECT_MINDCONTROL,
@@ -120,36 +126,9 @@ typedef struct StatusEffect {
 	btui16 effect_type;
 	btf32 effect_duration;
 	btui32 effect_magnitude;
-	//btui32 reserved;
 	btID effect_icon;
 	btui16 reserved;
 } StatusEffect;
-
-// TODO: merge with entity?? should be able to produce sfx
-struct ActiveState
-{
-	// Global properties, ultimately to be used by every object in the game, incl. environment tiles
-	enum ActiveFlags : btui64 // WIP
-	{
-		eALIVE = 1u,
-		eDIED_REPORT = 1u << 1u,
-	};
-	mem::bv<btui64, ActiveFlags> stateFlags;
-	enum StaticFlags : btui64 // WIP
-	{
-		eNOTHING = 1u,
-		eFLAMMABLE = 1u << 1u,
-	};
-	mem::bv<btui64, StaticFlags> properties2;
-	btui16 damagestate = STATE_DAMAGE_MAX;
-
-	mem::Buffer32<StatusEffect> effects;
-
-	void Damage(btui32 AMOUNT, btf32 ANGLE);
-	void AddEffect(btID CASTER, StatusEffectType TYPE, btf32 DURATION, btui32 MAGNITUDE, btID icon);
-	void AddSpell(btID CASTER, btID SPELL);
-	void TickEffects(btf32 DELTA_TIME);
-};
 
 // Base entity class
 struct ECCommon
@@ -157,35 +136,55 @@ struct ECCommon
 	bti8 name[32];
 
 	// Entity base properties
-	enum EntityFlags : btui8
-	{
+	enum PhysicsFlags : btui8 {
 		// Basic properties
 		eCOLLIDE_ENV = 1u, // Handle collision between this entity and the environment
 		eCOLLIDE_ENT = 1u << 1u, // Handle collision between this entity and other entities
 		eCOLLIDE_MAG = 1u << 3u, // Handle collision between this entity and magic effects
 		eCOLLIDE_PRJ = 1u << 2u, // Handle collision between this entity and physical projectiles
 		eREPORT_TOUCH = 1u << 4u, // Use callback function when another entity touches this one
-		eNO_TICK = 1u << 5u, // Do not tick every frame
 		ePHYS_DRAG = 1u << 6u, // Do not tick every frame
-		//eALIGN_MESH_TO_GROUND = 1u << 6ui8, // Align this object's mesh to the ground normal (useless because each class has its own draw fn anyway)
 		// Can go up to 1 << 7
 
 		ePREFAB_FULLSOLID = eCOLLIDE_ENV | eCOLLIDE_ENT | eCOLLIDE_PRJ | eCOLLIDE_MAG,
-		ePREFAB_ITEM = eCOLLIDE_ENV | eCOLLIDE_ENT | eNO_TICK | ePHYS_DRAG,
+		ePREFAB_ITEM = eCOLLIDE_ENV | eCOLLIDE_ENT | ePHYS_DRAG,
 	};
-	mem::bv<btui8, EntityFlags> properties;
-
+	mem::bv<btui8, PhysicsFlags> physicsFlags;
 	fac::faction faction;
-	ActiveState state;
+
+	btui16 damagestate = STATE_DAMAGE_MAX;
+	mem::Buffer32<StatusEffect> effects;
+	
+	// Global properties, ultimately to be used by every object in the game, incl. environment tiles (wow really huh)
+	enum StaticFlags : btui64 {
+		eNOTHING = 1u,
+		eFLAMMABLE = 1u << 1u,
+	};
+	mem::bv<btui64, StaticFlags> staticFlags;
+	enum ActiveFlags : btui64 {
+		eALIVE = 1u,
+		eDIED_REPORT = 1u << 1u,
+		eGROUNDED = 1u << 2u,
+	};
+	mem::bv<btui64, ActiveFlags> activeFlags;
+	__forceinline bool Grounded() {
+		return activeFlags.get(eGROUNDED);
+	}
+
+	void Damage(btui32 AMOUNT, btf32 ANGLE);
+	void AddEffect(btID CASTER, StatusEffectType TYPE, btf32 DURATION, btui32 MAGNITUDE, btID icon);
+	void AddSpell(btID CASTER, btID SPELL);
+	void TickEffects(btf32 DELTA_TIME);
 
 	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
 	btf32 height = 1.9f; // Height of the entity cylinder
+
 	Transform2D t;
+	
 	m::Vector2 velocity;
 	btf32 altitude_velocity = 0.f;
 	// foot slide for slippery surfaces / knockback etc.
 	m::Vector2 slideVelocity;
-	bool grounded = true;
 };
 
 // TODO: belong in some kinda collision file

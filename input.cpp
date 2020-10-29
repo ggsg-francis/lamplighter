@@ -154,7 +154,9 @@ namespace input
 			ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
 			ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
 			ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
+			ScancodeTransfer[SDL_SCANCODE_LCTRL] = key::CROUCH;
 			ScancodeTransfer[SDL_SCANCODE_LALT] = key::CROUCH;
+			ScancodeTransfer[SDL_SCANCODE_C] = key::CROUCH;
 			ScancodeTransfer[SDL_SCANCODE_SPACE] = key::JUMP;
 			ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
 			ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
@@ -214,9 +216,9 @@ namespace input
 	}
 
 	#ifdef DEF_NMP
-	InputBuffer buf[NUM_PLAYERS][INPUT_BUF_SIZE];
+	InputBuffer input_buffer[NUM_PLAYERS];
 	#else
-	InputBuffer buf;
+	InputBuffer input_buffer;
 	#endif
 
 	void UpdateInput(void* input)
@@ -315,26 +317,20 @@ namespace input
 	void ClearHitsAndDelta() {
 		BUF_LOCALSET.mouse_x = 0.f;
 		BUF_LOCALSET.mouse_y = 0.f;
-		BUF_LOCALSET.keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000u;
+		BUF_LOCALSET.keyBitsHit = (btui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
 	}
 
 	void ClearAll() {
-		BUF_LOCALSET.keyBitsHit = 0b0000000000000000000000000000000000000000000000000000000000000000u;
-		BUF_LOCALSET.keyBitsHeld = 0b0000000000000000000000000000000000000000000000000000000000000000u;
+		BUF_LOCALSET.keyBitsHit = (btui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
+		BUF_LOCALSET.keyBitsHeld = (btui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
 	}
-
-	#ifdef DEF_NMP
-	void CycleBuffers() {
-		buf[network::nid][0] = buf[network::nid][1];
-	}
-	#endif
 
 	#ifdef DEF_NMP
 	bool GetHeld(btui32 index, key::Key2 i) {
-		return mem::bvget<btui64>(buf[index][INPUT_BUF_GET].keyBitsHeld, 1u << (btui64)i);
+		return mem::bvget<btui64>(input_buffer[index].keyBitsHeld, (btui64)1u << (btui64)i);
 	}
 	bool GetHit(btui32 index, key::Key2 i) {
-		return mem::bvget<btui64>(buf[index][INPUT_BUF_GET].keyBitsHit, 1u << (btui64)i);
+		return mem::bvget<btui64>(input_buffer[index].keyBitsHit, (btui64)1u << (btui64)i);
 	}
 	#endif
 	bool GetHeld(key::Key2 i) {

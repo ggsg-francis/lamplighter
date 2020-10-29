@@ -257,7 +257,7 @@ void main() {
 }
 )"
 
-#if DEF_PROJECT == DEF_PROJECT_EXPLORE
+#if DEF_PROJECT == PROJECT_EX
 #define SHADER_FRAG_FRAMEBUFFER R"(
 #version 330 core
 

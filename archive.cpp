@@ -38,6 +38,7 @@ namespace acv
 
 	// Assets
 
+	mem::Lump<AssetType, ASSET_NONE, FN_COUNT, ARCHIVE_MAX_LOADED_DATA>* assetLump;
 	Resource assets[FN_COUNT];
 	btui32 assetCount = 0u;
 	btui64 asset_loaded_size = 0u;
@@ -52,66 +53,69 @@ namespace acv
 		//GetSum(ARCHIVE_FILENAME, &sum);
 		//GetSum(ARCHIVE_DATA_FILENAME, &sum);
 
+		// initialize archive memory
+		assetLump = new mem::Lump<AssetType, ASSET_NONE, FN_COUNT, ARCHIVE_MAX_LOADED_DATA>();
+
 		serializer::LoadArchive(ARCHIVE_FILENAME);
 
 		fileARCHIVE = fopen(ARCHIVE_DATA_FILENAME, "rb");
 	}
 	void End() {
-		acv::ClearMemory();
+		ClearMemory();
 		if (fileARCHIVE != NULL)
 			fclose(fileARCHIVE);
+		delete assetLump;
+		assetLump = nullptr;
 	}
 
 	void LoadAsset(btui32 i) {
-		if (!assets[i].loaded) {
-			if (fileARCHIVE != NULL) {
-				int err = fseek(fileARCHIVE, assets[i].file_pos, SEEK_SET); // Seek file beginning
-				switch (assets[i].type) {
-				case ASSET_TEXTURE_FILE:
-					assets[i].asset = new graphics::Texture;
-					((graphics::Texture*)assets[i].asset)->LoadFile(fileARCHIVE);
-					goto finish;
-				case ASSET_MESH_FILE:
-					assets[i].asset = new graphics::Mesh;
-					((graphics::Mesh*)assets[i].asset)->LoadFile(fileARCHIVE, false);
-					goto finish;
-				case ASSET_MESHBLEND_FILE:
-					assets[i].asset = new graphics::MeshBlend;
-					((graphics::MeshBlend*)assets[i].asset)->LoadFile(fileARCHIVE);
-					goto finish;
-				case ASSET_MESHDEFORM_FILE:
-					assets[i].asset = new graphics::MeshDeform;
-					((graphics::MeshDeform*)assets[i].asset)->LoadFile(fileARCHIVE);
-					goto finish;
-				};
-			finish:
-				assets[i].loaded = true;
-				asset_loaded_size += assets[i].file_size;
-				btf64 use_amount = (btf64)asset_loaded_size / (btf64)ARCHIVE_MAX_LOADED_DATA;
-				printf("Loaded asset %i | Usage: %i of %i , %f\n", i, asset_loaded_size, ARCHIVE_MAX_LOADED_DATA, (btf32)use_amount * 100.f);
-			}
+		if (!assets[i].loaded && fileARCHIVE != NULL) {
+			int err = fseek(fileARCHIVE, assets[i].file_pos, SEEK_SET); // Seek file beginning
+			switch (assets[i].type) {
+			case ASSET_TEXTURE_FILE:
+				assets[i].asset = assetLump->AddEnt(sizeof(graphics::Texture), ASSET_TEXTURE_FILE);
+				((graphics::Texture*)assetLump->GetEnt(assets[i].asset))->LoadFile(fileARCHIVE);
+				break;
+			case ASSET_MESH_FILE:
+				assets[i].asset = assetLump->AddEnt(sizeof(graphics::Mesh), ASSET_MESH_FILE);
+				((graphics::Mesh*)assetLump->GetEnt(assets[i].asset))->LoadFile(fileARCHIVE, false);
+				break;
+			case ASSET_MESHBLEND_FILE:
+				assets[i].asset = assetLump->AddEnt(sizeof(graphics::MeshBlend), ASSET_MESHBLEND_FILE);
+				((graphics::MeshBlend*)assetLump->GetEnt(assets[i].asset))->LoadFile(fileARCHIVE);
+				break;
+			case ASSET_MESHDEFORM_FILE:
+				assets[i].asset = assetLump->AddEnt(sizeof(graphics::MeshDeform), ASSET_MESHDEFORM_FILE);
+				((graphics::MeshDeform*)assetLump->GetEnt(assets[i].asset))->LoadFile(fileARCHIVE);
+				break;
+			};
+			assets[i].loaded = true;
+			asset_loaded_size += assets[i].file_size;
+			btf64 use_amount = (btf64)asset_loaded_size / (btf64)ARCHIVE_MAX_LOADED_DATA;
+			printf("Loaded asset %i | Usage: %i of %i , %f\n", i, asset_loaded_size, ARCHIVE_MAX_LOADED_DATA, (btf32)use_amount * 100.f);
 		}
 	}
 
 	void UnloadAsset(btui32 i) {
-		if (assets[i].asset != nullptr && assets[i].loaded) {
+		if (assets[i].asset != ID_NULL && assets[i].loaded) {
 			switch (assets[i].type) {
 			case ASSET_TEXTURE_FILE:
-				((graphics::Texture*)assets[i].asset)->Unload();
-				return;
+				((graphics::Texture*)assetLump->GetEnt(assets[i].asset))->Unload();
+				break;
 			case ASSET_MESH_FILE:
-				((graphics::Mesh*)assets[i].asset)->Unload();
-				return;
+				((graphics::Mesh*)assetLump->GetEnt(assets[i].asset))->Unload();
+				break;
 			case ASSET_MESHBLEND_FILE:
-				((graphics::MeshBlend*)assets[i].asset)->Unload();
-				return;
+				((graphics::MeshBlend*)assetLump->GetEnt(assets[i].asset))->Unload();
+				break;
 			case ASSET_MESHDEFORM_FILE:
-				((graphics::MeshDeform*)assets[i].asset)->Unload();
-				return;
+				((graphics::MeshDeform*)assetLump->GetEnt(assets[i].asset))->Unload();
+				break;
 			};
 			assets[i].loaded = false;
 			asset_loaded_size -= assets[i].file_size;
-			delete assets[i].asset;
+			assetLump->RmvEnt(assets[i].asset);
+			assets[i].asset = ID_NULL;
 		}
 	};
 
@@ -126,9 +130,9 @@ namespace acv
 	//#endif // DEF_ARCHIVER
 
 	void ClearMemory() {
-		for (int i = 0; i < acv::item_index; i++)
+		for (int i = 0; i < item_index; i++)
 		{
-			delete(acv::items[i]);
+			delete(items[i]);
 		}
 		#ifndef DEF_ARCHIVER
 		for (int i = 0; i < FN_COUNT; i++)
@@ -142,57 +146,57 @@ namespace acv
 
 	forceinline void AssetAccessCheck(btui32 index) {
 		// Load the asset if needed
-		if (!acv::assets[index].loaded)
-			acv::LoadAsset(index);
-		acv::assets[index].tickLastAccessed = tickCount;
+		if (!assets[index].loaded)
+			LoadAsset(index);
+		assets[index].tickLastAccessed = tickCount;
 	}
 
 	graphics::Texture& GetT(btui32 index) {
-		if (index < acv::assetCount && acv::assets[index].type == ASSET_TEXTURE_FILE) {
+		if (index < assetCount && assets[index].type == ASSET_TEXTURE_FILE) {
 			AssetAccessCheck(index);
-			return *(graphics::Texture*)acv::assets[index].asset;
+			return *(graphics::Texture*)assetLump->GetEnt(assets[index].asset);
 		}
 		AssetAccessCheck(DEFAULT_TEXTURE);
-		return *(graphics::Texture*)acv::assets[DEFAULT_TEXTURE].asset;
+		return *(graphics::Texture*)assetLump->GetEnt(assets[DEFAULT_TEXTURE].asset);
 	}
 
 	graphics::Mesh& GetM(btui32 index) {
-		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESH_FILE) {
+		if (index < assetCount && assets[index].type == ASSET_MESH_FILE) {
 			AssetAccessCheck(index);
-			return *(graphics::Mesh*)acv::assets[index].asset;
+			return *(graphics::Mesh*)assetLump->GetEnt(assets[index].asset);
 		}
 		AssetAccessCheck(DEFAULT_MESH);
-		return *(graphics::Mesh*)acv::assets[DEFAULT_MESH].asset;
+		return *(graphics::Mesh*)assetLump->GetEnt(assets[DEFAULT_MESH].asset);
 	}
 
 	graphics::MeshBlend& GetMB(btui32 index) {
-		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHBLEND_FILE) {
+		if (index < assetCount && assets[index].type == ASSET_MESHBLEND_FILE) {
 			AssetAccessCheck(index);
-			return *(graphics::MeshBlend*)acv::assets[index].asset;
+			return *(graphics::MeshBlend*)assetLump->GetEnt(assets[index].asset);
 		}
 		AssetAccessCheck(DEFAULT_MESHBLEND);
-		return *(graphics::MeshBlend*)acv::assets[DEFAULT_MESHBLEND].asset;
+		return *(graphics::MeshBlend*)assetLump->GetEnt(assets[DEFAULT_MESHBLEND].asset);
 	}
 
 	graphics::MeshDeform& GetMD(btui32 index) {
-		if (index < acv::assetCount && acv::assets[index].type == ASSET_MESHDEFORM_FILE) {
+		if (index < assetCount && assets[index].type == ASSET_MESHDEFORM_FILE) {
 			AssetAccessCheck(index);
-			return *(graphics::MeshDeform*)acv::assets[index].asset;
+			return *(graphics::MeshDeform*)assetLump->GetEnt(assets[index].asset);
 		}
 		AssetAccessCheck(DEFAULT_MESHDEFORM);
-		return *(graphics::MeshDeform*)acv::assets[DEFAULT_MESHDEFORM].asset;
+		return *(graphics::MeshDeform*)assetLump->GetEnt(assets[DEFAULT_MESHDEFORM].asset);
 	}
 
 	bool IsTexture(btui32 index) {
-		return acv::assets[index].type == ASSET_TEXTURE_FILE;
+		return assets[index].type == ASSET_TEXTURE_FILE;
 	}
 
 	bool IsMesh(btui32 index) {
-		return acv::assets[index].type == ASSET_MESH_FILE;
+		return assets[index].type == ASSET_MESH_FILE;
 	}
 
 	bool IsMeshBlend(btui32 index) {
-		return acv::assets[index].type == ASSET_MESHBLEND_FILE;
+		return assets[index].type == ASSET_MESHBLEND_FILE;
 	}
 
 	// put in network code

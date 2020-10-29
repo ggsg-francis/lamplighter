@@ -3,54 +3,78 @@
 #include "ec_common.h"
 
 #include "objects_inventory.h"
+#include "animation.h"
 
+enum ActorInputBit : btui16
+{
+	IN_RUN = 0x1u << 0x0u,
+	IN_AIM = 0x1u << 0x1u,
+	IN_USE = 0x1u << 0x2u,
+	IN_USE_HIT = 0x1u << 0x3u,
+	IN_USE_ALT = 0x1u << 0x4u,
+	IN_ACTN_A = 0x1u << 0x5u,
+	IN_ACTN_B = 0x1u << 0x6u,
+	IN_ACTN_C = 0x1u << 0x7u,
+	IN_CROUCH = 0x1u << 0x8u,
+	IN_JUMP = 0x1u << 0x9u,
+};
+struct ActorInput {
+	mem::bv<btui16, ActorInputBit> bits;
+	btui16 empty;
+	m::Vector2 move;
+};
+// compare 664
+//int iadhfkjhgg2 = sizeof(ECCommon);
+// compare: 1736 bytes
+//int iadhfkjhgg = sizeof(ECActor);
 struct ECActor : public ECCommon
 {
-	enum ActorInput : btui16
-	{
-		IN_RUN = 0x1u << 0x0u,
-		IN_AIM = 0x1u << 0x1u,
-		IN_USE = 0x1u << 0x2u,
-		IN_USE_HIT = 0x1u << 0x3u,
-		IN_USE_ALT = 0x1u << 0x4u,
-		IN_ACTN_A = 0x1u << 0x5u,
-		IN_ACTN_B = 0x1u << 0x6u,
-		IN_ACTN_C = 0x1u << 0x7u,
-		IN_CROUCH = 0x1u << 0x8u,
-		IN_JUMP = 0x1u << 0x9u,
-	};
-	mem::bv<btui16, ActorInput> inputBV;
-	m::Vector2 input; // Input vector, might be temporary
+	ActorInput input;
+	
 	m::Angle viewYaw;
 	m::Angle viewPitch;
 
-	//-------------------------------- Actor stuff
-
-	btui8 actorBase = 0u;
-
+	// Render colours
 	m::Vector3 skin_col_a;
 	m::Vector3 skin_col_b;
 	m::Vector3 skin_col_c;
 
+	// Character stats
 	btf32 speed = 2.3f;
-	btf32 agility = 0.f; // 0?? use agility to determine turning speed?
-
-	MaxedStat stamina;
+	btf32 agility = 1.f; // use agility to determine turning speed?
 
 	Inventory inventory;
 	btui32 inv_active_slot = 0u;
 
+	Transform3D t_body, t_head;
+	m::Vector3 fpCurrentL, fpCurrentR;
+	AnimPlayerVec3 ap_fpCurrentL, ap_fpCurrentR;
+	
+	btf32 aniStandHeight;
+	AnimPlayerVec3 ap_StandHeight;
+	
+	btf32 aniSlideResponse = 0.f;
+
+	m::Vector3 handPosR;
+	AnimPlayerVec3 ap_HandPosR;
+	m::Vector3 handPosL;
+	AnimPlayerVec3 ap_HandPosL;
+
+	path::Path ai_path;
+	btui64 ai_timer = 0u;
+
+	btID ai_target_ent = BUF_NULL;
+	btID ai_ally_ent = BUF_NULL;
+	btID aniHandHoldTarget = ID_NULL;
+	// Attack target - attacking target only
 	btID atk_target = BUF_NULL;
-	m::Angle atkYaw;
+	// View target (used to pick up items and stuff)
+	btID viewtarget = ID_NULL;
 
-	//-------------------------------- CHARA stuff
+	MaxedStat stamina;
 
-	enum CharaStaticProperties : btui8
-	{
-		eLEFT_HANDED = (0x1u << 0x0u),
-	};
-	mem::bv<btui8, CharaStaticProperties> staticPropertiesBV;
-
+	btui8 actorBase = 0u;
+	// Not neat looking but packing small bvs together
 	enum FootState : btui8
 	{
 		eL_DOWN,
@@ -63,8 +87,8 @@ struct ECActor : public ECCommon
 		eJUMP_NEITHER,
 		eJUMP_JUMP,
 		eJUMP_SPRINT,
+		eJUMP_SPRINT_WANTJUMP,
 	};
-
 	JumpState jump_state = eJUMP_NEITHER;
 
 	enum CharaAniFlags : btui8
@@ -82,36 +106,13 @@ struct ECActor : public ECCommon
 	};
 	mem::bv<btui8, CharaAniFlags> animationBV;
 
-	Transform3D t_body, t_head;
-	m::Vector3 fpCurrentL, fpCurrentR;
-	m::Vector2 ani_body_lean;
-	btf32 aniStandHeight;
+	bool aiControlled = false;
+
 	bool aniCrouch = false;
-	btf32 aniSlideResponse = 0.f;
 	bool aniRun = true;
 
-	btf32 aniTimer = 0.f;
-	m::Vector3 lastGroundFootPos;
-
-	btID aniHandHoldTarget = ID_NULL;
-
-	// View target (used to pick up items and stuff)
-	btID viewtarget = ID_NULL;
-
-	//-------------------------------- AI stuff
-
-	btf32 ai_vy_target = 0.f;
-	btf32 ai_vp_target = 0.f;
-	btID ai_target_ent = BUF_NULL;
-	btID ai_ally_ent = BUF_NULL;
-	bool aiControlled = false;
-	path::Path ai_path;
 	btui8 ai_path_current_index = 0u;
 	bool ai_pathing = false;
-
-	int TestFn() {
-		return 2;
-	}
 };
 
 void ActorOnHitGround(ECActor* chr);

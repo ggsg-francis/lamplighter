@@ -7,10 +7,6 @@ struct ECSingleItem : public ECCommon
 {
 	btID item_instance;
 	graphics::Matrix4x4 matrix;
-
-	int TestFn() {
-		return 10;
-	}
 };
 
 char* RestingItemName(void* ent); // <- this seems really unneeded...

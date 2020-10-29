@@ -62,7 +62,7 @@ namespace core
 		for (int i = 0; i <= GetLastEntity(); i++)
 		{
 			// If used, not me, and is alive
-			if (GetEntityExists(i) && i != index && ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE))
+			if (GetEntityExists(i) && i != index && ENTITY(i)->activeFlags.get(ECCommon::eALIVE))
 			{
 				btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
 				if (check_distance < closest_distance)
@@ -83,7 +83,7 @@ namespace core
 		for (int index_other = 0; index_other <= GetLastEntity(); index_other++) {
 			// If used, not me, and is alive
 			if (GetEntityExists(index_other) && index_other != index &&
-				ENTITY(index_other)->state.stateFlags.get(ActiveState::eALIVE) &&
+				ENTITY(index_other)->activeFlags.get(ECCommon::eALIVE) &&
 				fac::GetAllegiance(ENTITY(index)->faction, ENTITY(index_other)->faction) == allegiance) {
 				btf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
 				if (check_distance < dist) {
@@ -117,7 +117,7 @@ namespace core
 		for (int i = 0; i <= GetLastEntity(); i++)
 		{
 			// If used, not me, and is alive
-			if (GetEntityExists(i) && i != index && ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE))
+			if (GetEntityExists(i) && i != index && ENTITY(i)->activeFlags.get(ECCommon::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == allegiance)
@@ -143,7 +143,7 @@ namespace core
 		{
 			ECCommon* entity = ENTITY(i);
 			// If used, not me, and is alive
-			if (GetEntityExists(i) && i != index && entity->state.stateFlags.get(ActiveState::eALIVE))
+			if (GetEntityExists(i) && i != index && entity->activeFlags.get(ECCommon::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(entity_index->faction, entity->faction) == allegiance)
@@ -179,37 +179,28 @@ namespace core
 		btID id = BUF_NULL;
 		btf32 closestDist = 2.f;
 		btf32 closest_angle = 20.f;
-
 		ECCommon* entity_index = ENTITY(index);
 		// Iterate through nearby cells
-		for (int x = entity_index->t.csi.c[eCELL_I].x - 3u; x < entity_index->t.csi.c[eCELL_I].x + 3u; x++)
-		{
-			for (int y = entity_index->t.csi.c[eCELL_I].y - 3u; y < entity_index->t.csi.c[eCELL_I].y + 3u; y++)
-			{
+		for (int x = entity_index->t.csi.c[eCELL_I].x - 3u; x < entity_index->t.csi.c[eCELL_I].x + 3u; x++) {
+			for (int y = entity_index->t.csi.c[eCELL_I].y - 3u; y < entity_index->t.csi.c[eCELL_I].y + 3u; y++) {
 				// Iterate through every entity space in this cell
-				for (int e = 0; e <= refCells[x][y].ref_ents.Size(); e++)
-				{
-					//if (cells[x][y].ents[e] != ID_NULL && block_entity.used[cells[x][y].ents[e]] && ENTITY(cells[x][y].ents[e])->Type() == Entity::eITEM)
-					if (refCells[x][y].ref_ents[e] != ID_NULL && refCells[x][y].ref_ents[e] != index && GetEntityExists(refCells[x][y].ref_ents[e]))
-					{
-						// If the target is alive (likely to be temporary, soon as there is something interesting
-						// to do with dead bodies
-						if (ENTITY(refCells[x][y].ref_ents[e])->state.stateFlags.get(ActiveState::eALIVE))
-						{
-							btf32 check_distance = m::Length(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
-							if (check_distance < closestDist)
-							{
-								m::Vector2 targetoffset = m::Normalize(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
-
-								m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
-
-								btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
-								if (abs(angdif) < closest_angle)
-								{
-									closest_angle = angdif;
-									id = refCells[x][y].ref_ents[e];
-								}
-							}
+				for (int e = 0; e <= refCells[x][y].ref_ents.Size(); e++) {
+					// Skip if null, self or does not exist, or is dead
+					if (refCells[x][y].ref_ents[e] == ID_NULL ||
+						refCells[x][y].ref_ents[e] == index ||
+						!GetEntityExists(refCells[x][y].ref_ents[e]) ||
+						!ENTITY(refCells[x][y].ref_ents[e])->activeFlags.get(ECCommon::eALIVE))
+						continue;
+					// If the target is alive (likely to be temporary, soon as there is something interesting
+					// to do with dead bodies
+					btf32 check_distance = m::Length(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
+					if (check_distance < closestDist) {
+						m::Vector2 targetoffset = m::Normalize(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
+						m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
+						btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
+						if (abs(angdif) < closest_angle) {
+							closest_angle = angdif;
+							id = refCells[x][y].ref_ents[e];
 						}
 					}
 				}
@@ -235,18 +226,21 @@ namespace core
 		env::GetNearestSurfaceHeight(eptr->t.altitude, eptr->t.csi, eptr->t.altitude);
 		#endif
 		AddEntityCell(eptr->t.csi.c[eCELL_I].x, eptr->t.csi.c[eCELL_I].y, index);
-		eptr->state.stateFlags.set(ActiveState::eALIVE);
-		eptr->state.damagestate = STATE_DAMAGE_MAX;
+		eptr->activeFlags.set(ECCommon::eALIVE);
+		eptr->damagestate = STATE_DAMAGE_MAX;
 		eptr->radius = 0.15f;
 		eptr->height = 0.7f;
-		eptr->properties.set(ECCommon::ePREFAB_FULLSOLID);
-		eptr->state.stateFlags.set(ActiveState::eALIVE);
+		eptr->physicsFlags.set(ECCommon::ePREFAB_FULLSOLID);
+		eptr->activeFlags.set(ECCommon::eALIVE);
+
 		if (GetEntityType(index) == ENTITY_TYPE_ACTOR) {
-			ACTOR(index)->foot_state = ECActor::FootState::eL_DOWN;
+			ECActor* aptr = (ECActor*)eptr;
 			
-			ACTOR(index)->atk_target = BUF_NULL;
-			ACTOR(index)->ai_target_ent = BUF_NULL;
-			ACTOR(index)->ai_ally_ent = BUF_NULL;
+			aptr->foot_state = ECActor::FootState::eL_DOWN;
+			aptr->atk_target = BUF_NULL;
+			aptr->ai_target_ent = BUF_NULL;
+			aptr->ai_ally_ent = BUF_NULL;
+			aptr->ai_timer = 0u;
 
 			const m::Vector3 colEyes[]{
 				m::Vector3(232.f / 256.f, 17.f / 256.f, 17.f / 256.f), // red
@@ -290,9 +284,9 @@ namespace core
 				+ (colBase[rand() % 10] * hue_offs) 
 				+ m::Vector3(m::Random(-bri_offs, bri_offs));
 
-			ACTOR(index)->skin_col_a = col_base_a;
-			ACTOR(index)->skin_col_b = col_eyes;
-			ACTOR(index)->skin_col_c = col_base_b;
+			aptr->skin_col_a = col_base_a;
+			aptr->skin_col_b = col_eyes;
+			aptr->skin_col_c = col_base_b;
 		}
 	}
 
@@ -361,12 +355,12 @@ namespace core
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
-		ACTOR(id)->aiControlled = false;
-		ACTOR(id)->speed = 1.45f; // default
+		ACTOR(id)->aiControlled = true;
+		ACTOR(id)->speed = 1.52f; // default
 		//ACTOR(id)->speed = 2.5f; // quake
 		ACTOR(id)->inventory.AddNew(5u); // tick
 		ACTOR(id)->inventory.AddNew(5u); // tick
-		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->agility = 1.f;
 		ACTOR(id)->actorBase = 0u;
 	}
 
@@ -376,7 +370,7 @@ namespace core
 		ENTITY(id)->faction = fac::faction::player;
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.45f;
-		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->agility = 1.f;
 		ACTOR(id)->actorBase = 0u;
 	}
 
@@ -386,7 +380,7 @@ namespace core
 		ENTITY(id)->faction = fac::faction::playerhunter;
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.45f;
-		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->agility = 0.5f;
 		ACTOR(id)->inventory.AddNew(3u); // gun
 		ACTOR(id)->inventory.AddNew(4u); // ammo
 		ACTOR(id)->actorBase = 1u;
@@ -398,7 +392,7 @@ namespace core
 		ENTITY(id)->faction = fac::faction::undead;
 		ACTOR(id)->aiControlled = true;
 		ACTOR(id)->speed = 1.2f;
-		ACTOR(id)->agility = 0.f;
+		ACTOR(id)->agility = 0.25f;
 		ACTOR(id)->inventory.AddNew(7u); // common sword
 		ACTOR(id)->actorBase = 2u;
 	}

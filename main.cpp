@@ -62,8 +62,8 @@ extern "C" {
 #include "index.h"
 #include "weather.h"
 #include "test_zone.h"
-
 #include "render.h"
+#include "animation.h"
 
 //-------------------------------- TEMP
 
@@ -101,21 +101,36 @@ GLuint framebuffer_shadow; // Shadowmap framebuffer
 graphics::Texture rendertexture_shadow; // Shadowmap rendertexture
 
 //________________________________________________________________________________________________________________________________
-// TRANSLATE INPUTS --------------------------------------------------------------------------------------------------------------
+// INPUT -------------------------------------------------------------------------------------------------------------------------
 
 bool step_pause = false;
 
+void TickInput(SDL_Event* e) {
+	input::ClearHitsAndDelta();
+	while (SDL_PollEvent(e)) input::UpdateInput(e);
+	#ifdef DEF_NMP
+	// Trade inputs
+	if (config.bHost) {
+		network::RecvTCPHost();
+		network::SendInputHost();
+	}
+	else {
+		network::SendInputClient();
+		network::RecvTCPClient();
+	}
+	#endif
+}
+
 // Convert device input to chara input
-inline void TranslateInput()
+void TransferGameInput()
 {
 	if (config.b3PP) {
 		#ifdef DEF_NMP
-		for (btID i = 0u; i < NUM_PLAYERS; ++i) {
+		for (btID i = 0u; i < config.iNumNWPlayers; ++i) {
 			// Set input
 			core::SetPlayerInput((btID)i,
-				m::Vector2((btf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
-				(btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
-				input::buf[i][INPUT_BUF_GET].mouse_x * 0.25f, input::buf[i][INPUT_BUF_GET].mouse_y * 0.25f,
+				m::Vector2(0.f, (btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
+				(btf32)(input::GetHeld(i, input::key::DIR_R) - input::GetHeld(i, input::key::DIR_L)) * 6.f, 0.f,
 				input::GetHeld(i, input::key::USE),
 				input::GetHit(i, input::key::USE),
 				input::GetHit(i, input::key::USE_ALT),
@@ -125,13 +140,13 @@ inline void TranslateInput()
 				input::GetHit(i, input::key::ACTION_B),
 				input::GetHit(i, input::key::ACTION_C),
 				input::GetHit(i, input::key::CROUCH),
-				input::GetHeld(i, input::key::JUMP));
+				input::GetHit(i, input::key::JUMP));
 		}
 		#else
 		// Set input for player 0
 		core::SetPlayerInput(0u,
 			m::Vector2(0.f, (btf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
-			(btf32)(input::GetHeld(input::key::DIR_R) - input::GetHeld(input::key::DIR_L)) * 5.f, 0.f,
+			(btf32)(input::GetHeld(input::key::DIR_R) - input::GetHeld(input::key::DIR_L)) * 6.f, 0.f,
 			input::GetHeld(input::key::USE),
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE_ALT),
@@ -168,12 +183,12 @@ inline void TranslateInput()
 	}
 	else {
 		#ifdef DEF_NMP
-		for (btID i = 0u; i < NUM_PLAYERS; ++i) {
+		for (btID i = 0u; i < config.iNumNWPlayers; ++i) {
 			// Set input
 			core::SetPlayerInput((btID)i,
 				m::Vector2((btf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
 				(btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
-				input::buf[i][INPUT_BUF_GET].mouse_x * 0.25f, input::buf[i][INPUT_BUF_GET].mouse_y * 0.25f,
+				input::input_buffer[i].mouse_x * 0.25f, input::input_buffer[i].mouse_y * 0.25f,
 				input::GetHeld(i, input::key::USE),
 				input::GetHit(i, input::key::USE),
 				input::GetHit(i, input::key::USE_ALT),
@@ -183,7 +198,7 @@ inline void TranslateInput()
 				input::GetHit(i, input::key::ACTION_B),
 				input::GetHit(i, input::key::ACTION_C),
 				input::GetHit(i, input::key::CROUCH),
-				input::GetHeld(i, input::key::JUMP));
+				input::GetHit(i, input::key::JUMP));
 		}
 		#else
 		// Set input for player 0
@@ -221,39 +236,6 @@ inline void TranslateInput()
 	}
 }
 
-// Fixed timestep editor tick function
-inline void TranslateInputEditor()
-{
-	if (!step_pause && focus)
-	{
-		// Generate analogue input from directional keys
-		m::Vector2 input_p1(0.f, 0.f);
-		btf32 mouserot_mult = 0.25f;
-		if (!input::GetHeld(input::key::RUN))
-		{
-			input_p1.x = input::BUF_LOCALGET.mouse_x * -0.125f;
-			input_p1.y = input::BUF_LOCALGET.mouse_y * -0.125f;
-			mouserot_mult = 0.f;
-		}
-		// Set input
-		core::SetPlayerInput(0u, input_p1, input::BUF_LOCALGET.mouse_x * mouserot_mult, input::BUF_LOCALGET.mouse_y * mouserot_mult,
-			input::GetHit(input::key::USE),
-			input::GetHit(input::key::USE),
-			input::GetHit(input::key::USE_ALT),
-			input::GetHeld(input::key::RUN),
-			false,
-			input::GetHit(input::key::ACTION_A),
-			input::GetHit(input::key::ACTION_B),
-			input::GetHit(input::key::ACTION_C),
-			input::GetHeld(input::key::CROUCH),
-			input::GetHit(input::key::JUMP));
-
-		//do stuff
-		core::Tick(FRAME_TIME);
-		weather::Tick(FRAME_TIME);
-	}
-}
-
 //________________________________________________________________________________________________________________________________
 // UTIL FUNCTIONS ----------------------------------------------------------------------------------------------------------------
 
@@ -261,35 +243,20 @@ bool MainTick(SDL_Event* e)
 {
 	aud::Update(FRAME_TIME);
 
-	input::ClearHitsAndDelta();
-	while (SDL_PollEvent(e)) input::UpdateInput(e);
+	TickInput(e);
 
-	// TODO: think this over, there must be a better way to handle this
 	#ifdef DEF_NMP
-	if (config.bHost)
-	{
-		network::RecvTCP();
-		network::SendInputBuffer();
-	}
-	else
-	{
-		network::SendInputBuffer();
-		network::RecvTCP();
-	}
-	#endif
-
-	// If we reach this point, its time to run the tick
-	#ifdef DEF_NMP
-	input::CycleBuffers();
 	// Quit if any player quits
-	for (btui32 i = 0; i < NUM_PLAYERS; ++i)
-		if (input::GetHit(i, input::key::QUIT)) return false;
+	for (btui32 i = 0; i < config.iNumNWPlayers; ++i)
+		if (input::GetHit(i, input::key::QUIT))
+			return false;
 	#else
-	if (input::GetHit(input::key::QUIT)) return false;
+	if (input::GetHit(input::key::QUIT))
+		return false;
 	#endif
-	TranslateInput();
+	TransferGameInput();
+	// If we reach this point, its time to run the tick
 	return core::Tick((btf32)(FRAME_TIME));
-	//return true;
 }
 
 void MainDraw()
@@ -619,7 +586,7 @@ Font scavenged from Aesomatica's tileset for Dwarf Fortress, and modified by me 
 
 	// Generate debug version display
 	char buffinal[32];
-	sprintf(buffinal, "v%i.%i %s", VERSION_MAJOR, VERSION_MINOR, VERSION_COMMENT);
+	sprintf(buffinal, "v%i.%i.%i", VERSION_MAJOR, VERSION_MINOR, VERSION_PROJECT);
 	version.ReGen(buffinal, config.iWinX * -0.5f + 8, config.iWinX * 0.5f, config.iWinY * 0.5f - 10);
 
 	while (true) {
@@ -638,8 +605,7 @@ Font scavenged from Aesomatica's tileset for Dwarf Fortress, and modified by me 
 		// Run the frame
 		aud::Update(FRAME_TIME);
 
-		input::ClearHitsAndDelta();
-		while (SDL_PollEvent(&sdl_event)) input::UpdateInput(&sdl_event);
+		TickInput(&sdl_event);
 
 		if (exit) goto end;
 		if (play) goto endtogame;
@@ -681,11 +647,6 @@ updtime:
 	// Check to make sure the game isnt paused, and the window is in focus
 	if (!step_pause && focus)
 	{
-		#ifndef _DEBUG
-		_controlfp(_PC_24, _MCW_PC); _controlfp(_RC_NEAR, _MCW_RC);
-		//gpAssert((_controlfp(0, 0) & _MCW_PC) == _PC_24); gpAssert((_controlfp(0, 0) & _MCW_RC) == _RC_NEAR);
-		#endif
-
 		#ifdef DEF_SMOOTH_FRAMERATE
 		// Wait until the exact right time to run a new frame
 		while (current_frame_time <= next_frame_time)
@@ -849,7 +810,7 @@ LoopMode LoopEditor() {
 
 		if (input::GetHit(input::key::QUIT)) break;
 
-		TranslateInputEditor();
+		core::TickEditor(FRAME_TIME);
 
 		// Set GL properties for solid rendering
 		glEnable(GL_DEPTH_TEST);
@@ -886,6 +847,8 @@ LoopMode LoopEditor() {
 
 int main(int argc, char* argv[]) // SDL Main
 {
+	SetFP();
+
 	// make save dir.
 	_mkdir("save");
 
@@ -911,6 +874,7 @@ loop:
 		core::End();
 		break;
 	case MODE_EDITOR:
+		core::InitEditMode();
 		loop_mode = LoopEditor();
 		break;
 	}

@@ -112,12 +112,17 @@
     <ClInclude Include="graphics_shadersource_gl.h">
       <Filter>framework</Filter>
     </ClInclude>
-    <ClInclude Include="render.h" />
     <ClInclude Include="gui.h">
       <Filter>framework</Filter>
     </ClInclude>
     <ClInclude Include="3rdparty\miniaudio.h">
       <Filter>framework\3rdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="animation.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="render.h">
+      <Filter>framework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -192,8 +197,13 @@
     <ClCompile Include="input.cpp">
       <Filter>framework</Filter>
     </ClCompile>
-    <ClCompile Include="render.cpp" />
     <ClCompile Include="gui.cpp">
+      <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="animation.cpp">
+      <Filter>framework</Filter>
+    </ClCompile>
+    <ClCompile Include="render.cpp">
       <Filter>framework</Filter>
     </ClCompile>
   </ItemGroup>

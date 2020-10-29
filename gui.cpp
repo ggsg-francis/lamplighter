@@ -6,6 +6,7 @@
 #include "archive.hpp"
 #include "input.h"
 #include "audio.hpp"
+#include "cfg.h"
 
 struct Button {
 	// Position
@@ -82,6 +83,33 @@ void GUIUpdatNeighbors() {
 	}
 }
 void GUITick() {
+	#if DEF_NMP
+	// Allow any player to use the gui
+	for (btui32 i = 0; i < config.iNumNWPlayers; ++i) {
+		// Check for button activations and use callbacks
+		if (input::GetHit(i, input::key::ACTIVATE) || input::GetHit(i, input::key::JUMP)) {
+			buttons[buttonSelected].callback(buttons[buttonSelected].callbackData);
+			aud::PlaySnd(aud::FILE_GUI_ACCEPT);
+		}
+		// Check for directional inputs
+		if (input::GetHit(i, input::key::DIR_F) && buttons[buttonSelected].nbUp != ID_NULL) {
+			buttonSelected = buttons[buttonSelected].nbUp;
+			aud::PlaySnd(aud::FILE_GUI_BEEP);
+		}
+		if (input::GetHit(i, input::key::DIR_B) && buttons[buttonSelected].nbDn != ID_NULL) {
+			buttonSelected = buttons[buttonSelected].nbDn;
+			aud::PlaySnd(aud::FILE_GUI_BEEP);
+		}
+		if (input::GetHit(i, input::key::DIR_R) && buttons[buttonSelected].nbRt != ID_NULL) {
+			buttonSelected = buttons[buttonSelected].nbRt;
+			aud::PlaySnd(aud::FILE_GUI_BEEP);
+		}
+		if (input::GetHit(i, input::key::DIR_L) && buttons[buttonSelected].nbLt != ID_NULL) {
+			buttonSelected = buttons[buttonSelected].nbLt;
+			aud::PlaySnd(aud::FILE_GUI_BEEP);
+		}
+	}
+	#else
 	// Check for button activations and use callbacks
 	if (input::GetHit(input::key::ACTIVATE) || input::GetHit(input::key::JUMP)) {
 		buttons[buttonSelected].callback(buttons[buttonSelected].callbackData);
@@ -104,6 +132,7 @@ void GUITick() {
 		buttonSelected = buttons[buttonSelected].nbLt;
 		aud::PlaySnd(aud::FILE_GUI_BEEP);
 	}
+	#endif
 }
 void GUIDraw() {
 	for (int i = 0; i < buttons.Size(); ++i) {

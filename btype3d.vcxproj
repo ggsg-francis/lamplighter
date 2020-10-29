@@ -129,7 +129,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_NMP|x64'">
     <OutDir>$(SolutionDir)\0BUILD_DEBUG\</OutDir>
-    <TargetName>tsoa-debug_nwmp</TargetName>
+    <TargetName>tsoa-debug_LAN</TargetName>
     <IntDir>IntermediateGame\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -140,7 +140,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NMP|x64'">
     <OutDir>$(SolutionDir)\0BUILD_RELEASE\</OutDir>
     <IntDir>IntermediateGame\</IntDir>
-    <TargetName>tsoa_nwmp</TargetName>
+    <TargetName>tsoa_LAN</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -279,6 +279,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="animation.cpp" />
     <ClCompile Include="archive_read_write.cpp" />
     <ClCompile Include="core_save_load.cpp" />
     <ClCompile Include="ec_actor.cpp" />
@@ -311,6 +312,7 @@
     <ClInclude Include="3rdparty\cute_c2.h" />
     <ClInclude Include="3rdparty\cute_sound.h" />
     <ClInclude Include="3rdparty\miniaudio.h" />
+    <ClInclude Include="animation.h" />
     <ClInclude Include="archive_read_write.h" />
     <ClInclude Include="core_save_load.h" />
     <ClInclude Include="ec_actor.h" />

@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 
+#define FILE_OUT_VER 001u
+
 #define SIZE_8 1
 #define SIZE_16 2
 #define SIZE_32 4
@@ -17,8 +19,6 @@ extern mem::ObjBuf<HeldItem, ItemType, ENTITY_TYPE_NULL, BUF_SIZE>* buf_iteminst
 
 extern mem::objbuf_caterpillar block_proj; // Projectile buffer
 extern Projectile proj[BUF_SIZE];
-
-extern btui64 tickCount;
 
 namespace core
 {
@@ -73,7 +73,10 @@ void SaveState()
 		}
 	}
 
-	btui32 FILE_VER = 001u;
+	btui32 FILE_VER = FILE_OUT_VER;
+	btui32 GAME_VER = VERSION_MAJOR;
+	btui32 PROJ_VER = VERSION_PROJECT;
+	btui32 TEMP_VER = 0u;
 
 	FILE* file = fopen("save/save.bin", "wb"); // Open file
 	if (file != NULL)
@@ -81,6 +84,9 @@ void SaveState()
 		fseek(file, 0, SEEK_SET); // Seek file beginning
 
 		fwrite(&FILE_VER, SIZE_32, 1, file);
+		fwrite(&GAME_VER, SIZE_32, 1, file);
+		fwrite(&PROJ_VER, SIZE_32, 1, file);
+		fwrite(&TEMP_VER, SIZE_32, 1, file);
 
 		// Actual game state
 		fwrite(&tickCount, SIZE_64, 1, file);
@@ -108,11 +114,11 @@ void SaveState()
 			{
 				ECCommon* entptr = ENTITY(i);
 				fwrite(&entptr->name, 32, 1, file);
-				fwrite(&entptr->properties, SIZE_8, 1, file);
+				fwrite(&entptr->physicsFlags, SIZE_8, 1, file);
 				fwrite(&entptr->faction, SIZE_8, 1, file);
-				fwrite(&entptr->state.damagestate, SIZE_16, 1, file);
-				fwrite(&entptr->state.stateFlags, SIZE_64, 1, file);
-				fwrite(&entptr->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
+				fwrite(&entptr->damagestate, SIZE_16, 1, file);
+				fwrite(&entptr->activeFlags, SIZE_64, 1, file);
+				fwrite(&entptr->effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
 				fwrite(&entptr->radius, SIZE_32, 1, file);
 				fwrite(&entptr->height, SIZE_32, 1, file);
 				fwrite(&entptr->t.position.x, SIZE_32, 1, file);
@@ -125,7 +131,7 @@ void SaveState()
 				fwrite(&entptr->t.csi, sizeof(CellSpace), 1, file);
 				fwrite(&entptr->slideVelocity.x, SIZE_32, 1, file);
 				fwrite(&entptr->slideVelocity.y, SIZE_32, 1, file);
-				fwrite(&entptr->grounded, SIZE_8, 1, file);
+				fwrite(&temp, SIZE_8, 1, file);
 
 				switch (GetEntityType(i))
 				{
@@ -137,9 +143,9 @@ void SaveState()
 				case ENTITY_TYPE_ACTOR:
 				{
 					ECActor* actptr = ACTOR(i);
-					fwrite(&actptr->inputBV, SIZE_16, 1, file);
-					fwrite(&actptr->input.x, SIZE_32, 1, file);
-					fwrite(&actptr->input.y, SIZE_32, 1, file);
+					fwrite(&actptr->input.bits, SIZE_16, 1, file);
+					fwrite(&actptr->input.move.x, SIZE_32, 1, file);
+					fwrite(&actptr->input.move.y, SIZE_32, 1, file);
 					fwrite(&actptr->viewYaw, SIZE_32, 1, file);
 					fwrite(&actptr->viewPitch, SIZE_32, 1, file);
 					fwrite(&actptr->actorBase, SIZE_8, 1, file);
@@ -152,8 +158,7 @@ void SaveState()
 					fwrite(&actptr->inventory, sizeof(Inventory), 1, file);
 					fwrite(&actptr->inv_active_slot, SIZE_32, 1, file);
 					fwrite(&actptr->atk_target, SIZE_16, 1, file);
-					fwrite(&actptr->atkYaw, SIZE_32, 1, file);
-					fwrite(&actptr->staticPropertiesBV, SIZE_8, 1, file);
+					fwrite(&temp, SIZE_8, 1, file);
 					fwrite(&actptr->foot_state, SIZE_8, 1, file);
 					fwrite(&actptr->jump_state, SIZE_8, 1, file);
 					fwrite(&actptr->animationBV, SIZE_8, 1, file);
@@ -161,13 +166,10 @@ void SaveState()
 					fwrite(&actptr->t_head, sizeof(Transform3D), 1, file);
 					fwrite(&actptr->fpCurrentL, sizeof(m::Vector3), 1, file);
 					fwrite(&actptr->fpCurrentR, sizeof(m::Vector3), 1, file);
-					fwrite(&actptr->ani_body_lean, sizeof(m::Vector2), 1, file);
 					fwrite(&actptr->aniStandHeight, SIZE_32, 1, file);
 					fwrite(&actptr->aniCrouch, SIZE_8, 1, file);
 					fwrite(&actptr->aniSlideResponse, SIZE_32, 1, file);
 					fwrite(&actptr->aniRun, SIZE_8, 1, file);
-					fwrite(&actptr->aniTimer, SIZE_32, 1, file);
-					fwrite(&actptr->lastGroundFootPos, sizeof(m::Vector3), 1, file);
 					fwrite(&actptr->aniHandHoldTarget, SIZE_16, 1, file);
 					fwrite(&actptr->ai_target_ent, SIZE_16, 1, file);
 					fwrite(&actptr->ai_ally_ent, SIZE_16, 1, file);
@@ -246,14 +248,17 @@ void SaveState()
 }
 void LoadStateFileV001()
 {
-	btui32 FILE_VER = 0b11111111111111111111111111111111;
+	btui32 empty = 0u;
 
 	FILE* file = fopen("save/save.bin", "rb"); // Open file
 	if (file != NULL)
 	{
 		fseek(file, 0, SEEK_SET); // Seek file beginning
 
-		fread(&FILE_VER, SIZE_32, 1, file);
+		fread(&empty, SIZE_32, 1, file);
+		fread(&empty, SIZE_32, 1, file);
+		fread(&empty, SIZE_32, 1, file);
+		fread(&empty, SIZE_32, 1, file);
 
 		// Actual game state
 		fread(&tickCount, SIZE_64, 1, file);
@@ -283,11 +288,11 @@ void LoadStateFileV001()
 			{
 				ECCommon* entptr = ENTITY(i);
 				fread(&entptr->name, 32, 1, file);
-				fread(&entptr->properties, SIZE_8, 1, file);
+				fread(&entptr->physicsFlags, SIZE_8, 1, file);
 				fread(&entptr->faction, SIZE_8, 1, file);
-				fread(&entptr->state.damagestate, SIZE_16, 1, file);
-				fread(&entptr->state.stateFlags, SIZE_64, 1, file);
-				fread(&entptr->state.effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
+				fread(&entptr->damagestate, SIZE_16, 1, file);
+				fread(&entptr->activeFlags, SIZE_64, 1, file);
+				fread(&entptr->effects, sizeof(mem::Buffer32<StatusEffect>), 1, file);
 				fread(&entptr->radius, SIZE_32, 1, file);
 				fread(&entptr->height, SIZE_32, 1, file);
 				fread(&entptr->t.position.x, SIZE_32, 1, file);
@@ -300,7 +305,7 @@ void LoadStateFileV001()
 				fread(&entptr->t.csi, sizeof(CellSpace), 1, file);
 				fread(&entptr->slideVelocity.x, SIZE_32, 1, file);
 				fread(&entptr->slideVelocity.y, SIZE_32, 1, file);
-				fread(&entptr->grounded, SIZE_8, 1, file);
+				fread(&temp, SIZE_8, 1, file);
 
 				switch (GetEntityType(i))
 				{
@@ -312,9 +317,9 @@ void LoadStateFileV001()
 				case ENTITY_TYPE_ACTOR:
 				{
 					ECActor* actptr = ACTOR(i);
-					fread(&actptr->inputBV, SIZE_16, 1, file);
-					fread(&actptr->input.x, SIZE_32, 1, file);
-					fread(&actptr->input.y, SIZE_32, 1, file);
+					fread(&actptr->input.bits, SIZE_16, 1, file);
+					fread(&actptr->input.move.x, SIZE_32, 1, file);
+					fread(&actptr->input.move.y, SIZE_32, 1, file);
 					fread(&actptr->viewYaw, SIZE_32, 1, file);
 					fread(&actptr->viewPitch, SIZE_32, 1, file);
 					fread(&actptr->actorBase, SIZE_8, 1, file);
@@ -327,8 +332,7 @@ void LoadStateFileV001()
 					fread(&actptr->inventory, sizeof(Inventory), 1, file);
 					fread(&actptr->inv_active_slot, SIZE_32, 1, file);
 					fread(&actptr->atk_target, SIZE_16, 1, file);
-					fread(&actptr->atkYaw, SIZE_32, 1, file);
-					fread(&actptr->staticPropertiesBV, SIZE_8, 1, file);
+					fread(&temp, SIZE_8, 1, file);
 					fread(&actptr->foot_state, SIZE_8, 1, file);
 					fread(&actptr->jump_state, SIZE_8, 1, file);
 					fread(&actptr->animationBV, SIZE_8, 1, file);
@@ -336,13 +340,10 @@ void LoadStateFileV001()
 					fread(&actptr->t_head, sizeof(Transform3D), 1, file);
 					fread(&actptr->fpCurrentL, sizeof(m::Vector3), 1, file);
 					fread(&actptr->fpCurrentR, sizeof(m::Vector3), 1, file);
-					fread(&actptr->ani_body_lean, sizeof(m::Vector2), 1, file);
 					fread(&actptr->aniStandHeight, SIZE_32, 1, file);
 					fread(&actptr->aniCrouch, SIZE_8, 1, file);
 					fread(&actptr->aniSlideResponse, SIZE_32, 1, file);
 					fread(&actptr->aniRun, SIZE_8, 1, file);
-					fread(&actptr->aniTimer, SIZE_32, 1, file);
-					fread(&actptr->lastGroundFootPos, sizeof(m::Vector3), 1, file);
 					fread(&actptr->aniHandHoldTarget, SIZE_16, 1, file);
 					fread(&actptr->ai_target_ent, SIZE_16, 1, file);
 					fread(&actptr->ai_ally_ent, SIZE_16, 1, file);
@@ -350,6 +351,7 @@ void LoadStateFileV001()
 					fread(&actptr->ai_path, sizeof(path::Path), 1, file);
 					fread(&actptr->ai_path_current_index, SIZE_8, 1, file);
 					fread(&actptr->ai_pathing, SIZE_8, 1, file);
+					actptr->ai_timer = 0u;
 				}
 				break;
 				}
@@ -416,30 +418,48 @@ void LoadStateFileV001()
 		fclose(file); // Close file
 	}
 }
-void LoadState()
+bool LoadState()
 {
 	btui32 FILE_VER = 0b11111111111111111111111111111111;
+	btui32 GAME_VER = 0b11111111111111111111111111111111;
+	btui32 PROJ_VER = 0b11111111111111111111111111111111;
+	btui32 TEMP_VER = 0b11111111111111111111111111111111;
 
 	FILE* file = fopen("save/save.bin", "rb"); // Open file
-	if (file != NULL)
-	{
-		core::ClearBuffers();
+	if (file == NULL) goto loadfailed_nofile;
 
-		fseek(file, 0, SEEK_SET); // Seek file beginning
-		fread(&FILE_VER, SIZE_32, 1, file); // Load file version
-		fclose(file); // Close file
+	// Load file versions
+	fseek(file, 0, SEEK_SET); // Seek file beginning
+	fread(&FILE_VER, SIZE_32, 1, file); // Load file versions
+	fread(&GAME_VER, SIZE_32, 1, file);
+	fread(&PROJ_VER, SIZE_32, 1, file);
+	fread(&TEMP_VER, SIZE_32, 1, file);
+	fclose(file); // Close file
 
-		switch (FILE_VER) {
-		case 001u:
-			LoadStateFileV001();
-			break;
-		}
+	// If the save game was created by an older, incompatible major version
+	if (GAME_VER != VERSION_MAJOR) goto loadfailed;
+	if (PROJ_VER != VERSION_PROJECT) goto loadfailed;
 
-		core::RegenCellRefs();
-		core::CheckPlayerAI();
+	core::ClearBuffers();
+
+	switch (FILE_VER) {
+	case 001u:
+		LoadStateFileV001();
+		goto loadsucceeded;
+	default:
+		goto loadfailed;
 	}
 
+loadsucceeded:
+	core::RegenCellRefs();
+	core::CheckPlayerAI();
 	core::GUISetMessag(0, "Game loaded!");
+	return true;
+loadfailed:
+	core::GUISetMessag(0, "The game has been modified since the last save and so your progress must be reset, sorry!");
+	return false;
+loadfailed_nofile:
+	return false;
 }
 
 #undef SIZE_8

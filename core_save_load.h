@@ -3,6 +3,6 @@
 
 bool SaveExists();
 void SaveState();
-void LoadState();
+bool LoadState();
 
 #endif

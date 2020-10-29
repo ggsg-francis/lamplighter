@@ -50,19 +50,8 @@ void* GetItemInstance(btID ID);
 ItemType GetItemInstanceType(btID ID);
 //
 void FreeItemInstance(btID ID);
-
-//-------------------------------- ACTIVATORS
-
-// Make an item, return ID
-btID InitActivator(ActivatorType type);
-// Get whether an item with this ID exists
-bool GetActivatorExists(btID id);
-// Get the pointer address of the item at ID
-void* GetActivatorPtr(btID id);
-// Get the type of the item at ID
-ActivatorType GetActivatorType(btID id);
 //
-void FreeActivator(btID ID);
+void IndexClearItemInstances();
 
 //-------------------------------- OTHER STUFF
 

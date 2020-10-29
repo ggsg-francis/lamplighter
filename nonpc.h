@@ -5,13 +5,19 @@
 #include "index.h"
 #include "entity.h"
 
+btf32 ai_vy_target = 0.f;
+btf32 ai_vp_target = 0.f;
+
 void NPCFocusEnemy(ECActor* actor)
 {
 	m::Vector2 TargetVector = ENTITY(actor->ai_target_ent)->t.position - actor->t.position;
 	m::Vector2 TargetVectorVertical = m::Vector2(m::Length(TargetVector), ENTITY(actor->ai_target_ent)->t.altitude - actor->t.altitude);
 	float distance_to_target = m::Length(TargetVector);
 
-	actor->inputBV.unset(ECActor::IN_USE);
+	actor->input.bits.unset(IN_USE);
+
+	actor->input.bits.set(IN_RUN);
+
 
 	btf32 attack_dist = 1.5f;
 	// if its a ranged weapon, set the attack range higher
@@ -19,12 +25,12 @@ void NPCFocusEnemy(ECActor* actor)
 		attack_dist = 30.f;
 	}
 
-	actor->input = m::Normalize(ENTITY(actor->ai_target_ent)->t.position - actor->t.position);
+	actor->input.move = m::Normalize(ENTITY(actor->ai_target_ent)->t.position - actor->t.position);
 
 	if (distance_to_target < attack_dist) // if enemy is close enough to swing at
 	{
-		actor->input.x = 0.f;
-		actor->input.y = 0.f;
+		actor->input.move.x = 0.f;
+		actor->input.move.y = 0.f;
 
 		btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 		btf32 angle22 = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(TargetVectorVertical)));
@@ -35,17 +41,17 @@ void NPCFocusEnemy(ECActor* actor)
 		//actor->viewPitch.Set(angle22);
 		//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
 		//actor->viewPitch.RotateTowards(angle22, HEAD_TURN_SPEED);
-		actor->ai_vy_target = angle2;
+		ai_vy_target = angle2;
 		if (angle22 < -80.f) angle22 = -80.f;
 		if (angle22 > 70.f) angle22 = 70.f;
-		actor->ai_vp_target = angle22;
+		ai_vp_target = angle22;
 
 		// this method staggers their shooting
 		btf32 rand = m::Random(0.f, 100.f);
 		// spam single shot guns
-		actor->inputBV.setto(ECActor::IN_USE_HIT, rand < 7.f);
+		actor->input.bits.setto(IN_USE_HIT, rand < 7.f);
 		// automatic guns
-		actor->inputBV.set(ECActor::IN_USE);
+		actor->input.bits.set(IN_USE);
 	}
 	else
 	{
@@ -67,7 +73,7 @@ void NPCFocusEnemy(ECActor* actor)
 				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 				//actor->viewYaw.Set(angle2);
 				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-				actor->ai_vy_target = angle2;
+				ai_vy_target = angle2;
 			}
 			else
 			{
@@ -75,7 +81,7 @@ void NPCFocusEnemy(ECActor* actor)
 
 				//actor->viewYaw.Set(angle2);
 				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-				actor->ai_vy_target = angle2;
+				ai_vy_target = angle2;
 
 			}
 		}
@@ -86,7 +92,7 @@ void NPCFocusEnemy(ECActor* actor)
 
 			//actor->viewYaw.Set(angle2);
 			//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
-			actor->ai_vy_target = angle2;
+			ai_vy_target = angle2;
 		}
 	}
 }
@@ -102,8 +108,8 @@ void NPCFollowAlly(ECActor* actor)
 	actor->aniCrouch = ACTOR(actor->ai_ally_ent)->aniCrouch;
 
 	if (!actor->ai_pathing) { // if not pathing, see if we need to path
-		actor->input.x = 0.f;
-		actor->input.y = 0.f;
+		actor->input.move.x = 0.f;
+		actor->input.move.y = 0.f;
 		if (distance_to_target > 2.f) { // if far enough away from the target, make a path
 			if (path::PathFind(&actor->ai_path,
 				actor->t.position.x, actor->t.position.y,
@@ -153,60 +159,82 @@ void NPCFollowAlly(ECActor* actor)
 		}
 		printf("Pathing, index: %i\n", actor->ai_path_current_index);
 		#endif
-		actor->input = TargetVector; // go to target, whatever it is
+		actor->input.move = TargetVector; // go to target, whatever it is
 	}
-	actor->ai_vy_target = angle2; // look at thing
+	ai_vy_target = angle2; // look at thing
 
-	actor->inputBV.unset(ECActor::IN_USE);
-	actor->inputBV.unset(ECActor::IN_USE_HIT);
+	actor->input.bits.unset(IN_USE);
+	actor->input.bits.unset(IN_USE_HIT);
 }
 
 void NPCIdle(ECActor* actor)
 {
-	actor->input.y = 0.f;
-	actor->input.x = 0.f;
-	actor->inputBV.unset(ECActor::IN_USE);
+	actor->input.move.y = 0.f;
+	actor->input.move.x = 0.f;
+	actor->input.bits.unset(IN_USE);
 }
 
 void NPCTick(btID id)
 {
+	ai_vp_target = 0.f;
+	ai_vy_target = 0.f;
+	
 	ECActor* actor = ACTOR(id);
 
-	actor->input.y = 0.f;
-	actor->input.x = 0.f;
+	actor->input.move.y = 0.f;
+	actor->input.move.x = 0.f;
+
+	actor->input.bits.unset(IN_RUN);
 
 	// update targ:
 	// If is null OR deleted OR dead OR no LOS
-	if (actor->ai_target_ent == BUF_NULL
-		|| !GetEntityExists(actor->ai_target_ent)
-		|| !ENTITY(actor->ai_target_ent)->state.stateFlags.get(ActiveState::eALIVE)
-		|| !core::LOSCheck(id, actor->ai_target_ent))
-	{
-		actor->ai_target_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
-		actor->atk_target = actor->ai_target_ent;
-		
-		if (actor->ai_target_ent != BUF_NULL) // if we do find an enemy
-			aud::PlaySnd3D(aud::FILE_TAUNT, m::Vector3(actor->t_head.GetPosition()));
+	if (actor->ai_target_ent != BUF_NULL &&
+		(!GetEntityExists(actor->ai_target_ent) || // gone
+		!ENTITY(actor->ai_target_ent)->activeFlags.get(ECCommon::eALIVE) || // dead
+		!core::LOSCheck(id, actor->ai_target_ent))) { // cant see
+		actor->ai_target_ent = BUF_NULL;
+	}
+
+	if (actor->ai_target_ent == BUF_NULL) {
+		// Check if it's time to try and find a new enemy
+		if (actor->ai_timer <= tickCount) {
+			actor->ai_target_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
+			actor->atk_target = actor->ai_target_ent;
+			if (actor->ai_target_ent != BUF_NULL) // if we do find an enemy
+				aud::PlaySnd3D(aud::FILE_TAUNT, m::Vector3(actor->t_head.GetPosition()));
+			actor->ai_timer = tickCount + (btui64)m::Random(50, 250);
+		}
+		// Otherwise just set as null and we can retry later
+		else {
+			actor->ai_target_ent = BUF_NULL;
+			actor->atk_target = actor->ai_target_ent;
+		}
 	}
 	// update ally:
 	// If is null OR deleted OR dead
 	// dont forget about ally when they go out of sightline
 	if (actor->ai_ally_ent == BUF_NULL
 		|| !GetEntityExists(actor->ai_ally_ent)
-		|| !ENTITY(actor->ai_ally_ent)->state.stateFlags.get(ActiveState::eALIVE))
-		actor->ai_ally_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
+		|| !ENTITY(actor->ai_ally_ent)->activeFlags.get(ECCommon::eALIVE)) {
+		if (actor->ai_timer <= tickCount) {
+			actor->ai_ally_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
+			actor->ai_timer = tickCount + (btui64)m::Random(100, 500);
+		}
+		else {
+			actor->ai_ally_ent = BUF_NULL;
+		}
+	}
 
 	// bad and temporary :P
 	// makes npc only point its gun if its looking at an enemy
-	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN)
-	{
-		actor->inputBV.setto(ECActor::ActorInput::IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
-		actor->inputBV.setto(ECActor::ActorInput::IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
+	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN) {
+		actor->input.bits.setto(IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
+		actor->input.bits.setto(IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
 	}
 
-	if (actor->ai_target_ent == BUF_NULL)
-	{
-		if (actor->ai_ally_ent == BUF_NULL)
+	if (actor->ai_target_ent == BUF_NULL) {
+		if (actor->ai_ally_ent == BUF_NULL
+			|| actor->faction != fac::player) // temp: just dont follow each other if we're not on the player side
 			NPCIdle(actor);
 		else // if we have an ally, follow it
 			NPCFollowAlly(actor);
@@ -214,8 +242,8 @@ void NPCTick(btID id)
 	else // if we have a target
 		NPCFocusEnemy(actor);
 
-	actor->viewYaw.RotateTowards(actor->ai_vy_target, HEAD_TURN_SPEED);
-	actor->viewPitch.RotateTowards(actor->ai_vp_target, HEAD_TURN_SPEED);
+	actor->viewYaw.RotateTowards(ai_vy_target, HEAD_TURN_SPEED);
+	actor->viewPitch.RotateTowards(ai_vp_target, HEAD_TURN_SPEED);
 }
 
 #endif

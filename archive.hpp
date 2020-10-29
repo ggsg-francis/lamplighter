@@ -95,7 +95,7 @@ namespace acv
 		AssetType type = ASSET_NONE;
 		bool loaded = false;
 		btui64 tickLastAccessed = 0u;
-		void* asset = nullptr;
+		btui32 asset = ID_NULL;
 	};
 
 	graphics::Texture& GetT(btui32 index);

@@ -29,16 +29,22 @@ namespace network
 	// Network ID
 	extern btui8 nid;
 
-	// Receive and handle any available packets
-	void RecvTCP();
-	//
-	bool SendInputBuffer();
-	// Send a reliable message across the network
-	bool SendTCP(btPacket* PACKET);
+	// Receive and handle any available packets as the client
+	void RecvTCPClient();
+	// Receive and handle any available packets as the host
+	void RecvTCPHost();
+	// Send a reliable message across the network as the client
+	bool SendTCPClient(btPacket* packet);
+	// Send a reliable message across the network as the host
+	bool SendTCPHost(btPacket* packet);
 	// Initialize and connect. Returns true if succeeded
 	bool Init();
-	//
+	// Free the network
 	void End();
+	// Send input bits via TCP
+	bool SendInputClient();
+	// Send input bits via TCP
+	bool SendInputHost();
 }
 #endif // DEF_NMP
 

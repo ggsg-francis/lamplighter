@@ -159,6 +159,7 @@ namespace graphics
 	m::Vector3 MatrixGetForward(Matrix4x4& SRC_MATRIX);
 	m::Vector3 MatrixGetRight(Matrix4x4& SRC_MATRIX);
 	m::Vector3 MatrixGetUp(Matrix4x4& SRC_MATRIX);
+	m::Vector3 MatrixOrientVector(Matrix4x4& SRC_MATRIX, m::Vector3 vector);
 
 	struct colour
 	{
@@ -518,8 +519,8 @@ namespace graphics
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
-		Vertex* vces; // Vertices
-		btui32* ices; // Indices
+		Vertex* vces = nullptr; // Vertices
+		btui32* ices = nullptr; // Indices
 		size_t vces_size;
 		size_t ices_size;
 	};

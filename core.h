@@ -29,6 +29,7 @@ extern btui64 tickCount;
 namespace core
 {
 	void Init();
+	void InitEditMode();
 	void End();
 
 	// Clear all entities from memory
@@ -37,6 +38,7 @@ namespace core
 	void RegenCellRefs();
 
 	bool Tick(btf32 delta);
+	bool TickEditor(btf32 delta);
 	void TickGUI();
 
 	void GUISetMessag(int player, char* string);
@@ -63,11 +65,6 @@ namespace core
 	// Destroy the item at ID
 	void DestroyItem(btID id);
 
-	// Create a new activator
-	btID SpawnActivator(btui32 x, btui32 y);
-	// Destroy an activator
-	void DestroyActivator(btID id);
-
 	// Creates a projectile instance, allocates an ID
 	void SpawnProjectile(fac::faction faction, btID template_type, m::Vector2 position, btf32 height,
 		float yaw, float pitch);
@@ -82,14 +79,11 @@ namespace core
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg);
 	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& csi);
 
-	// Get HP (Health Points) of entity at X ID
-	btui16 GetHP(btID id);
-
 	// Set shadow texture ID (TODO: hacky, get rid of this)
 	void SetShadowTexture(btui32 id);
 
 	extern unsigned int activePlayer;
-	extern btID players[2];
+	extern btID players[NUM_PLAYERS];
 
 	int CellEntityCount(int x, int y);
 	btID CellEntity(int x, int y, int e);

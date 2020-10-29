@@ -14,44 +14,57 @@ namespace core
 {
 	//--------------------------- GLOBAL VARIABLES
 
-	btf64 networkTimerTemp;
+	btui32 activePlayer = 0u;
+	btID players[NUM_PLAYERS];
+	m::Vector3 camViewTarget[NUM_PLAYERS];
+	m::Vector3 camViewPosition[NUM_PLAYERS];
 
-	unsigned int activePlayer = 0u;
-	btID players[2];
-	m::Vector3 viewTarget[2];
-	m::Vector3 viewPosition[2];
-	// todo: wrap all of the gui globals into a structure
-	// for measuring HP changes for gui display
-	btui16 guiPlayerHP[2]{ 1000u, 1000u };
-	btf32 guiInvTimer[2]{ 0.f, 0.f };
-
-	//env::EnvNode editor_node_copy;
-	btui32 editor_flags_copy;
-	btID editor_prop_copy;
-	env::NodePropDirection editor_prop_dir_copy;
-	btui8 editor_height_copy_ne;
-	btui8 editor_height_copy_nw;
-	btui8 editor_height_copy_se;
-	btui8 editor_height_copy_sw;
-	btui8 editor_material_copy;
-
-	m::Vector2 editor_cursor = m::Vector2(1024.f, 1024.f);
-	CellSpace editor_cursorCS;
-	btf32 editor_cursor_height = 0.f;
-	btui32 editor_zoom = 5u;
-	m::Angle editor_cam_pitch = m::Angle(60.f);
-	m::Angle editor_cam_yaw = m::Angle(0.f);
+	struct EditorStuff {
+		// general editor properties
+		m::Vector2 cursor = m::Vector2(1024.f, 1024.f);
+		CellSpace cursorCS;
+		btf32 cursor_height = 0.f;
+		btui32 zoom = 5u;
+		m::Angle cam_pitch = m::Angle(60.f);
+		m::Angle cam_yaw = m::Angle(0.f);
+		// Environment edit properties
+		btui32 flags_copy;
+		btID prop_copy;
+		env::NodePropDirection prop_dir_copy;
+		btui8 height_copy_ne;
+		btui8 height_copy_nw;
+		btui8 height_copy_se;
+		btui8 height_copy_sw;
+		btui8 material_copy;
+	};
+	EditorStuff editor;
 	
-	#if DEF_PROJECT == PROJECT_BC
-	bool bShowGuide = false;
-	bti32 guideW = 0;
-	graphics::GUIText text_guidehelp;
-	#endif
+	struct CoreGUI {
+		// TODO: shalt optimize later, we dont need all these duplicates
+		// Screen message
+		graphics::GUIText text_message[NUM_PLAYERS];
+		btui64 message_time[NUM_PLAYERS];
+		// for measuring HP changes for gui display
+		btui16 guiPlayerHP[NUM_PLAYERS];
+		btf32 guiInvTimer[NUM_PLAYERS];
+		// inventory stuff
+		graphics::GUIBox guibox;
+		graphics::GUIText text_temp;
+		graphics::GUIText text_hp;
+		graphics::GUIText text_version;
+		graphics::GUIText text_fps;
+		// BC stuff
+		#if DEF_PROJECT == PROJECT_BC
+		bool bShowGuide = false;
+		bti32 guideW = 0;
+		graphics::GUIText text_guidehelp;
+		#endif
+	};
+	CoreGUI gui;
 
 	struct ReferenceCell
 	{
 		mem::idbuf ref_ents; // Entity references
-		btID ref_activator = ID_NULL;
 	};
 	ReferenceCell refCells[WORLD_SIZE][WORLD_SIZE];
 
@@ -63,19 +76,6 @@ namespace core
 	{
 		return core::refCells[x][y].ref_ents[e];
 	}
-
-	// inventory stuff
-	graphics::GUIBox guibox;
-	graphics::GUIText text_temp;
-	graphics::GUIText text_hp;
-	graphics::GUIText text_version;
-	graphics::GUIText text_fps;
-
-	graphics::GUIText text_message[2];
-	btui64 message_time[2];
-
-	bti32 cursor_x = 0u;
-	bti32 cursor_y = 0u;
 
 	//--------------------------- FUNCTION DECLARATIONS
 
@@ -259,6 +259,7 @@ char* TemplatePrefixes[] { // start at line 250
 	"Kill Lord",
 	"Huge Thrombo",
 	"Llame",
+	"Horny",
 	"Treasured",
 	"Speedy",
 	"Slow",
@@ -267,18 +268,17 @@ char* TemplatePrefixes[] { // start at line 250
 	"Tarnished",
 	"Debased",
 	"Crazy",
-	/*"Obeskure", // DC First names
-	"Brie",
-	"Strawberry",
-	"Gibby",
-	"Tebby",
-	"Moon",
-	"Eremine",
-	"Saramy",
-	"Rewit",*/
+	"Squirrel Bladder",
+	"Juvenile",
+	"Drooling",
+	"Cute",
 };
 // count the above
 #define TEMP_NAME_PREFIX_COUNT (269u - 250u)
+
+
+
+
 
 
 
@@ -303,20 +303,20 @@ char* TemplateFamilyNames[]{ // start at line 300
 	"Creedmoor",
 	"Bloodfire",
 	"Brightfury",
+	"Broadraven",
+	"Snowskin",
+	"Loomin",
+	"Lenore",
+	"Jouby",
+	"Radang",
+	"Bole",
+	"Bremar",
+	"Ashcoarm",
+	"Two-Eyes",
+	"Scumbottom",
 };
 // count the above
-#define TEMP_NAME_FAMILY_COUNT (305u - 300u)
-
-
-
-
-
-
-
-
-
-
-
+#define TEMP_NAME_FAMILY_COUNT (316u - 300u)
 
 
 
@@ -347,9 +347,7 @@ char* TemplateFamilyNames[]{ // start at line 300
 
 
 char* TemplateNames[] { // start at line 350
-	"Loomin", // DC Last names
 	"Tammy",
-	"Squirrel Bladder",
 	"Jojes",
 	"Nutmeg",
 	"Beeawoo",
@@ -365,11 +363,13 @@ char* TemplateNames[] { // start at line 350
 	"Thromb",
 	"Throbbo",
 	"Thrungus",
+	"Giga",
 	"Ozoh",
 	"Excity",
 	"Jpeg",
 	"Smutt",
 	"Clover",
+	"Rumble",
 	"Eldred",
 	"Floog",
 	"Isvos",
@@ -380,7 +380,6 @@ char* TemplateNames[] { // start at line 350
 	"Hix",
 	"Sephus",
 	"Obat",
-	"Radang",
 	"Usus",
 	"Diobola",
 	"Tojybowy",
@@ -415,7 +414,7 @@ char* TemplateNames[] { // start at line 350
 	"Masterhacker",
 	"Toxoplasma",
 	"Geldanlage",
-	"OnlinepTup",
+	"Onlineptup",
 	"ViahsTup",
 	"Apumat",
 	"Ijexe",
@@ -449,7 +448,6 @@ char* TemplateNames[] { // start at line 350
 	"Mitryukha",
 	"Lavren",
 	"Annus",
-	"Broadraven",
 	"Minyash",
 	"Anatolka",
 	"Kezanok",
@@ -459,7 +457,6 @@ char* TemplateNames[] { // start at line 350
 	"Yuka",
 	"Alekseich",
 	"Luizka",
-	"Bole",
 	"Milan",
 	"Ltyecz",
 	"Elinore",
@@ -619,7 +616,6 @@ char* TemplateNames[] { // start at line 350
 	"Soar",
 	"Zainn",
 	"Kyarald",
-	"Maximus",
 	"Bark",
 	"Bureaus",
 	"Anayajurus",
@@ -662,7 +658,6 @@ char* TemplateNames[] { // start at line 350
 	"Union",
 	"Ujieyez",
 	"Vasa",
-	"Bremar",
 	"Anayalore",
 	"Arcia",
 	"Igula",
@@ -707,7 +702,6 @@ char* TemplateNames[] { // start at line 350
 	"Lyndaik",
 	"Or",
 	"Muns",
-	"Lenore",
 	"Dino",
 	"Louelle",
 	"Misty",
@@ -734,7 +728,6 @@ char* TemplateNames[] { // start at line 350
 	"Avaraseyexuzu",
 	"Hydra",
 	"Duell",
-	"Jewelson",
 	"Lester",
 	"Norvezhskiy",
 	"Learl",
@@ -803,7 +796,6 @@ char* TemplateNames[] { // start at line 350
 	"Miroha",
 	"Andya",
 	"Hritsya",
-	"Snowskin",
 	"Ufkif",
 	"Adrielar",
 	"Jieylau",
@@ -815,7 +807,6 @@ char* TemplateNames[] { // start at line 350
 	"Mariasha",
 	"Karina",
 	"Tygot",
-	"Juvenile",
 	"Fief",
 	"Jellies",
 	"Eudush",
@@ -824,7 +815,6 @@ char* TemplateNames[] { // start at line 350
 	"Valera",
 	"Kandis",
 	"Lavrunya",
-	"Ashcoarm",
 	"Mironka",
 	"Odorert",
 	"Ulyan",
@@ -867,7 +857,6 @@ char* TemplateNames[] { // start at line 350
 	"Artemy",
 	"Gogh",
 	"Lucasus",
-	"DarrenJouby",
 	"Lyubasha",
 	"Molosola",
 	"Brenas",
@@ -909,236 +898,18 @@ char* TemplateNames[] { // start at line 350
 	"Faville",
 	"Lina",
 	"Genus",
-	"Renate"
+	"Vladislavpah",
+	"Renate",
 };
 // count the above
-#define TEMP_NAME_COUNT (912u - 350u)
+#define TEMP_NAME_COUNT (902u - 350u)
 
-// just names
-/*
-"Vladislavpah",
-"Alexandrina",
-"Antoniokes",
-"Janniest",
-"Louisa",
-"Rydersil",
-"Trudymcc",
-"Esmeraldajw16",
-"Winstontheli",
-"Amara carr",
-"Robinsonblankatmhacker",
-"Robinson hacker",
-"Henry",
-"Vanessa williams",
-"Mr mark",
-"Elizabeth",
-"Elizabethcole232",
-"Annie",
-"Rich cruz",
-"Paul",
-"Anniemellor233",
-"Patricia clifford",
-"Allison babara",
-"Mabel",
-"Morris mabel",
-"Donald jude",
-"Richard",
-"Mr ken",
-"James lawrence",
-"Cedric davis",
-"Jane",
-"John brown",
-"Kenny allen",
-"Mr kenny",
-"Brenna helen",
-"Amanda hugo",
-"Mrs sandra",
-"Robert alexander",
-"Robert alex",
-"Ryan",
-"Thomas colson",
-"Bruno luis",
-"Tara kline",
-"Dr smith",
-"Nicky derek",
-"T.williams",
-"Sandra pethtel",
-"Kate johnson",
-"Smith seth",
-"Amara carr",
-"David",
-"Aster nelson",
-"Abigail winfrey",
-"Anita",
-"Cindy",
-"Paul",
-"Joannehn16",
-"Adolf preston",
-"Elizabeth lizzy",
-"Edward bee",
-"Ryan",
-"Mellisa brandon",
-"Kate johnson",
-"Anthony",
-"Lucy camile",
-"Harrison bouchard",
-"Lily walker",
-"Lucy camile",
-"Fred",
-"Mariam joneas",
-"Jose mario",
-"Georg bednorz",
-"Morris ferdinad",
-"Thomas",
-"Rossey",
-"Tricia",
-"Benjamin collie",
-"Harrison",
-"Simon",
-"Grace",
-"Micheal",
-"Connel",
-"Williams",
-"Richardpenny",
-"Mark",
-"Leonard",
-"Mariam joneas",
-"Smith",
-"Steve ashley",
-"Ryan gregory",
-"Teresa moore",
-"David wirth",
-"Kenny allen",
-"Mr roland martin",
-"Simon philip",
-"Rebecca morrison",
-"Stewartgab",
-"Roberto",
-"Mr simon",
-"Brett wood",
-"Gennady fedya",
-"Sonia buker",
-"Christ ben",
-"Jasonmoito",
-"Natalie",
-"Cari sue harris",
-"Levi",
-"Sarah",
-"Winston",
-"Wilson",
-"Scott",
-"Steve",
-"Orlando",
-"Kenneth",
-"Aaron",
-"Harrison",
-"Bouchard",
-"Tracy",
-"Giuseppe",
-"Zanotti",
-"Percy",
-"Claudette",
-"Joseph",
-"Jeffrey",
-"David",
-"Natasha",
-"Helen",
-"Alphonso",
-"Tyler",
-"Jason",
-"George",
-"Kayleigh",
-"Dennis",
-"Daniel",
-"Melvin",
-"Clark",
-"Stephen",
-"Marty",
-"Blake",
-"Sabrina",
-"Wilford",
-"Erica",
-"Michael",
-"Sharon",
-"Robert",
-"Ronald",
-"Theresa",
-"Lucinda",
-"Rickie",
-"Ashely",
-"Shirley",
-"Carlos",
-"James",
-"Raymond",
-"Billie",
-"Antonio",
-"Marissa",
-"Alexander",
-"Brenda",
-"Julianne",
-"Adriana",
-"Cynthia",
-"Paula",
-"Cathy",
-"Willis",
-"Philip",
-"Connor",
-"Eliza",
-"Richard",
-"Matt",
-"Elizabeth",
-"Thomas",
-"Howard",
-"Susan",
-"Anthony",
-"Stacy",
-"Charles",
-"Jennifer",
-"Selena",
-"Brad",
-"Harry",
-"Darrell",
-"Marcus",
-"Glenn",
-"Clinton",
-"Amy",
-"Martin",
-"Herbert",
-"Kenhix",
-"Brucep,
-"Betty",
-"Leonard",
-"Calvin",
-"Adam",
-"Kevin",
-"Gabriel",
-"Fred",
-"Arthur",
-"Anton",
-"Patrick",
-"Johnnie",
-"Allen",
-"Corey",
-"Gilbert",
-"William",
-"Ralph",
-"Matthew",
-"Melissa",
-"Donald",
-"Johnny",
-"Joan",
-"Frank",
-"Shane",
-"Alice",
-"Henry",
-"Regina",
-"Albert",
-"Bertie",
-"Trenton",
-"Mary",
-"Nick",
-"Freddie",
-"Ron",
-"Cedric",
-"Laurence",
-*/
+/*"Obeskure", // DC First names
+"Brie",
+"Strawberry",
+"Gibby",
+"Tebby",
+"Moon",
+"Eremine",
+"Saramy",
+"Rewit",*/

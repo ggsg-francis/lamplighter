@@ -1,5 +1,6 @@
 #include "audio.hpp"
 
+#include "cfg.h"
 #include "maths.hpp"
 // for transform2d only
 // TODO: put transform in its own file
@@ -28,17 +29,19 @@ namespace aud
 
 	char* fileNames[FILE_COUNT]
 	{
-		"snd/fire_smg.wav",
-		"snd/swing.wav",
-		"snd/hit.wav",
-		"snd/footstep_01.wav",
-		"snd/footstep_02.wav",
-		"snd/effect.wav",
-		"snd/hey.wav",
-		"snd/hey_spectral.wav",
-		"snd/welcome.wav",
-		"snd/menu_beep.wav",
-		"snd/menu_accept.wav",
+		"snd_wav/fire_smg.wav",
+		"snd_wav/swing.wav",
+		"snd_wav/hit.wav",
+		"snd_wav/footstep_01.wav",
+		"snd_wav/footstep_02.wav",
+		"snd_wav/effect.wav",
+		"snd_wav/hey.wav",
+		"snd_wav/hey_spectral.wav",
+		"snd_wav/welcome.wav",
+		"snd_wav/menu_beep.wav",
+		"snd_wav/menu_accept.wav",
+		"snd_wav/mus_b2.wav",
+		"snd_wav/mus_fightingroom.wav",
 	};
 
 	cs_context_t* ctx;
@@ -47,11 +50,6 @@ namespace aud
 	cs_playing_sound_t* sound[FILE_COUNT];
 
 	#if DEF_PROJECT == PROJECT_BC
-	cs_loaded_sound_t loaded_music_1;
-	cs_loaded_sound_t loaded_music_2;
-	cs_play_sound_def_t def_music;
-	cs_playing_sound_t* sound_music;
-
 	bool tpptemp = false;
 	#endif
 
@@ -63,6 +61,8 @@ namespace aud
 
 	void Init(void* handle)
 	{
+		mstrVol = config.fVolume;
+
 		ctx = cs_make_context(handle, 44100, 10, 1, 32);
 		if (ctx) {
 			int breakpoint = 1;
@@ -75,20 +75,13 @@ namespace aud
 
 			#if DEF_PROJECT == PROJECT_BC
 			tpptemp = config.b3PP;
-
-			loaded_music_1 = cs_load_wav("snd/mus_morrowind_theme_dj_mix.wav");
-			loaded_music_2 = cs_load_wav("snd/mus_fightingroom.wav");
-			def_music = cs_make_def(&loaded_music_1);
-			sound_music = cs_play_sound(ctx, def_music);
-			if (sound_music) {
-				sound_music->volume0 = 0.3f;
-				sound_music->volume1 = 0.3f;
+			sound[FILE_MUS_01] = cs_play_sound(ctx, def[FILE_MUS_01]);
+			if (sound[FILE_MUS_01]) {
+				sound[FILE_MUS_01]->volume0 = 0.3f;
+				sound[FILE_MUS_01]->volume1 = 0.3f;
+				cs_loop_sound(sound[FILE_MUS_01], 1); // loop that banger!!!
 			}
-			cs_loop_sound(sound_music, 1); // loop that banger!!!
 			#endif
-		}
-		else {
-			int breakpoint = 1;
 		}
 	}
 
@@ -97,17 +90,24 @@ namespace aud
 		#if DEF_PROJECT == PROJECT_BC
 		if (config.b3PP != tpptemp) {
 			tpptemp = config.b3PP;
-			cs_stop_sound(sound_music);
-			if (tpptemp)
-				def_music = cs_make_def(&loaded_music_1);
-			else
-				def_music = cs_make_def(&loaded_music_2);
-			sound_music = cs_play_sound(ctx, def_music);
-			if (sound_music) {
-				sound_music->volume0 = 0.3f;
-				sound_music->volume1 = 0.3f;
+			if (tpptemp) {
+				cs_stop_sound(sound[FILE_MUS_02]);
+				sound[FILE_MUS_01] = cs_play_sound(ctx, def[FILE_MUS_01]);
+				if (sound[FILE_MUS_01]) {
+					sound[FILE_MUS_01]->volume0 = 0.3f;
+					sound[FILE_MUS_01]->volume1 = 0.3f;
+					cs_loop_sound(sound[FILE_MUS_01], 1); // loop that banger!!!
+				}
 			}
-			cs_loop_sound(sound_music, 1); // loop that banger!!!
+			else {
+				cs_stop_sound(sound[FILE_MUS_01]);
+				sound[FILE_MUS_02] = cs_play_sound(ctx, def[FILE_MUS_02]);
+				if (sound[FILE_MUS_02]) {
+					sound[FILE_MUS_02]->volume0 = 0.3f;
+					sound[FILE_MUS_02]->volume1 = 0.3f;
+					cs_loop_sound(sound[FILE_MUS_02], 1); // loop that banger!!!
+				}
+			}
 		}
 		#endif
 
@@ -121,8 +121,8 @@ namespace aud
 		// play the sound		
 		sound[file] = cs_play_sound(ctx, def[file]);
 		if (sound[file]) {
-			sound[file]->volume0 = mstrVol;
-			sound[file]->volume1 = mstrVol;
+			sound[file]->volume0 = volume * mstrVol;
+			sound[file]->volume1 = volume * mstrVol;
 		}
 	}
 
@@ -193,13 +193,15 @@ namespace aud
 	bool sound_playing[FILE_COUNT];
 	btf32 sound_volume[FILE_COUNT];
 
+	btf32 mstrVol = 0.5f;
+
 	//ma_event g_stopEvent; /* <-- Signaled by the audio thread, waited on by the main thread. */
 
 	#define CHANNEL_COUNT 2
 
-	//The way mixing works is that we just read into a temporary buffer, then take the contents of that buffer and mix it with the
-	//contents of the output buffer by simply adding the samples together. You could also clip the samples to -1..+1, but I'm not
-	//doing that in this example.
+	// The way mixing works is that we just read into a temporary buffer, then take the contents of that buffer and mix it with the
+	// contents of the output buffer by simply adding the samples together. You could also clip the samples to -1..+1, but I'm not
+	// doing that in this example.
 	ma_uint32 MixS16(ma_decoder* pDecoder, bti16* pOutputS16, ma_uint32 frameCount, btf32 volume) {
 		bti16 temp[4096];
 		ma_uint32 tempCapInFrames = ma_countof(temp) / CHANNEL_COUNT;
@@ -220,8 +222,8 @@ namespace aud
 			}
 
 			/* Mix the frames together. */
-			for (iSample = 0; iSample < framesReadThisIteration*CHANNEL_COUNT; ++iSample) {
-				bti64 output = pOutputS16[totalFramesRead*CHANNEL_COUNT + iSample] + temp[iSample];
+			for (iSample = 0; iSample < framesReadThisIteration * CHANNEL_COUNT; ++iSample) {
+				bti64 output = pOutputS16[totalFramesRead * CHANNEL_COUNT + iSample] + temp[iSample];
 				// vol test
 				output = (bti64)((btf32)output * volume);
 				// Clamp to 16 bit int range
@@ -229,7 +231,7 @@ namespace aud
 					output = (bti64)((bti16)0b0111111111111111);
 				if (output < (bti64)((bti16)0b1000000000000000))
 					output = (bti64)((bti16)0b1000000000000000);
-				pOutputS16[totalFramesRead*CHANNEL_COUNT + iSample] = (bti16)output;
+				pOutputS16[totalFramesRead * CHANNEL_COUNT + iSample] = (bti16)output;
 			}
 
 			totalFramesRead += framesReadThisIteration;
@@ -260,6 +262,8 @@ namespace aud
 
 	void Init(void* handle)
 	{
+		mstrVol = config.fVolume;
+
 		// Load all of the audio files
 		for (int i = 0; i < FILE_COUNT; ++i) {
 			result = ma_decoder_init_file(fileNames[i], NULL, &decoders[i]);
@@ -323,7 +327,7 @@ namespace aud
 		// reset file to beginning
 		ma_decoder_seek_to_pcm_frame(&decoders[file], 0);
 		sound_playing[file] = true;
-		sound_volume[file] = volume;
+		sound_volume[file] = volume * mstrVol;
 	}
 
 	void PlaySnd3D(AudioFile file, m::Vector3 src)
@@ -353,8 +357,7 @@ namespace aud
 		// play the sound	
 		ma_decoder_seek_to_pcm_frame(&decoders[file], 0);
 		sound_playing[file] = true;
-		sound_volume[file] = vol;
-		// volume = vol * mstrvol;
+		sound_volume[file] = vol * mstrVol;
 	}
 
 	void End()

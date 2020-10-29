@@ -14,24 +14,22 @@ bool saveNextFrame = false;
 
 namespace core
 {
-	btui16 GetHP(btID id)
-	{
-		return ENTITY(id)->state.damagestate;
+	btui16 GetHP(btID id) {
+		return ENTITY(id)->damagestate;
 	}
 
-	void SetViewFocus(btID index)
-	{
+	void SetViewFocus(btID index) {
 		activePlayer = index;
-		ECActor* chara = ACTOR(players[activePlayer]);
-		graphics::SetMatView(&viewTarget[activePlayer], &viewPosition[activePlayer], nullptr);
+		graphics::SetMatView(&camViewTarget[activePlayer], &camViewPosition[activePlayer], nullptr);
 	}
 
-	enum flood_fill_type
-	{
-		r_ambient,
-		g_light,
-		b_unused,
-		a_unused,
+	bool CoreLoad() {
+		bool loaded = LoadState();
+		if (loaded) {
+			gui.guiPlayerHP[0] = 0u;
+			gui.guiPlayerHP[1] = 0u;
+		}
+		return loaded;
 	};
 
 	// still useful to have really
@@ -83,7 +81,7 @@ namespace core
 
 	void DoSpawn()
 	{
-		#ifdef DEF_SPAWN_NPC
+		#if DEF_SPAWN_NPC
 
 		// for every entity
 		/*
@@ -91,8 +89,8 @@ namespace core
 		{
 			if (block_entity.used[e])
 			{
-				if (!ENTITY(e)->state.stateFlags.get(ActiveState::eALIVE)
-					&& !ENTITY(e)->state.stateFlags.get(ActiveState::eDIED_REPORT)
+				if (!ENTITY(e)->stateFlags.get(ECCommon::eALIVE)
+					&& !ENTITY(e)->stateFlags.get(ECCommon::eDIED_REPORT)
 					&& ACTOR(e)->aiControlled)
 				{
 					m::Vector2 pos1 = ENTITY(players[0])->t.position;
@@ -140,35 +138,39 @@ namespace core
 
 		// Generate debug version display
 		char buffinal[32];
-		sprintf(buffinal, "BT3D R%i-%i [%s]", VERSION_MAJOR, VERSION_MINOR, VERSION_COMMENT);
-		text_version.ReGen(buffinal, config.iWinX * -0.5f, config.iWinX * 0.5f, config.iWinY * 0.5f - 12);
+		sprintf(buffinal, "BT3D R%i.%i.%i", VERSION_MAJOR, VERSION_MINOR, VERSION_PROJECT);
+		gui.text_version.ReGen(buffinal, config.iWinX * -0.5f, config.iWinX * 0.5f, config.iWinY * 0.5f - 12);
 
 		#if DEF_PROJECT == PROJECT_BC
-		text_guidehelp.ReGen("Press F1 to read the guidebook!", config.iWinX * -0.5f + 2, config.iWinX * 0.5f, config.iWinY * 0.5f - 4);
+		gui.text_guidehelp.ReGen("Press F1 to read the guidebook!", config.iWinX * -0.5f + 2, config.iWinX * 0.5f, config.iWinY * 0.5f - 4);
 		#endif
 
 		//-------------------------------- Spawnz
 
-		if (!config.bEditMode) {
-			if (SaveExists()) LoadState();
-			else {
-				//SpawnActivator(1024u, 1024u);
+		if (!SaveExists() || !CoreLoad()) {
+			//SpawnActivator(1024u, 1024u);
 
-				players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
-				players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
-				// test npc
-				SpawnEntity(prefab::prefab_player_ally, m::Vector2(1025.f, 1025.f), 0.f);
-				#if DEF_PVP
-				// PVP - align p2 with player hunter faction
-				ENTITY(players[1])->faction = fac::playerhunter;
-				#endif
-				#if DEF_SPAWN_ON_INIT
-				DoSpawn();
-				#endif
-				#if DEF_AUTOSAVE_ON_START
-				SaveState();
-				#endif
+			#ifdef DEF_NMP
+			for (int i = 0; i < config.iNumNWPlayers; ++i) {
+				players[i] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
 			}
+			#else
+			players[0] = SpawnEntity(prefab::prefab_player, m::Vector2(1024.f, 1024.f), 0.f);
+			players[1] = SpawnEntity(prefab::prefab_player, m::Vector2(1023.f, 1022.f), 0.f);
+			// test npc
+			SpawnEntity(prefab::prefab_player_ally, m::Vector2(1025.f, 1025.f), 0.f);
+			#endif
+
+			#if DEF_PVP
+			// PVP - align p2 with player hunter faction
+			ENTITY(players[1])->faction = fac::playerhunter;
+			#endif
+			#if DEF_SPAWN_ON_INIT
+			DoSpawn();
+			#endif
+			#if DEF_AUTOSAVE_ON_START
+			SaveState();
+			#endif
 		}
 
 		CheckPlayerAI();
@@ -189,6 +191,20 @@ namespace core
 		fac::SetAllegiance(fac::playerhunter, fac::player, fac::enemy);
 		fac::SetAllegiance(fac::playerhunter, fac::playerhunter, fac::allied);
 	}
+	void InitEditMode()
+	{
+		// Use native window size for generating these gui elements
+		graphics::SetGUIFrameSize(config.iWinX, config.iWinY);
+
+		// Generate debug version display
+		char buffinal[32];
+		sprintf(buffinal, "BT3D R%i.%i.%i", VERSION_MAJOR, VERSION_MINOR, VERSION_PROJECT);
+		gui.text_version.ReGen(buffinal, config.iWinX * -0.5f, config.iWinX * 0.5f, config.iWinY * 0.5f - 12);
+
+		#if DEF_PROJECT == PROJECT_BC
+		gui.text_guidehelp.ReGen("Press F1 to read the guidebook!", config.iWinX * -0.5f + 2, config.iWinX * 0.5f, config.iWinY * 0.5f - 4);
+		#endif
+	}
 	void End()
 	{
 		ClearBuffers();
@@ -198,10 +214,7 @@ namespace core
 	void ClearBuffers()
 	{
 		IndexClearEntities();
-		for (int i = 0; i < BUF_SIZE; i++) {
-			if (!ItemInstanceExists(i)) continue;
-			FreeItemInstance(i);
-		}
+		IndexClearItemInstances();
 		for (int x = 0; x < WORLD_SIZE; ++x) {
 			for (int y = 0; y < WORLD_SIZE; ++y) {
 				refCells[x][y].ref_ents.Clear();
@@ -231,29 +244,27 @@ namespace core
 		#endif
 
 		// TODO: think this over, there must be a better way to handle this
-		#if DEF_AUTO_RELOAD_ON_DEATH // Don't reload if it's multiplayer, this might be a temporary measure anyway
+		#if DEF_AUTO_RELOAD_ON_DEATH
 		// check if either player is dead
-		if (!ENTITY(players[0])->state.stateFlags.get(ActiveState::eALIVE) || !ENTITY(players[1])->state.stateFlags.get(ActiveState::eALIVE)) {
+		if (!ENTITY(players[0])->stateFlags.get(ECCommon::eALIVE) || !ENTITY(players[1])->stateFlags.get(ECCommon::eALIVE)) {
 			// Load the last save state
-			LoadState();
+			CoreLoad();
 		}
 		#endif
 
 		weather::Tick(dt);
 
-		//temporary destroy dead entities
-		///*
-		for (int i = 0; i <= GetLastEntity(); i++)
-			if (GetEntityExists(i))
-				if (!ENTITY(i)->state.stateFlags.get(ActiveState::eALIVE)
-					&& !ENTITY(i)->state.stateFlags.get(ActiveState::eDIED_REPORT))
-				{
-					//index::DestroyEntity(i);
-					ENTITY(i)->properties.unset(ECCommon::EntityFlags::eCOLLIDE_ENT);
-					ENTITY(i)->properties.unset(ECCommon::EntityFlags::eCOLLIDE_PRJ);
-					ENTITY(i)->properties.unset(ECCommon::EntityFlags::eCOLLIDE_MAG);
-				}
-		//*/
+		// temporary destroy dead entities
+		for (int i = 0; i <= GetLastEntity(); i++) {
+			if (!GetEntityExists(i)) continue;
+			if (ENTITY(i)->activeFlags.get(ECCommon::eALIVE)
+				|| ENTITY(i)->activeFlags.get(ECCommon::eDIED_REPORT))
+				continue;
+			//index::DestroyEntity(i);
+			ENTITY(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_ENT);
+			ENTITY(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_PRJ);
+			ENTITY(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_MAG);
+		}
 
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
@@ -261,7 +272,7 @@ namespace core
 		{
 			if (GetEntityExists(i))
 			{
-				ENTITY(i)->state.TickEffects(dt);
+				ENTITY(i)->TickEffects(dt);
 				EntityTick(i, dt);
 			}
 		}
@@ -270,394 +281,156 @@ namespace core
 
 		ProjectileTick(dt);
 
-		#ifndef DEF_NMP
-		if (config.bEditMode)
-		{
-			ECCommon* entity = ENTITY(0);
-
-			if (input::GetHeld(input::key::RUN)) {
-				editor_cam_pitch.RotateClamped(input::buf.mouse_y * 20.f * dt, 5.f, 85.f);
-				editor_cam_yaw.Rotate(input::buf.mouse_x * 10.f * dt);
-			}
-			else {
-				m::Vector2 vec = m::AngToVec2(editor_cam_yaw.Rad());
-				editor_cursor +=
-					((m::Vector2(vec.y, -vec.x) * input::buf.mouse_x)
-						+ (vec * -input::buf.mouse_y)) * 0.35f * dt;
-			}
-			
-			bti32 editor_cursor_x = roundf(editor_cursor.x);
-			bti32 editor_cursor_y = roundf(editor_cursor.y);
-
-			btf32 editor_cursor_offset_x = editor_cursor.x - (btf32)editor_cursor_x;
-			btf32 editor_cursor_offset_y = editor_cursor.y - (btf32)editor_cursor_y;
-
-			#define GetCellX editor_cursor_x
-			#define GetCellY editor_cursor_y
-			#define GetOffsX editor_cursor_offset_x
-			#define GetOffsY editor_cursor_offset_y
-			
-			if (input::GetHit(input::key::USE))
-			{
-				++env::eCells.terrain_material[GetCellX][GetCellY];
-				if (env::eCells.terrain_material[GetCellX][GetCellY] > 7u)
-					env::eCells.terrain_material[GetCellX][GetCellY] = 0u;
-				env::GenerateTerrainMesh();
-			}
-			else if (input::GetHeld(input::key::USE_ALT))
-			{
-				env::eCells.terrain_material[GetCellX][GetCellY] = editor_material_copy;
-				env::GenerateTerrainMesh();
-			}
-			else if (input::GetHit(input::key::ACTIVATE))
-			{
-				//env::GeneratePhysicsSurfaces();
-				//env::SaveBin();	
-			}
-			else if (input::GetHeld(input::key::DIR_F)) // Forward
-				env::eCells.prop_dir[GetCellX][GetCellY] = env::eNORTH;
-			else if (input::GetHeld(input::key::DIR_B)) // Back
-				env::eCells.prop_dir[GetCellX][GetCellY] = env::eSOUTH;
-			else if (input::GetHeld(input::key::DIR_R)) // Right
-				env::eCells.prop_dir[GetCellX][GetCellY] = env::eEAST;
-			else if (input::GetHeld(input::key::DIR_L)) // Left
-				env::eCells.prop_dir[GetCellX][GetCellY] = env::eWEST;
-			else if (input::GetHit(input::key::FUNCTION_1)) // COPY
-			{
-				editor_flags_copy = env::eCells.flags[GetCellX][GetCellY];
-				editor_prop_copy = env::eCells.prop[GetCellX][GetCellY];
-				editor_prop_dir_copy = env::eCells.prop_dir[GetCellX][GetCellY];
-				editor_height_copy_ne = env::eCells.terrain_height_ne[GetCellX][GetCellY];
-				editor_height_copy_nw = env::eCells.terrain_height_nw[GetCellX][GetCellY];
-				editor_height_copy_se = env::eCells.terrain_height_se[GetCellX][GetCellY];
-				editor_height_copy_sw = env::eCells.terrain_height_sw[GetCellX][GetCellY];
-				editor_material_copy = env::eCells.terrain_material[GetCellX][GetCellY];
-			}
-			else if (input::GetHeld(input::key::FUNCTION_2)) // PASTE
-			{
-				env::eCells.flags[GetCellX][GetCellY] = (env::eflag::flag)editor_flags_copy;
-				env::eCells.prop[GetCellX][GetCellY] = editor_prop_copy;
-				env::eCells.prop_dir[GetCellX][GetCellY] = editor_prop_dir_copy;
-				env::eCells.terrain_height_ne[GetCellX][GetCellY] = editor_height_copy_ne;
-				env::eCells.terrain_height_nw[GetCellX][GetCellY] = editor_height_copy_nw;
-				env::eCells.terrain_height_se[GetCellX][GetCellY] = editor_height_copy_se;
-				env::eCells.terrain_height_sw[GetCellX][GetCellY] = editor_height_copy_sw;
-				env::eCells.terrain_material[GetCellX][GetCellY] = editor_material_copy;
-				env::GenerateTerrainMesh();
-			}
-			else if (input::GetHit(input::key::FUNCTION_3)) // TOGGLE LIGHT
-			{
-				env::Get(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC)
-					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC)
-					: env::Set(GetCellX, GetCellY, env::eflag::EF_LIGHTSRC);
-			}
-			else if (input::GetHit(input::key::FUNCTION_4)) // TOGGLE SPAWN
-			{
-				if (env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST)) {
-					env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
-					env::Set(GetCellX, GetCellY, env::eflag::EF_SPAWN_ITEM_TEST);
-				}
-				else if (env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_ITEM_TEST)) {
-					env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
-					env::UnSet(GetCellX, GetCellY, env::eflag::EF_SPAWN_ITEM_TEST);
-				}
-				else {
-					env::Set(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST);
-				}
-			}
-			else if (input::GetHit(input::key::FUNCTION_5)) // SAVE
-			{
-				env::SaveBin();
-			}
-			else if (input::GetHit(input::key::FUNCTION_6)) // TOGGLE SPAWN INDEX
-			{
-				if (env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_TEST)) {
-					++env::eCells.spawn_id[GetCellX][GetCellY];
-					// we don't have a proper archive setup for entity templates
-					if (env::eCells.spawn_id[GetCellX][GetCellY] >= prefab::prefab_count)
-						env::eCells.spawn_id[GetCellX][GetCellY] = 0u;
-				}
-				else if (env::Get(GetCellX, GetCellY, env::eflag::EF_SPAWN_ITEM_TEST)) {
-					++env::eCells.spawn_id[GetCellX][GetCellY];
-					if (env::eCells.spawn_id[GetCellX][GetCellY] >= acv::item_index)
-						env::eCells.spawn_id[GetCellX][GetCellY] = 0u;
-				}
-			}
-			else if (input::GetHit(input::key::FUNCTION_7)) // TOGGLE FPP
-			{
-				env::Get(GetCellX, GetCellY, env::eflag::EF_FPP_HERE)
-					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_FPP_HERE)
-					: env::Set(GetCellX, GetCellY, env::eflag::EF_FPP_HERE);
-			}
-			else if (input::GetHit(input::key::ACTION_A))
-			{
-				env::Get(GetCellX, GetCellY, env::eflag::EF_IMPASSABLE)
-					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_IMPASSABLE)
-					: env::Set(GetCellX, GetCellY, env::eflag::EF_IMPASSABLE);
-			}
-			else if (input::GetHit(input::key::ACTION_B))
-			{
-				if (env::eCells.prop[GetCellX][GetCellY] > 0u)
-					--env::eCells.prop[GetCellX][GetCellY];
-			}
-			else if (input::GetHit(input::key::ACTION_C))
-			{
-				if (env::eCells.prop[GetCellX][GetCellY] < acv::prop_index)
-					++env::eCells.prop[GetCellX][GetCellY];
-			}
-			else if (input::GetHit(input::key::FUNCTION_7))
-			{
-				env::Get(GetCellX, GetCellY, env::eflag::EF_INVISIBLE)
-					? env::UnSet(GetCellX, GetCellY, env::eflag::EF_INVISIBLE)
-					: env::Set(GetCellX, GetCellY, env::eflag::EF_INVISIBLE);
-				env::GenerateTerrainMesh();
-			}
-			else if (input::GetHit(input::key::INV_CYCLE_R))
-			{
-				if (input::GetHeld(input::key::RUN))
-				{
-					++env::eCells.terrain_height_ne[GetCellX][GetCellY];
-					++env::eCells.terrain_height_nw[GetCellX][GetCellY];
-					++env::eCells.terrain_height_se[GetCellX][GetCellY];
-					++env::eCells.terrain_height_sw[GetCellX][GetCellY];
-				}
-				else if (input::GetHeld(input::key::CROUCH))
-				{
-					if (GetOffsX > 0.f && GetOffsY > 0.f) { // NE
-						if (env::eCells.terrain_height_nw[GetCellX + 1][GetCellY] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
-							++env::eCells.terrain_height_nw[GetCellX + 1][GetCellY];
-						if (env::eCells.terrain_height_se[GetCellX][GetCellY + 1] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
-							++env::eCells.terrain_height_se[GetCellX][GetCellY + 1];
-						if (env::eCells.terrain_height_sw[GetCellX + 1][GetCellY + 1] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
-							++env::eCells.terrain_height_sw[GetCellX + 1][GetCellY + 1];
-						++env::eCells.terrain_height_ne[GetCellX][GetCellY];
-					}
-					else if (GetOffsY > 0.f) { // NW
-						if (env::eCells.terrain_height_ne[GetCellX - 1][GetCellY] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
-							++env::eCells.terrain_height_ne[GetCellX - 1][GetCellY];
-						if (env::eCells.terrain_height_sw[GetCellX][GetCellY + 1] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
-							++env::eCells.terrain_height_sw[GetCellX][GetCellY + 1];
-						if (env::eCells.terrain_height_se[GetCellX - 1][GetCellY + 1] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
-							++env::eCells.terrain_height_se[GetCellX - 1][GetCellY + 1];
-						++env::eCells.terrain_height_nw[GetCellX][GetCellY];
-					}
-					else if (GetOffsX > 0.f) { // SE
-						if (env::eCells.terrain_height_sw[GetCellX + 1][GetCellY] == env::eCells.terrain_height_se[GetCellX][GetCellY])
-							++env::eCells.terrain_height_sw[GetCellX + 1][GetCellY];
-						if (env::eCells.terrain_height_ne[GetCellX][GetCellY - 1] == env::eCells.terrain_height_se[GetCellX][GetCellY])
-							++env::eCells.terrain_height_ne[GetCellX][GetCellY - 1];
-						if (env::eCells.terrain_height_nw[GetCellX + 1][GetCellY - 1] == env::eCells.terrain_height_se[GetCellX][GetCellY])
-							++env::eCells.terrain_height_nw[GetCellX + 1][GetCellY - 1];
-						++env::eCells.terrain_height_se[GetCellX][GetCellY];
-					}
-					else { // SW
-						if (env::eCells.terrain_height_se[GetCellX - 1][GetCellY] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
-							++env::eCells.terrain_height_se[GetCellX - 1][GetCellY];
-						if (env::eCells.terrain_height_nw[GetCellX][GetCellY - 1] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
-							++env::eCells.terrain_height_nw[GetCellX][GetCellY - 1];
-						if (env::eCells.terrain_height_ne[GetCellX - 1][GetCellY - 1] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
-							++env::eCells.terrain_height_ne[GetCellX - 1][GetCellY - 1];
-						++env::eCells.terrain_height_sw[GetCellX][GetCellY];
-					}
-				}
-				else
-				{
-					if (GetOffsX > 0.f && GetOffsY > 0.f)
-						++env::eCells.terrain_height_ne[GetCellX][GetCellY];
-					else if (GetOffsY > 0.f)
-						++env::eCells.terrain_height_nw[GetCellX][GetCellY];
-					else if (GetOffsX > 0.f)
-						++env::eCells.terrain_height_se[GetCellX][GetCellY];
-					else
-						++env::eCells.terrain_height_sw[GetCellX][GetCellY];
-				}
-				env::GenerateTerrainMesh();
-			}
-			else if (input::GetHit(input::key::INV_CYCLE_L)) {
-				if (input::GetHeld(input::key::RUN)) {
-					--env::eCells.terrain_height_ne[GetCellX][GetCellY];
-					--env::eCells.terrain_height_nw[GetCellX][GetCellY];
-					--env::eCells.terrain_height_se[GetCellX][GetCellY];
-					--env::eCells.terrain_height_sw[GetCellX][GetCellY];
-				}
-				else if (input::GetHeld(input::key::CROUCH)) {
-					if (GetOffsX > 0.f && GetOffsY > 0.f) { // NE
-						if (env::eCells.terrain_height_nw[GetCellX + 1][GetCellY] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
-							--env::eCells.terrain_height_nw[GetCellX + 1][GetCellY];
-						if (env::eCells.terrain_height_se[GetCellX][GetCellY + 1] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
-							--env::eCells.terrain_height_se[GetCellX][GetCellY + 1];
-						if (env::eCells.terrain_height_sw[GetCellX + 1][GetCellY + 1] == env::eCells.terrain_height_ne[GetCellX][GetCellY])
-							--env::eCells.terrain_height_sw[GetCellX + 1][GetCellY + 1];
-						--env::eCells.terrain_height_ne[GetCellX][GetCellY];
-					}
-					else if (GetOffsY > 0.f) { // NW
-						if (env::eCells.terrain_height_ne[GetCellX - 1][GetCellY] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
-							--env::eCells.terrain_height_ne[GetCellX - 1][GetCellY];
-						if (env::eCells.terrain_height_sw[GetCellX][GetCellY + 1] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
-							--env::eCells.terrain_height_sw[GetCellX][GetCellY + 1];
-						if (env::eCells.terrain_height_se[GetCellX - 1][GetCellY + 1] == env::eCells.terrain_height_nw[GetCellX][GetCellY])
-							--env::eCells.terrain_height_se[GetCellX - 1][GetCellY + 1];
-						--env::eCells.terrain_height_nw[GetCellX][GetCellY];
-					}
-					else if (GetOffsX > 0.f) { // SE
-						if (env::eCells.terrain_height_sw[GetCellX + 1][GetCellY] == env::eCells.terrain_height_se[GetCellX][GetCellY])
-							--env::eCells.terrain_height_sw[GetCellX + 1][GetCellY];
-						if (env::eCells.terrain_height_ne[GetCellX][GetCellY - 1] == env::eCells.terrain_height_se[GetCellX][GetCellY])
-							--env::eCells.terrain_height_ne[GetCellX][GetCellY - 1];
-						if (env::eCells.terrain_height_nw[GetCellX + 1][GetCellY - 1] == env::eCells.terrain_height_se[GetCellX][GetCellY])
-							--env::eCells.terrain_height_nw[GetCellX + 1][GetCellY - 1];
-						--env::eCells.terrain_height_se[GetCellX][GetCellY];
-					}
-					else { // SW
-						if (env::eCells.terrain_height_se[GetCellX - 1][GetCellY] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
-							--env::eCells.terrain_height_se[GetCellX - 1][GetCellY];
-						if (env::eCells.terrain_height_nw[GetCellX][GetCellY - 1] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
-							--env::eCells.terrain_height_nw[GetCellX][GetCellY - 1];
-						if (env::eCells.terrain_height_ne[GetCellX - 1][GetCellY - 1] == env::eCells.terrain_height_sw[GetCellX][GetCellY])
-							--env::eCells.terrain_height_ne[GetCellX - 1][GetCellY - 1];
-						--env::eCells.terrain_height_sw[GetCellX][GetCellY];
-					}
-				}
-				else {
-					if (GetOffsX > 0.f && GetOffsY > 0.f)
-						--env::eCells.terrain_height_ne[GetCellX][GetCellY];
-					else if (GetOffsY > 0.f)
-						--env::eCells.terrain_height_nw[GetCellX][GetCellY];
-					else if (GetOffsX > 0.f)
-						--env::eCells.terrain_height_se[GetCellX][GetCellY];
-					else
-						--env::eCells.terrain_height_sw[GetCellX][GetCellY];
-				}
-				env::GenerateTerrainMesh();
-			}
-
-			#undef GetCellX
-			#undef GetCellY
-			#undef GetOffsX
-			#undef GetOffsY
+		if (saveNextFrame) {
+			SaveState();
+			saveNextFrame = false;
 		}
-		else
+		#if DEF_PROJECT != PROJECT_BC || defined _DEBUG // disable save/load for BC
+		#ifdef DEF_NMP
+		for (btui32 i = 0; i < config.iNumNWPlayers; ++i) {
+			if (input::GetHit(i, input::key::FUNCTION_5)) { // SAVE
+				SaveState();
+				break;
+			}
+			else if (input::GetHit(i, input::key::FUNCTION_9)) { // LOAD
+				if (SaveExists()) CoreLoad();
+				break;
+			}
+		}
+		#else
+		if (input::GetHit(input::key::FUNCTION_5)) { // SAVE
+			SaveState();
+		}
+		else if (input::GetHit(input::key::FUNCTION_9)) { // LOAD
+			if (SaveExists()) CoreLoad();
+		}
 		#endif
-		{
-			if (saveNextFrame) {
-				SaveState();
-				saveNextFrame = false;
-			}
-			#if DEF_PROJECT != PROJECT_BC || defined _DEBUG // disable save/load for BC
-			#ifdef DEF_NMP
-			for (btui32 i = 0; i < NUM_PLAYERS; ++i) {
-				if (input::GetHit(i, input::key::FUNCTION_5)) { // SAVE
-					SaveState();
-					break;
-				}
-				else if (input::GetHit(i, input::key::FUNCTION_9)) { // LOAD
-					if (SaveExists()) LoadState();
-					break;
-				}
-			}
-			#else
-			if (input::GetHit(input::key::FUNCTION_5)) { // SAVE
-				SaveState();
-			}
-			else if (input::GetHit(input::key::FUNCTION_9)) { // LOAD
-				if (SaveExists()) LoadState();
-			}
-			#endif
-			#endif
+		#endif
 
-			#if DEF_PROJECT == PROJECT_BC
-			if (input::GetHit(input::key::FUNCTION_1)) { // TOGGLE GUIDE
-				bShowGuide = !bShowGuide;
-				guideW = 0;
-			}
-			#endif
+		#if DEF_PROJECT == PROJECT_BC
+		if (input::GetHit(input::key::FUNCTION_1)) { // TOGGLE GUIDE
+			gui.bShowGuide = !gui.bShowGuide;
+			gui.guideW = 0;
 		}
+		#endif
 
 		//-------------------------------- Modify camera
 
-		if (config.bEditMode) {
-
-			GetCellSpaceInfo(editor_cursor, editor_cursorCS);
-
-			btf32 height;
-			
-			#if DEF_GRID
-			env::GetHeight(height, editor_cursorCS);
-			#else
-			env::GetNearestSurfaceHeight(height, editor_cursorCS, 1000000.f);
+		if (config.b3PP) {
+			#if DEF_NMP
+			m::Vector3 target_a = m::Vector3(ENTITY(players[network::nid])->t.position.x, ENTITY(players[network::nid])->t.altitude + 0.8f, ENTITY(players[network::nid])->t.position.y);
+			m::Vector2 dir_a = (m::AngToVec2(ENTITY(players[network::nid])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[network::nid])->viewYaw.Rad())) * 0.5f;
+			m::Vector3 position_a = target_a - (m::Vector3(dir_a.x, -0.2f, dir_a.y)) * 3.f;
+			#else			
+			m::Vector3 target_a = m::Vector3(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.altitude + 0.8f, ENTITY(players[0])->t.position.y);
+			m::Vector2 dir_a = (m::AngToVec2(ENTITY(players[0])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[0])->viewYaw.Rad())) * 0.5f;
+			m::Vector3 position_a = target_a - (m::Vector3(dir_a.x, -0.2f, dir_a.y)) * 3.f;
+			m::Vector3 target_b = m::Vector3(ENTITY(players[1])->t.position.x, ENTITY(players[1])->t.altitude + 0.8f, ENTITY(players[1])->t.position.y);
+			m::Vector2 dir_b = (m::AngToVec2(ENTITY(players[1])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[1])->viewYaw.Rad())) * 0.5f;
+			m::Vector3 position_b = target_b - (m::Vector3(dir_b.x, -0.2f, dir_b.y)) * 3.f;
 			#endif
 
-			editor_cursor_height = m::Lerp(editor_cursor_height, height, 1.5f * dt);
-
-			viewTarget[0] = m::Vector3(editor_cursor.x, editor_cursor_height, editor_cursor.y);
-
-			btf32 r = 3.5f;
-			btf32 pitch_x = cos(editor_cam_pitch.Rad());
-			btf32 pitch_y = sin(editor_cam_pitch.Rad());
-			btf32 yaw_x = cos(editor_cam_yaw.Rad());
-			btf32 yaw_y = sin(editor_cam_yaw.Rad());
-			viewPosition[0] = viewTarget[0] + r * m::Vector3(-yaw_y * pitch_x, pitch_y, -yaw_x * pitch_x);
-		}
-		else {
-			if (config.b3PP) {
-				m::Vector3 target_a = m::Vector3(ENTITY(players[0])->t.position.x, ENTITY(players[0])->t.altitude + 0.8f, ENTITY(players[0])->t.position.y);
-				m::Vector3 target_b = m::Vector3(ENTITY(players[1])->t.position.x, ENTITY(players[1])->t.altitude + 0.8f, ENTITY(players[1])->t.position.y);
-
-				m::Vector2 dir_a = (m::AngToVec2(ENTITY(players[0])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[0])->viewYaw.Rad())) * 0.5f;
-				m::Vector2 dir_b = (m::AngToVec2(ENTITY(players[1])->t.yaw.Rad()) + m::AngToVec2(ACTOR(players[1])->viewYaw.Rad())) * 0.5f;
-
-				m::Vector3 position_a = target_a - (m::Vector3(dir_a.x, -0.2f, dir_a.y)) * 3.f;
-				m::Vector3 position_b = target_b - (m::Vector3(dir_b.x, -0.2f, dir_b.y)) * 3.f;
-
-				#if DEF_GRID
+			#if DEF_GRID
+			#if DEF_NMP
+			if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y)) {
+				position_a = m::Lerp(position_a, target_a, 0.5f);
 				if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y)) {
-					position_a = m::Lerp(position_a, target_a, 0.5f);
-					if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y)) {
-						position_a = m::Lerp(position_a, target_a, 0.75f);
+					position_a = m::Lerp(position_a, target_a, 0.75f);
+				}
+			}
+			#else
+			if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y)) {
+				position_a = m::Lerp(position_a, target_a, 0.5f);
+				if (!env::LineTraceBh(roundf(target_a.x), roundf(target_a.z), roundf(position_a.x), roundf(position_a.z), target_a.y, position_a.y)) {
+					position_a = m::Lerp(position_a, target_a, 0.75f);
+				}
+			}
+			if (config.bSplitScreen) {
+				if (!env::LineTraceBh(roundf(target_b.x), roundf(target_b.z), roundf(position_b.x), roundf(position_b.z), target_b.y, position_b.y)) {
+					position_b = m::Lerp(position_b, target_b, 0.5f);
+					if (!env::LineTraceBh(roundf(target_b.x), roundf(target_b.z), roundf(position_b.x), roundf(position_b.z), target_b.y, position_b.y)) {
+						position_b = m::Lerp(position_b, target_b, 0.75f);
 					}
 				}
-				#else
-				env::LineTraceHit hit;
-				if (env::LineTrace(target_a.x, target_a.z, position_a.x, position_a.z, target_a.y, position_a.y, &hit)) {
-					position_a.x = hit.pos.x;
-					position_a.z = hit.pos.y;
-					position_a = position_a + m::Vector3(dir_a.x, 0.f, dir_a.y) * 0.25f; // push the camera away from the wall a bit
-					//position_a.y = hit.h;
-				}
-				#endif
-
-				// Snap if the difference between now and the target is too great
-				if (m::Length(viewTarget[0] - target_a) > 10.f || m::Length(viewPosition[0] - position_a) > 10.f) {
-					viewTarget[0] = target_a;
-					viewPosition[0] = position_a;
-				}
-				// Move camera gradually
-				else {
-					viewTarget[0] = m::BlendToward(viewTarget[0], target_a, 0.05f, dt);
-					viewPosition[0] = m::BlendToward(viewPosition[0], position_a, 0.15f, dt);
-				}
-				// Snap if the difference between now and the target is too great
-				if (m::Length(viewTarget[1] - target_b) > 10.f || m::Length(viewPosition[1] - position_b) > 10.f) {
-					viewTarget[1] = target_b;
-					viewPosition[1] = position_b;
-				}
-				// Move camera gradually
-				else {
-					viewTarget[1] = m::BlendToward(viewTarget[1], target_b, 0.05f, dt);
-					viewPosition[1] = m::BlendToward(viewPosition[1], position_b, 0.15f, dt);
-				}
 			}
+			#endif
+			#else
+			#if DEF_NMP
+			env::LineTraceHit hit;
+			if (env::LineTrace(target_a.x, target_a.z, position_a.x, position_a.z, target_a.y, position_a.y, &hit)) {
+				position_a.x = hit.pos.x;
+				position_a.z = hit.pos.y;
+				position_a = position_a + m::Vector3(dir_a.x, 0.f, dir_a.y) * 0.25f; // push the camera away from the wall a bit
+				//position_a.y = hit.h;
+			}
+			#endif
+			#endif
+
+			#if DEF_NMP
+			// Snap if the difference between now and the target is too great
+			if (m::Length(camViewTarget[network::nid] - target_a) > 10.f || m::Length(camViewPosition[network::nid] - position_a) > 10.f) {
+				camViewTarget[network::nid] = target_a;
+				camViewPosition[network::nid] = position_a;
+			}
+			// Move camera gradually
 			else {
-				viewPosition[0] = ACTOR(0)->t_head.GetPosition() + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(0)->t_head.GetRotation());
-				viewPosition[1] = ACTOR(1)->t_head.GetPosition() + m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(1)->t_head.GetRotation());
-
-				viewTarget[0] = viewPosition[0] + ACTOR(0)->t_head.GetForward();
-				viewTarget[1] = viewPosition[1] + ACTOR(1)->t_head.GetForward();
+				camViewTarget[network::nid] = m::BlendToward(camViewTarget[network::nid], target_a, 0.05f, dt);
+				camViewPosition[network::nid] = m::BlendToward(camViewPosition[network::nid], position_a, 0.15f, dt);
 			}
+			#else
+			// Snap if the difference between now and the target is too great
+			if (m::Length(camViewTarget[0] - target_a) > 10.f || m::Length(camViewPosition[0] - position_a) > 10.f) {
+				camViewTarget[0] = target_a;
+				camViewPosition[0] = position_a;
+			}
+			// Move camera gradually
+			else {
+				camViewTarget[0] = m::BlendToward(camViewTarget[0], target_a, 0.05f, dt);
+				camViewPosition[0] = m::BlendToward(camViewPosition[0], position_a, 0.15f, dt);
+			}
+			if (config.bSplitScreen) {
+				// Snap if the difference between now and the target is too great
+				if (m::Length(camViewTarget[1] - target_b) > 10.f || m::Length(camViewPosition[1] - position_b) > 10.f) {
+					camViewTarget[1] = target_b;
+					camViewPosition[1] = position_b;
+				}
+				// Move camera gradually
+				else {
+					camViewTarget[1] = m::BlendToward(camViewTarget[1], target_b, 0.05f, dt);
+					camViewPosition[1] = m::BlendToward(camViewPosition[1], position_b, 0.15f, dt);
+				}
+			}
+			#endif
+		}
+		else {
+			#if DEF_NMP
+			camViewPosition[network::nid] = ACTOR(network::nid)->t_head.GetPosition() +
+				m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(network::nid)->t_head.GetRotation());
+			camViewTarget[network::nid] = camViewPosition[network::nid] + ACTOR(network::nid)->t_head.GetForward();
+			#else
+			camViewPosition[0] = ACTOR(0)->t_head.GetPosition() +
+				m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(0)->t_head.GetRotation());
+			camViewTarget[0] = camViewPosition[0] + ACTOR(0)->t_head.GetForward();
+			if (config.bSplitScreen) {
+				camViewPosition[1] = ACTOR(1)->t_head.GetPosition() +
+					m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(1)->t_head.GetRotation());
+				camViewTarget[1] = camViewPosition[1] + ACTOR(1)->t_head.GetForward();
+			}
+			#endif
 		}
 
 		#if DEF_PROJECT == PROJECT_BC
 		{ // Set 3pp based on tile parameter
+			#ifdef DEF_NMP
+			config.b3PP = true;
+			for (int i = 0; i < config.iNumNWPlayers; ++i) {
+				ECCommon* ent = ENTITY(players[i]);
+				int x = ent->t.csi.c[eCELL_I].x;
+				int y = ent->t.csi.c[eCELL_I].y;
+				if (env::Get(x, y, env::eflag::EF_FPP_HERE))
+					config.b3PP = false;
+			}
+			#else
 			ECCommon* ent = ENTITY(players[0]);
 			int x = ent->t.csi.c[eCELL_I].x;
 			int y = ent->t.csi.c[eCELL_I].y;
@@ -665,6 +438,7 @@ namespace core
 				config.b3PP = false;
 			else
 				config.b3PP = true;
+			#endif
 		}
 		#endif
 
@@ -675,21 +449,227 @@ namespace core
 		return true;
 	}
 
+	void EditorModTerrain(bti32 cellX, bti32 cellY, btf32 offsX, btf32 offsY, bti32 modify) {
+		if (input::GetHeld(input::key::RUN))
+		{
+			env::eCells.terrain_height_ne[cellX][cellY] += modify;
+			env::eCells.terrain_height_nw[cellX][cellY] += modify;
+			env::eCells.terrain_height_se[cellX][cellY] += modify;
+			env::eCells.terrain_height_sw[cellX][cellY] += modify;
+		}
+		else if (input::GetHeld(input::key::CROUCH))
+		{
+			if (offsX > 0.f && offsY > 0.f) { // NE
+				if (env::eCells.terrain_height_nw[cellX + 1][cellY] == env::eCells.terrain_height_ne[cellX][cellY])
+					env::eCells.terrain_height_nw[cellX + 1][cellY] += modify;
+				if (env::eCells.terrain_height_se[cellX][cellY + 1] == env::eCells.terrain_height_ne[cellX][cellY])
+					env::eCells.terrain_height_se[cellX][cellY + 1] += modify;
+				if (env::eCells.terrain_height_sw[cellX + 1][cellY + 1] == env::eCells.terrain_height_ne[cellX][cellY])
+					env::eCells.terrain_height_sw[cellX + 1][cellY + 1] += modify;
+				env::eCells.terrain_height_ne[cellX][cellY];
+			}
+			else if (offsY > 0.f) { // NW
+				if (env::eCells.terrain_height_ne[cellX - 1][cellY] == env::eCells.terrain_height_nw[cellX][cellY])
+					env::eCells.terrain_height_ne[cellX - 1][cellY] += modify;
+				if (env::eCells.terrain_height_sw[cellX][cellY + 1] == env::eCells.terrain_height_nw[cellX][cellY])
+					env::eCells.terrain_height_sw[cellX][cellY + 1] += modify;
+				if (env::eCells.terrain_height_se[cellX - 1][cellY + 1] == env::eCells.terrain_height_nw[cellX][cellY])
+					env::eCells.terrain_height_se[cellX - 1][cellY + 1] += modify;
+				env::eCells.terrain_height_nw[cellX][cellY] += modify;
+			}
+			else if (offsX > 0.f) { // SE
+				if (env::eCells.terrain_height_sw[cellX + 1][cellY] == env::eCells.terrain_height_se[cellX][cellY])
+					env::eCells.terrain_height_sw[cellX + 1][cellY] += modify;
+				if (env::eCells.terrain_height_ne[cellX][cellY - 1] == env::eCells.terrain_height_se[cellX][cellY])
+					env::eCells.terrain_height_ne[cellX][cellY - 1] += modify;
+				if (env::eCells.terrain_height_nw[cellX + 1][cellY - 1] == env::eCells.terrain_height_se[cellX][cellY])
+					env::eCells.terrain_height_nw[cellX + 1][cellY - 1] += modify;
+				env::eCells.terrain_height_se[cellX][cellY] += modify;
+			}
+			else { // SW
+				if (env::eCells.terrain_height_se[cellX - 1][cellY] == env::eCells.terrain_height_sw[cellX][cellY])
+					env::eCells.terrain_height_se[cellX - 1][cellY] += modify;
+				if (env::eCells.terrain_height_nw[cellX][cellY - 1] == env::eCells.terrain_height_sw[cellX][cellY])
+					env::eCells.terrain_height_nw[cellX][cellY - 1] += modify;
+				if (env::eCells.terrain_height_ne[cellX - 1][cellY - 1] == env::eCells.terrain_height_sw[cellX][cellY])
+					env::eCells.terrain_height_ne[cellX - 1][cellY - 1] += modify;
+				env::eCells.terrain_height_sw[cellX][cellY] += modify;
+			}
+		}
+		else
+		{
+			if (offsX > 0.f && offsY > 0.f)
+				env::eCells.terrain_height_ne[cellX][cellY] += modify;
+			else if (offsY > 0.f)
+				env::eCells.terrain_height_nw[cellX][cellY] += modify;
+			else if (offsX > 0.f)
+				env::eCells.terrain_height_se[cellX][cellY] += modify;
+			else
+				env::eCells.terrain_height_sw[cellX][cellY] += modify;
+		}
+		env::GenerateTerrainMesh();
+	}
+
+	bool TickEditor(btf32 dt)
+	{
+		#ifndef DEF_NMP
+		if (input::GetHeld(input::key::RUN)) {
+			editor.cam_pitch.RotateClamped(input::input_buffer.mouse_y * 20.f * dt, 5.f, 85.f);
+			editor.cam_yaw.Rotate(input::input_buffer.mouse_x * 10.f * dt);
+		}
+		else {
+			m::Vector2 vec = m::AngToVec2(editor.cam_yaw.Rad());
+			editor.cursor +=
+				((m::Vector2(vec.y, -vec.x) * input::input_buffer.mouse_x)
+					+ (vec * -input::input_buffer.mouse_y)) * 0.35f * dt;
+		}
+
+		bti32 editor_cursor_x = roundf(editor.cursor.x);
+		bti32 editor_cursor_y = roundf(editor.cursor.y);
+
+		btf32 editor_cursor_offset_x = editor.cursor.x - (btf32)editor_cursor_x;
+		btf32 editor_cursor_offset_y = editor.cursor.y - (btf32)editor_cursor_y;
+
+		if (input::GetHit(input::key::USE)) {
+			++env::eCells.terrain_material[editor_cursor_x][editor_cursor_y];
+			if (env::eCells.terrain_material[editor_cursor_x][editor_cursor_y] > 7u)
+				env::eCells.terrain_material[editor_cursor_x][editor_cursor_y] = 0u;
+			env::GenerateTerrainMesh();
+		}
+		else if (input::GetHeld(input::key::USE_ALT)) {
+			env::eCells.terrain_material[editor_cursor_x][editor_cursor_y] = editor.material_copy;
+			env::GenerateTerrainMesh();
+		}
+		else if (input::GetHeld(input::key::DIR_F)) // Forward
+			env::eCells.prop_dir[editor_cursor_x][editor_cursor_y] = env::eNORTH;
+		else if (input::GetHeld(input::key::DIR_B)) // Back
+			env::eCells.prop_dir[editor_cursor_x][editor_cursor_y] = env::eSOUTH;
+		else if (input::GetHeld(input::key::DIR_R)) // Right
+			env::eCells.prop_dir[editor_cursor_x][editor_cursor_y] = env::eEAST;
+		else if (input::GetHeld(input::key::DIR_L)) // Left
+			env::eCells.prop_dir[editor_cursor_x][editor_cursor_y] = env::eWEST;
+		else if (input::GetHit(input::key::FUNCTION_1)) { // COPY
+			editor.flags_copy = env::eCells.flags[editor_cursor_x][editor_cursor_y];
+			editor.prop_copy = env::eCells.prop[editor_cursor_x][editor_cursor_y];
+			editor.prop_dir_copy = env::eCells.prop_dir[editor_cursor_x][editor_cursor_y];
+			editor.height_copy_ne = env::eCells.terrain_height_ne[editor_cursor_x][editor_cursor_y];
+			editor.height_copy_nw = env::eCells.terrain_height_nw[editor_cursor_x][editor_cursor_y];
+			editor.height_copy_se = env::eCells.terrain_height_se[editor_cursor_x][editor_cursor_y];
+			editor.height_copy_sw = env::eCells.terrain_height_sw[editor_cursor_x][editor_cursor_y];
+			editor.material_copy = env::eCells.terrain_material[editor_cursor_x][editor_cursor_y];
+		}
+		else if (input::GetHeld(input::key::FUNCTION_2)) { // PASTE
+			env::eCells.flags[editor_cursor_x][editor_cursor_y] = (env::eflag::flag)editor.flags_copy;
+			env::eCells.prop[editor_cursor_x][editor_cursor_y] = editor.prop_copy;
+			env::eCells.prop_dir[editor_cursor_x][editor_cursor_y] = editor.prop_dir_copy;
+			env::eCells.terrain_height_ne[editor_cursor_x][editor_cursor_y] = editor.height_copy_ne;
+			env::eCells.terrain_height_nw[editor_cursor_x][editor_cursor_y] = editor.height_copy_nw;
+			env::eCells.terrain_height_se[editor_cursor_x][editor_cursor_y] = editor.height_copy_se;
+			env::eCells.terrain_height_sw[editor_cursor_x][editor_cursor_y] = editor.height_copy_sw;
+			env::eCells.terrain_material[editor_cursor_x][editor_cursor_y] = editor.material_copy;
+			env::GenerateTerrainMesh();
+		}
+		else if (input::GetHit(input::key::FUNCTION_3)) { // TOGGLE LIGHT
+			env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_LIGHTSRC)
+				? env::UnSet(editor_cursor_x, editor_cursor_y, env::eflag::EF_LIGHTSRC)
+				: env::Set(editor_cursor_x, editor_cursor_y, env::eflag::EF_LIGHTSRC);
+		}
+		else if (input::GetHit(input::key::FUNCTION_4)) { // TOGGLE SPAWN
+			if (env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_TEST)) {
+				env::UnSet(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_TEST);
+				env::Set(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_ITEM_TEST);
+			}
+			else if (env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_ITEM_TEST)) {
+				env::UnSet(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_TEST);
+				env::UnSet(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_ITEM_TEST);
+			}
+			else {
+				env::Set(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_TEST);
+			}
+		}
+		else if (input::GetHit(input::key::FUNCTION_5)) { // SAVE
+			env::SaveBin();
+		}
+		else if (input::GetHit(input::key::FUNCTION_6)) { // TOGGLE SPAWN INDEX
+			if (env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_TEST)) {
+				++env::eCells.spawn_id[editor_cursor_x][editor_cursor_y];
+				// we don't have a proper archive setup for entity templates
+				if (env::eCells.spawn_id[editor_cursor_x][editor_cursor_y] >= prefab::prefab_count)
+					env::eCells.spawn_id[editor_cursor_x][editor_cursor_y] = 0u;
+			}
+			else if (env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_ITEM_TEST)) {
+				++env::eCells.spawn_id[editor_cursor_x][editor_cursor_y];
+				if (env::eCells.spawn_id[editor_cursor_x][editor_cursor_y] >= acv::item_index)
+					env::eCells.spawn_id[editor_cursor_x][editor_cursor_y] = 0u;
+			}
+		}
+		else if (input::GetHit(input::key::FUNCTION_7)) { // TOGGLE FPP
+			env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_FPP_HERE)
+				? env::UnSet(editor_cursor_x, editor_cursor_y, env::eflag::EF_FPP_HERE)
+				: env::Set(editor_cursor_x, editor_cursor_y, env::eflag::EF_FPP_HERE);
+		}
+		else if (input::GetHit(input::key::ACTION_A)) {
+			env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_IMPASSABLE)
+				? env::UnSet(editor_cursor_x, editor_cursor_y, env::eflag::EF_IMPASSABLE)
+				: env::Set(editor_cursor_x, editor_cursor_y, env::eflag::EF_IMPASSABLE);
+		}
+		else if (input::GetHit(input::key::ACTION_B)) {
+			if (env::eCells.prop[editor_cursor_x][editor_cursor_y] > 0u)
+				--env::eCells.prop[editor_cursor_x][editor_cursor_y];
+		}
+		else if (input::GetHit(input::key::ACTION_C)) {
+			if (env::eCells.prop[editor_cursor_x][editor_cursor_y] < acv::prop_index)
+				++env::eCells.prop[editor_cursor_x][editor_cursor_y];
+		}
+		else if (input::GetHit(input::key::FUNCTION_7)) {
+			env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_INVISIBLE)
+				? env::UnSet(editor_cursor_x, editor_cursor_y, env::eflag::EF_INVISIBLE)
+				: env::Set(editor_cursor_x, editor_cursor_y, env::eflag::EF_INVISIBLE);
+			env::GenerateTerrainMesh();
+		}
+		else if (input::GetHit(input::key::INV_CYCLE_R)) {
+			EditorModTerrain(editor_cursor_x, editor_cursor_y, editor_cursor_offset_x, editor_cursor_offset_y, 1);
+		}
+		else if (input::GetHit(input::key::INV_CYCLE_L)) {
+			EditorModTerrain(editor_cursor_x, editor_cursor_y, editor_cursor_offset_x, editor_cursor_offset_y, -1);
+		}
+
+		#endif
+
+		//-------------------------------- Modify camera
+
+		GetCellSpaceInfo(editor.cursor, editor.cursorCS);
+
+		btf32 height;
+
+		#if DEF_GRID
+		env::GetHeight(height, editor.cursorCS);
+		#else
+		env::GetNearestSurfaceHeight(height, editor.cursorCS, 1000000.f);
+		#endif
+
+		editor.cursor_height = m::Lerp(editor.cursor_height, height, 1.5f * dt);
+
+		camViewTarget[0] = m::Vector3(editor.cursor.x, editor.cursor_height, editor.cursor.y);
+
+		btf32 r = 3.5f;
+		btf32 pitch_x = cos(editor.cam_pitch.Rad());
+		btf32 pitch_y = sin(editor.cam_pitch.Rad());
+		btf32 yaw_x = cos(editor.cam_yaw.Rad());
+		btf32 yaw_y = sin(editor.cam_yaw.Rad());
+		camViewPosition[0] = camViewTarget[0] + r * m::Vector3(-yaw_y * pitch_x, pitch_y, -yaw_x * pitch_x);
+
+		//-------------------------------- Stuff
+
+		++tickCount;
+
+		return true;
+	}
+
 	void Draw(bool oob)
 	{
 		btf32 time2 = ((btf32)tickCount / 30.f) * 0.02f + 0.2f;
-		//btf32 time2 = 0.27f;
-		//btf32 time2 = 0.22f;
-
-		m::Vector2 sunrot = m::AngToVec2(glm::radians((floor(time2 * 360.f * 16.f) / 16.f) + 180.f));
-		//m::Vector2 sunrot = m::AngToVec2(glm::radians(time2 * 360.f + 180.f));
-		//glm::vec3 sunrot2 = glm::vec3(sunrot.x, sunrot.y, 0.f);
-		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x, sunrot.y, sunrot.y * 1.2f));
-
-		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(sunrot.x * 0.25f, 1.f, sunrot.x * 0.25f));
-		//glm::vec3 sunrot2 = (glm::vec3)m::Normalize(m::Vector3(0.25f, 1.f, 0.25f));
 		m::Vector3 sunVec = m::Normalize(m::Vector3(0.5f, 1.f, 0.5f));
-		//m::Vector3 sunVec = m::Vector3(0.f, 1.f, 0.f);
 
 		graphics::Matrix4x4 matrix; // Matrix used for rendering env. props (so far...)
 
@@ -726,7 +706,8 @@ namespace core
 		}
 		else
 		{
-			m::Vector3 lightPos(
+			m::Vector3 lightPos(0.f, 0.f, 0.f);
+			if (!config.bEditMode) lightPos = m::Vector3(
 				ENTITY(players[activePlayer])->t.position.x,
 				ENTITY(players[activePlayer])->t.altitude,
 				-ENTITY(players[activePlayer])->t.position.y);
@@ -754,16 +735,9 @@ namespace core
 
 		if (!config.bEditMode) if (oob) ProjectileDraw(); // Draw projectiles
 
-		//-------------------------------- DRAW TERRAIN
-
-		matrix = graphics::Matrix4x4();
-		if (oob)
-		{
-			//graphics::MatrixTransform(matrix, m::Vector3(roundf(ENTITY(activePlayer)->t.position.x / 8) * 8, 0.f, roundf(ENTITY(activePlayer)->t.position.y / 8) * 8));
-			//DrawMesh(ID_NULL, acv::GetM(acv::m_terrain_near), acv::GetT(acv::t_terrain_sanddirt), SS_TERRAIN, matrix);
-		}
-
 		//-------------------------------- DRAW ENTITIES AND PROPS
+		
+		matrix = graphics::Matrix4x4();
 
 		#ifdef DEF_DRAW_WIREFRAME
 		graphics::SetRenderWire();
@@ -771,9 +745,11 @@ namespace core
 
 		if (config.bEditMode)
 		{
-			bti32 editor_cursor_x = roundf(editor_cursor.x);
-			bti32 editor_cursor_y = roundf(editor_cursor.y);
-			graphics::MatrixTransform(matrix, m::Vector3(editor_cursor_x, env::eCells.terrain_height[editor_cursor_x][editor_cursor_y] / TERRAIN_HEIGHT_DIVISION, editor_cursor_y));
+			bti32 editor_cursor_x = roundf(editor.cursor.x);
+			bti32 editor_cursor_y = roundf(editor.cursor.y);
+			graphics::MatrixTransform(matrix, m::Vector3(editor_cursor_x,
+				env::eCells.terrain_height[editor_cursor_x][editor_cursor_y] /
+				TERRAIN_HEIGHT_DIVISION, editor_cursor_y));
 			DrawMesh(ID_NULL, acv::GetM(acv::m_debugcell), acv::GetT(acv::t_gui_bar_red), SS_NORMAL, matrix);
 
 			btui32 drawrange = 16u; // Create min/max draw coordinates
@@ -856,19 +832,21 @@ namespace core
 			//env::DrawDebugGizmos(cs);
 			#endif
 
-			//*
-			for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
-			{
-				#ifdef DEF_FPP_INVISIBLE
-				if (i != players[activePlayer] && block_entity.used[i])
-				#else
-				if (GetEntityExists(i))
-				#endif
-				{
+			for (btID i = 0; i <= GetLastEntity(); i++) { // For every entity
+				// Early exit if the entity isnt even real
+				if (!GetEntityExists(i)) continue;
+				// For distance culling
+				m::Vector3 diff = m::Vector3(ENTITY(i)->t.position.x, ENTITY(i)->t.altitude, ENTITY(i)->t.position.y)
+					- camViewPosition[activePlayer];
+				// Dot against the camera direction, for not drawing behind us
+				// Not as good as frustum culling, but I'll live
+				btf32 dot = m::Dot(diff,
+					m::Normalize(camViewTarget[activePlayer] - camViewPosition[activePlayer]));
+				// Culling
+				if (m::Length(diff) < 30.f && dot > 0.f) {
 					EntityDraw(i);
 				}
 			}
-			//*/
 
 			#define DRAWRANGE 16u
 			/*
@@ -910,111 +888,83 @@ namespace core
 		#endif // DEF_DRAW_WIREFRAME
 	}
 
+	// move somewhere else
+	void SoulTransferTemp(btID player, btID from, btID to) {
+		// if we are allied
+		if (fac::GetAllegiance(ENTITY(from)->faction, ENTITY(to)->faction) == fac::allied) {
+			// SOUL TRANSFER
+			if (players[0] != players[1]) { // If both player's arent using the same entity
+				ACTOR(players[player])->aiControlled = true; // Let the AI take over
+				ACTOR(players[player])->ai_target_ent = ID_NULL; // Let the AI take over
+				ACTOR(players[player])->ai_ally_ent = ID_NULL; // Let the AI take over
+			}
+			players[player] = to; // Set player to control player's view target
+			ACTOR(players[player])->aiControlled = false;
+		}
+	}
+
 	void TickGUI()
 	{
-		// TODO: make this less shit
+		// Not the most elegant of functions
 		#ifdef DEF_NMP
-		for (btID i = 0u; i < NUM_PLAYERS; ++i)
-		{
+		for (btID i = 0u; i < config.iNumNWPlayers; ++i) {
 			if (input::GetHit(i, input::key::INV_CYCLE_L))
 				ActorDecrEquipSlot(players[i]);
 			if (input::GetHit(i, input::key::INV_CYCLE_R))
 				ActorIncrEquipSlot(players[i]);
-			if (input::GetHit(i, input::key::ACTIVATE)) // Pick up items
-				if (viewtarget[i] != ID_NULL && GetEntityType(viewtarget[i]) == ENTITY_TYPE_RESTING_ITEM) {
-					ActorTakeItem(players[i], viewtarget[i]);
+			if (input::GetHit(i, input::key::ACTIVATE)) { // Pick up items
+				btID viewtarget = GetEntity<ECActor>(players[i])->viewtarget;
+				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
+					ActorTakeItem(players[i], viewtarget);
 				}
-				else if (viewtarget[i] != ID_NULL && GetEntityType(viewtarget[i]) == ENTITY_TYPE_ACTOR)
-				{
+				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR) {
 					// hold hand
-					ActorTryHoldHand(players[i], viewtarget[i]);
-
-					// SOUL TRANSFER
-					// if we are allied
-					/*
-					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget[activePlayer])->faction) == fac::allied)
-					{
-					// SOUL TRANSFER
-					if (players[0] != players[1]) // If both player's arent using the same entity
-					{
-					ACTOR(players[activePlayer])->aiControlled = true; // Let the AI take over
-					ACTOR(players[activePlayer])->ai_target_ent = ID_NULL; // Let the AI take over
-					ACTOR(players[activePlayer])->ai_ally_ent = ID_NULL; // Let the AI take over
-					}
-					players[activePlayer] = viewtarget[activePlayer]; // Set player to control player's view target
-					ACTOR(players[activePlayer])->aiControlled = false;
-					}
-					*/
+					ActorTryHoldHand(players[i], viewtarget);
+					// soultransfer
+					//SoulTransferTemp(i, players[i], viewtarget);
 				}
-			if (input::GetHit(i, input::key::DROP_HELD))
-			{
-				ActorDropItem(players[i], ACTOR(players[i])->inv_active_slot);
-				//network::SendCharaInv(ACTOR(players[i]), players[i]); // TEMP FAILSAFE
 			}
+			if (input::GetHit(i, input::key::DROP_HELD))
+				ActorDropItem(players[i], ACTOR(players[i])->inv_active_slot);
 		}
 		#else
-		if (activePlayer == 0u)
-		{
-			btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+		if (activePlayer == 0u) {
 			if (input::GetHit(input::key::INV_CYCLE_L))
 				ActorDecrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::INV_CYCLE_R))
 				ActorIncrEquipSlot(players[activePlayer]);
-			if (input::GetHit(input::key::ACTIVATE)) // Pick up items
-				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM)
+			if (input::GetHit(input::key::ACTIVATE)) { // Pick up items
+				btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
 					ActorTakeItem(players[activePlayer], viewtarget);
-				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR)
-				{
+				}
+				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR) {
 					// hold hand
 					ActorTryHoldHand(players[activePlayer], viewtarget);
-
-					// SOUL TRANSFER
-					// if we are allied
-					/*
-					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget[activePlayer])->faction) == fac::allied)
-					{
-						// SOUL TRANSFER
-						if (players[0] != players[1]) // If both player's arent using the same entity
-						{
-							ACTOR(players[activePlayer])->aiControlled = true; // Let the AI take over
-							ACTOR(players[activePlayer])->ai_target_ent = ID_NULL; // Let the AI take over
-							ACTOR(players[activePlayer])->ai_ally_ent = ID_NULL; // Let the AI take over
-						}
-						players[activePlayer] = viewtarget[activePlayer]; // Set player to control player's view target
-						ACTOR(players[activePlayer])->aiControlled = false;
-					}
-					*/
+					// soultransfer
+					//SoulTransferTemp(activePlayer, players[activePlayer], viewtarget);
 				}
+			}
 			if (input::GetHit(input::key::DROP_HELD))
 				ActorDropItem(players[activePlayer], ACTOR(players[activePlayer])->inv_active_slot);
 		}
-		else
-		{
-			btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+		else {
 			if (input::GetHit(input::key::C_INV_CYCLE_L))
 				ActorDecrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::C_INV_CYCLE_R))
 				ActorIncrEquipSlot(players[activePlayer]);
-			if (input::GetHit(input::key::C_ACTIVATE)) // Pick up items
-				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM)
+			if (input::GetHit(input::key::C_ACTIVATE)) { // Pick up items
+				btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
 					ActorTakeItem(players[activePlayer], viewtarget);
-				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR)
-				{
-					// SOUL TRANSFER
-					// Possession, actually
-					// if we are allied
-					if (fac::GetAllegiance(ENTITY(players[activePlayer])->faction, ENTITY(viewtarget)->faction) == fac::allied)
-					{
-						// begin soul transfer
-						// If both players aren't controlling the same entity, let the AI take over
-						if (players[0] != players[1])
-							ACTOR(players[activePlayer])->aiControlled = true;
-						// Set the player to possess their view target entity
-						players[activePlayer] = viewtarget;
-						// Disable the AI on the possessed entity
-						ACTOR(players[activePlayer])->aiControlled = false;
-					}
 				}
+				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR) {
+					// hold hand
+					ActorTryHoldHand(players[activePlayer], viewtarget);
+					// soultransfer
+					//SoulTransferTemp(activePlayer, players[activePlayer], viewtarget);
+				}
+			}
 			if (input::GetHit(input::key::C_DROP_HELD))
 				ActorDropItem(players[activePlayer], ACTOR(players[activePlayer])->inv_active_slot);
 		}
@@ -1023,12 +973,10 @@ namespace core
 
 	void GUISetMessag(int player, char* string)
 	{
-		// this is evil, try it sometime
-		//graphics::SetFrameSize(graphics::FrameSizeX(), graphics::FrameSizeY());
 		graphics::SetGUIFrameSize(graphics::FrameSizeX(), graphics::FrameSizeY());
 		int halfw = -(int)graphics::FrameSizeX() / 2;
-		message_time[player] = tickCount + 90u;
-		text_message[player].ReGen(string, halfw + 16, -halfw - 16, 32);
+		gui.message_time[player] = tickCount + 90u;
+		gui.text_message[player].ReGen(string, halfw + 16, -halfw - 16, 32);
 	}
 
 	void GUIDrawInventory(Inventory* inv, btui16 active_slot)
@@ -1040,27 +988,27 @@ namespace core
 
 		graphics::GUIText text;
 
-		guiInvTimer[activePlayer] = m::StepToward(guiInvTimer[activePlayer], (btf32)active_slot, 0.4f);
+		gui.guiInvTimer[activePlayer] = m::StepToward(gui.guiInvTimer[activePlayer], (btf32)active_slot, 0.4f);
 
 		bti32 xoffs = p1_x_start + 24;
 		bti32 yoffs = p1_y_start + 24 + 32; // add hp bar height
 
 		// Calculate loop bounds
-		bti32 min = (bti32)ceilf(guiInvTimer[activePlayer]) - 2;
+		bti32 min = (bti32)ceilf(gui.guiInvTimer[activePlayer]) - 2;
 		if (min < 0) min = 0;
-		bti32 max = (bti32)floorf(guiInvTimer[activePlayer]) + 3;
+		bti32 max = (bti32)floorf(gui.guiInvTimer[activePlayer]) + 3;
 		if (max >= inv->items.Size()) max = inv->items.Size() - 1;
 		// Loop through items
 		for (int i = min; i <= max; ++i) {
 			if (inv->items.Used(i)) {
-				btf32 xoffsf = guiInvTimer[activePlayer] * invspace;
-				if ((btf32)i >= guiInvTimer[activePlayer]) {
-					btf32 opacity = 1.f - m::Clamp(fabsf(((btf32)i - guiInvTimer[activePlayer]) * (1.f / 3.f)), 0.f, 1.f);
+				btf32 xoffsf = gui.guiInvTimer[activePlayer] * invspace;
+				if ((btf32)i >= gui.guiInvTimer[activePlayer]) {
+					btf32 opacity = 1.f - m::Clamp(fabsf(((btf32)i - gui.guiInvTimer[activePlayer]) * (1.f / 3.f)), 0.f, 1.f);
 					graphics::DrawGUITexture(&acv::GetT(acv::items[GETITEMINST(inv->items[i])->id_item_template]->id_icon),
 						xoffs + (i * invspace) - xoffsf, yoffs, 64, 64, opacity);
 				}
 				else {
-					btf32 opacity = 1.f - m::Clamp(fabsf(((btf32)i - guiInvTimer[activePlayer]) * 0.5f), 0.f, 1.f);
+					btf32 opacity = 1.f - m::Clamp(fabsf(((btf32)i - gui.guiInvTimer[activePlayer]) * 0.5f), 0.f, 1.f);
 					graphics::DrawGUITexture(&acv::GetT(acv::items[GETITEMINST(inv->items[i])->id_item_template]->id_icon),
 						xoffs, yoffs - (i * invspace) + xoffsf, 64, 64, opacity);
 				}
@@ -1081,7 +1029,7 @@ namespace core
 			}
 		}
 
-		int boxoffs = (m::Clamp(fabsf(((btf32)active_slot - guiInvTimer[activePlayer]) * 0.5f), 0.f, 1.f) * 12.f);
+		int boxoffs = (m::Clamp(fabsf(((btf32)active_slot - gui.guiInvTimer[activePlayer]) * 0.5f), 0.f, 1.f) * 12.f);
 		if (boxoffs > 6) boxoffs = 6;
 
 		graphics::DrawGUIBox(&acv::GetT(acv::t_gui_select_box),
@@ -1108,27 +1056,27 @@ namespace core
 		//TODO: use 'actor'?
 		ECActor* chara = ACTOR(players[activePlayer]);
 
-		if (message_time[activePlayer] > tickCount) {
-			text_message[activePlayer].SetOffset(0, (90u - (message_time[activePlayer] - tickCount)) / 4);
-			text_message[activePlayer].Draw(&acv::GetT(acv::t_gui_font),
-				(float)(message_time[activePlayer] - tickCount) / 90.f);
-			//text_message[activePlayer].Draw(&acv::GetT(acv::t_gui_font), 0.5f);
+		// Draw message
+		if (gui.message_time[activePlayer] > tickCount) {
+			gui.text_message[activePlayer].SetOffset(0, (90u - (gui.message_time[activePlayer] - tickCount)) / 4);
+			gui.text_message[activePlayer].Draw(&acv::GetT(acv::t_gui_font),
+				(float)(gui.message_time[activePlayer] - tickCount) / 90.f);
 		}
 
-		// hurt effect
-		//graphics::DrawGUITexture(&acv::GetT(acv::t_gui_hurt), 0, 0, config.iWinX, config.iWinY);
-		if (ENTITY(players[activePlayer])->state.damagestate < guiPlayerHP[activePlayer])
-		{
+		// Draw hurt effect
+		if (ENTITY(players[activePlayer])->damagestate < gui.guiPlayerHP[activePlayer]) {
 			graphics::DrawGUITexture(&acv::GetT(acv::t_gui_hurt), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(),
-				(btf32)(guiPlayerHP[activePlayer] - ENTITY(players[activePlayer])->state.damagestate) * (10.f / 1000.f));
-			guiPlayerHP[activePlayer] -= 5u;
+				(btf32)(gui.guiPlayerHP[activePlayer] - ENTITY(players[activePlayer])->damagestate) * (10.f / 1000.f));
+			gui.guiPlayerHP[activePlayer] =
+				m::StepToward(gui.guiPlayerHP[activePlayer],
+					ENTITY(players[activePlayer])->damagestate, 5);
 		}
-		else
-		{
-			guiPlayerHP[activePlayer] = ENTITY(players[activePlayer])->state.damagestate;
+		else {
+			gui.guiPlayerHP[activePlayer] = ENTITY(players[activePlayer])->damagestate;
 		}
+
+		// Draw crosshairs
 		if (!config.b3PP) {
-			// croshair
 			if (config.bCrossHairs) graphics::DrawGUITexture(&acv::GetT(acv::t_gui_crosshair), 0, 0, 32, 32);
 		}
 
@@ -1146,14 +1094,14 @@ namespace core
 				p1_x_start + roundf(hp * (hpscale * 0.5f)), p1_y_start + 8,
 				(int)ceilf(hp * hpscale), 16);
 			char stuff[32];
-			snprintf(stuff, 32, "%iHP", player->state.damagestate);
-			text_hp.ReGen(stuff, p1_x_start + 4, p1_x_start + 128, p1_y_start + 13);
-			text_hp.Draw(&acv::GetT(acv::t_gui_font));
+			snprintf(stuff, 32, "%iHP", player->damagestate);
+			gui.text_hp.ReGen(stuff, p1_x_start + 4, p1_x_start + 128, p1_y_start + 13);
+			gui.text_hp.Draw(&acv::GetT(acv::t_gui_font));
 			// effects
 			int effoffs = 1;
-			for (int i = 0; i < player->state.effects.Size(); ++i) {
-				if (!player->state.effects.Used(i)) continue;
-				graphics::DrawGUITexture(&acv::GetT(player->state.effects[i].effect_icon), p1_x_start + 128 + effoffs * 16, p1_y_start + 8, 16, 16);
+			for (int i = 0; i < player->effects.Size(); ++i) {
+				if (!player->effects.Used(i)) continue;
+				graphics::DrawGUITexture(&acv::GetT(player->effects[i].effect_icon), p1_x_start + 128 + effoffs * 16, p1_y_start + 8, 16, 16);
 				++effoffs;
 			}
 		}
@@ -1194,8 +1142,8 @@ namespace core
 					textboxY = -(bti32)graphics::FrameSizeY() / 2 + 24;
 
 				// Draw its name
-				text_temp.ReGen(EntityName(viewtarget), textboxX, textboxX + 128, textboxY);
-				guibox.ReGen(textboxX, textboxX + text_temp.sizex, textboxY - text_temp.sizey, textboxY, 4, 10);
+				gui.text_temp.ReGen(EntityName(viewtarget), textboxX, textboxX + 128, textboxY);
+				gui.guibox.ReGen(textboxX, textboxX + gui.text_temp.sizex, textboxY - gui.text_temp.sizey, textboxY, 4, 10);
 				// draw our enemy's health
 				if (ACTOR(players[activePlayer])->atk_target != ID_NULL) {
 					btf32 hp = (btf32)core::GetHP(ACTOR(players[activePlayer])->atk_target) / 1000.f;
@@ -1207,8 +1155,8 @@ namespace core
 						(int)ceilf(hp * hpscale), 16);
 				}
 				// draw the thing
-				guibox.Draw(&acv::GetT(acv::t_gui_box), 0.75f);
-				text_temp.Draw(&acv::GetT(acv::t_gui_font), 1.f);
+				gui.guibox.Draw(&acv::GetT(acv::t_gui_box), 0.75f);
+				gui.text_temp.Draw(&acv::GetT(acv::t_gui_font), 1.f);
 				// draw the pick-up icon
 				if (GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM)
 					graphics::DrawGUITexture(&acv::GetT(acv::t_gui_icon_pick_up), target_x_start, target_y_start, 24, 24);
@@ -1223,8 +1171,8 @@ namespace core
 			char stuff[32];
 			snprintf(stuff, 32, "Mushrooms Collected: %i of 12", ACTOR(players[activePlayer])->inventory.CountItemsOfTemplate(1u));
 			// reuse health text 4 fun
-			text_hp.ReGen(stuff, p1_x_start + 8, 0, p1_y_start + graphics::FrameSizeY() - 16);
-			text_hp.Draw(&acv::GetT(acv::t_gui_font));
+			gui.text_hp.ReGen(stuff, p1_x_start + 8, 0, p1_y_start + graphics::FrameSizeY() - 16);
+			gui.text_hp.Draw(&acv::GetT(acv::t_gui_font));
 		}
 		#endif
 	}
@@ -1232,11 +1180,11 @@ namespace core
 	void DrawPostDraw(btf64 delta)
 	{
 		#ifdef _DEBUG
-		text_version.Draw(&acv::GetT(acv::t_gui_font));
+		gui.text_version.Draw(&acv::GetT(acv::t_gui_font));
 		char buffer[16];
 		int i = snprintf(buffer, 16, "%f", 1.f / delta);
-		text_fps.ReGen(buffer, config.iWinX * -0.5f, config.iWinX * 0.5f, config.iWinY * 0.5f - 24.f);
-		text_fps.Draw(&acv::GetT(acv::t_gui_font));
+		gui.text_fps.ReGen(buffer, config.iWinX * -0.5f, config.iWinX * 0.5f, config.iWinY * 0.5f - 24.f);
+		gui.text_fps.Draw(&acv::GetT(acv::t_gui_font));
 		//graphics::DrawGUITexture(&acv::GetT(acv::t_cursor), cursor_x, cursor_y, 128, 128);
 		// draw archiver loaded list
 		for (int i2 = 0; i2 < acv::AssetCount(); ++i2)
@@ -1246,13 +1194,13 @@ namespace core
 				graphics::DrawGUITexture(&acv::GetT(acv::t_debug_loaded_n), 2 + i2 * 4 - ((bti32)config.iWinX / 2), ((bti32)config.iWinY / 2) - 40, 4, 8);
 		#endif
 		#if DEF_PROJECT == PROJECT_BC
-		if (bShowGuide) {
-			guideW = m::StepToward(guideW, 512, 12);
-			graphics::DrawGUITexture(&acv::GetT(acv::t_gui_guide), 0, 0, guideW, 512, 1.f);
+		if (gui.bShowGuide) {
+			gui.guideW = m::StepToward(gui.guideW, 512, 12);
+			graphics::DrawGUITexture(&acv::GetT(acv::t_gui_guide), 0, 0, gui.guideW, 512, 1.f);
 			//graphics::DrawGUITexture(&acv::GetT(acv::t_gui_guide), 0, 0, guideW, guideW, 1.f);
 		}
 		else {
-			text_guidehelp.Draw(&acv::GetT(acv::t_gui_font));
+			gui.text_guidehelp.Draw(&acv::GetT(acv::t_gui_font));
 		}
 		#endif
 	}
@@ -1262,27 +1210,32 @@ namespace core
 		bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C,
 		bool crouch, bool jump) {
 		ECActor* actor = ACTOR(players[playerIndex]);
-		actor->input = m::Rotate(input, actor->viewYaw.Rad()) * m::Vector2(-1.f, 1.f);
+		actor->input.move = m::Rotate(input, actor->viewYaw.Rad()) * m::Vector2(-1.f, 1.f);
 		actor->viewYaw.Rotate(rot_x);
 		actor->viewPitch.RotateClamped(rot_y, -80.f, 70.f);
-		actor->inputBV.setto(ECActor::IN_USE, use);
-		actor->inputBV.setto(ECActor::IN_USE_HIT, use_hit);
-		actor->inputBV.setto(ECActor::IN_USE_ALT, use_alt);
-		actor->inputBV.setto(ECActor::IN_RUN, run);
-		actor->inputBV.setto(ECActor::IN_AIM, aim);
-		actor->inputBV.setto(ECActor::IN_ACTN_A, ACTION_A);
-		actor->inputBV.setto(ECActor::IN_ACTN_B, ACTION_B);
-		actor->inputBV.setto(ECActor::IN_ACTN_C, ACTION_C);
-		actor->inputBV.setto(ECActor::IN_CROUCH, crouch);
-		actor->inputBV.setto(ECActor::IN_JUMP, jump);
+		actor->input.bits.setto(IN_USE, use);
+		actor->input.bits.setto(IN_USE_HIT, use_hit);
+		actor->input.bits.setto(IN_USE_ALT, use_alt);
+		actor->input.bits.setto(IN_RUN, run);
+		actor->input.bits.setto(IN_AIM, aim);
+		actor->input.bits.setto(IN_ACTN_A, ACTION_A);
+		actor->input.bits.setto(IN_ACTN_B, ACTION_B);
+		actor->input.bits.setto(IN_ACTN_C, ACTION_C);
+		actor->input.bits.setto(IN_CROUCH, crouch);
+		actor->input.bits.setto(IN_JUMP, jump);
 	}
 
 	void CheckPlayerAI() {
+		#if DEF_NMP
+		for (int i = 0; i < config.iNumNWPlayers; ++i)
+			ACTOR(players[i])->aiControlled = false;
+		#else
 		ACTOR(players[0])->aiControlled = false;
 		if (config.bSplitScreen)
 			ACTOR(players[1])->aiControlled = false;
 		else
 			ACTOR(players[1])->aiControlled = true;
+		#endif
 	}
 
 	void AddEntityCell(btui32 x, btui32 y, btID e)
@@ -1314,8 +1267,8 @@ namespace core
 		btID id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
 		PrefabCommon(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
-		ENTITY(id)->properties.set(ECCommon::ePREFAB_ITEM);
-		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
+		ENTITY(id)->physicsFlags.set(ECCommon::ePREFAB_ITEM);
+		ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
 		ITEM(id)->item_instance = SpawnItem(item_template);
 		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemInstance(ITEM(id)->item_instance))->id_item_template]->f_radius;
 		ENTITY(id)->height = 0.5f;
@@ -1336,11 +1289,11 @@ namespace core
 		//ENTITY(id)->t.height += 1.f; // temp
 		ENTITY(id)->t.altitude = height;
 		AddEntityCell(ENTITY(id)->t.csi.c[eCELL_I].x, ENTITY(id)->t.csi.c[eCELL_I].y, id);
-		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
-		ENTITY(id)->state.damagestate = STATE_DAMAGE_MAX;
+		ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
+		ENTITY(id)->damagestate = STATE_DAMAGE_MAX;
 		ENTITY(id)->faction = fac::faction::none;
-		ENTITY(id)->properties.set(ECCommon::ePREFAB_ITEM);
-		ENTITY(id)->state.stateFlags.set(ActiveState::eALIVE);
+		ENTITY(id)->physicsFlags.set(ECCommon::ePREFAB_ITEM);
+		ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
 		ITEM(id)->item_instance = itemid;
 		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemInstance(itemid))->id_item_template]->f_radius;
 		ENTITY(id)->height = 0.5f;
@@ -1378,22 +1331,6 @@ namespace core
 		std::cout << "Destroyed item " << id << std::endl;
 	}
 
-	btID SpawnActivator(btui32 x, btui32 y)
-	{
-		btID id = InitActivator(ACTIVATOR_TYPE_JUNK);
-		StaticActivator* act = (StaticActivator*)GetActivatorPtr(id);
-		act->homePosition.x = x;
-		act->homePosition.y = y;
-		refCells[x][y].ref_activator = id;
-		return id;
-	}
-	void DestroyActivator(btID id)
-	{
-		StaticActivator* act = (StaticActivator*)GetActivatorPtr(id);
-		refCells[act->homePosition.x][act->homePosition.y].ref_activator = ID_NULL;
-		FreeActivator(id);
-	}
-
 	void SpawnProjectile(fac::faction faction, btID type, m::Vector2 pos, btf32 height,
 		float yaw, float pitch)
 	{
@@ -1407,10 +1344,10 @@ namespace core
 		//
 		/*
 		btf32 r = 5.f;
-		btf32 pitch_x = cos(editor_cam_pitch.Rad());
-		btf32 pitch_y = sin(editor_cam_pitch.Rad());
-		btf32 yaw_x = cos(editor_cam_yaw.Rad());
-		btf32 yaw_y = sin(editor_cam_yaw.Rad());
+		btf32 pitch_x = cos(editor.cam_pitch.Rad());
+		btf32 pitch_y = sin(editor.cam_pitch.Rad());
+		btf32 yaw_x = cos(editor.cam_yaw.Rad());
+		btf32 yaw_y = sin(editor.cam_yaw.Rad());
 		viewPosition[0] = viewTarget[0] + r * m::Vector3(-yaw_y * pitch_x, pitch_y, -yaw_x * pitch_x);
 		*/
 
@@ -1600,7 +1537,7 @@ namespace core
 					///*
 					for (int i = 0; i <= GetLastEntity(); i++)
 					{
-						if (GetEntityExists(i) && ENTITY(i)->properties.get(ECCommon::eCOLLIDE_PRJ))
+						if (GetEntityExists(i) && ENTITY(i)->physicsFlags.get(ECCommon::eCOLLIDE_PRJ))
 						{
 							if (fac::GetAllegiance(ENTITY(i)->faction, (fac::faction)proj[index].faction) != fac::allied)
 							{
@@ -1614,7 +1551,7 @@ namespace core
 									if (dist < 0.5f)
 									{
 										// TODO: pass angle to damage fn
-										ENTITY(i)->state.Damage(acv::projectiles[proj[index].type].damage, glm::degrees(m::Vec2ToAng(vec)));
+										ENTITY(i)->Damage(acv::projectiles[proj[index].type].damage, glm::degrees(m::Vec2ToAng(vec)));
 										DestroyProjectile(index); // Destroy the projectile
 									}
 								}
@@ -1649,11 +1586,11 @@ namespace core
 											if (dist < 0.5f)
 											{
 												// kill
-												ENTITY(ID)->state.hp -= 0.5f;
-												if (ENTITY(ID)->state.hp <= 0.f)
+												ENTITY(ID)->hp -= 0.5f;
+												if (ENTITY(ID)->hp <= 0.f)
 												{
-													ENTITY(ID)->state.properties.unset(ActiveState::eALIVE);
-													ENTITY(ID)->state.hp = 0.f;
+													ENTITY(ID)->properties.unset(ECCommon::eALIVE);
+													ENTITY(ID)->hp = 0.f;
 												}
 												DestroyProjectile(index); // Destroy the projectile
 											}

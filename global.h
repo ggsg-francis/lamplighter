@@ -8,12 +8,34 @@
 // this is done in the project configuration setting now
 //#define DEF_NMP
 
-#ifdef _MSC_VER
-//#define DEF_USE_CS // Use cute sound
+#ifdef DEF_NMP
+#define DEF_V_NMP 1
+#else
+#define DEF_V_NMP 0
 #endif
+// Release version
+#define VERSION_MAJOR 22u // Major version should be incremented any time save compatibility is broken
+#define VERSION_MINOR 10 // Minor version should be incremented for every new release
+// This version number basically says which game this is
+#define VERSION_PROJECT (\
+DEF_PROJECT |\
+(DEF_V_NMP << 8u) |\
+(DEF_GRID << 9u) |\
+(DEF_AUTOSAVE_ON_START << 10u) |\
+(DEF_AUTO_RELOAD_ON_DEATH << 11u) |\
+(DEF_AUTOAIM << 12u) |\
+(DEF_LONGJUMP << 13u) |\
+(DEF_WALL_SLIDE_PRESERVE_SPEED << 14u) |\
+(DEF_NPC_INFINITE_CONS << 15u) |\
+(DEF_PVP << 16u) |\
+(DEF_SPAWN_ON_INIT << 17u) |\
+(DEF_SPAWN_NPC << 18u)\
+)
+
+#define DEF_USE_CS // Use cute sound
 
 #ifdef DEF_NMP
-#define NUM_PLAYERS 2
+#define NUM_PLAYERS 4 // danger zone
 #else
 #define NUM_PLAYERS 2 // always 2 (co-op splitscreen)
 #endif
@@ -40,18 +62,13 @@
 #define WORLD_SIZE_MAXINT_OLD 2047
 #define WORLD_SIZE_SQUARED (WORLD_SIZE * WORLD_SIZE)
 
-#if DEF_PROJECT == DEF_PROJECT_EXPLORE
+#if DEF_PROJECT == PROJECT_EX
 //#define SCREEN_UPSCALE_THRESHOLD 1024u
 #define SCREEN_UPSCALE_THRESHOLD 1664u
 #elif DEF_PROJECT == PROJECT_BC
 #define SCREEN_UPSCALE_THRESHOLD 640u
 #endif
 #define SCREEN_POSTPROCESS_DOWNSAMPLE_DIVISION 4
-
-// Release version
-#define VERSION_MAJOR 19u
-#define VERSION_MINOR DEF_PROJECT
-#define VERSION_COMMENT DEF_PROJECTNAME_V
 
 #define MD_MATRIX_COUNT 4u
 
@@ -173,6 +190,14 @@ extern "C" {
 	#define ASSET_MESHBLEND_FILE 3u
 	#define ASSET_MESHDEFORM_FILE 4u
 	#define ASSET_SOUNDWAV_FILE 5u
+
+	#include <float.h>
+	inline void SetFP() {
+		btui32 current_word = 0;
+		//_controlfp_s(&current_word, _DN_SAVE, _MCW_DN); // Set denormal (don't know what this does)
+		//_controlfp_s(&current_word, _PC_24, _MCW_PC); // Set precision control (can't do on x64)
+		_controlfp_s(&current_word, _RC_NEAR, _MCW_RC); // Set rounding control
+	}
 
 	#ifdef __cplusplus
 }
