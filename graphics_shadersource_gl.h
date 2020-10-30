@@ -1,5 +1,4 @@
-#define SSRC_VERSION R"(
-#version 330 core
+#define SSRC_VERSION R"(#version 330 core
 )"
 
 //________________________________________________________________________________________________________________________________
@@ -269,31 +268,31 @@ uniform sampler2D uf_txtr;
 uniform float wx = 640.f;
 uniform float wy = 480.f;
 
-vec3 BloomAdd(float rndsz, float fmodx, float fmody, float offsetamt, vec2 pxpos) {
+// Optimized bloom
+const int bloom_iter = 5;
+const float bloom_rndsz = 24.;
+const float bloom_offs = 1.f / bloom_rndsz;
+vec3 BloomAdd(float fmodx, float fmody, float offsetamt, vec2 pxpos) {
 	return mix(
-		mix(
-			texture(uf_txtr, floor(pxpos * rndsz) / rndsz).rgb,
-			texture(uf_txtr, floor((pxpos + vec2(offsetamt, 0)) * rndsz) / rndsz).rgb,
+		mix(texture(uf_txtr, pxpos).rgb,
+			texture(uf_txtr, pxpos + vec2(offsetamt, 0.f)).rgb,
 			fmodx),
-		mix(
-			texture(uf_txtr, floor((pxpos + vec2(0, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(uf_txtr, floor((pxpos + vec2(offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
+		mix(texture(uf_txtr, pxpos + vec2(0.f, offsetamt)).rgb,
+			texture(uf_txtr, pxpos + vec2(offsetamt, offsetamt)).rgb,
 			fmodx),
 		fmody);
 }
 vec3 Bloom() {
-	int itercount = 6;
-	float rndsz = 24.;
-	float fmodx = (TexCoords.x - (floor(TexCoords.x * rndsz) / rndsz)) * rndsz;
-	float fmody = (TexCoords.y - (floor(TexCoords.y * rndsz) / rndsz)) * rndsz;
-	float offsetP = 1.f / rndsz;
-	vec3 bloom = vec3(0.f, 0.f, 0.f);
-	for (int x = -itercount; x < itercount; x++) {
-		for (int y = -itercount; y < itercount; y++) {
-			bloom += BloomAdd(rndsz, fmodx, fmody, offsetP, TexCoords + vec2(x * offsetP, y * offsetP));
-		}
-	}
-	return bloom / ((itercount * 2) * (itercount * 2)) * 0.5f;
+	float fmodx = TexCoords.x * bloom_rndsz - floor(TexCoords.x * bloom_rndsz);
+	float fmody = TexCoords.y * bloom_rndsz - floor(TexCoords.y * bloom_rndsz);
+	//float fmodx = mod(TexCoords.x * bloom_rndsz, 1.f);
+	//float fmody = mod(TexCoords.y * bloom_rndsz, 1.f);
+	vec2 tcfloor = floor(TexCoords * bloom_rndsz) / bloom_rndsz;
+	vec3 bloom = vec3(0.f, 0.f, 0.f);	
+	for (int x = -bloom_iter; x < bloom_iter; x++)
+		for (int y = -bloom_iter; y < bloom_iter; y++)
+			bloom += BloomAdd(fmodx, fmody, bloom_offs, tcfloor + vec2(x * bloom_offs, y * bloom_offs));
+	return bloom / ((bloom_iter * 2) * (bloom_iter * 2)) * 0.5f;
 }
 
 void main() { 
@@ -324,7 +323,8 @@ void main() {
 	
 	//col = clamp((col), 0, 1);	
 	
-	//col += clamp((Bloom()) * 0.75f, 0.f, 128.f);
+	//col += clamp((Bloom() - 0.1f) * 0.75f, 0.f, 128.f);
+	col += clamp((Bloom() - 0.1f) * 1.5f, 0.f, 128.f);
 
 	FragColor.rgb = col;
 	FragColor.a = 1.f;
@@ -412,31 +412,29 @@ float dither(float color) {
 }
 //*/
 
-vec3 BloomAdd(float rndsz, float fmodx, float fmody, float offsetamt, vec2 pxpos) {
+// Optimized bloom
+const int bloom_iter = 6;
+const float bloom_rndsz = 24.;
+const float bloom_offs = 1.f / bloom_rndsz;
+vec3 BloomAdd(float fmodx, float fmody, float offsetamt, vec2 pxpos) {
 	return mix(
-		mix(
-			texture(uf_txtr, floor(pxpos * rndsz) / rndsz).rgb,
-			texture(uf_txtr, floor((pxpos + vec2(offsetamt, 0)) * rndsz) / rndsz).rgb,
+		mix(texture(uf_txtr, pxpos).rgb,
+			texture(uf_txtr, pxpos + vec2(offsetamt, 0.f)).rgb,
 			fmodx),
-		mix(
-			texture(uf_txtr, floor((pxpos + vec2(0, offsetamt)) * rndsz) / rndsz).rgb,
-			texture(uf_txtr, floor((pxpos + vec2(offsetamt, offsetamt)) * rndsz) / rndsz).rgb,
+		mix(texture(uf_txtr, pxpos + vec2(0.f, offsetamt)).rgb,
+			texture(uf_txtr, pxpos + vec2(offsetamt, offsetamt)).rgb,
 			fmodx),
 		fmody);
 }
 vec3 Bloom() {
-	int itercount = 8;
-	float rndsz = 32.;
-	float fmodx = (TexCoords.x - (floor(TexCoords.x * rndsz) / rndsz)) * rndsz;
-	float fmody = (TexCoords.y - (floor(TexCoords.y * rndsz) / rndsz)) * rndsz;
-	float offsetP = 1.f / rndsz;
-	vec3 bloom = vec3(0.f, 0.f, 0.f);
-	for (int x = -itercount; x < itercount; x++) {
-		for (int y = -itercount; y < itercount; y++) {
-			bloom += BloomAdd(rndsz, fmodx, fmody, offsetP, TexCoords + vec2(x * offsetP, y * offsetP));
-		}
-	}
-	return bloom / ((itercount * 2) * (itercount * 2)) * 0.5f;
+	float fmodx = (TexCoords.x - (floor(TexCoords.x * bloom_rndsz) / bloom_rndsz)) * bloom_rndsz;
+	float fmody = (TexCoords.y - (floor(TexCoords.y * bloom_rndsz) / bloom_rndsz)) * bloom_rndsz;
+	vec2 tcfloor = floor(TexCoords * bloom_rndsz) / bloom_rndsz;
+	vec3 bloom = vec3(0.f, 0.f, 0.f);	
+	for (int x = -bloom_iter; x < bloom_iter; x++)
+		for (int y = -bloom_iter; y < bloom_iter; y++)
+			bloom += BloomAdd(fmodx, fmody, bloom_offs, tcfloor + vec2(x * bloom_offs, y * bloom_offs));
+	return bloom / ((bloom_iter * 2) * (bloom_iter * 2)) * 0.5f;
 }
 
 void main() { 
@@ -501,7 +499,7 @@ void main() {
 	//col.b = min(brightness, difB);
 	
 	// BOX BLUR BLOOM
-	//col += Bloom();
+	col += Bloom();
 	
 	FragColor.rgb = col;
 	FragColor.a = 1.f;
@@ -1283,6 +1281,10 @@ void main()
 void main() {
 	FragColor = texture(texture_diffuse1, TexCoords);
 	if (FragColor.a < 0.5) discard;
+
+	// dither test
+	//if ((int(gl_FragCoord.x) & 1) > 0 != (int(gl_FragCoord.y) & 1) > 0)
+	//	discard;
 
 	//float ndotl = clamp(dot(Normal, vsun) * Col.r, 0, 1);
 	//float ndotl_amb = clamp(dot(Normal, vec3(0,-1,0)) + 0.5f, 0, 1);

@@ -14,8 +14,8 @@ namespace core
 {
 	//--------------------------- GLOBAL VARIABLES
 
-	btui32 activePlayer = 0u;
-	btID players[NUM_PLAYERS];
+	lui32 activePlayer = 0u;
+	lid players[NUM_PLAYERS];
 	m::Vector3 camViewTarget[NUM_PLAYERS];
 	m::Vector3 camViewPosition[NUM_PLAYERS];
 
@@ -23,19 +23,21 @@ namespace core
 		// general editor properties
 		m::Vector2 cursor = m::Vector2(1024.f, 1024.f);
 		CellSpace cursorCS;
-		btf32 cursor_height = 0.f;
-		btui32 zoom = 5u;
+		lf32 cursor_height = 0.f;
+		lui32 zoom = 5u;
 		m::Angle cam_pitch = m::Angle(60.f);
 		m::Angle cam_yaw = m::Angle(0.f);
 		// Environment edit properties
-		btui32 flags_copy;
-		btID prop_copy;
+		lui32 flags_copy;
+		lid prop_copy;
+		#if DEF_GRID
 		env::NodePropDirection prop_dir_copy;
-		btui8 height_copy_ne;
-		btui8 height_copy_nw;
-		btui8 height_copy_se;
-		btui8 height_copy_sw;
-		btui8 material_copy;
+		#endif
+		lui8 height_copy_ne;
+		lui8 height_copy_nw;
+		lui8 height_copy_se;
+		lui8 height_copy_sw;
+		lui8 material_copy;
 	};
 	EditorStuff editor;
 	
@@ -43,10 +45,10 @@ namespace core
 		// TODO: shalt optimize later, we dont need all these duplicates
 		// Screen message
 		graphics::GUIText text_message[NUM_PLAYERS];
-		btui64 message_time[NUM_PLAYERS];
+		lui64 message_time[NUM_PLAYERS];
 		// for measuring HP changes for gui display
-		btui16 guiPlayerHP[NUM_PLAYERS];
-		btf32 guiInvTimer[NUM_PLAYERS];
+		lui16 guiPlayerHP[NUM_PLAYERS];
+		lf32 guiInvTimer[NUM_PLAYERS];
 		// inventory stuff
 		graphics::GUIBox guibox;
 		graphics::GUIText text_temp;
@@ -56,7 +58,7 @@ namespace core
 		// BC stuff
 		#if DEF_PROJECT == PROJECT_BC
 		bool bShowGuide = false;
-		bti32 guideW = 0;
+		li32 guideW = 0;
 		graphics::GUIText text_guidehelp;
 		#endif
 	};
@@ -72,21 +74,21 @@ namespace core
 	{
 		return core::refCells[x][y].ref_ents.Size();
 	}
-	btID CellEntity(int x, int y, int e)
+	lid CellEntity(int x, int y, int e)
 	{
 		return core::refCells[x][y].ref_ents[e];
 	}
 
 	//--------------------------- FUNCTION DECLARATIONS
 
-	btID GetClosestPlayer(btID id);
-	btID GetClosestEntity(btID id, btf32 dist);
-	btID GetClosestEntityAlleg(btID index, btf32 dist, fac::facalleg allegiance);
+	lid GetClosestPlayer(lid id);
+	lid GetClosestEntity(lid id, lf32 dist);
+	lid GetClosestEntityAlleg(lid index, lf32 dist, fac::facalleg allegiance);
 
-	void ProjectileTick(btf32 dt);
+	void ProjectileTick(lf32 dt);
 	void ProjectileDraw();
 	void ProjectileHitCheck();
-	void RemoveAllReferences(btID id);
+	void RemoveAllReferences(lid id);
 }
 
 

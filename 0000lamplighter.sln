@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "btype3d", "btype3d.vcxproj", "{10E0CAE9-EE96-4BBE-B1FD-5E359AF4629F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lamplighter", "lamplighter.vcxproj", "{10E0CAE9-EE96-4BBE-B1FD-5E359AF4629F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bt_archiver", "bt_archiver.vcxproj", "{DF93715E-CAAB-44EE-BF92-FA0072AF7DBE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ltrarchiver", "ltrarchiver.vcxproj", "{DF93715E-CAAB-44EE-BF92-FA0072AF7DBE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ltrrender", "ltrrender\ltrrender.vcxproj", "{4F61B776-AAD8-4ECD-88EA-EFF70E4E6A42}"
 EndProject

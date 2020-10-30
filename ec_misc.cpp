@@ -11,7 +11,7 @@ char* RestingItemName(void* ent) {
 	return (char*)acv::items[GETITEMINST(((ECSingleItem*)ent)->item_instance)->id_item_template]->name;
 }
 
-void RestingItemTick(btID id, void* ent, btf32 dt)
+void RestingItemTick(lid id, void* ent, lf32 dt)
 {
 	ECSingleItem* self = (ECSingleItem*)ent;
 
@@ -29,7 +29,7 @@ void RestingItemTick(btID id, void* ent, btf32 dt)
 
 	// TODO: finding tri is done again in physics tick, reuse it somehow
 
-	btf32 ground_height;
+	lf32 ground_height;
 	m::Vector2 slope(0.f, 0.f);
 	#if DEF_GRID
 	env::GetHeight(ground_height, self ->t.csi);
@@ -62,7 +62,7 @@ void RestingItemTick(btID id, void* ent, btf32 dt)
 	#endif
 }
 
-void RestingItemDraw(btID id, void* ent)
+void RestingItemDraw(lid id, void* ent)
 {
 	ECSingleItem* self = (ECSingleItem*)ent;
 	// Draw the mesh of our item id
@@ -73,22 +73,22 @@ void RestingItemDraw(btID id, void* ent)
 		DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
 }
 
-void TarBubbleTick(btID id, void* ent, btf32 dt)
+void TarBubbleTick(lid id, void* ent, lf32 dt)
 {
 	
 }
 
-void TarBubbleDraw(btID id, void* ent)
+void TarBubbleDraw(lid id, void* ent)
 {
 
 }
 
-void WallBugTick(btID id, void* ent, btf32 dt)
+void WallBugTick(lid id, void* ent, lf32 dt)
 {
 
 }
 
-void WallBugDraw(btID id, void* ent)
+void WallBugDraw(lid id, void* ent)
 {
 
 }

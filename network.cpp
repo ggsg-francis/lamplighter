@@ -30,8 +30,8 @@ namespace network
 {
 	TCPsocket socket_reliable_sv_incoming;
 	TCPsocket socket_reliable[NUM_PLAYERS - 1u];
-	btui32 player_count = 2u;
-	btui32 socket_count = 1u;
+	lui32 player_count = 2u;
+	lui32 socket_count = 1u;
 	UDPsocket socket_connection;
 
 	#if DEF_UDP
@@ -42,11 +42,11 @@ namespace network
 	SDLNet_SocketSet socketset;
 	
 	// Network ID
-	btui8 nid = 0u;
+	lui8 nid = 0u;
 
-	btf32 FloatTest() {
-		bti32 xm = 0x3f18492a;
-		btf32 x = *(btf32*)&xm;
+	lf32 FloatTest() {
+		li32 xm = 0x3f18492a;
+		lf32 x = *(lf32*)&xm;
 		x = (sqrt(x) + 1) / 2.0f;
 		return x;
 	}
@@ -92,7 +92,7 @@ namespace network
 	}
 	void RecvTCPHost() {
 		btPacket pak;
-		//btui32 readCount = 0u;
+		//lui32 readCount = 0u;
 		bool* read = new bool[socket_count];
 		for (int i = 0; i < socket_count; ++i) {
 			read[i] = false; // Set all to false
@@ -122,7 +122,7 @@ namespace network
 			switch (ptype) {
 			case eINPUT_BUFFER:
 				// Read input buffer into local input buffer for this player
-				input::input_buffer[PACKET_READ(pak, 3, btui8)]
+				input::input_buffer[PACKET_READ(pak, 3, lui8)]
 					= PACKET_READ(pak, 4, InputBuffer);
 				break;
 			default:
@@ -211,7 +211,7 @@ namespace network
 		{
 			IPaddress addr; // broadcast
 
-			btui32 seed = (btui32)time(NULL); // Server decides the seed
+			lui32 seed = (lui32)time(NULL); // Server decides the seed
 			srand(seed); //initialize the random seed
 
 			int found_other = SDLNet_ResolveHost(&addr, NULL, (Uint16)config.iPort);
@@ -223,7 +223,7 @@ namespace network
 			if (!socket_reliable_sv_incoming) goto exiterr;
 			printf("Socket opened OK\n");
 
-			btui32 taken_connections = 0u;
+			lui32 taken_connections = 0u;
 			printf("waiting for connection... \n");
 			while (true) {
 			wait:
@@ -240,18 +240,18 @@ namespace network
 							printf("Got packet! \n");
 							paktype type = PACKET_READ(pak, 0, paktype);
 							if (type == eCLIENT_CONNECT_REQUEST) {
-								if (_MSC_VER != PACKET_READ(pak, 12, btui32)) { // check compiler version number
+								if (_MSC_VER != PACKET_READ(pak, 12, lui32)) { // check compiler version number
 									printf("WARNING -- This client was built with a different compiler, desynchronization is likely.\n");
 								}
-								if (PACKET_READ(pak, 4, btui32) == VERSION_MAJOR // if the version number matches
-									&& PACKET_READ(pak, 8, btui32) == VERSION_MINOR // if the version number matches
-									&& FloatTest() == PACKET_READ(pak, 16, btf32)) { // and the floating point calculation matches
+								if (PACKET_READ(pak, 4, lui32) == VERSION_MAJOR // if the version number matches
+									&& PACKET_READ(pak, 8, lui32) == VERSION_MINOR // if the version number matches
+									&& FloatTest() == PACKET_READ(pak, 16, lf32)) { // and the floating point calculation matches
 									printf("Version accepted!\n");
 									// send connection packet
 									PACKET_WRITE(pak, 0, eSERVER_CONNECT_CONFIRM, paktype);
-									PACKET_WRITE(pak, 1, taken_connections + 1u, btui8); // send client NID (zero is always host)
-									PACKET_WRITE(pak, 4, seed, btui32); // send RNG seed
-									PACKET_WRITE(pak, 8, config.iNumNWPlayers, btui32); // send Player count
+									PACKET_WRITE(pak, 1, taken_connections + 1u, lui8); // send client NID (zero is always host)
+									PACKET_WRITE(pak, 4, seed, lui32); // send RNG seed
+									PACKET_WRITE(pak, 8, config.iNumNWPlayers, lui32); // send Player count
 									SDLNet_TCP_Send(socket_reliable[taken_connections], pak, PACKET_SIZE);
 									// One more connection
 									++taken_connections;
@@ -299,10 +299,10 @@ namespace network
 			// send connection packet
 			btPacket pak;
 			PACKET_WRITE(pak, 0, eCLIENT_CONNECT_REQUEST, paktype);
-			PACKET_WRITE(pak, 4, VERSION_MAJOR, btui32);
-			PACKET_WRITE(pak, 8, VERSION_MINOR, btui32);
-			PACKET_WRITE(pak, 12, _MSC_VER, btui32); // send compiler version number
-			PACKET_WRITE(pak, 16, FloatTest(), btf32); // send float test
+			PACKET_WRITE(pak, 4, VERSION_MAJOR, lui32);
+			PACKET_WRITE(pak, 8, VERSION_MINOR, lui32);
+			PACKET_WRITE(pak, 12, _MSC_VER, lui32); // send compiler version number
+			PACKET_WRITE(pak, 16, FloatTest(), lf32); // send float test
 			printf("Sending\n");
 			if (SDLNet_TCP_Send(socket_reliable[0], pak, PACKET_SIZE) < PACKET_SIZE)
 				printf("Could not send ;~;\n");
@@ -312,9 +312,9 @@ namespace network
 					switch (pak[0]) {
 					case eSERVER_CONNECT_CONFIRM:
 						printf("Connection accepted! NID is %u\n", pak[1]);
-						nid = PACKET_READ(pak, 1, btui8);
-						srand(PACKET_READ(pak, 4, btui32)); //initialize the random seed
-						config.iNumNWPlayers = PACKET_READ(pak, 8, btui32); // read Player count
+						nid = PACKET_READ(pak, 1, lui8);
+						srand(PACKET_READ(pak, 4, lui32)); //initialize the random seed
+						config.iNumNWPlayers = PACKET_READ(pak, 8, lui32); // read Player count
 						player_count = config.iNumNWPlayers;
 						goto exit;
 						break;
@@ -359,9 +359,9 @@ namespace network
 	bool SendInputClient() {
 		btPacket pak;
 		// Write packet type
-		PACKET_WRITE(pak, 0, eINPUT_BUFFER, btui8);
+		PACKET_WRITE(pak, 0, eINPUT_BUFFER, lui8);
 		// Write own input (and nw address)
-		PACKET_WRITE(pak, 3, nid, btui8);
+		PACKET_WRITE(pak, 3, nid, lui8);
 		PACKET_WRITE(pak, 4, input::input_buffer[nid], InputBuffer);
 		// Send to server
 		return SendTCPClient(&pak);
@@ -369,7 +369,7 @@ namespace network
 	bool SendInputHost() {
 		btPacket pak;
 		// Write packet type
-		PACKET_WRITE(pak, 0, eINPUT_BUFFER, btui8);
+		PACKET_WRITE(pak, 0, eINPUT_BUFFER, lui8);
 		// For every player (including us), write input
 		for (int i = 0; i < player_count; ++i) {
 			PACKET_WRITE(pak, i * sizeof(InputBuffer) + 4u,

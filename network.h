@@ -11,7 +11,7 @@
 // From Quake
 #define	MAXHOSTNAMELEN 256
 
-enum paktype : btui8
+enum paktype : lui8
 {
 	ePING, // Does nothing
 
@@ -22,12 +22,12 @@ enum paktype : btui8
 	eINPUT_BUFFER,
 };
 
-typedef btui8 btPacket[PACKET_SIZE];
+typedef lui8 btPacket[PACKET_SIZE];
 
 namespace network
 {
 	// Network ID
-	extern btui8 nid;
+	extern lui8 nid;
 
 	// Receive and handle any available packets as the client
 	void RecvTCPClient();

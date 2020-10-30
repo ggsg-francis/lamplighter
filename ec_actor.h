@@ -5,7 +5,7 @@
 #include "objects_inventory.h"
 #include "animation.h"
 
-enum ActorInputBit : btui16
+enum ActorInputBit : lui16
 {
 	IN_RUN = 0x1u << 0x0u,
 	IN_AIM = 0x1u << 0x1u,
@@ -19,8 +19,8 @@ enum ActorInputBit : btui16
 	IN_JUMP = 0x1u << 0x9u,
 };
 struct ActorInput {
-	mem::bv<btui16, ActorInputBit> bits;
-	btui16 empty;
+	mem::bv<lui16, ActorInputBit> bits;
+	lui16 empty;
 	m::Vector2 move;
 };
 // compare 664
@@ -40,20 +40,20 @@ struct ECActor : public ECCommon
 	m::Vector3 skin_col_c;
 
 	// Character stats
-	btf32 speed = 2.3f;
-	btf32 agility = 1.f; // use agility to determine turning speed?
+	lf32 speed = 2.3f;
+	lf32 agility = 1.f; // use agility to determine turning speed?
 
 	Inventory inventory;
-	btui32 inv_active_slot = 0u;
+	lui32 inv_active_slot = 0u;
 
 	Transform3D t_body, t_head;
 	m::Vector3 fpCurrentL, fpCurrentR;
 	AnimPlayerVec3 ap_fpCurrentL, ap_fpCurrentR;
 	
-	btf32 aniStandHeight;
+	lf32 aniStandHeight;
 	AnimPlayerVec3 ap_StandHeight;
 	
-	btf32 aniSlideResponse = 0.f;
+	lf32 aniSlideResponse = 0.f;
 
 	m::Vector3 handPosR;
 	AnimPlayerVec3 ap_HandPosR;
@@ -61,28 +61,28 @@ struct ECActor : public ECCommon
 	AnimPlayerVec3 ap_HandPosL;
 
 	path::Path ai_path;
-	btui64 ai_timer = 0u;
+	lui64 ai_timer = 0u;
 
-	btID ai_target_ent = BUF_NULL;
-	btID ai_ally_ent = BUF_NULL;
-	btID aniHandHoldTarget = ID_NULL;
+	lid ai_target_ent = BUF_NULL;
+	lid ai_ally_ent = BUF_NULL;
+	lid aniHandHoldTarget = ID_NULL;
 	// Attack target - attacking target only
-	btID atk_target = BUF_NULL;
+	lid atk_target = BUF_NULL;
 	// View target (used to pick up items and stuff)
-	btID viewtarget = ID_NULL;
+	lid viewtarget = ID_NULL;
 
 	MaxedStat stamina;
 
-	btui8 actorBase = 0u;
+	lui8 actorBase = 0u;
 	// Not neat looking but packing small bvs together
-	enum FootState : btui8
+	enum FootState : lui8
 	{
 		eL_DOWN,
 		eR_DOWN,
 	};
 	FootState foot_state = eL_DOWN;
 
-	enum JumpState : btui8
+	enum JumpState : lui8
 	{
 		eJUMP_NEITHER,
 		eJUMP_JUMP,
@@ -91,7 +91,7 @@ struct ECActor : public ECCommon
 	};
 	JumpState jump_state = eJUMP_NEITHER;
 
-	enum CharaAniFlags : btui8
+	enum CharaAniFlags : lui8
 	{
 		eANI_TEMP_1 = 1u,
 		eANI_LANDED = 1u << 1u,
@@ -104,24 +104,24 @@ struct ECActor : public ECCommon
 
 		eANI_CLEAR = 0b11111111u,
 	};
-	mem::bv<btui8, CharaAniFlags> animationBV;
+	mem::bv<lui8, CharaAniFlags> animationBV;
 
 	bool aiControlled = false;
 
 	bool aniCrouch = false;
 	bool aniRun = true;
 
-	btui8 ai_path_current_index = 0u;
+	lui8 ai_path_current_index = 0u;
 	bool ai_pathing = false;
 };
 
 void ActorOnHitGround(ECActor* chr);
-void ActorTryHoldHand(btID id_self, btID id);
-void ActorTakeItem(btID id_self, btID id);
-void ActorDropItem(btID id_self, btID slot);
-void ActorDropAllItems(btID id_self);
-void ActorSetEquipSlot(btID id_self, btui32 slot);
-void ActorIncrEquipSlot(btID id_self);
-void ActorDecrEquipSlot(btID id_self);
-void ActorTick(btID id, void* ent, btf32 dt);
-void ActorDraw(btID id, void* ent);
+void ActorTryHoldHand(lid id_self, lid id);
+void ActorTakeItem(lid id_self, lid id);
+void ActorDropItem(lid id_self, lid slot);
+void ActorDropAllItems(lid id_self);
+void ActorSetEquipSlot(lid id_self, lui32 slot);
+void ActorIncrEquipSlot(lid id_self);
+void ActorDecrEquipSlot(lid id_self);
+void ActorTick(lid id, void* ent, lf32 dt);
+void ActorDraw(lid id, void* ent);

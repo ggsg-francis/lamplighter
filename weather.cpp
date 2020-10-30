@@ -12,7 +12,7 @@ namespace weather
 #define TIMER_TIME 120.f
 //#define TIMER_TIME 20.f
 
-	void Tick(btf32 dt)
+	void Tick(lf32 dt)
 	{
 		w.recalc_ticker += dt / TIMER_TIME;
 		if (w.recalc_ticker > 1.f)

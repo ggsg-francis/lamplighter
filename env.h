@@ -4,7 +4,7 @@
 #include "memory.hpp"
 #include "maths.hpp"
 
-typedef btui32 btcoord;
+typedef lui32 btcoord;
 //duplicate struct (of what?)
 struct CellCoord
 {
@@ -12,7 +12,7 @@ struct CellCoord
 	CellCoord(btcoord _x, btcoord _y) : x{ _x }, y{ _y } {};
 };
 // Enumerator representing the intended function of the 4 cell coordinates used
-enum eCell : btui32
+enum eCell : lui32
 {
 	eCELL_I, // This cell
 	eCELL_X, // Next cell along the X axis
@@ -29,8 +29,8 @@ struct CellGroup
 struct CellSpace
 {
 	CellCoord c[eCELL_COUNT]{ CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u), CellCoord(0u,0u) };
-	btf32 offsetx;
-	btf32 offsety;
+	lf32 offsetx;
+	lf32 offsety;
 };
 
 #define PATH_NUM_NODES 64
@@ -39,25 +39,42 @@ namespace env
 {
 	#if !DEF_GRID
 	
-	struct EnvVert {
+	struct EnvVert { // 256 bytes (should be reduced when we ditch vert neighbors)
 		m::Vector2 pos;
-		btf32 h;
+		lf32 h;
 		m::Vector2 nor;
-		btui32 neighbors[32];
-		btui32 neighborcount;
+		lui32 neighbors[32];
+		lui32 neighborcount;
+	
+		lui64 buffer1[13];
 	};
 
+	enum EnvFloorMat : lui8 {
+		FLOOR_STANDARD,
+		FLOOR_WATER,
+		FLOOR_TAR,
+		FLOOR_QUICKSAND,
+		FLOOR_LAVA,
+		FLOOR_ICE,
+		FLOOR_ACID,
+	};
+	// Triangle metadata
+	struct EnvTriMeta { // 64 bytes (I want to leave a lot of room for new things okay)
+		EnvFloorMat floorMaterial;
+		bool filler[63];
+	};
 	// Triangle used for floor collision
-	struct EnvTri {
+	struct EnvTri { // 48 bytes
 		// Vertex indices
-		btui32 a, b, c;
+		lui32 verts[3];
 		// Slope for slide calculations
 		m::Vector2 slope;
 		// indices of the three neighboring triangles
-		btID neighbors[3];
+		lid neighbors[3];
 		// Which island do I belong to
-		btui16 group;
-		btui8 neighborcount;
+		lui16 group;
+		// How many neighbors do I have (1-3)
+		lui8 neighborcount;
 		// test
 		bool open_edge_ab;
 		bool open_edge_bc;
@@ -65,48 +82,52 @@ namespace env
 		// shitty
 		bool facing_up;
 		bool vertical;
+		
+		bool filler[11];
 	};
-
+	
 	// Line segment used for wall collision
-	struct EnvLineSeg {
+	struct EnvLineSeg { // 64 bytes
 		m::Vector2 pos_a; // Point position
-		btf32 h_a_top; // Point height top
-		btf32 h_a_bot; // Point height bottom
+		lf32 h_a_top; // Point height top
+		lf32 h_a_bot; // Point height bottom
 		m::Vector2 pos_b; // Point position
-		btf32 h_b_top; // Point height top
-		btf32 h_b_bot; // Point height bottom
+		lf32 h_b_top; // Point height top
+		lf32 h_b_bot; // Point height bottom
 		// collision variables
-		btf32 csn_rotation;
+		lf32 csn_rotation;
 		m::Vector2 csn_position;
 		m::Vector2 csn_scale;
+	
+		bool filler[12];
 	};
 
-	btui32 GetNumTris(WCoord coords);
-	btf32 GetTriHeight(WCoord coords, btui32 index, btf32 pos_x, btf32 pos_y);
-	bool GetTriExists(WCoord coords, btui32 index);
-	void* GetC2Tri(WCoord coords, btui32 index);
-	EnvTri* GetTri(WCoord coords, btui32 index);
-	btui32 GetNumLines(WCoord coords);
-	EnvLineSeg* GetLine(WCoord coords, btui32 index);
+	lui32 GetNumTris(WCoord coords);
+	lf32 GetTriHeight(WCoord coords, lui32 index, lf32 pos_x, lf32 pos_y);
+	bool GetTriExists(WCoord coords, lui32 index);
+	void* GetC2Tri(WCoord coords, lui32 index);
+	EnvTri* GetTri(WCoord coords, lui32 index);
+	lui32 GetNumLines(WCoord coords);
+	EnvLineSeg* GetLine(WCoord coords, lui32 index);
 
 	struct EnvTriSurfaceSet {
 		EnvTri* nearest_ceil_above;
 		EnvTri* nearest_flor_above;
 		EnvTri* nearest_ceil_below;
 		EnvTri* nearest_flor_below;
-		btf32 nearest_ceil_h_above;
-		btf32 nearest_flor_h_above;
-		btf32 nearest_ceil_h_below;
-		btf32 nearest_flor_h_below;
+		lf32 nearest_ceil_h_above;
+		lf32 nearest_flor_h_above;
+		lf32 nearest_ceil_h_below;
+		lf32 nearest_flor_h_below;
 	};
-	void GetFloorsAndCeilings(CellSpace& csinf, btf32 in_height, EnvTriSurfaceSet* set);
+	void GetFloorsAndCeilings(CellSpace& csinf, lf32 in_height, EnvTriSurfaceSet* set);
 
 	#endif
 
 	// Environment flags
 	namespace eflag
 	{
-		enum flag : btui32
+		enum flag : lui32
 		{
 			EF_EMPTY = 0x0u,
 			// Base collision
@@ -152,66 +173,65 @@ namespace env
 
 	struct node_coord
 	{
-		btui8 x, y;
+		lui8 x, y;
 		node_coord()
 		{
 			this->x = 0u; this->y = 0u;
 		}
-		node_coord(btui8 x, btui8 y)
+		node_coord(lui8 x, lui8 y)
 		{
 			this->x = x; this->y = y;
 		}
 	};
 
-	enum NodePropDirection : btui8
+	#if DEF_GRID
+	enum NodePropDirection : lui8
 	{
 		eNORTH, eSOUTH, eEAST, eWEST,
 	};
-
 	// New structure is much easier to add new properties to saved versions
 	struct EnvNode
 	{
 		eflag::flag flags[WORLD_SIZE][WORLD_SIZE];
-		btui16 prop[WORLD_SIZE][WORLD_SIZE];
+		lui16 prop[WORLD_SIZE][WORLD_SIZE];
 		NodePropDirection prop_dir[WORLD_SIZE][WORLD_SIZE];
-		btui8 terrain_height[WORLD_SIZE][WORLD_SIZE]; // unuse this if possible
-		btui8 terrain_material[WORLD_SIZE][WORLD_SIZE];
-		btui8 water_height[WORLD_SIZE][WORLD_SIZE]; // this one's basically free i think
-		btui8 terrain_height_ne[WORLD_SIZE][WORLD_SIZE];
-		btui8 terrain_height_nw[WORLD_SIZE][WORLD_SIZE];
-		btui8 terrain_height_se[WORLD_SIZE][WORLD_SIZE];
-		btui8 terrain_height_sw[WORLD_SIZE][WORLD_SIZE];
-		btID spawn_id[WORLD_SIZE][WORLD_SIZE];
+		lui8 terrain_height[WORLD_SIZE][WORLD_SIZE]; // unuse this if possible
+		lui8 terrain_material[WORLD_SIZE][WORLD_SIZE];
+		lui8 water_height[WORLD_SIZE][WORLD_SIZE]; // this one's basically free i think
+		lui8 terrain_height_ne[WORLD_SIZE][WORLD_SIZE];
+		lui8 terrain_height_nw[WORLD_SIZE][WORLD_SIZE];
+		lui8 terrain_height_se[WORLD_SIZE][WORLD_SIZE];
+		lui8 terrain_height_sw[WORLD_SIZE][WORLD_SIZE];
+		lid spawn_id[WORLD_SIZE][WORLD_SIZE];
 	};
-
 	extern EnvNode eCells;
-
-	bool Get(btui32 x, btui32 y, eflag::flag bit);
-	void Set(btui32 x, btui32 y, eflag::flag bit);
-	void UnSet(btui32 x, btui32 y, eflag::flag bit);
+	#endif
 
 	#if DEF_GRID
-	void GetHeight(btf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
-	void GetSlope(btf32& OUT_SLOPE_X, btf32& OUT_SLOPE_Y, CellSpace& CELL_SPACE);
+	bool Get(lui32 x, lui32 y, eflag::flag bit);
+	void Set(lui32 x, lui32 y, eflag::flag bit);
+	void UnSet(lui32 x, lui32 y, eflag::flag bit);
+	void GetHeight(lf32& OUT_HEIGHT, CellSpace& CELL_SPACE);
+	void GetSlope(lf32& OUT_SLOPE_X, lf32& OUT_SLOPE_Y, CellSpace& CELL_SPACE);
 	#else
 	// Get the height of the nearest ceiling above this point
-	void GetNearestCeilingHeight(btf32& out_height, CellSpace& cell_space, btf32 in_height);
+	void GetNearestCeilingHeight(lf32& out_height, CellSpace& cell_space, lf32 in_height);
 	// Get the height of the ground.
 	// In_height represents the origin point so we can exist underneath other triangles
-	void GetNearestSurfaceHeight(btf32& out_height, CellSpace& cell_space, btf32 in_height);
-	void GetNearestSurfaceHeight(btf32& out_height, EnvTri** out_tri, CellSpace& cell_space, btf32 in_height);
+	void GetNearestSurfaceHeight(lf32& out_height, CellSpace& cell_space, lf32 in_height);
+	void GetNearestSurfaceHeight(lf32& out_height, EnvTri** out_tri, CellSpace& cell_space, lf32 in_height);
 	#endif
 
 	struct LineTraceHit {
 		m::Vector2 pos;
-		btf32 h;
+		lf32 h;
 	};
 	// returns true if it hits a wall
-	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2, btf32 height_a, btf32 height_b);
-	bool LineTrace(btf32 x1, btf32 y1, btf32 x2, btf32 y2, btf32 height_a, btf32 height_b, LineTraceHit* out_hit);
+	bool LineTrace(lf32 x1, lf32 y1, lf32 x2, lf32 y2, lf32 height_a, lf32 height_b);
+	bool LineTrace(lf32 x1, lf32 y1, lf32 x2, lf32 y2, lf32 height_a, lf32 height_b, LineTraceHit* out_hit);
 	#if DEF_GRID
 	// returns true, counter-intuitively, if it DOESNT hit anything
-	bool LineTraceBh(int x1, int y1, int x2, int y2, btf32 height_a, btf32 height_b);
+	bool LineTraceBh(int x1, int y1, int x2, int y2, lf32 height_a, lf32 height_b);
 	#endif
 
 	void Tick();
@@ -224,10 +244,15 @@ namespace env
 	void SaveBin();
 	// Save world setting to binary file
 	void LoadBin();
+	#if !DEF_GRID
+	void GeneratePhysMesh();
+	#endif
 
-	void Clean();
+	//void Clean();
+	#if DEF_GRID
 	void GeneratePropMeshes();
 	void GenerateTerrainMesh();
+	#endif
 
 	void Free();
 }
@@ -239,15 +264,15 @@ namespace path
 		#if DEF_GRID
 		WCoord nodes[PATH_NUM_NODES];
 		#else
-		btf32 pos_x[PATH_NUM_NODES];
-		btf32 pos_y[PATH_NUM_NODES];
+		lf32 pos_x[PATH_NUM_NODES];
+		lf32 pos_y[PATH_NUM_NODES];
 		#endif
-		btui8 len;
+		lui8 len;
 	};
 	#if DEF_GRID
 	bool PathFind(Path* path, btcoord x, btcoord y, btcoord xDest, btcoord yDest);
 	#else
-	bool PathFind(Path* path, btf32 x, btf32 y, btf32 xDest, btf32 yDest);
+	bool PathFind(Path* path, lf32 x, lf32 y, lf32 xDest, lf32 yDest);
 	#endif
 }
 

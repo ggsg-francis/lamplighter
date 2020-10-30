@@ -14,8 +14,8 @@
 #define DEF_V_NMP 0
 #endif
 // Release version
-#define VERSION_MAJOR 22u // Major version should be incremented any time save compatibility is broken
-#define VERSION_MINOR 10 // Minor version should be incremented for every new release
+#define VERSION_MAJOR 23u // Major version should be incremented any time save compatibility is broken
+#define VERSION_MINOR 1 // Minor version should be incremented for every new release
 // This version number basically says which game this is
 #define VERSION_PROJECT (\
 DEF_PROJECT |\
@@ -128,49 +128,49 @@ extern "C" {
 
 	#ifdef __GNUC__
 	// Signed integers
-	typedef signed char bti8;
-	typedef signed short int bti16;
-	typedef signed int bti32;
-	typedef signed long long int bti64;
+	typedef signed char li8;
+	typedef signed short int li16;
+	typedef signed int li32;
+	typedef signed long long int li64;
 	// Unsigned integers
-	typedef unsigned char btui8;
-	typedef unsigned short int btui16;
-	typedef unsigned int btui32;
-	typedef unsigned long long btui64;
+	typedef unsigned char lui8;
+	typedef unsigned short int lui16;
+	typedef unsigned int lui32;
+	typedef unsigned long long lui64;
 	// Floating points
-	typedef float btf32;
-	typedef double btf64;
-	typedef long double btf96;
+	typedef float lf32;
+	typedef double lf64;
+	typedef long double lf96;
 	// For specific uses
-	typedef unsigned short int btID;
+	typedef unsigned short int lid;
 	#elif defined _MSC_VER
 	// Signed integers
-	typedef signed __int8 bti8;
-	typedef signed __int16 bti16;
-	typedef signed __int32 bti32;
-	typedef signed __int64 bti64;
+	typedef signed __int8 li8;
+	typedef signed __int16 li16;
+	typedef signed __int32 li32;
+	typedef signed __int64 li64;
 	// Unsigned integers
-	typedef unsigned __int8 btui8;
-	typedef unsigned __int16 btui16;
-	typedef unsigned __int32 btui32;
-	typedef unsigned __int64 btui64;
+	typedef unsigned __int8 lui8;
+	typedef unsigned __int16 lui16;
+	typedef unsigned __int32 lui32;
+	typedef unsigned __int64 lui64;
 	// Floating points
-	typedef float btf32;
-	typedef double btf64;
+	typedef float lf32;
+	typedef double lf64;
 	// For specific uses
-	typedef unsigned __int16 btID;
+	typedef lui16 lid;
 	#else
 	#error Using different c++ compiler than written for, please review! (global.h)
 	#endif
 
 	typedef struct WCoord {
-		btui16 x;
-		btui16 y;
+		lui16 x;
+		lui16 y;
 	} WCoord;
 
 	// TODO: these should probably go to their respective places too
 
-	typedef btui8 ItemType;
+	typedef lui8 ItemType;
 	#define ITEM_TYPE_MISC 0u
 	#define ITEM_TYPE_EQUIP 1u
 	#define ITEM_TYPE_WPN_MELEE 2u
@@ -179,11 +179,11 @@ extern "C" {
 	#define ITEM_TYPE_CONS 5u
 	#define ITEM_TYPE_COUNT 6u
 
-	typedef btui8 ActivatorType;
+	typedef lui8 ActivatorType;
 	#define ACTIVATOR_TYPE_JUNK 0u
 	#define ACTIVATOR_TYPE_COUNT 1u
 
-	typedef btui8 AssetType;
+	typedef lui8 AssetType;
 	#define ASSET_NONE 0u
 	#define ASSET_TEXTURE_FILE 1u
 	#define ASSET_MESH_FILE 2u
@@ -193,7 +193,7 @@ extern "C" {
 
 	#include <float.h>
 	inline void SetFP() {
-		btui32 current_word = 0;
+		lui32 current_word = 0;
 		//_controlfp_s(&current_word, _DN_SAVE, _MCW_DN); // Set denormal (don't know what this does)
 		//_controlfp_s(&current_word, _PC_24, _MCW_PC); // Set precision control (can't do on x64)
 		_controlfp_s(&current_word, _RC_NEAR, _MCW_RC); // Set rounding control

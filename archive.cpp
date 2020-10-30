@@ -9,9 +9,7 @@
 #include "archive_data.h"
 #endif
 
-// hmmmmmmmmmm
-// from core
-extern btui64 tickCount;
+lui64 useCount = 0u;
 
 namespace acv
 {
@@ -19,29 +17,29 @@ namespace acv
 
 	ItemRecord* items[ITEM_RECORD_COUNT]{ nullptr };
 	ItemType item_types[ITEM_RECORD_COUNT];
-	btui32 item_index = 0u;
+	lui32 item_index = 0u;
 
 	PropRecord props[PROP_RECORD_COUNT];
-	btui32 prop_index = 0u;
+	lui32 prop_index = 0u;
 
 	SpellRecord spells[SPELL_RECORD_COUNT];
-	btui32 spell_index = 0u;
+	lui32 spell_index = 0u;
 
 	ProjectileRecord projectiles[PROJECTILE_RECORD_COUNT];
-	btui32 projectiles_index = 0u;
+	lui32 projectiles_index = 0u;
 
 	ActorRecord actor_templates[ACTOR_RECORD_COUNT];
-	btui32 actor_template_index = 0u;
+	lui32 actor_template_index = 0u;
 
 	ActivatorRecord activators[ACTIVATOR_RECORD_COUNT];
-	btui32 activator_index = 0u;
+	lui32 activator_index = 0u;
 
 	// Assets
 
 	mem::Lump<AssetType, ASSET_NONE, FN_COUNT, ARCHIVE_MAX_LOADED_DATA>* assetLump;
 	Resource assets[FN_COUNT];
-	btui32 assetCount = 0u;
-	btui64 asset_loaded_size = 0u;
+	lui32 assetCount = 0u;
+	lui64 asset_loaded_size = 0u;
 
 	//#ifndef DEF_ARCHIVER
 
@@ -49,7 +47,7 @@ namespace acv
 
 	void Init() {
 		// Get sums
-		//btui8 sum = 0ui8;
+		//lui8 sum = 0ui8;
 		//GetSum(ARCHIVE_FILENAME, &sum);
 		//GetSum(ARCHIVE_DATA_FILENAME, &sum);
 
@@ -68,9 +66,9 @@ namespace acv
 		assetLump = nullptr;
 	}
 
-	void LoadAsset(btui32 i) {
+	void LoadAsset(lui32 i) {
 		if (!assets[i].loaded && fileARCHIVE != NULL) {
-			int err = fseek(fileARCHIVE, assets[i].file_pos, SEEK_SET); // Seek file beginning
+			int err = fseek(fileARCHIVE, (long)assets[i].file_pos, SEEK_SET); // Seek file beginning
 			switch (assets[i].type) {
 			case ASSET_TEXTURE_FILE:
 				assets[i].asset = assetLump->AddEnt(sizeof(graphics::Texture), ASSET_TEXTURE_FILE);
@@ -91,12 +89,12 @@ namespace acv
 			};
 			assets[i].loaded = true;
 			asset_loaded_size += assets[i].file_size;
-			btf64 use_amount = (btf64)asset_loaded_size / (btf64)ARCHIVE_MAX_LOADED_DATA;
-			printf("Loaded asset %i | Usage: %i of %i , %f\n", i, asset_loaded_size, ARCHIVE_MAX_LOADED_DATA, (btf32)use_amount * 100.f);
+			lf64 use_amount = (lf64)asset_loaded_size / (lf64)ARCHIVE_MAX_LOADED_DATA;
+			printf("Loaded asset %u | Usage: %u of %u , %f\n", i, (lui32)asset_loaded_size, ARCHIVE_MAX_LOADED_DATA, (lf32)use_amount * 100.f);
 		}
 	}
 
-	void UnloadAsset(btui32 i) {
+	void UnloadAsset(lui32 i) {
 		if (assets[i].asset != ID_NULL && assets[i].loaded) {
 			switch (assets[i].type) {
 			case ASSET_TEXTURE_FILE:
@@ -119,24 +117,22 @@ namespace acv
 		}
 	};
 
-	bool IsLoaded(btui32 i) {
+	bool IsLoaded(lui32 i) {
 		return assets[i].loaded;
 	}
 
-	btui32 AssetCount() {
+	lui32 AssetCount() {
 		return assetCount;
 	}
 
 	//#endif // DEF_ARCHIVER
 
 	void ClearMemory() {
-		for (int i = 0; i < item_index; i++)
-		{
+		for (lui32 i = 0; i < item_index; i++) {
 			delete(items[i]);
 		}
 		#ifndef DEF_ARCHIVER
-		for (int i = 0; i < FN_COUNT; i++)
-		{
+		for (lui32 i = 0; i < FN_COUNT; i++) {
 			UnloadAsset(i);
 		}
 		#endif // DEF_ARCHIVER
@@ -144,14 +140,15 @@ namespace acv
 
 	//#ifndef DEF_ARCHIVER
 
-	forceinline void AssetAccessCheck(btui32 index) {
+	forceinline void AssetAccessCheck(lui32 index) {
 		// Load the asset if needed
 		if (!assets[index].loaded)
 			LoadAsset(index);
-		assets[index].tickLastAccessed = tickCount;
+		assets[index].tickLastAccessed = useCount;
+		++useCount;
 	}
 
-	graphics::Texture& GetT(btui32 index) {
+	graphics::Texture& GetT(lui32 index) {
 		if (index < assetCount && assets[index].type == ASSET_TEXTURE_FILE) {
 			AssetAccessCheck(index);
 			return *(graphics::Texture*)assetLump->GetEnt(assets[index].asset);
@@ -160,7 +157,7 @@ namespace acv
 		return *(graphics::Texture*)assetLump->GetEnt(assets[DEFAULT_TEXTURE].asset);
 	}
 
-	graphics::Mesh& GetM(btui32 index) {
+	graphics::Mesh& GetM(lui32 index) {
 		if (index < assetCount && assets[index].type == ASSET_MESH_FILE) {
 			AssetAccessCheck(index);
 			return *(graphics::Mesh*)assetLump->GetEnt(assets[index].asset);
@@ -169,7 +166,7 @@ namespace acv
 		return *(graphics::Mesh*)assetLump->GetEnt(assets[DEFAULT_MESH].asset);
 	}
 
-	graphics::MeshBlend& GetMB(btui32 index) {
+	graphics::MeshBlend& GetMB(lui32 index) {
 		if (index < assetCount && assets[index].type == ASSET_MESHBLEND_FILE) {
 			AssetAccessCheck(index);
 			return *(graphics::MeshBlend*)assetLump->GetEnt(assets[index].asset);
@@ -178,7 +175,7 @@ namespace acv
 		return *(graphics::MeshBlend*)assetLump->GetEnt(assets[DEFAULT_MESHBLEND].asset);
 	}
 
-	graphics::MeshDeform& GetMD(btui32 index) {
+	graphics::MeshDeform& GetMD(lui32 index) {
 		if (index < assetCount && assets[index].type == ASSET_MESHDEFORM_FILE) {
 			AssetAccessCheck(index);
 			return *(graphics::MeshDeform*)assetLump->GetEnt(assets[index].asset);
@@ -187,29 +184,29 @@ namespace acv
 		return *(graphics::MeshDeform*)assetLump->GetEnt(assets[DEFAULT_MESHDEFORM].asset);
 	}
 
-	bool IsTexture(btui32 index) {
+	bool IsTexture(lui32 index) {
 		return assets[index].type == ASSET_TEXTURE_FILE;
 	}
 
-	bool IsMesh(btui32 index) {
+	bool IsMesh(lui32 index) {
 		return assets[index].type == ASSET_MESH_FILE;
 	}
 
-	bool IsMeshBlend(btui32 index) {
+	bool IsMeshBlend(lui32 index) {
 		return assets[index].type == ASSET_MESHBLEND_FILE;
 	}
 
 	// put in network code
-	void GetSum(char* fn, btui8* out_sum)
+	void GetSum(char* fn, lui8* out_sum)
 	{
-		btui8 read = 0ui8;
+		lui8 read = 0ui8;
 		FILE* file = fopen(fn, "rb"); // Open file
 		if (file != NULL) {
 			fseek(file, 0, SEEK_END); // Seek file end
-			btui64 bytecount = ftell(file); // Get file size
+			lui64 bytecount = ftell(file); // Get file size
 			fseek(file, 0, SEEK_SET); // Seek file beginning
 			// Add bytes
-			for (btui64 i = 0; i < bytecount; ++i) {
+			for (lui64 i = 0; i < bytecount; ++i) {
 				fread(&read, 1, 1, file);
 				*out_sum += read;
 			}

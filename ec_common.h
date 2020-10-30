@@ -22,7 +22,7 @@ class Transform2D
 public:
 	// world space position
 	m::Vector2 position;
-	btf32 altitude = 0.f;
+	lf32 altitude = 0.f;
 	m::Angle yaw;
 	CellSpace csi; // Where we are in cell space
 };
@@ -83,12 +83,12 @@ public:
 struct MaxedStat
 {
 private:
-	btui16 state = STATE_DAMAGE_MAX;
+	lui16 state = STATE_DAMAGE_MAX;
 public:
 	//void GetState();
 };
 
-enum StatusEffectType : btui16 {
+enum StatusEffectType : lui16 {
 	// HP effects
 	EFFECT_DAMAGE_HP,
 	EFFECT_RESTORE_HP,
@@ -122,21 +122,21 @@ enum StatusEffectType : btui16 {
 };
 
 typedef struct StatusEffect {
-	btID effect_caster_id;
-	btui16 effect_type;
-	btf32 effect_duration;
-	btui32 effect_magnitude;
-	btID effect_icon;
-	btui16 reserved;
+	lid effect_caster_id;
+	lui16 effect_type;
+	lf32 effect_duration;
+	lui32 effect_magnitude;
+	lid effect_icon;
+	lui16 reserved;
 } StatusEffect;
 
 // Base entity class
 struct ECCommon
 {
-	bti8 name[32];
+	li8 name[32];
 
 	// Entity base properties
-	enum PhysicsFlags : btui8 {
+	enum PhysicsFlags : lui8 {
 		// Basic properties
 		eCOLLIDE_ENV = 1u, // Handle collision between this entity and the environment
 		eCOLLIDE_ENT = 1u << 1u, // Handle collision between this entity and other entities
@@ -149,40 +149,40 @@ struct ECCommon
 		ePREFAB_FULLSOLID = eCOLLIDE_ENV | eCOLLIDE_ENT | eCOLLIDE_PRJ | eCOLLIDE_MAG,
 		ePREFAB_ITEM = eCOLLIDE_ENV | eCOLLIDE_ENT | ePHYS_DRAG,
 	};
-	mem::bv<btui8, PhysicsFlags> physicsFlags;
+	mem::bv<lui8, PhysicsFlags> physicsFlags;
 	fac::faction faction;
 
-	btui16 damagestate = STATE_DAMAGE_MAX;
+	lui16 damagestate = STATE_DAMAGE_MAX;
 	mem::Buffer32<StatusEffect> effects;
 	
 	// Global properties, ultimately to be used by every object in the game, incl. environment tiles (wow really huh)
-	enum StaticFlags : btui64 {
+	enum StaticFlags : lui64 {
 		eNOTHING = 1u,
 		eFLAMMABLE = 1u << 1u,
 	};
-	mem::bv<btui64, StaticFlags> staticFlags;
-	enum ActiveFlags : btui64 {
+	mem::bv<lui64, StaticFlags> staticFlags;
+	enum ActiveFlags : lui64 {
 		eALIVE = 1u,
 		eDIED_REPORT = 1u << 1u,
 		eGROUNDED = 1u << 2u,
 	};
-	mem::bv<btui64, ActiveFlags> activeFlags;
+	mem::bv<lui64, ActiveFlags> activeFlags;
 	__forceinline bool Grounded() {
 		return activeFlags.get(eGROUNDED);
 	}
 
-	void Damage(btui32 AMOUNT, btf32 ANGLE);
-	void AddEffect(btID CASTER, StatusEffectType TYPE, btf32 DURATION, btui32 MAGNITUDE, btID icon);
-	void AddSpell(btID CASTER, btID SPELL);
-	void TickEffects(btf32 DELTA_TIME);
+	void Damage(lui32 AMOUNT, lf32 ANGLE);
+	void AddEffect(lid CASTER, StatusEffectType TYPE, lf32 DURATION, lui32 MAGNITUDE, lid icon);
+	void AddSpell(lid CASTER, lid SPELL);
+	void TickEffects(lf32 DELTA_TIME);
 
-	btf32 radius = 0.5f; // Radius of the entity (no larger than .5)
-	btf32 height = 1.9f; // Height of the entity cylinder
+	lf32 radius = 0.5f; // Radius of the entity (no larger than .5)
+	lf32 height = 1.9f; // Height of the entity cylinder
 
 	Transform2D t;
 	
 	m::Vector2 velocity;
-	btf32 altitude_velocity = 0.f;
+	lf32 altitude_velocity = 0.f;
 	// foot slide for slippery surfaces / knockback etc.
 	m::Vector2 slideVelocity;
 };
@@ -196,6 +196,6 @@ struct hit_info {
 };
 
 // Handle this entitiy's position, receives desired motion
-void Entity_PhysicsTick(ECCommon* ENTITY, btID ID, btf32 DELTA_TIME);
+void Entity_PhysicsTick(ECCommon* ENTITY, lid ID, lf32 DELTA_TIME);
 
 char* EntityName(void* ent);

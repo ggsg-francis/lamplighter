@@ -9,16 +9,16 @@
 // TODO: probably dont want this here
 #include "SDL2\SDL.h"
 
-btui64 tickCount;
+lui64 tickCount;
 bool saveNextFrame = false;
 
 namespace core
 {
-	btui16 GetHP(btID id) {
+	lui16 GetHP(lid id) {
 		return ENTITY(id)->damagestate;
 	}
 
-	void SetViewFocus(btID index) {
+	void SetViewFocus(lid index) {
 		activePlayer = index;
 		graphics::SetMatView(&camViewTarget[activePlayer], &camViewPosition[activePlayer], nullptr);
 	}
@@ -34,7 +34,7 @@ namespace core
 
 	// still useful to have really
 	/*
-	void flood_fill_temp(btui16 srcx, btui16 srcy, btui16 x, btui16 y, graphics::colour col)
+	void flood_fill_temp(lui16 srcx, lui16 srcy, lui16 x, lui16 y, graphics::colour col)
 	{
 		//t_EnvLightmap.SetPixelChannelG(x, y, col.g);
 		if (!env::Get(x, y, env::eflag::EF_IMPASSABLE) && t_EnvLightmap.GetPixel(x, y).g < col.g)
@@ -57,12 +57,12 @@ namespace core
 
 	GLuint shadowtex;
 	glm::mat4 shadowmat_temp;
-	void SetShadowTexture(btui32 id)
+	void SetShadowTexture(lui32 id)
 	{
 		shadowtex = id;
 	}
 
-	void UpdateOtherShaderParams(btf32 time2, m::Vector3 sunVec)
+	void UpdateOtherShaderParams(lf32 time2, m::Vector3 sunVec)
 	{
 		for (int i = graphics::S_UTIL_FIRST_LIT; i <= graphics::S_UTIL_LAST_LIT; ++i)
 		{
@@ -81,35 +81,8 @@ namespace core
 
 	void DoSpawn()
 	{
+		#if DEF_GRID
 		#if DEF_SPAWN_NPC
-
-		// for every entity
-		/*
-		for (int e = 0; e < block_entity.index_end; e++)
-		{
-			if (block_entity.used[e])
-			{
-				if (!ENTITY(e)->stateFlags.get(ECCommon::eALIVE)
-					&& !ENTITY(e)->stateFlags.get(ECCommon::eDIED_REPORT)
-					&& ACTOR(e)->aiControlled)
-				{
-					m::Vector2 pos1 = ENTITY(players[0])->t.position;
-					m::Vector2 pos2 = ENTITY(players[1])->t.position;
-					m::Vector2 pos3 = ENTITY(e)->t.position;
-					if (m::Length(pos1 - pos3) > 12.f && m::Length(pos2 - pos3) > 12.f) // only destroy if far away
-						DestroyEntity(e);
-				}
-				if (EntityType(e) == ENTITY_TYPE_RESTING_ITEM)
-				{
-					m::Vector2 pos1 = ENTITY(players[0])->t.position;
-					m::Vector2 pos2 = ENTITY(players[1])->t.position;
-					m::Vector2 pos3 = ENTITY(e)->t.position;
-					if (m::Length(pos1 - pos3) > 12.f && m::Length(pos2 - pos3) > 12.f) // only destroy if far away
-						DestroyEntity(e);
-				}
-			}
-		}//*/
-
 		// spawn characters
 		for (int x = 0; x < WORLD_SIZE; ++x) {
 			for (int y = 0; y < WORLD_SIZE; ++y) {
@@ -117,7 +90,6 @@ namespace core
 				SpawnEntity(env::eCells.spawn_id[x][y], m::Vector2(x, y), 0.f);
 			}
 		}
-
 		#endif
 
 		// spawn items
@@ -127,6 +99,7 @@ namespace core
 				SpawnNewEntityItem(env::eCells.spawn_id[x][y], m::Vector2(x,y), 0.f);
 			}
 		}
+		#endif
 	}
 
 	void Init()
@@ -138,7 +111,7 @@ namespace core
 
 		// Generate debug version display
 		char buffinal[32];
-		sprintf(buffinal, "BT3D R%i.%i.%i", VERSION_MAJOR, VERSION_MINOR, VERSION_PROJECT);
+		sprintf(buffinal, "%s v%i.%i.%i", DEF_PROJECTNAME_V, VERSION_MAJOR, VERSION_MINOR, VERSION_PROJECT);
 		gui.text_version.ReGen(buffinal, config.iWinX * -0.5f, config.iWinX * 0.5f, config.iWinY * 0.5f - 12);
 
 		#if DEF_PROJECT == PROJECT_BC
@@ -198,7 +171,7 @@ namespace core
 
 		// Generate debug version display
 		char buffinal[32];
-		sprintf(buffinal, "BT3D R%i.%i.%i", VERSION_MAJOR, VERSION_MINOR, VERSION_PROJECT);
+		sprintf(buffinal, "%s v%i.%i.%i", DEF_PROJECTNAME_V, VERSION_MAJOR, VERSION_MINOR, VERSION_PROJECT);
 		gui.text_version.ReGen(buffinal, config.iWinX * -0.5f, config.iWinX * 0.5f, config.iWinY * 0.5f - 12);
 
 		#if DEF_PROJECT == PROJECT_BC
@@ -224,13 +197,14 @@ namespace core
 
 	void RegenCellRefs()
 	{
-		for (int i = 0; i <= GetLastEntity(); i++) {
+		for (int i = 0; i < GetEntityArraySize(); i++) {
+			if (!GetEntityExists(i)) continue;
 			ECCommon* ent = (ECCommon*)GetEntityPtr(i);
 			AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, i);
 		}
 	}
 
-	bool Tick(btf32 dt)
+	bool Tick(lf32 dt)
 	{
 		#if DEF_PROJECT == PROJECT_BC
 		// kill the game if we won :P
@@ -255,7 +229,7 @@ namespace core
 		weather::Tick(dt);
 
 		// temporary destroy dead entities
-		for (int i = 0; i <= GetLastEntity(); i++) {
+		for (int i = 0; i < GetEntityArraySize(); i++) {
 			if (!GetEntityExists(i)) continue;
 			if (ENTITY(i)->activeFlags.get(ECCommon::eALIVE)
 				|| ENTITY(i)->activeFlags.get(ECCommon::eDIED_REPORT))
@@ -268,13 +242,10 @@ namespace core
 
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
-		for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
-		{
-			if (GetEntityExists(i))
-			{
-				ENTITY(i)->TickEffects(dt);
-				EntityTick(i, dt);
-			}
+		for (lid i = 0; i < GetEntityArraySize(); i++) { // For every entity
+			if (!GetEntityExists(i)) continue;
+			ENTITY(i)->TickEffects(dt);
+			EntityTick(i, dt);
 		}
 
 		//-------------------------------- SOME OTHER SHIT
@@ -287,7 +258,7 @@ namespace core
 		}
 		#if DEF_PROJECT != PROJECT_BC || defined _DEBUG // disable save/load for BC
 		#ifdef DEF_NMP
-		for (btui32 i = 0; i < config.iNumNWPlayers; ++i) {
+		for (lui32 i = 0; i < config.iNumNWPlayers; ++i) {
 			if (input::GetHit(i, input::key::FUNCTION_5)) { // SAVE
 				SaveState();
 				break;
@@ -449,7 +420,8 @@ namespace core
 		return true;
 	}
 
-	void EditorModTerrain(bti32 cellX, bti32 cellY, btf32 offsX, btf32 offsY, bti32 modify) {
+	#if DEF_GRID
+	void EditorModTerrain(li32 cellX, li32 cellY, lf32 offsX, lf32 offsY, li32 modify) {
 		if (input::GetHeld(input::key::RUN))
 		{
 			env::eCells.terrain_height_ne[cellX][cellY] += modify;
@@ -509,8 +481,9 @@ namespace core
 		}
 		env::GenerateTerrainMesh();
 	}
+	#endif
 
-	bool TickEditor(btf32 dt)
+	bool TickEditor(lf32 dt)
 	{
 		#ifndef DEF_NMP
 		if (input::GetHeld(input::key::RUN)) {
@@ -524,12 +497,17 @@ namespace core
 					+ (vec * -input::input_buffer.mouse_y)) * 0.35f * dt;
 		}
 
-		bti32 editor_cursor_x = roundf(editor.cursor.x);
-		bti32 editor_cursor_y = roundf(editor.cursor.y);
+		li32 editor_cursor_x = roundf(editor.cursor.x);
+		li32 editor_cursor_y = roundf(editor.cursor.y);
 
-		btf32 editor_cursor_offset_x = editor.cursor.x - (btf32)editor_cursor_x;
-		btf32 editor_cursor_offset_y = editor.cursor.y - (btf32)editor_cursor_y;
+		lf32 editor_cursor_offset_x = editor.cursor.x - (lf32)editor_cursor_x;
+		lf32 editor_cursor_offset_y = editor.cursor.y - (lf32)editor_cursor_y;
 
+		if (input::GetHit(input::key::FUNCTION_5)) { // SAVE
+			env::SaveBin();
+		}
+
+		#if DEF_GRID
 		if (input::GetHit(input::key::USE)) {
 			++env::eCells.terrain_material[editor_cursor_x][editor_cursor_y];
 			if (env::eCells.terrain_material[editor_cursor_x][editor_cursor_y] > 7u)
@@ -587,9 +565,6 @@ namespace core
 				env::Set(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_TEST);
 			}
 		}
-		else if (input::GetHit(input::key::FUNCTION_5)) { // SAVE
-			env::SaveBin();
-		}
 		else if (input::GetHit(input::key::FUNCTION_6)) { // TOGGLE SPAWN INDEX
 			if (env::Get(editor_cursor_x, editor_cursor_y, env::eflag::EF_SPAWN_TEST)) {
 				++env::eCells.spawn_id[editor_cursor_x][editor_cursor_y];
@@ -635,12 +610,13 @@ namespace core
 		}
 
 		#endif
+		#endif
 
 		//-------------------------------- Modify camera
 
 		GetCellSpaceInfo(editor.cursor, editor.cursorCS);
 
-		btf32 height;
+		lf32 height;
 
 		#if DEF_GRID
 		env::GetHeight(height, editor.cursorCS);
@@ -652,11 +628,11 @@ namespace core
 
 		camViewTarget[0] = m::Vector3(editor.cursor.x, editor.cursor_height, editor.cursor.y);
 
-		btf32 r = 3.5f;
-		btf32 pitch_x = cos(editor.cam_pitch.Rad());
-		btf32 pitch_y = sin(editor.cam_pitch.Rad());
-		btf32 yaw_x = cos(editor.cam_yaw.Rad());
-		btf32 yaw_y = sin(editor.cam_yaw.Rad());
+		lf32 r = 3.5f;
+		lf32 pitch_x = cos(editor.cam_pitch.Rad());
+		lf32 pitch_y = sin(editor.cam_pitch.Rad());
+		lf32 yaw_x = cos(editor.cam_yaw.Rad());
+		lf32 yaw_y = sin(editor.cam_yaw.Rad());
 		camViewPosition[0] = camViewTarget[0] + r * m::Vector3(-yaw_y * pitch_x, pitch_y, -yaw_x * pitch_x);
 
 		//-------------------------------- Stuff
@@ -668,7 +644,7 @@ namespace core
 
 	void Draw(bool oob)
 	{
-		btf32 time2 = ((btf32)tickCount / 30.f) * 0.02f + 0.2f;
+		lf32 time2 = ((lf32)tickCount / 30.f) * 0.02f + 0.2f;
 		m::Vector3 sunVec = m::Normalize(m::Vector3(0.5f, 1.f, 0.5f));
 
 		graphics::Matrix4x4 matrix; // Matrix used for rendering env. props (so far...)
@@ -718,9 +694,9 @@ namespace core
 
 			#define LIGHT_RND ((SHADOW_RESOLUTION / SHADOW_WIDTH) / 2)
 
-			btf32 moveF = roundf(m::Dot(lightVecForw, lightPos));
-			btf32 moveS = roundf(m::Dot(LightVecSide, lightPos) * LIGHT_RND) / LIGHT_RND;
-			btf32 moveU = roundf(m::Dot(LightVecUp, lightPos) * LIGHT_RND) / LIGHT_RND;
+			lf32 moveF = roundf(m::Dot(lightVecForw, lightPos));
+			lf32 moveS = roundf(m::Dot(LightVecSide, lightPos) * LIGHT_RND) / LIGHT_RND;
+			lf32 moveU = roundf(m::Dot(LightVecUp, lightPos) * LIGHT_RND) / LIGHT_RND;
 
 			#undef LIGHT_RND
 
@@ -745,27 +721,31 @@ namespace core
 
 		if (config.bEditMode)
 		{
-			bti32 editor_cursor_x = roundf(editor.cursor.x);
-			bti32 editor_cursor_y = roundf(editor.cursor.y);
+			li32 editor_cursor_x = roundf(editor.cursor.x);
+			li32 editor_cursor_y = roundf(editor.cursor.y);
+			#if DEF_GRID
 			graphics::MatrixTransform(matrix, m::Vector3(editor_cursor_x,
 				env::eCells.terrain_height[editor_cursor_x][editor_cursor_y] /
 				TERRAIN_HEIGHT_DIVISION, editor_cursor_y));
 			DrawMesh(ID_NULL, acv::GetM(acv::m_debugcell), acv::GetT(acv::t_gui_bar_red), SS_NORMAL, matrix);
+			#endif
 
-			btui32 drawrange = 16u; // Create min/max draw coordinates
-			bti32 minx = editor_cursor_x - drawrange; if (minx < 0) minx = 0;
-			bti32 maxx = editor_cursor_x + drawrange; if (maxx > WORLD_SIZE_MAXINT) maxx = WORLD_SIZE_MAXINT;
-			bti32 miny = editor_cursor_y - drawrange; if (miny < 0) miny = 0;
-			bti32 maxy = editor_cursor_y + drawrange; if (maxy > WORLD_SIZE_MAXINT) maxy = WORLD_SIZE_MAXINT;
-			for (bti32 x = minx; x <= maxx; x++)
+			#if DEF_GRID
+			lui32 drawrange = 16u; // Create min/max draw coordinates
+			li32 minx = editor_cursor_x - drawrange; if (minx < 0) minx = 0;
+			li32 maxx = editor_cursor_x + drawrange; if (maxx > WORLD_SIZE_MAXINT) maxx = WORLD_SIZE_MAXINT;
+			li32 miny = editor_cursor_y - drawrange; if (miny < 0) miny = 0;
+			li32 maxy = editor_cursor_y + drawrange; if (maxy > WORLD_SIZE_MAXINT) maxy = WORLD_SIZE_MAXINT;
+			for (li32 x = minx; x <= maxx; x++)
 			{
-				for (bti32 y = miny; y < maxy; y++)
+				for (li32 y = miny; y < maxy; y++)
 				{
-					btf32 rotation_by_enum[]
+					lf32 rotation_by_enum[]
 					{
 						0.f, 180.f, 90.f, 270.f,
 					};
 					matrix = graphics::Matrix4x4();
+
 
 					graphics::SetRenderWire();
 
@@ -822,6 +802,7 @@ namespace core
 					}*/
 				}
 			}
+			#endif
 			env::DrawTerrainDebug();
 		}
 		else
@@ -832,7 +813,7 @@ namespace core
 			//env::DrawDebugGizmos(cs);
 			#endif
 
-			for (btID i = 0; i <= GetLastEntity(); i++) { // For every entity
+			for (lid i = 0; i < GetEntityArraySize(); i++) { // For every entity
 				// Early exit if the entity isnt even real
 				if (!GetEntityExists(i)) continue;
 				// For distance culling
@@ -840,7 +821,7 @@ namespace core
 					- camViewPosition[activePlayer];
 				// Dot against the camera direction, for not drawing behind us
 				// Not as good as frustum culling, but I'll live
-				btf32 dot = m::Dot(diff,
+				lf32 dot = m::Dot(diff,
 					m::Normalize(camViewTarget[activePlayer] - camViewPosition[activePlayer]));
 				// Culling
 				if (m::Length(diff) < 30.f && dot > 0.f) {
@@ -852,12 +833,12 @@ namespace core
 			/*
 			Entity* entity = ENTITY(players[activePlayer]);
 			// Set min/max draw coordinates
-			bti32 minx = entity->t.csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
-			bti32 maxx = entity->t.csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE_MAXINT) maxx = WORLD_SIZE_MAXINT;
-			bti32 miny = entity->t.csi.c[0].y - DRAWRANGE; if (miny < 0) miny = 0;
-			bti32 maxy = entity->t.csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE_MAXINT) maxy = WORLD_SIZE_MAXINT;
-			for (bti32 x = minx; x <= maxx; x++) {
-				for (bti32 y = miny; y < maxy; y++) {
+			li32 minx = entity->t.csi.c[0].x - DRAWRANGE; if (minx < 0) minx = 0;
+			li32 maxx = entity->t.csi.c[0].x + DRAWRANGE; if (maxx > WORLD_SIZE_MAXINT) maxx = WORLD_SIZE_MAXINT;
+			li32 miny = entity->t.csi.c[0].y - DRAWRANGE; if (miny < 0) miny = 0;
+			li32 maxy = entity->t.csi.c[0].y + DRAWRANGE; if (maxy > WORLD_SIZE_MAXINT) maxy = WORLD_SIZE_MAXINT;
+			for (li32 x = minx; x <= maxx; x++) {
+				for (li32 y = miny; y < maxy; y++) {
 					//-------------------------------- DRAW ENTITIES ON THIS CELL
 					for (int e = 0; e <= refCells[x][y].ref_ents.end(); e++)
 						if (refCells[x][y].ref_ents[e] != ID_NULL && GetEntityExists(refCells[x][y].ref_ents[e]))
@@ -889,7 +870,7 @@ namespace core
 	}
 
 	// move somewhere else
-	void SoulTransferTemp(btID player, btID from, btID to) {
+	void SoulTransferTemp(lid player, lid from, lid to) {
 		// if we are allied
 		if (fac::GetAllegiance(ENTITY(from)->faction, ENTITY(to)->faction) == fac::allied) {
 			// SOUL TRANSFER
@@ -907,13 +888,13 @@ namespace core
 	{
 		// Not the most elegant of functions
 		#ifdef DEF_NMP
-		for (btID i = 0u; i < config.iNumNWPlayers; ++i) {
+		for (lid i = 0u; i < config.iNumNWPlayers; ++i) {
 			if (input::GetHit(i, input::key::INV_CYCLE_L))
 				ActorDecrEquipSlot(players[i]);
 			if (input::GetHit(i, input::key::INV_CYCLE_R))
 				ActorIncrEquipSlot(players[i]);
 			if (input::GetHit(i, input::key::ACTIVATE)) { // Pick up items
-				btID viewtarget = GetEntity<ECActor>(players[i])->viewtarget;
+				lid viewtarget = GetEntity<ECActor>(players[i])->viewtarget;
 				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
 					ActorTakeItem(players[i], viewtarget);
 				}
@@ -934,7 +915,7 @@ namespace core
 			if (input::GetHit(input::key::INV_CYCLE_R))
 				ActorIncrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::ACTIVATE)) { // Pick up items
-				btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+				lid viewtarget = ACTOR(players[activePlayer])->viewtarget;
 				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
 					ActorTakeItem(players[activePlayer], viewtarget);
 				}
@@ -954,7 +935,7 @@ namespace core
 			if (input::GetHit(input::key::C_INV_CYCLE_R))
 				ActorIncrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::C_ACTIVATE)) { // Pick up items
-				btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+				lid viewtarget = ACTOR(players[activePlayer])->viewtarget;
 				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
 					ActorTakeItem(players[activePlayer], viewtarget);
 				}
@@ -979,36 +960,36 @@ namespace core
 		gui.text_message[player].ReGen(string, halfw + 16, -halfw - 16, 32);
 	}
 
-	void GUIDrawInventory(Inventory* inv, btui16 active_slot)
+	void GUIDrawInventory(Inventory* inv, lui16 active_slot)
 	{
 		int p1_x_start = -(int)graphics::FrameSizeX() / 2;
 		int p1_y_start = -(int)graphics::FrameSizeY() / 2;
 
-		const bti32 invspace = 38;
+		const li32 invspace = 38;
 
 		graphics::GUIText text;
 
-		gui.guiInvTimer[activePlayer] = m::StepToward(gui.guiInvTimer[activePlayer], (btf32)active_slot, 0.4f);
+		gui.guiInvTimer[activePlayer] = m::StepToward(gui.guiInvTimer[activePlayer], (lf32)active_slot, 0.4f);
 
-		bti32 xoffs = p1_x_start + 24;
-		bti32 yoffs = p1_y_start + 24 + 32; // add hp bar height
+		li32 xoffs = p1_x_start + 24;
+		li32 yoffs = p1_y_start + 24 + 32; // add hp bar height
 
 		// Calculate loop bounds
-		bti32 min = (bti32)ceilf(gui.guiInvTimer[activePlayer]) - 2;
+		li32 min = (li32)ceilf(gui.guiInvTimer[activePlayer]) - 2;
 		if (min < 0) min = 0;
-		bti32 max = (bti32)floorf(gui.guiInvTimer[activePlayer]) + 3;
+		li32 max = (li32)floorf(gui.guiInvTimer[activePlayer]) + 3;
 		if (max >= inv->items.Size()) max = inv->items.Size() - 1;
 		// Loop through items
 		for (int i = min; i <= max; ++i) {
 			if (inv->items.Used(i)) {
-				btf32 xoffsf = gui.guiInvTimer[activePlayer] * invspace;
-				if ((btf32)i >= gui.guiInvTimer[activePlayer]) {
-					btf32 opacity = 1.f - m::Clamp(fabsf(((btf32)i - gui.guiInvTimer[activePlayer]) * (1.f / 3.f)), 0.f, 1.f);
+				lf32 xoffsf = gui.guiInvTimer[activePlayer] * invspace;
+				if ((lf32)i >= gui.guiInvTimer[activePlayer]) {
+					lf32 opacity = 1.f - m::Clamp(fabsf(((lf32)i - gui.guiInvTimer[activePlayer]) * (1.f / 3.f)), 0.f, 1.f);
 					graphics::DrawGUITexture(&acv::GetT(acv::items[GETITEMINST(inv->items[i])->id_item_template]->id_icon),
 						xoffs + (i * invspace) - xoffsf, yoffs, 64, 64, opacity);
 				}
 				else {
-					btf32 opacity = 1.f - m::Clamp(fabsf(((btf32)i - gui.guiInvTimer[activePlayer]) * 0.5f), 0.f, 1.f);
+					lf32 opacity = 1.f - m::Clamp(fabsf(((lf32)i - gui.guiInvTimer[activePlayer]) * 0.5f), 0.f, 1.f);
 					graphics::DrawGUITexture(&acv::GetT(acv::items[GETITEMINST(inv->items[i])->id_item_template]->id_icon),
 						xoffs, yoffs - (i * invspace) + xoffsf, 64, 64, opacity);
 				}
@@ -1029,7 +1010,7 @@ namespace core
 			}
 		}
 
-		int boxoffs = (m::Clamp(fabsf(((btf32)active_slot - gui.guiInvTimer[activePlayer]) * 0.5f), 0.f, 1.f) * 12.f);
+		int boxoffs = (m::Clamp(fabsf(((lf32)active_slot - gui.guiInvTimer[activePlayer]) * 0.5f), 0.f, 1.f) * 12.f);
 		if (boxoffs > 6) boxoffs = 6;
 
 		graphics::DrawGUIBox(&acv::GetT(acv::t_gui_select_box),
@@ -1066,7 +1047,7 @@ namespace core
 		// Draw hurt effect
 		if (ENTITY(players[activePlayer])->damagestate < gui.guiPlayerHP[activePlayer]) {
 			graphics::DrawGUITexture(&acv::GetT(acv::t_gui_hurt), 0, 0, graphics::FrameSizeX(), graphics::FrameSizeY(),
-				(btf32)(gui.guiPlayerHP[activePlayer] - ENTITY(players[activePlayer])->damagestate) * (10.f / 1000.f));
+				(lf32)(gui.guiPlayerHP[activePlayer] - ENTITY(players[activePlayer])->damagestate) * (10.f / 1000.f));
 			gui.guiPlayerHP[activePlayer] =
 				m::StepToward(gui.guiPlayerHP[activePlayer],
 					ENTITY(players[activePlayer])->damagestate, 5);
@@ -1086,8 +1067,8 @@ namespace core
 		{
 			ECCommon* player = ENTITY(players[activePlayer]);
 			// hp
-			btf32 hp = (btf32)core::GetHP(players[activePlayer]) / 1000.f;
-			btf32 hpscale = 128.f;
+			lf32 hp = (lf32)core::GetHP(players[activePlayer]) / 1000.f;
+			lf32 hpscale = 128.f;
 			graphics::DrawGUITexture(&acv::GetT(acv::t_col_black),
 				p1_x_start + (hpscale * 0.5f), p1_y_start + 8, (int)hpscale, 16);
 			graphics::DrawGUITexture(&acv::GetT(acv::t_gui_bar_red),
@@ -1107,7 +1088,7 @@ namespace core
 		}
 
 		// enemy hp
-		btID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+		lid viewtarget = ACTOR(players[activePlayer])->viewtarget;
 		// If not null or player and exists
 		if (viewtarget != ID_NULL && viewtarget != core::players[activePlayer] && GetEntityExists(viewtarget)) {
 			ECCommon* entity = ENTITY(viewtarget);
@@ -1125,29 +1106,29 @@ namespace core
 			//*/
 
 			if (pr.w > 0.f) { // If the target is actually in front of us
-				int target_x_start = (bti32)pr.x;
-				int target_y_start = (bti32)pr.y;
+				int target_x_start = (li32)pr.x;
+				int target_y_start = (li32)pr.y;
 
 				int textboxX = target_x_start + 24;
 				int textboxY = target_y_start - 24;
 
 				// Clamp textbox
-				if (textboxX > (bti32)graphics::FrameSizeX() / 2 - 128 - 12)
-					textboxX = (bti32)graphics::FrameSizeX() / 2 - 128 - 12;
-				else if (textboxX < -(bti32)graphics::FrameSizeX() / 2 + 12)
-					textboxX = -(bti32)graphics::FrameSizeX() / 2 + 12;
-				if (textboxY > (bti32)graphics::FrameSizeY() / 2 - 12)
-					textboxY = (bti32)graphics::FrameSizeY() / 2 - 12;
-				else if (textboxY < -(bti32)graphics::FrameSizeY() / 2 + 24)
-					textboxY = -(bti32)graphics::FrameSizeY() / 2 + 24;
+				if (textboxX > (li32)graphics::FrameSizeX() / 2 - 128 - 12)
+					textboxX = (li32)graphics::FrameSizeX() / 2 - 128 - 12;
+				else if (textboxX < -(li32)graphics::FrameSizeX() / 2 + 12)
+					textboxX = -(li32)graphics::FrameSizeX() / 2 + 12;
+				if (textboxY > (li32)graphics::FrameSizeY() / 2 - 12)
+					textboxY = (li32)graphics::FrameSizeY() / 2 - 12;
+				else if (textboxY < -(li32)graphics::FrameSizeY() / 2 + 24)
+					textboxY = -(li32)graphics::FrameSizeY() / 2 + 24;
 
 				// Draw its name
 				gui.text_temp.ReGen(EntityName(viewtarget), textboxX, textboxX + 128, textboxY);
 				gui.guibox.ReGen(textboxX, textboxX + gui.text_temp.sizex, textboxY - gui.text_temp.sizey, textboxY, 4, 10);
 				// draw our enemy's health
 				if (ACTOR(players[activePlayer])->atk_target != ID_NULL) {
-					btf32 hp = (btf32)core::GetHP(ACTOR(players[activePlayer])->atk_target) / 1000.f;
-					btf32 hpscale = 128.f;
+					lf32 hp = (lf32)core::GetHP(ACTOR(players[activePlayer])->atk_target) / 1000.f;
+					lf32 hpscale = 128.f;
 					graphics::DrawGUITexture(&acv::GetT(acv::t_col_black),
 						p1_x_start + (hpscale * 0.5f), p1_y_start + 24, (int)hpscale, 16);
 					graphics::DrawGUITexture(&acv::GetT(acv::t_gui_bar_yellow),
@@ -1177,7 +1158,7 @@ namespace core
 		#endif
 	}
 
-	void DrawPostDraw(btf64 delta)
+	void DrawPostDraw(lf64 delta)
 	{
 		#ifdef _DEBUG
 		gui.text_version.Draw(&acv::GetT(acv::t_gui_font));
@@ -1189,9 +1170,9 @@ namespace core
 		// draw archiver loaded list
 		for (int i2 = 0; i2 < acv::AssetCount(); ++i2)
 			if (acv::IsLoaded(i2))
-				graphics::DrawGUITexture(&acv::GetT(acv::t_debug_loaded_y), 2 + i2 * 4 - ((bti32)config.iWinX / 2), ((bti32)config.iWinY / 2) - 40, 4, 8);
+				graphics::DrawGUITexture(&acv::GetT(acv::t_debug_loaded_y), 2 + i2 * 4 - ((li32)config.iWinX / 2), ((li32)config.iWinY / 2) - 40, 4, 8);
 			else
-				graphics::DrawGUITexture(&acv::GetT(acv::t_debug_loaded_n), 2 + i2 * 4 - ((bti32)config.iWinX / 2), ((bti32)config.iWinY / 2) - 40, 4, 8);
+				graphics::DrawGUITexture(&acv::GetT(acv::t_debug_loaded_n), 2 + i2 * 4 - ((li32)config.iWinX / 2), ((li32)config.iWinY / 2) - 40, 4, 8);
 		#endif
 		#if DEF_PROJECT == PROJECT_BC
 		if (gui.bShowGuide) {
@@ -1205,7 +1186,7 @@ namespace core
 		#endif
 	}
 
-	void SetPlayerInput(btID playerIndex, m::Vector2 input, btf32 rot_x, btf32 rot_y,
+	void SetPlayerInput(lid playerIndex, m::Vector2 input, lf32 rot_x, lf32 rot_y,
 		bool use, bool use_hit, bool use_alt,
 		bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C,
 		bool crouch, bool jump) {
@@ -1238,12 +1219,12 @@ namespace core
 		#endif
 	}
 
-	void AddEntityCell(btui32 x, btui32 y, btID e)
+	void AddEntityCell(lui32 x, lui32 y, lid e)
 	{
 		refCells[x][y].ref_ents.Add(e);
 	}
 
-	void RemoveEntityCell(btui32 x, btui32 y, btID e)
+	void RemoveEntityCell(lui32 x, lui32 y, lid e)
 	{
 		refCells[x][y].ref_ents.Remove(e);
 	}
@@ -1251,9 +1232,9 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// SPAWN FUNCTIONS ---------------------------------------------------------------------------------------------------------------
 
-	btID SpawnEntity(btui8 type, m::Vector2 pos, float dir)
+	lid SpawnEntity(lui8 type, m::Vector2 pos, float dir)
 	{
-		btID id = IndexSpawnEntity(ENTITY_TYPE_ACTOR);
+		lid id = IndexSpawnEntity(ENTITY_TYPE_ACTOR);
 		if (id != ID_NULL) {
 			PrefabEntity[type](id, pos, dir);
 		}
@@ -1262,9 +1243,9 @@ namespace core
 		}
 		return id;
 	}
-	btID SpawnNewEntityItem(btID item_template, m::Vector2 pos, btf32 dir)
+	lid SpawnNewEntityItem(lid item_template, m::Vector2 pos, lf32 dir)
 	{
-		btID id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
+		lid id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
 		PrefabCommon(id, pos, dir);
 		ENTITY(id)->faction = fac::faction::none;
 		ENTITY(id)->physicsFlags.set(ECCommon::ePREFAB_ITEM);
@@ -1274,9 +1255,9 @@ namespace core
 		ENTITY(id)->height = 0.5f;
 		return id;
 	}
-	btID SpawnEntityItem(btID itemid, m::Vector2 pos, btf32 height, btf32 dir)
+	lid SpawnEntityItem(lid itemid, m::Vector2 pos, lf32 height, lf32 dir)
 	{
-		btID id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
+		lid id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
 
 		//spawn_setup_t(id, pos, dir);
 
@@ -1299,7 +1280,7 @@ namespace core
 		ENTITY(id)->height = 0.5f;
 		return id;
 	}
-	void DestroyEntity(btID id)
+	void DestroyEntity(lid id)
 	{
 		RemoveAllReferences(id);
 		// A special case has to be made for items, which contain their own instance
@@ -1310,9 +1291,9 @@ namespace core
 		std::cout << "Destroyed entity " << id << std::endl;
 	}
 
-	btID SpawnItem(btID item_template)
+	lid SpawnItem(lid item_template)
 	{
-		btID id = InitItemInstance(acv::item_types[item_template]);
+		lid id = InitItemInstance(acv::item_types[item_template]);
 		if (id != BUF_NULL)
 		{
 			GETITEMINST(id)->id_item_template = item_template;
@@ -1325,13 +1306,13 @@ namespace core
 		}
 		return id;
 	}
-	void DestroyItem(btID id)
+	void DestroyItem(lid id)
 	{
 		FreeItemInstance(id);
 		std::cout << "Destroyed item " << id << std::endl;
 	}
 
-	void SpawnProjectile(fac::faction faction, btID type, m::Vector2 pos, btf32 height,
+	void SpawnProjectile(fac::faction faction, lid type, m::Vector2 pos, lf32 height,
 		float yaw, float pitch)
 	{
 		PrjID id = IndexSpawnProjectile();
@@ -1343,11 +1324,11 @@ namespace core
 
 		//
 		/*
-		btf32 r = 5.f;
-		btf32 pitch_x = cos(editor.cam_pitch.Rad());
-		btf32 pitch_y = sin(editor.cam_pitch.Rad());
-		btf32 yaw_x = cos(editor.cam_yaw.Rad());
-		btf32 yaw_y = sin(editor.cam_yaw.Rad());
+		lf32 r = 5.f;
+		lf32 pitch_x = cos(editor.cam_pitch.Rad());
+		lf32 pitch_y = sin(editor.cam_pitch.Rad());
+		lf32 yaw_x = cos(editor.cam_yaw.Rad());
+		lf32 yaw_y = sin(editor.cam_yaw.Rad());
 		viewPosition[0] = viewTarget[0] + r * m::Vector3(-yaw_y * pitch_x, pitch_y, -yaw_x * pitch_x);
 		*/
 
@@ -1364,7 +1345,7 @@ namespace core
 			printf("Projectile Save\n");
 		}
 	}
-	void SpawnProjectileSpread(fac::faction faction, btID type, m::Vector2 pos, btf32 height,
+	void SpawnProjectileSpread(fac::faction faction, lid type, m::Vector2 pos, lf32 height,
 		float yaw, float pitch, float spread)
 	{
 		yaw += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add horizontal spread
@@ -1373,7 +1354,7 @@ namespace core
 		SpawnProjectile(faction, type, pos, height, yaw, pitch);
 	}
 
-	void DestroyProjectile(btID id)
+	void DestroyProjectile(lid id)
 	{
 		IndexDestroyProjectileC(MakePrjID(id));
 	}
@@ -1381,7 +1362,7 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// SOMETHING ---------------------------------------------------------------------------------------------------------------------
 
-	void ActorCastProj(btID i)
+	void ActorCastProj(lid i)
 	{
 		SpawnProjectileSpread(ENTITY(i)->faction, 0, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->t.yaw.Rad()) * 0.55f), ENTITY(i)->t.altitude, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
 	}
@@ -1389,18 +1370,20 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// PROJECTILES -------------------------------------------------------------------------------------------------------------------
 
-	bool ProjectileCollideEnv(btID index)
+	bool ProjectileCollideEnv(lid index)
 	{
 		Projectile* proj = GetProj(MakePrjID(index));
 
+		#if DEF_GRID
 		int x = (int)roundf(proj->t.position_x);
 		int y = (int)roundf(proj->t.position_y);
 		if (env::Get(x, y, env::eflag::EF_IMPASSABLE)) // if hit an impassable tile
 			return true;
+		#endif
 
 		CellSpace csi;
 		GetCellSpaceInfo(m::Vector2(proj->t.position_x, proj->t.position_y), csi);
-		btf32 height;
+		lf32 height;
 		#if DEF_GRID
 		env::GetHeight(height, csi);
 		#else
@@ -1422,7 +1405,7 @@ namespace core
 		return i;
 	}
 
-	void ProjectileTick(btf32 dt) // Projectile tick
+	void ProjectileTick(lf32 dt) // Projectile tick
 	{
 		int index = block_proj.index_first;
 		bool stop = false;
@@ -1506,12 +1489,12 @@ namespace core
 				if (ProjectileCollideEnv(index)) // If it's time to die
 				{
 					DestroyProjectile(index);
-					btui16 x = (btui16)roundf(proj[index].t.position_x);
-					btui16 y = (btui16)roundf(proj[index].t.position_y);
+					lui16 x = (lui16)roundf(proj[index].t.position_x);
+					lui16 y = (lui16)roundf(proj[index].t.position_y);
 					m::Vector2 vec = m::Normalize(m::Vector2(proj[index].t.velocity_x, proj[index].t.velocity_y));
-					btui16 x2 = (btui16)((bti16)x + (bti16)roundf(vec.x));
-					btui16 y2 = (btui16)((bti16)y + (bti16)roundf(vec.y));
-					//t_EnvHeightmap.SetPixelChannelG((btui16)roundf(proj[index].t.position.x), (btui16)roundf(proj[index].t.position.y), 255ui8);
+					lui16 x2 = (lui16)((li16)x + (li16)roundf(vec.x));
+					lui16 y2 = (lui16)((li16)y + (li16)roundf(vec.y));
+					//t_EnvHeightmap.SetPixelChannelG((lui16)roundf(proj[index].t.position.x), (lui16)roundf(proj[index].t.position.y), 255ui8);
 
 					//if (!env::Get(x, y, env::eflag::eIMPASSABLE) && !env::Get(x2, y2, env::eflag::eIMPASSABLE))
 					//{
@@ -1535,7 +1518,7 @@ namespace core
 				{
 					// LOOP THROUGH ALL ENTITIES METHOD, SHIT BUT ONLY WAY THAT WORKS ATM
 					///*
-					for (int i = 0; i <= GetLastEntity(); i++)
+					for (int i = 0; i < GetEntityArraySize(); i++)
 					{
 						if (GetEntityExists(i) && ENTITY(i)->physicsFlags.get(ECCommon::eCOLLIDE_PRJ))
 						{

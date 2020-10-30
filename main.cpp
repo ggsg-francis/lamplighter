@@ -67,7 +67,7 @@ extern "C" {
 
 //-------------------------------- TEMP
 
-btf32 wipe_time = 0.f;
+lf32 wipe_time = 0.f;
 
 //-------------------------------- WINDOWING GLOBAL VARIABLES
 
@@ -126,11 +126,11 @@ void TransferGameInput()
 {
 	if (config.b3PP) {
 		#ifdef DEF_NMP
-		for (btID i = 0u; i < config.iNumNWPlayers; ++i) {
+		for (lid i = 0u; i < config.iNumNWPlayers; ++i) {
 			// Set input
-			core::SetPlayerInput((btID)i,
-				m::Vector2(0.f, (btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
-				(btf32)(input::GetHeld(i, input::key::DIR_R) - input::GetHeld(i, input::key::DIR_L)) * 6.f, 0.f,
+			core::SetPlayerInput((lid)i,
+				m::Vector2(0.f, (lf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
+				(lf32)(input::GetHeld(i, input::key::DIR_R) - input::GetHeld(i, input::key::DIR_L)) * 6.f, 0.f,
 				input::GetHeld(i, input::key::USE),
 				input::GetHit(i, input::key::USE),
 				input::GetHit(i, input::key::USE_ALT),
@@ -145,8 +145,8 @@ void TransferGameInput()
 		#else
 		// Set input for player 0
 		core::SetPlayerInput(0u,
-			m::Vector2(0.f, (btf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
-			(btf32)(input::GetHeld(input::key::DIR_R) - input::GetHeld(input::key::DIR_L)) * 6.f, 0.f,
+			m::Vector2(0.f, (lf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
+			(lf32)(input::GetHeld(input::key::DIR_R) - input::GetHeld(input::key::DIR_L)) * 6.f, 0.f,
 			input::GetHeld(input::key::USE),
 			input::GetHit(input::key::USE),
 			input::GetHit(input::key::USE_ALT),
@@ -183,11 +183,11 @@ void TransferGameInput()
 	}
 	else {
 		#ifdef DEF_NMP
-		for (btID i = 0u; i < config.iNumNWPlayers; ++i) {
+		for (lid i = 0u; i < config.iNumNWPlayers; ++i) {
 			// Set input
-			core::SetPlayerInput((btID)i,
-				m::Vector2((btf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
-				(btf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
+			core::SetPlayerInput((lid)i,
+				m::Vector2((lf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
+				(lf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
 				input::input_buffer[i].mouse_x * 0.25f, input::input_buffer[i].mouse_y * 0.25f,
 				input::GetHeld(i, input::key::USE),
 				input::GetHit(i, input::key::USE),
@@ -203,8 +203,8 @@ void TransferGameInput()
 		#else
 		// Set input for player 0
 		core::SetPlayerInput(0u,
-			m::Vector2((btf32)(input::GetHeld(input::key::DIR_L) - input::GetHeld(input::key::DIR_R)),
-			(btf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
+			m::Vector2((lf32)(input::GetHeld(input::key::DIR_L) - input::GetHeld(input::key::DIR_R)),
+			(lf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
 			input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
 			input::GetHeld(input::key::USE),
 			input::GetHit(input::key::USE),
@@ -247,7 +247,7 @@ bool MainTick(SDL_Event* e)
 
 	#ifdef DEF_NMP
 	// Quit if any player quits
-	for (btui32 i = 0; i < config.iNumNWPlayers; ++i)
+	for (lui32 i = 0; i < config.iNumNWPlayers; ++i)
 		if (input::GetHit(i, input::key::QUIT))
 			return false;
 	#else
@@ -256,7 +256,7 @@ bool MainTick(SDL_Event* e)
 	#endif
 	TransferGameInput();
 	// If we reach this point, its time to run the tick
-	return core::Tick((btf32)(FRAME_TIME));
+	return core::Tick((lf32)(FRAME_TIME));
 }
 
 void MainDraw()
@@ -454,7 +454,8 @@ bool MainInit()
 
 	//-------------------------------- INITIALIZE GRAPHICS
 
-	graphics::Init();
+	graphics::Init(config.bEditMode, config.bSplitScreen, config.fCameraFOV,
+		config.fCameraNearClip, config.fCameraFarClip, config.iWinX, config.iWinY);
 	#if DEF_SWR
 	RenderInit();
 	#endif
@@ -480,7 +481,7 @@ bool MainInit()
 	//-------------------------------- INITIALIZATION
 
 	#ifndef DEF_NMP
-	srand(time(NULL)); // Initialize the random seed
+	srand((lui32)time(NULL)); // Initialize the random seed
 	#endif
 
 	acv::Init();
@@ -550,8 +551,8 @@ LoopMode LoopMainMenu() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	btf64 current_frame_time = 0.f;
-	btf64 next_frame_time = 0.f;
+	lf64 current_frame_time = 0.f;
+	lf64 next_frame_time = 0.f;
 
 	bool play = false;
 	bool exit = false;
@@ -587,17 +588,17 @@ Font scavenged from Aesomatica's tileset for Dwarf Fortress, and modified by me 
 	// Generate debug version display
 	char buffinal[32];
 	sprintf(buffinal, "v%i.%i.%i", VERSION_MAJOR, VERSION_MINOR, VERSION_PROJECT);
-	version.ReGen(buffinal, config.iWinX * -0.5f + 8, config.iWinX * 0.5f, config.iWinY * 0.5f - 10);
+	version.ReGen(buffinal, -((li32)config.iWinX / 2) + 8, config.iWinX / 2, config.iWinY / 2 - 10);
 
 	while (true) {
 		#ifdef DEF_SMOOTH_FRAMERATE
 		// Wait until the exact right time to run a new frame
 		while (current_frame_time <= next_frame_time)
-			current_frame_time = (btf64)SDL_GetTicks() / 1000.;
+			current_frame_time = (lf64)SDL_GetTicks() / 1000.;
 		next_frame_time = current_frame_time + FRAME_TIME;
 		#else
 		// Just run the new frame now
-		current_frame_time = (btf64)SDL_GetTicks() / 1000.;
+		current_frame_time = (lf64)SDL_GetTicks() / 1000.;
 		next_frame_time = current_frame_time + FRAME_TIME;
 		Time::Update(current_frame_time);
 		#endif
@@ -635,12 +636,12 @@ end:
 }
 
 LoopMode LoopGame() {
-	btf64 current_frame_time = 0.f;
-	btf64 next_frame_time = 0.f;
+	lf64 current_frame_time = 0.f;
+	lf64 next_frame_time = 0.f;
 
 	// Variable declarations (so that they are not crossed by the label jumps)
 	glm::mat4 mat_fb;
-	btf64 test2;
+	lf64 test2;
 
 	printf("Entered Game Loop\n");
 updtime:
@@ -650,11 +651,11 @@ updtime:
 		#ifdef DEF_SMOOTH_FRAMERATE
 		// Wait until the exact right time to run a new frame
 		while (current_frame_time <= next_frame_time)
-			current_frame_time = (btf64)SDL_GetTicks() / 1000.;
+			current_frame_time = (lf64)SDL_GetTicks() / 1000.;
 		next_frame_time = current_frame_time + FRAME_TIME;
 		#else
 		// Just run the new frame now
-		current_frame_time = (btf64)SDL_GetTicks() / 1000.;
+		current_frame_time = (lf64)SDL_GetTicks() / 1000.;
 		next_frame_time = current_frame_time + FRAME_TIME;
 		Time::Update(current_frame_time);
 		#endif
@@ -673,7 +674,6 @@ updtime:
 	//________________________________________________________________________________________________________________________________
 	// RENDER ------------------------------------------------------------------------------------------------------------------------
 
-render:
 	MainDraw();
 
 	//-------------------------------- DRAW FRAMEBUFFER (TODO: try and clean this up a bit!)
@@ -713,7 +713,7 @@ render:
 	#endif // MP
 
 	// screenwipe stuff (temp)
-	wipe_time += FRAME_TIME * 1.6f;
+	wipe_time += (lf32)FRAME_TIME * 1.6f;
 	if (wipe_time > 1.f) wipe_time = 1.f;
 	mat_fb = glm::rotate(mat_fb, glm::radians(wipe_time * 360.f * 2.f), glm::vec3(0.f, 0.f, 1.f));
 	mat_fb = glm::scale(mat_fb, glm::vec3(wipe_time, wipe_time, wipe_time));
@@ -786,7 +786,7 @@ render:
 	//-------------------------------- SLEEP FOR THE REMAINDER OF THE FRAME
 
 	// Get the time now that we've rendered the frame
-	current_frame_time = (btf64)SDL_GetTicks() / 1000.;
+	current_frame_time = (lf64)SDL_GetTicks() / 1000.;
 	// Get the frame time remainder that we need to sleep for (rounded down)
 	test2 = (next_frame_time - current_frame_time) * 1000.;
 	if (test2 > 0.)
@@ -810,7 +810,7 @@ LoopMode LoopEditor() {
 
 		if (input::GetHit(input::key::QUIT)) break;
 
-		core::TickEditor(FRAME_TIME);
+		core::TickEditor((lf32)FRAME_TIME);
 
 		// Set GL properties for solid rendering
 		glEnable(GL_DEPTH_TEST);
@@ -854,7 +854,12 @@ int main(int argc, char* argv[]) // SDL Main
 
 	if (!MainInit()) goto exitnoinit;
 
+	#if DEF_GRID
 	env::LoadBin();
+	#else
+	if (!config.bEditMode) env::LoadBin();
+	else env::GeneratePhysMesh();
+	#endif
 
 	LoopMode loop_mode = MODE_EXIT;
 	if (config.bEditMode) loop_mode = MODE_EDITOR;

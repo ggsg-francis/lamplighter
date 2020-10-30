@@ -32,20 +32,20 @@ namespace weather
 		glm::vec3 col_amb_dest = glm::vec3(1.f, 1.f, 1.f);
 		glm::vec3 col_fog_dest = glm::vec3(1.f, 1.f, 1.f);
 
-		float fog_level = 0.f;
-		float fog_level_from = 0.f;
-		float fog_level_dest = 0.f;
+		lf32 fog_level = 0.f;
+		lf32 fog_level_from = 0.f;
+		lf32 fog_level_dest = 0.f;
 
 		//start at 1 to trigger a weather transition right at the start
-		float recalc_ticker = 1.f;
+		lf32 recalc_ticker = 1.f;
 
-		float stat_tod = 0.f;
-		float stat_overcast_level = 0.f;
+		lf32 stat_tod = 0.f;
+		lf32 stat_overcast_level = 0.f;
 	};
 
 	extern Weather w;
 
-	void Tick(btf32 DELTA);
+	void Tick(lf32 DELTA);
 
 	void* SunColour();
 	void* AmbientColour();

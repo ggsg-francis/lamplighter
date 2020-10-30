@@ -22,14 +22,14 @@ namespace graphics
 	#define FILE_VERSION_MD 0x0u
 	#define FILE_VERSION_MDB 0x0u
 
-	typedef btui16 version_t;
+	typedef lui16 version_t;
 
 	struct color
 	{
-		btui8 r = '\0';
-		btui8 g = '\0';
-		btui8 b = '\0';
-		btui8 a = '\0';
+		lui8 r = '\0';
+		lui8 g = '\0';
+		lui8 b = '\0';
+		lui8 a = '\0';
 	};
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -212,13 +212,13 @@ namespace graphics
 			// If there is a second colour set
 			if (mesh->mColors[1u])
 			{
-				for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
+				for (lui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
 					vertex.matr[i] = 0.f;
 
-				btf32 fa = 0.f;
-				btf32 fb = 0.f;
-				btf32 fc = 0.f;
-				btf32 fd = 0.f;
+				lf32 fa = 0.f;
+				lf32 fb = 0.f;
+				lf32 fc = 0.f;
+				lf32 fd = 0.f;
 				// Set deform matrices
 				if (false) // TODO: if 'mirror weights'
 				{
@@ -245,12 +245,12 @@ namespace graphics
 					fc = mesh->mColors[1u][i].b;
 					fd = mesh->mColors[1u][i].a;
 				}
-				//btf32 fd = 0.f;
+				//lf32 fd = 0.f;
 
 				//mesh->m
 
 				// Normalize the deform values
-				//btf32 length = sqrt(fb * fb + fc * fc + fd * fd);
+				//lf32 length = sqrt(fb * fb + fc * fc + fd * fd);
 				//if (length != 0.f)
 				//{
 				//	fb = fb / length;
@@ -265,7 +265,7 @@ namespace graphics
 				//}
 
 				//// set that neutral matrix is the remainder of the other three
-				//btf32 fa = 1.f - (fb + fc + fd);
+				//lf32 fa = 1.f - (fb + fc + fd);
 
 				vertex.matr[0u] = fa;
 				vertex.matr[1u] = fb;
@@ -274,7 +274,7 @@ namespace graphics
 			}
 			else
 			{
-				for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
+				for (lui32 i = 0u; i < MD_MATRIX_COUNT; ++i)
 					vertex.matr[i] = 0.f;
 			}
 			
@@ -294,8 +294,8 @@ namespace graphics
 		}
 		// Bone Zone
 		/*
-		for (btui32 i = 0; i < mesh->mNumBones; i++) { // For every bone...
-			for (btui32 j = 0; j < mesh->mBones[i]->mNumWeights; j++) { // For every weight
+		for (lui32 i = 0; i < mesh->mNumBones; i++) { // For every bone...
+			for (lui32 j = 0; j < mesh->mBones[i]->mNumWeights; j++) { // For every weight
 				#define vid mesh->mBones[i]->mWeights[j].mVertexId
 				vertices[vid].matr[0u] = mesh->mBones[i]->mWeights[j].mWeight;
 				std::cout << "Set Bone ID " << mesh->mBones[i]->mWeights[j].mVertexId << " to value " << mesh->mBones[i]->mWeights[j].mWeight << std::endl;
@@ -312,7 +312,7 @@ namespace graphics
 	// TODO: add dds loader from this address
 	//http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/#compressed-textures
 
-	void ConvertTex(char* sfn, void* OUT, btui8 filter, btui8 edge)
+	void ConvertTex(char* sfn, void* OUT, lui8 filter, lui8 edge)
 	{
 		FILE* out = (FILE*)OUT;
 		
@@ -330,8 +330,8 @@ namespace graphics
 			fclose(in);
 
 			int *pixels = tgaRead(buffer, TGA_READER_ABGR);
-			btui16 width = (btui16)tgaGetWidth(buffer);
-			btui16 height = (btui16)tgaGetHeight(buffer);
+			lui16 width = (lui16)tgaGetWidth(buffer);
+			lui16 height = (lui16)tgaGetHeight(buffer);
 
 			// copy into new format?
 
@@ -348,8 +348,8 @@ namespace graphics
 			fwrite(&filter, 1, 1, out);
 			fwrite(&edge, 1, 1, out);
 			// Write dimensions
-			fwrite(&width, sizeof(btui16), 1, out); // Max value: 65535
-			fwrite(&height, sizeof(btui16), 1, out);
+			fwrite(&width, sizeof(lui16), 1, out); // Max value: 65535
+			fwrite(&height, sizeof(lui16), 1, out);
 			// Write pixel buffer
 			fwrite(carr, sizeof(color), width * height, out);
 			// Close file
@@ -367,7 +367,7 @@ namespace graphics
 		Mesh a = ma.meshes[0];
 
 		std::vector<Vertex> vces; // Vertices
-		std::vector<btui32> ices; // Indices
+		std::vector<lui32> ices; // Indices
 
 		// For each vertex
 		for (int i = 0; i < a.vertices.size(); i++)
@@ -400,7 +400,7 @@ namespace graphics
 		// Write indices
 		i = ices.size(); // Get number of indices
 		fwrite(&i, sizeof(size_t), 1, out);
-		fwrite(&ices[0], sizeof(btui32), ices.size(), out);
+		fwrite(&ices[0], sizeof(lui32), ices.size(), out);
 	}
 	void ConvertMB(char* sfn_a, char* sfn_b, void* OUT)
 	{
@@ -456,10 +456,10 @@ namespace graphics
 		Mesh a = ma.meshes[0];
 
 		std::vector<VertexDeform> vces; // Vertices
-		std::vector<btui32> ices; // Indices
+		std::vector<lui32> ices; // Indices
 
 		// For each vertex
-		for (btui32 iVert = 0; iVert < a.vertices.size(); ++iVert)
+		for (lui32 iVert = 0; iVert < a.vertices.size(); ++iVert)
 		{
 			vces.push_back(VertexDeform());
 			vces[iVert].pos = a.vertices[iVert].pos;
@@ -467,15 +467,15 @@ namespace graphics
 			vces[iVert].uvc = a.vertices[iVert].uvc;
 			vces[iVert].col = a.vertices[iVert].col;
 			// For each matrix blend
-			for (btui32 iMat = 0; iMat < MD_MATRIX_COUNT; ++iMat)
+			for (lui32 iMat = 0; iMat < MD_MATRIX_COUNT; ++iMat)
 				vces[iVert].mat[iMat] = a.vertices[iVert].matr[iMat];
 
-			//const btf32 leglen = 1.f;
-			const btf32 leglen = 0.75f;
-			//const btf32 leglen = 0.625f;
-			const btf32 bodlen = 0.55f;
-			//const btf32 hipw = 0.125f;
-			const btf32 hipw = 0.12f;
+			//const lf32 leglen = 1.f;
+			const lf32 leglen = 0.75f;
+			//const lf32 leglen = 0.625f;
+			const lf32 bodlen = 0.55f;
+			//const lf32 hipw = 0.125f;
+			const lf32 hipw = 0.12f;
 			switch (type)
 			{
 			case graphics::eDEFAULT:
@@ -507,6 +507,6 @@ namespace graphics
 		// Write indices
 		i = ices.size(); // Get number of indices
 		fwrite(&i, sizeof(size_t), 1, out);
-		fwrite(&ices[0], sizeof(btui32), ices.size(), out);
+		fwrite(&ices[0], sizeof(lui32), ices.size(), out);
 	}
 }

@@ -9,47 +9,47 @@
 //-------------------------------- ENTITIES
 
 // Return a string which will be printed to the screen when this entity is looked at
-char* EntityName(btID id);
+char* EntityName(lid id);
 // Tick this entity
-void EntityTick(btID id, btf32 dt);
+void EntityTick(lid id, lf32 dt);
 // Render graphics of this entity
-void EntityDraw(btID id);
+void EntityDraw(lid id);
 // Set properties of an entity so that we can use it in-game
-void IndexRegisterEntityMeta(EntityType type, btui32 size,
-	char*(*_fpName)(void*), void(*_fpTick)(btID, void*, btf32), void(*_fpDraw)(btID, void*));
+void IndexRegisterEntityMeta(EntityType type, lui32 size,
+	char*(*_fpName)(void*), void(*_fpTick)(lid, void*, lf32), void(*_fpDraw)(lid, void*));
 // Make an entity at this specified address
-void IndexSpawnEntityFixedID(EntityType TYPE, btID ID);
+void IndexSpawnEntityFixedID(EntityType TYPE, lid ID);
 // Make an entity, return ID
-btID IndexSpawnEntity(EntityType TYPE);
+lid IndexSpawnEntity(EntityType TYPE);
 // Get whether an entity with this ID exists
-bool GetEntityExists(btID ID);
+bool GetEntityExists(lid ID);
 // Get the ID of the last entity
-btID GetLastEntity();
+lid GetEntityArraySize();
 // Get the pointer address of the entity at X ID
-void* GetEntityPtr(btID ID);
+void* GetEntityPtr(lid ID);
 // Replaces the old ENTITY() etc. macros
-template <typename Type> Type* GetEntity(btID id) {
+template <typename Type> Type* GetEntity(lid id) {
 	return (Type*)GetEntityPtr(id);
 }
 // Get the type of the entity at ID
-EntityType GetEntityType(btID ID);
+EntityType GetEntityType(lid ID);
 //
-void IndexDeleteEntity(btID ID);
+void IndexDeleteEntity(lid ID);
 //
 void IndexClearEntities();
 
 //-------------------------------- ITEMS
 
 // Make an item, return ID
-btID InitItemInstance(ItemType TYPE);
+lid InitItemInstance(ItemType TYPE);
 // Get whether an item with this ID exists
-bool ItemInstanceExists(btID ID);
+bool ItemInstanceExists(lid ID);
 // Get the pointer address of the item at ID
-void* GetItemInstance(btID ID);
+void* GetItemInstance(lid ID);
 // Get the type of the item at ID
-ItemType GetItemInstanceType(btID ID);
+ItemType GetItemInstanceType(lid ID);
 //
-void FreeItemInstance(btID ID);
+void FreeItemInstance(lid ID);
 //
 void IndexClearItemInstances();
 
@@ -70,7 +70,7 @@ void IndexClearItemInstances();
 
 //-------------------------------- PROJECTILES
 
-typedef struct _prjid { btID id; } PrjID;
+typedef struct _prjid { lid id; } PrjID;
 
 PrjID MakePrjID(int i);
 
@@ -81,22 +81,22 @@ void IndexEnd();
 typedef struct
 {
 	// world space position
-	btf32 position_x;
-	btf32 position_y;
-	btf32 position_h;
-	btf32 velocity_x;
-	btf32 velocity_y;
-	btf32 velocity_h;
-	btui8 cellx;
-	btui8 celly;
+	lf32 position_x;
+	lf32 position_y;
+	lf32 position_h;
+	lf32 velocity_x;
+	lf32 velocity_y;
+	lf32 velocity_h;
+	lui8 cellx;
+	lui8 celly;
 } TransformC;
 
 typedef struct
 {
 	TransformC t;
-	btui64 ttd;
-	btui32 faction;
-	btID type;
+	lui64 ttd;
+	lui32 faction;
+	lid type;
 } Projectile;
 
 PrjID IndexSpawnProjectile();

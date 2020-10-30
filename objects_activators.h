@@ -21,7 +21,7 @@ enum ActivatorBits
 
 typedef struct StaticActivator
 {
-	mem::bv<btui64, ActivatorBits> bits;
+	mem::bv<lui64, ActivatorBits> bits;
 	Inventory inv;
 	WCoord homePosition;
 } StaticActivator;

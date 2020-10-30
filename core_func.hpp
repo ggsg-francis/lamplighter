@@ -7,12 +7,12 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// GENERAL FUNCTIONS -------------------------------------------------------------------------------------------------------------
 
-	void RemoveAllReferences(btID index)
+	void RemoveAllReferences(lid index)
 	{
 		// Remove us from the cell we're on
 		refCells[ENTITY(index)->t.csi.c[eCELL_I].x][ENTITY(index)->t.csi.c[eCELL_I].y].ref_ents.Remove(index);
 		// Remove all references to us by other entities
-		for (int i = 0; i <= GetLastEntity(); i++)
+		for (int i = 0; i < GetEntityArraySize(); i++)
 		{
 			if (GetEntityExists(i) && i != index) // If entity exists and is not me
 			{
@@ -29,7 +29,7 @@ namespace core
 		}
 	}
 
-	bool LOSCheck(btID enta, btID entb) {
+	bool LOSCheck(lid enta, lid entb) {
 		ECCommon* entity_a = ENTITY(enta);
 		ECCommon* entity_b = ENTITY(entb);
 		#if DEF_GRID
@@ -45,26 +45,26 @@ namespace core
 		#endif
 	}
 
-	btID GetClosestPlayer(btID index)
+	lid GetClosestPlayer(lid index)
 	{
-		btf32 check_distance_0 = m::Length(ENTITY(players[0])->t.position - ENTITY(index)->t.position);
-		btf32 check_distance_1 = m::Length(ENTITY(players[1])->t.position - ENTITY(index)->t.position);
+		lf32 check_distance_0 = m::Length(ENTITY(players[0])->t.position - ENTITY(index)->t.position);
+		lf32 check_distance_1 = m::Length(ENTITY(players[1])->t.position - ENTITY(index)->t.position);
 		if (check_distance_1 > check_distance_0) // Which player is closer to me
 			return players[1];
 		else
 			return players[0];
 	}
 
-	btID GetClosestEntity(btID index, btf32 dist)
+	lid GetClosestEntity(lid index, lf32 dist)
 	{
-		btID current_closest = BUF_NULL;
-		btf32 closest_distance = dist; // Effectively sets a max return range
-		for (int i = 0; i <= GetLastEntity(); i++)
+		lid current_closest = BUF_NULL;
+		lf32 closest_distance = dist; // Effectively sets a max return range
+		for (int i = 0; i < GetEntityArraySize(); i++)
 		{
 			// If used, not me, and is alive
 			if (GetEntityExists(i) && i != index && ENTITY(i)->activeFlags.get(ECCommon::eALIVE))
 			{
-				btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
+				lf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
 				if (check_distance < closest_distance)
 				{
 					current_closest = i;
@@ -76,16 +76,16 @@ namespace core
 	}
 
 	// TODO: ANGLE IS ALREADY CALCULATED HERE, SO REUSE IT FOR THE PROJECTILE CODE INSTEAD OF REGENNING
-	btID GetViewTargetEntity(btID index, btf32 dist, fac::facalleg allegiance)
+	lid GetViewTargetEntity(lid index, lf32 dist, fac::facalleg allegiance)
 	{
-		btID current_closest = BUF_NULL;
-		btf32 closest_angle = 15.f;
-		for (int index_other = 0; index_other <= GetLastEntity(); index_other++) {
+		lid current_closest = BUF_NULL;
+		lf32 closest_angle = 15.f;
+		for (int index_other = 0; index_other < GetEntityArraySize(); index_other++) {
 			// If used, not me, and is alive
 			if (GetEntityExists(index_other) && index_other != index &&
 				ENTITY(index_other)->activeFlags.get(ECCommon::eALIVE) &&
 				fac::GetAllegiance(ENTITY(index)->faction, ENTITY(index_other)->faction) == allegiance) {
-				btf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
+				lf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
 				if (check_distance < dist) {
 					ECCommon* ent = ENTITY(index);
 					ECCommon* ent_other = ENTITY(index_other);
@@ -98,7 +98,7 @@ namespace core
 					{
 						m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
 						m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
-						btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
+						lf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
 						if (abs(angdif) < closest_angle) {
 							closest_angle = angdif;
 							current_closest = index_other;
@@ -110,11 +110,11 @@ namespace core
 		return current_closest;
 	}
 
-	btID GetClosestEntityAlleg(btID index, btf32 dist, fac::facalleg allegiance)
+	lid GetClosestEntityAlleg(lid index, lf32 dist, fac::facalleg allegiance)
 	{
-		btID current_closest = BUF_NULL;
-		btf32 closest_distance = dist; // Effectively sets a max return range
-		for (int i = 0; i <= GetLastEntity(); i++)
+		lid current_closest = BUF_NULL;
+		lf32 closest_distance = dist; // Effectively sets a max return range
+		for (int i = 0; i < GetEntityArraySize(); i++)
 		{
 			// If used, not me, and is alive
 			if (GetEntityExists(i) && i != index && ENTITY(i)->activeFlags.get(ECCommon::eALIVE))
@@ -122,7 +122,7 @@ namespace core
 				// do I like THEM
 				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == allegiance)
 				{
-					btf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
+					lf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
 					if (check_distance < closest_distance)
 					{
 						current_closest = i;
@@ -134,12 +134,12 @@ namespace core
 		return current_closest;
 	}
 
-	btID GetClosestEntityAllegLOS(btID index, btf32 dist, fac::facalleg allegiance)
+	lid GetClosestEntityAllegLOS(lid index, lf32 dist, fac::facalleg allegiance)
 	{
 		ECCommon* entity_index = ENTITY(index);
-		btID current_closest = BUF_NULL;
-		btf32 closest_distance = dist; // Effectively sets a max return range
-		for (int i = 0; i <= GetLastEntity(); i++)
+		lid current_closest = BUF_NULL;
+		lf32 closest_distance = dist; // Effectively sets a max return range
+		for (int i = 0; i < GetEntityArraySize(); i++)
 		{
 			ECCommon* entity = ENTITY(i);
 			// If used, not me, and is alive
@@ -148,7 +148,7 @@ namespace core
 				// do I like THEM
 				if (fac::GetAllegiance(entity_index->faction, entity->faction) == allegiance)
 				{
-					btf32 check_distance = m::Length(entity->t.position - entity_index->t.position);
+					lf32 check_distance = m::Length(entity->t.position - entity_index->t.position);
 					if (check_distance < closest_distance)
 					{
 						// Linetrace environment to see if the character is visible
@@ -174,11 +174,11 @@ namespace core
 		return current_closest;
 	}
 
-	btID GetEntityViewTarget(btID index)
+	lid GetEntityViewTarget(lid index)
 	{
-		btID id = BUF_NULL;
-		btf32 closestDist = 2.f;
-		btf32 closest_angle = 20.f;
+		lid id = BUF_NULL;
+		lf32 closestDist = 2.f;
+		lf32 closest_angle = 20.f;
 		ECCommon* entity_index = ENTITY(index);
 		// Iterate through nearby cells
 		for (int x = entity_index->t.csi.c[eCELL_I].x - 3u; x < entity_index->t.csi.c[eCELL_I].x + 3u; x++) {
@@ -193,11 +193,11 @@ namespace core
 						continue;
 					// If the target is alive (likely to be temporary, soon as there is something interesting
 					// to do with dead bodies
-					btf32 check_distance = m::Length(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
+					lf32 check_distance = m::Length(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
 					if (check_distance < closestDist) {
 						m::Vector2 targetoffset = m::Normalize(ENTITY(refCells[x][y].ref_ents[e])->t.position - entity_index->t.position);
 						m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
-						btf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
+						lf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
 						if (abs(angdif) < closest_angle) {
 							closest_angle = angdif;
 							id = refCells[x][y].ref_ents[e];
@@ -212,7 +212,7 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// PREFABS -----------------------------------------------------------------------------------------------------------------------
 
-	inline void PrefabCommon(btID index, m::Vector2 pos, btf32 dir)
+	inline void PrefabCommon(lid index, m::Vector2 pos, lf32 dir)
 	{
 		ECCommon* eptr = GetEntity<ECCommon>(index);
 		eptr->t.position = pos;
@@ -273,8 +273,8 @@ namespace core
 				m::Vector3(31.f / 256.f, 29.f / 256.f, 29.f / 256.f),
 			};
 
-			const btf32 hue_offs = 0.25f;
-			const btf32 bri_offs = 0.05f;
+			const lf32 hue_offs = 0.25f;
+			const lf32 bri_offs = 0.05f;
 			m::Vector3 col_base_a = colBase[rand() % 10]
 				+ (colBase[rand() % 10] * hue_offs) - hue_offs
 				+ m::Vector3(m::Random(-bri_offs, bri_offs));
@@ -296,36 +296,36 @@ namespace core
 			return c + ('A' - 'a');
 		return c;
 	}
-	void NameEntity(btID id)
+	void NameEntity(lid id)
 	{
 		char name1[32];
 		char name2[32];
 
-		btui32 random;
-		btui32 usePrefix = (btui32)m::Random(0u, 100u);
+		lui32 random;
+		lui32 usePrefix = (lui32)m::Random(0u, 100u);
 
-		btui32 prefix_percent = 5u;
+		lui32 prefix_percent = 5u;
 
 		if (usePrefix < prefix_percent) { // X% chance of having a prefix
-			random = (btui32)roundf(m::Random(0u, TEMP_NAME_PREFIX_COUNT));
+			random = (lui32)roundf(m::Random(0u, TEMP_NAME_PREFIX_COUNT));
 			strcpy(name1, TemplatePrefixes[random]);
 		}
 		else {
-			random = (btui32)roundf(m::Random(0, TEMP_NAME_COUNT));
+			random = (lui32)roundf(m::Random(0, TEMP_NAME_COUNT));
 			strcpy(name1, TemplateNames[random]);
 		}
 
-		btui32 remaining_space = 31 - strlen(name1);
+		lui32 remaining_space = 31 - strlen(name1);
 
 		// if there's enough space for a second name
 		if (remaining_space > 8) {
 		gen2ndname:
 			if (usePrefix < prefix_percent) { // X% chance of having a prefix
-				random = (btui32)roundf(m::Random(0, TEMP_NAME_COUNT));
+				random = (lui32)roundf(m::Random(0, TEMP_NAME_COUNT));
 				strcpy(name2, TemplateNames[random]);
 			}
 			else {
-				random = (btui32)roundf(m::Random(0, TEMP_NAME_FAMILY_COUNT));
+				random = (lui32)roundf(m::Random(0, TEMP_NAME_FAMILY_COUNT));
 				strcpy(name2, TemplateFamilyNames[random]);
 			}
 			// if second name is short enough to fit
@@ -342,7 +342,7 @@ namespace core
 
 	namespace prefab
 	{
-		enum prefabtype : btui8 {
+		enum prefabtype : lui8 {
 			prefab_player,
 			prefab_player_ally,
 			prefab_hunter,
@@ -351,7 +351,7 @@ namespace core
 		};
 	}
 
-	void PrefabPlayer(btID id, m::Vector2 pos, btf32 dir) {
+	void PrefabPlayer(lid id, m::Vector2 pos, lf32 dir) {
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
@@ -364,7 +364,7 @@ namespace core
 		ACTOR(id)->actorBase = 0u;
 	}
 
-	void PrefabPlayerAlly(btID id, m::Vector2 pos, btf32 dir) {
+	void PrefabPlayerAlly(lid id, m::Vector2 pos, lf32 dir) {
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
@@ -374,7 +374,7 @@ namespace core
 		ACTOR(id)->actorBase = 0u;
 	}
 
-	void PrefabHunter(btID id, m::Vector2 pos, btf32 dir) {
+	void PrefabHunter(lid id, m::Vector2 pos, lf32 dir) {
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::playerhunter;
@@ -386,7 +386,7 @@ namespace core
 		ACTOR(id)->actorBase = 1u;
 	}
 
-	void PrefabZombie(btID id, m::Vector2 pos, btf32 dir) {
+	void PrefabZombie(lid id, m::Vector2 pos, lf32 dir) {
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::undead;
@@ -397,7 +397,7 @@ namespace core
 		ACTOR(id)->actorBase = 2u;
 	}
 
-	void(*PrefabEntity[prefab::prefab_count])(btID, m::Vector2, btf32) = { PrefabPlayer, PrefabPlayerAlly, PrefabHunter, PrefabZombie };
+	void(*PrefabEntity[prefab::prefab_count])(lid, m::Vector2, lf32) = { PrefabPlayer, PrefabPlayerAlly, PrefabHunter, PrefabZombie };
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- CELL STUFF -----------------------------------------------------------------------------------------
@@ -437,13 +437,13 @@ namespace core
 
 	void GetCellGroup(m::Vector2 vec, CellGroup& cg)
 	{
-		btui8 dir = 0u; // Represents direction of offset
+		lui8 dir = 0u; // Represents direction of offset
 
 		cg.c[eCELL_I].x = (btcoord)roundf(vec.x); // X cell coordinate
 		cg.c[eCELL_I].y = (btcoord)roundf(vec.y); // Y cell coordinate
 
-		dir = eN * (vec.y - (btf32)cg.c[eCELL_I].y > 0.f);  // Set direction bit N
-		dir |= eE * (vec.x - (btf32)cg.c[eCELL_I].x > 0.f); // Add direction bit E
+		dir = eN * (vec.y - (lf32)cg.c[eCELL_I].y > 0.f);  // Set direction bit N
+		dir |= eE * (vec.x - (lf32)cg.c[eCELL_I].x > 0.f); // Add direction bit E
 
 		GetCellNeighbors[dir](cg.c[eCELL_I].x, cg.c[eCELL_I].y, cg.c); // Get cell group from direction
 	}
@@ -455,13 +455,13 @@ namespace core
 		if (vec.x > WORLD_SIZE_MAXINT - 1.f) vec.x = WORLD_SIZE_MAXINT - 1.f;
 		if (vec.y > WORLD_SIZE_MAXINT - 1.f) vec.y = WORLD_SIZE_MAXINT - 1.f;
 
-		btui8 dir = 0u; // Represents direction of offset
+		lui8 dir = 0u; // Represents direction of offset
 
 		cs.c[eCELL_I].x = (btcoord)roundf(vec.x); // X cell coordinate
 		cs.c[eCELL_I].y = (btcoord)roundf(vec.y); // Y cell coordinate
 
-		cs.offsety = vec.y - (btf32)cs.c[eCELL_I].y; // X offset
-		cs.offsetx = vec.x - (btf32)cs.c[eCELL_I].x; // Y offset
+		cs.offsety = vec.y - (lf32)cs.c[eCELL_I].y; // X offset
+		cs.offsetx = vec.x - (lf32)cs.c[eCELL_I].x; // Y offset
 
 		dir = eN * (cs.offsety > 0.f);  // Set direction bit N
 		dir |= eE * (cs.offsetx > 0.f); // Add direction bit E

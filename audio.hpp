@@ -30,8 +30,8 @@ namespace aud
 	};
 
 	void Init(void* handle);
-	void Update(btf64 dt);
-	void PlaySnd(AudioFile file, btf32 volume = 1.f);
+	void Update(lf64 dt);
+	void PlaySnd(AudioFile file, lf32 volume = 1.f);
 	void PlaySnd3D(AudioFile file, m::Vector3 src);
 	void End();
 }

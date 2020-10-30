@@ -30,7 +30,7 @@ namespace m
 
 namespace CHARCODE_ASCII
 {
-	enum ASCII : btui8
+	enum ASCII : lui8
 	{
 		NUL, // Null
 		SOH, // Start of Heading
@@ -71,7 +71,7 @@ namespace CHARCODE_ASCII
 namespace CHARCODE
 {
 	// ASCII Standard, but with unneeded characters swapped for rendering based purposes
-	enum LTRCODE : btui8
+	enum LTRCODE : lui8
 	{
 		NUL, // Null
 		LB, // Line Break
@@ -88,26 +88,26 @@ namespace CHARCODE
 
 namespace graphics
 {
-	btui32 FrameSizeX();
-	btui32 FrameSizeY();
-	void SetFrameSize(btui32 x, btui32 y);
-	void SetGUIFrameSize(btui32 x, btui32 y);
+	lui32 FrameSizeX();
+	lui32 FrameSizeY();
+	void SetFrameSize(lui32 x, lui32 y);
+	void SetGUIFrameSize(lui32 x, lui32 y);
 
 	// TODO: MOVE TO MATHS!!!
 	struct Matrix3x3
 	{
-		btf32 m[3][3];
+		lf32 m[3][3];
 	};
 	// TODO: MOVE TO MATHS!!!
 	struct FRow4
 	{
-		btf32 e[4]; // Elements
-		FRow4(btf32 a, btf32 b, btf32 c, btf32 d)
+		lf32 e[4]; // Elements
+		FRow4(lf32 a, lf32 b, lf32 c, lf32 d)
 		{
 			e[0] = a; e[1] = b; e[2] = c; e[3] = d;
 		};
-		btf32& operator[](const bti32 index) { return e[index]; };
-		btf32 const& operator[](const bti32 index) const { return e[index]; };
+		lf32& operator[](const li32 index) { return e[index]; };
+		lf32 const& operator[](const li32 index) const { return e[index]; };
 	};
 	// TODO: MOVE TO MATHS!!!
 	struct Matrix4x4
@@ -125,8 +125,8 @@ namespace graphics
 				v[2] = FRow4(0.f, 0.f, 1.f, 0.f);
 			v[3] = FRow4(0.f, 0.f, 0.f, 1.f);
 		}
-		FRow4& operator[](const bti32 index) { return v[index]; };
-		FRow4 const& operator[](const bti32 index) const { return v[index]; };
+		FRow4& operator[](const li32 index) { return v[index]; };
+		FRow4 const& operator[](const li32 index) const { return v[index]; };
 	};
 	// TODO: MOVE TO MATHS!!!
 	m::Vector3 operator*(const m::Vector3& VECTOR, const Matrix4x4& MATRIX);
@@ -136,7 +136,7 @@ namespace graphics
 	// Translate matrix (copied from glm)
 	Matrix4x4 MatrixTranslate(Matrix4x4 const& MATRIX, m::Vector3 const& VECTOR);
 	// Rotate matrix (copied from glm)
-	Matrix4x4 MatrixRotate(Matrix4x4 const& MATRIX, btf32 ANGLE, m::Vector3 const& VECTOR);
+	Matrix4x4 MatrixRotate(Matrix4x4 const& MATRIX, lf32 ANGLE, m::Vector3 const& VECTOR);
 	// Scale matrix (copied from glm)
 	Matrix4x4 MatrixScale(Matrix4x4 const& MATRIX, m::Vector3 const& VECTOR);
 	// For generating a camera matrix (copied from glm)
@@ -146,9 +146,9 @@ namespace graphics
 	// Generate model location matrix
 	void MatrixTransformXFlip(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR);
 	// Generate model location and yaw matrix
-	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, btf32 YAW);
+	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, lf32 YAW);
 	// Generate model location and yaw/pitch matrix
-	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, btf32 YAW, btf32 PITCH);
+	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, lf32 YAW, lf32 PITCH);
 	// Generate model location and rotation matrix
 	void MatrixTransform(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
 	void MatrixTransformForwardUp(Matrix4x4& OUT_MATRIX, m::Vector3 const& POSITION_VECTOR, m::Vector3 const& FORWARD_VECTOR, m::Vector3 const& UP_VECTOR);
@@ -163,21 +163,22 @@ namespace graphics
 
 	struct colour
 	{
-		btui8 r = 0u;
-		btui8 g = 0u;
-		btui8 b = 0u;
-		btui8 a = 0u;
-		colour(btui8 x = 0u, btui8 y = 0u, btui8 z = 0u, btui8 w = 0u) : r{ x }, g{ y }, b{ z }, a{ w } {}
+		lui8 r = 0u;
+		lui8 g = 0u;
+		lui8 b = 0u;
+		lui8 a = 0u;
+		colour(lui8 x = 0u, lui8 y = 0u, lui8 z = 0u, lui8 w = 0u) : r{ x }, g{ y }, b{ z }, a{ w } {}
 	};
 
-	void Init();
+	void Init(bool editmode, bool splitscreen, lf32 camerafov,
+		lf32 cameranearclip, lf32 camerafarclip, lui32 winx, lui32 winy);
 	void End();
 
-	void SetSplitScreen(bool);
+	void SetSplitScreen(bool, lui32 winx, lui32 winy);
 
 	m::Vector3 GetViewPos();
 	m::Vector3 GetFocalCenter();
-	void SetMatProj(btf32 FOV_MULT = 1.f);
+	void SetMatProj(lf32 FOV_MULT = 1.f);
 	void SetMatView(void* t, void* p, void* t2);
 	void SetMatProjLight();
 	void SetMatViewLight(float x, float y, float z, float vx, float vy, float vz);
@@ -191,7 +192,7 @@ namespace graphics
 	void SetRenderSolid();
 	void SetRenderWire();
 
-	enum BlendMode : btui8
+	enum BlendMode : lui8
 	{
 		eSOLID,
 		eTRANSPARENT,
@@ -387,7 +388,7 @@ namespace graphics
 	};
 	Shader& GetShader(eShader SHADER_ID);
 
-	enum TextureFilterMode : btui8
+	enum TextureFilterMode : lui8
 	{
 		eNEAREST,
 		eNEAREST_MIPMAP,
@@ -395,7 +396,7 @@ namespace graphics
 		eLINEAR_MIPMAP,
 		eFOLIAGE,
 	};
-	enum TextureEdgeMode : btui8
+	enum TextureEdgeMode : lui8
 	{
 		eREPEAT,
 		eREPEAT_MIRROR,
@@ -406,29 +407,29 @@ namespace graphics
 
 	struct TextureBuffer
 	{
-		btui16 width;
-		btui16 height;
+		lui16 width;
+		lui16 height;
 		colour* buffer;
 	};
 
 	struct Texture
 	{
 		GLuint glID;
-		btui16 width;
-		btui16 height;
+		lui16 width;
+		lui16 height;
 
 		TextureFilterMode filter;
 		TextureEdgeMode edge;
 
 		#if DEF_SWR
 		colour* buffer2;
-		void Init(btui16 SIZE_X, btui16 SIZE_Y, colour COLOUR);
-		void SetPixel(btui16 PIXEL_X, btui16 PIXEL_Y, colour COLOUR);
-		void SetPixelChannelR(btui16 PIXEL_X, btui16 PIXEL_Y, btui8 VALUE);
-		void SetPixelChannelG(btui16 PIXEL_X, btui16 PIXEL_Y, btui8 VALUE);
-		void SetPixelChannelB(btui16 PIXEL_X, btui16 PIXEL_Y, btui8 VALUE);
-		void SetPixelChannelA(btui16 PIXEL_X, btui16 PIXEL_Y, btui8 VALUE);
-		colour GetPixel(btui16 PIXEL_X, btui16 PIXEL_Y);
+		void Init(lui16 SIZE_X, lui16 SIZE_Y, colour COLOUR);
+		void SetPixel(lui16 PIXEL_X, lui16 PIXEL_Y, colour COLOUR);
+		void SetPixelChannelR(lui16 PIXEL_X, lui16 PIXEL_Y, lui8 VALUE);
+		void SetPixelChannelG(lui16 PIXEL_X, lui16 PIXEL_Y, lui8 VALUE);
+		void SetPixelChannelB(lui16 PIXEL_X, lui16 PIXEL_Y, lui8 VALUE);
+		void SetPixelChannelA(lui16 PIXEL_X, lui16 PIXEL_Y, lui8 VALUE);
+		colour GetPixel(lui16 PIXEL_X, lui16 PIXEL_Y);
 		void ReBindGL(TextureFilterMode FILTER_MODE, TextureEdgeMode EDGE_MODE);
 		void Texture::InitGLTest();
 		#endif
@@ -461,13 +462,13 @@ namespace graphics
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
 		Vertex* vces; // Vertices
-		btui32* ices; // Indices
+		lui32* ices; // Indices
 		size_t vces_size;
 		size_t ices_size;
 	public:
 		// Probably all temporary
 		Vertex* Vces() { return vces; };
-		btui32* Ices() { return ices; };
+		lui32* Ices() { return ices; };
 		size_t VcesSize() { return vces_size; };
 		size_t IcesSize() { return ices_size; };
 	};
@@ -520,7 +521,7 @@ namespace graphics
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
 		Vertex* vces = nullptr; // Vertices
-		btui32* ices = nullptr; // Indices
+		lui32* ices = nullptr; // Indices
 		size_t vces_size;
 		size_t ices_size;
 	};
@@ -530,23 +531,23 @@ namespace graphics
 	{
 	public:
 		void Draw();
-		void GenerateFromHMap(btui8(&heightmap)[WORLD_SIZE][WORLD_SIZE], btui8(&matmap)[WORLD_SIZE][WORLD_SIZE]);
+		void GenerateFromHMap(lui8(&heightmap)[WORLD_SIZE][WORLD_SIZE], lui8(&matmap)[WORLD_SIZE][WORLD_SIZE]);
 		void GenerateComplexEnv(
-			btui8(&heightmap)[WORLD_SIZE][WORLD_SIZE],
-			btui8(&matmap)[WORLD_SIZE][WORLD_SIZE],
-			btui32* flags,
-			btui32 flag_invisible,
-			btui8(&heightmap_ne)[WORLD_SIZE][WORLD_SIZE],
-			btui8(&heightmap_nw)[WORLD_SIZE][WORLD_SIZE],
-			btui8(&heightmap_se)[WORLD_SIZE][WORLD_SIZE],
-			btui8(&heightmap_sw)[WORLD_SIZE][WORLD_SIZE]);
+			lui8(&heightmap)[WORLD_SIZE][WORLD_SIZE],
+			lui8(&matmap)[WORLD_SIZE][WORLD_SIZE],
+			lui32* flags,
+			lui32 flag_invisible,
+			lui8(&heightmap_ne)[WORLD_SIZE][WORLD_SIZE],
+			lui8(&heightmap_nw)[WORLD_SIZE][WORLD_SIZE],
+			lui8(&heightmap_se)[WORLD_SIZE][WORLD_SIZE],
+			lui8(&heightmap_sw)[WORLD_SIZE][WORLD_SIZE]);
 	private:
 		void ReBindGL();
 		GLuint vao = UI32_NULL; // Vertex Array Object
 		GLuint vbo = UI32_NULL; // Vertex Buffer Object
 		GLuint ebo = UI32_NULL; // Element Buffer Object
 		VertexTerrain* vces = nullptr; // Vertices
-		btui32* ices = nullptr; // Indices
+		lui32* ices = nullptr; // Indices
 		size_t vces_size;
 		size_t ices_size;
 	public:
@@ -563,7 +564,7 @@ namespace graphics
 		void Init();
 		void SetTexture(GLuint TEXTURE);
 		//missing parameters obviously (it's obvious??)
-		void Draw(int posx, int posy, int width, int height, btf32 opacity);
+		void Draw(int posx, int posy, int width, int height, lf32 opacity);
 	};
 
 	#define INPUT_LEN_TEMP 256
@@ -578,8 +579,8 @@ namespace graphics
 	public:
 		void Init();
 		void End();
-		void ReGen(bti16 xa, bti16 xb, bti16 ya, bti16 yb, btui16 margin_size, btui16 bleed_size = 0u);
-		void Draw(Texture* texture, btf32 opacity = 1.f);
+		void ReGen(li16 xa, li16 xb, li16 ya, li16 yb, lui16 margin_size, lui16 bleed_size = 0u);
+		void Draw(Texture* texture, lf32 opacity = 1.f);
 	};
 
 	enum TextAlignMode {
@@ -598,19 +599,19 @@ namespace graphics
 		int cnum;
 		float xa, xb, y;
 	public:
-		btui16 sizex, sizey;
+		lui16 sizex, sizey;
 		void Init();
 		void End();
 		//set boundaries of the text box
 		void SetOffset(int X, int Y);
 		void GetTextBounds();
-		void ReGen(char* string, bti16 xa, bti16 xb, bti16 y, TextAlignMode align = eTEXTALIGN_LEFT);
-		void Draw(Texture* texture, btf32 opacity = 1.f);
+		void ReGen(char* string, li16 xa, li16 xb, li16 y, TextAlignMode align = eTEXTALIGN_LEFT);
+		void Draw(Texture* texture, lf32 opacity = 1.f);
 	};
 
-	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h, btf32 opacity = 1.f);
-	void DrawGUIBox(Texture* texture, bti16 xa, bti16 xb, bti16 ya, bti16 yb, btui16 margin_size, btui16 bleed_size = 0u);
-	void DrawGUIText(char* string, Texture* texture, bti32 xa, bti32 xb, bti32 y);
+	void DrawGUITexture(Texture* texture, li32 x, li32 y, li32 w, li32 h, lf32 opacity = 1.f);
+	void DrawGUIBox(Texture* texture, li16 xa, li16 xb, li16 ya, li16 yb, lui16 margin_size, lui16 bleed_size = 0u);
+	void DrawGUIText(char* string, Texture* texture, li32 xa, li32 xb, li32 y);
 }
 
 enum ShaderStyle
@@ -619,24 +620,24 @@ enum ShaderStyle
 	SS_CHARA,
 };
 
-void DrawMesh(btID ID, graphics::Mesh& MESH, graphics::Texture TEXTURE,
+void DrawMesh(lid ID, graphics::Mesh& MESH, graphics::Texture TEXTURE,
 	ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
 void DrawParticles(graphics::Mesh& MESH, graphics::Texture TEXTURE,
-	graphics::Matrix4x4* MATRIX, btui32 COUNT);
+	graphics::Matrix4x4* MATRIX, lui32 COUNT);
 
-void DrawBlendMesh(btID ID, graphics::MeshBlend& MODEL, btf32 BLENDSTATE,
+void DrawBlendMesh(lid ID, graphics::MeshBlend& MODEL, lf32 BLENDSTATE,
 	graphics::Texture TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
-void DrawMeshDeform(btID ID, graphics::MeshDeform& MODEL,
-	graphics::Texture TEXTURE, ShaderStyle SHADER, btui32 MATRIX_COUNT,
+void DrawMeshDeform(lid ID, graphics::MeshDeform& MODEL,
+	graphics::Texture TEXTURE, ShaderStyle SHADER, lui32 MATRIX_COUNT,
 	graphics::Matrix4x4 MATRIX_A, graphics::Matrix4x4 MATRIX_B,
 	graphics::Matrix4x4 MATRIX_C, graphics::Matrix4x4 MATRIX_D);
 
-void DrawCompositeMesh(btID ID, graphics::CompositeMesh& MESH,
+void DrawCompositeMesh(lid ID, graphics::CompositeMesh& MESH,
 	graphics::Texture TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
-void DrawTerrainMesh(btID ID, graphics::TerrainMesh MESH,
+void DrawTerrainMesh(lid ID, graphics::TerrainMesh MESH,
 	graphics::Texture TEXTURE_A, graphics::Texture TEXTURE_B,
 	graphics::Texture TEXTURE_C, graphics::Texture TEXTURE_D,
 	graphics::Texture TEXTURE_E, graphics::Texture TEXTURE_F,

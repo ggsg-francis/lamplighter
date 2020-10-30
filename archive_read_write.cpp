@@ -12,15 +12,15 @@
 namespace acv
 {
 	extern Resource assets[FN_COUNT];
-	extern btui32 assetCount;
+	extern lui32 assetCount;
 }
 
 namespace serializer
 {
-	btID GetAssetIDFromHandle(char* handle, AssetType type)
+	lid GetAssetIDFromHandle(char* handle, AssetType type)
 	{
-		btID retid = ID_NULL;
-		for (btID i = 0; i < acv::assetCount; ++i)
+		lid retid = ID_NULL;
+		for (lid i = 0; i < acv::assetCount; ++i)
 		{
 			if (memcmp(handle, acv::assets[i].handle, 8u) == 0)
 			{
@@ -31,10 +31,10 @@ namespace serializer
 		return retid; // Return ID of new filename
 	}
 
-	btID GetSpellIDFromHandle(char* handle)
+	lid GetSpellIDFromHandle(char* handle)
 	{
-		btID retid = ID_NULL;
-		for (btID i = 0; i < acv::spell_index; ++i)
+		lid retid = ID_NULL;
+		for (lid i = 0; i < acv::spell_index; ++i)
 		{
 			if (memcmp(handle, acv::spells[i].handle, 8u) == 0)
 			{
@@ -45,10 +45,10 @@ namespace serializer
 		return retid; // Return ID of new filename
 	}
 
-	btID GetProjIDFromHandle(char* handle)
+	lid GetProjIDFromHandle(char* handle)
 	{
-		btID retid = ID_NULL;
-		for (btID i = 0; i < acv::projectiles_index; ++i)
+		lid retid = ID_NULL;
+		for (lid i = 0; i < acv::projectiles_index; ++i)
 		{
 			if (memcmp(handle, acv::projectiles[i].handle, 8u) == 0)
 			{
@@ -59,10 +59,10 @@ namespace serializer
 		return retid; // Return ID of new filename
 	}
 
-	btID GetItemIDFromHandle(char* handle)
+	lid GetItemIDFromHandle(char* handle)
 	{
-		btID retid = ID_NULL;
-		for (btID i = 0; i < acv::projectiles_index; ++i)
+		lid retid = ID_NULL;
+		for (lid i = 0; i < acv::projectiles_index; ++i)
 		{
 			if (memcmp(handle, acv::projectiles[i].handle, 8u) == 0)
 			{
@@ -77,13 +77,13 @@ namespace serializer
 	{
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "FILENAMES" << std::endl;
-		for (btui32 i = 0u; i < acv::assetCount; i++)
+		for (lui32 i = 0u; i < acv::assetCount; i++)
 		{
 			std::cout << "FILE " << i << " | TYPE " << (int)acv::assets[i].type << " | ADDR " << acv::assets[i].file_pos << std::endl;
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "PROPS" << std::endl;
-		for (btui32 i = 0; i < acv::prop_index; i++)
+		for (lui32 i = 0; i < acv::prop_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
 			std::cout << "MESH ID              " << acv::props[i].idMesh << std::endl;
@@ -94,11 +94,11 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "SPELLS" << std::endl;
-		for (btui32 i = 0; i < acv::spell_index; i++)
+		for (lui32 i = 0; i < acv::spell_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
 			std::cout << "HANDLE               ";
-			for (btui8 c = 0; c < 8; ++c)
+			for (lui8 c = 0; c < 8; ++c)
 				std::cout << acv::spells[i].handle[c];
 			std::cout << std::endl;
 			std::cout << "NAME                 " << acv::spells[i].name << std::endl;
@@ -109,11 +109,11 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "PROJECTILES" << std::endl;
-		for (btui32 i = 0; i < acv::projectiles_index; i++)
+		for (lui32 i = 0; i < acv::projectiles_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
 			std::cout << "HANDLE               ";
-			for (btui8 c = 0; c < 8; ++c)
+			for (lui8 c = 0; c < 8; ++c)
 				std::cout << acv::projectiles[i].handle[c];
 			std::cout << std::endl;
 			std::cout << "DAMAGE               " << acv::projectiles[i].damage << std::endl;
@@ -124,7 +124,7 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "ITEMS" << std::endl;
-		for (btui32 i = 0; i < acv::item_index; i++)
+		for (lui32 i = 0; i < acv::item_index; i++)
 		{
 			#define ITEMI ((acv::ItemRecord*)acv::items[i])
 			#define WMELI ((acv::ItemRecordMel*)acv::items[i])
@@ -162,11 +162,11 @@ namespace serializer
 		}
 		std::cout << "__________________________________________" << std::endl;
 		std::cout << "ACTOR BASES" << std::endl;
-		for (btui32 i = 0; i < acv::actor_template_index; i++)
+		for (lui32 i = 0; i < acv::actor_template_index; i++)
 		{
 			std::cout << "---------------------" << std::endl;
 			std::cout << "HANDLE               ";
-			for (btui8 c = 0; c < 8; ++c)
+			for (lui8 c = 0; c < 8; ++c)
 				std::cout << acv::actor_templates[i].handle[c];
 			std::cout << std::endl;
 			std::cout << "MESH ID HEAD         " << acv::actor_templates[i].m_head << std::endl;
@@ -204,7 +204,7 @@ namespace serializer
 
 			fseek(file, 0, SEEK_SET); // Seek file beginning
 
-			btui32 index = 0u;
+			lui32 index = 0u;
 
 			bool comment = false;
 
@@ -404,7 +404,7 @@ namespace serializer
 		fgetc(file); //  Advance past space
 	}
 
-	#define ELEMEQUALS(s) *(btui32*)elem == *(btui32*)&s
+	#define ELEMEQUALS(s) *(lui32*)elem == *(lui32*)&s
 
 	void InterpretValue(char* elem, char* value, int value_size, void* pTARGET, int* pOFFSET)
 	{
@@ -425,7 +425,7 @@ namespace serializer
 			*pOFFSET += dSIZE; }
 
 		#define INTERPRET_BITVEC(TYPE) { \
-			for (btui32 i = 0; i < sizeof(TYPE) * 8u; ++i) if (value[i] == 'x') \
+			for (lui32 i = 0; i < sizeof(TYPE) * 8u; ++i) if (value[i] == 'x') \
 				*(TYPE*)(((char*)pTARGET) + *pOFFSET) |= ((TYPE)1u << (TYPE)i); \
 			*pOFFSET += sizeof(TYPE); }
 
@@ -436,28 +436,28 @@ namespace serializer
 		}
 		// Texture handle
 		else if (ELEMEQUALS("H_TX")) {
-			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-			*pOFFSET += sizeof(btID);
+			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
+			*pOFFSET += sizeof(lid);
 		}
 		// Mesh handle
 		else if (ELEMEQUALS("H_MH")) {
-			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
-			*pOFFSET += sizeof(btID);
+			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
+			*pOFFSET += sizeof(lid);
 		}
 		// Spell handle
 		else if (ELEMEQUALS("H_SP")) {
-			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetSpellIDFromHandle(value);
-			*pOFFSET += sizeof(btID);
+			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetSpellIDFromHandle(value);
+			*pOFFSET += sizeof(lid);
 		}
 		// Projectile handle
 		else if (ELEMEQUALS("H_PJ")) {
-			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetProjIDFromHandle(value);
-			*pOFFSET += sizeof(btID);
+			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetProjIDFromHandle(value);
+			*pOFFSET += sizeof(lid);
 		}
 		// Item handle
 		else if (ELEMEQUALS("H_IT")) {
-			*(btID*)(((char*)pTARGET) + *pOFFSET) = GetItemIDFromHandle(value);
-			*pOFFSET += sizeof(btID);
+			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetItemIDFromHandle(value);
+			*pOFFSET += sizeof(lid);
 		}
 		// Boolean
 		else if (ELEMEQUALS("BOO8")) {
@@ -470,28 +470,28 @@ namespace serializer
 			*pOFFSET += sizeof(bool);
 		}
 		// 8 bit ints
-		else if (ELEMEQUALS("SI08")) INTERPRET_INT(bti8)
-		else if (ELEMEQUALS("UI08")) INTERPRET_INT(btui8)
+		else if (ELEMEQUALS("SI08")) INTERPRET_INT(li8)
+		else if (ELEMEQUALS("UI08")) INTERPRET_INT(lui8)
 		// 16 bit ints
-		else if (ELEMEQUALS("SI16")) INTERPRET_INT(bti16)
-		else if (ELEMEQUALS("UI16")) INTERPRET_INT(btui16)
+		else if (ELEMEQUALS("SI16")) INTERPRET_INT(li16)
+		else if (ELEMEQUALS("UI16")) INTERPRET_INT(lui16)
 		// 32 bit ints
-		else if (ELEMEQUALS("SI32")) INTERPRET_INT(bti32)
-		else if (ELEMEQUALS("UI32")) INTERPRET_INT(btui32)
+		else if (ELEMEQUALS("SI32")) INTERPRET_INT(li32)
+		else if (ELEMEQUALS("UI32")) INTERPRET_INT(lui32)
 		// 64 bit ints
-		else if (ELEMEQUALS("SI64")) INTERPRET_INT(bti64)
-		else if (ELEMEQUALS("UI64")) INTERPRET_INT(btui64)
+		else if (ELEMEQUALS("SI64")) INTERPRET_INT(li64)
+		else if (ELEMEQUALS("UI64")) INTERPRET_INT(lui64)
 		// Floats
-		else if (ELEMEQUALS("FP32")) INTERPRET_FLOAT(btf32)
-		else if (ELEMEQUALS("FP64")) INTERPRET_FLOAT(btf64)
+		else if (ELEMEQUALS("FP32")) INTERPRET_FLOAT(lf32)
+		else if (ELEMEQUALS("FP64")) INTERPRET_FLOAT(lf64)
 		// Strings
 		else if (ELEMEQUALS("CS32")) INTERPRET_STRING(32u)
 		else if (ELEMEQUALS("CS64")) INTERPRET_STRING(64u)
 		// Bitvectors
-		else if (ELEMEQUALS("BV08")) INTERPRET_BITVEC(btui8)
-		else if (ELEMEQUALS("BV16")) INTERPRET_BITVEC(btui16)
-		else if (ELEMEQUALS("BV32")) INTERPRET_BITVEC(btui32)
-		else if (ELEMEQUALS("BV64")) INTERPRET_BITVEC(btui64)
+		else if (ELEMEQUALS("BV08")) INTERPRET_BITVEC(lui8)
+		else if (ELEMEQUALS("BV16")) INTERPRET_BITVEC(lui16)
+		else if (ELEMEQUALS("BV32")) INTERPRET_BITVEC(lui32)
+		else if (ELEMEQUALS("BV64")) INTERPRET_BITVEC(lui64)
 
 		#undef INTERPRET_INT
 		#undef INTERPRET_FLOAT
@@ -825,36 +825,36 @@ namespace serializer
 
 			//-------------------------------- Asset part
 
-			fread(&acv::assetCount, sizeof(btui32), 1, file); // Read filename count
-			for (btui32 i = 0u; i < acv::assetCount; i++) // Read file types
+			fread(&acv::assetCount, sizeof(lui32), 1, file); // Read filename count
+			for (lui32 i = 0u; i < acv::assetCount; i++) // Read file types
 			{
 				fread(&acv::assets[i].handle, 8, 1, file);
-				fread(&acv::assets[i].file_pos, sizeof(btui64), 1, file);
-				fread(&acv::assets[i].file_size, sizeof(btui64), 1, file);
-				fread(&acv::assets[i].type, sizeof(btui8), 1, file);
+				fread(&acv::assets[i].file_pos, sizeof(lui64), 1, file);
+				fread(&acv::assets[i].file_size, sizeof(lui64), 1, file);
+				fread(&acv::assets[i].type, sizeof(lui8), 1, file);
 			}
 
 			//-------------------------------- Prop part
 
-			fread(&acv::prop_index, sizeof(btui32), 1, file);
+			fread(&acv::prop_index, sizeof(lui32), 1, file);
 			fread(&acv::props, sizeof(acv::PropRecord), acv::prop_index, file);
 
 			//-------------------------------- Spell part
 
-			fread(&acv::spell_index, sizeof(btui32), 1, file);
+			fread(&acv::spell_index, sizeof(lui32), 1, file);
 			fread(&acv::spells, sizeof(acv::SpellRecord), acv::spell_index, file);
 
 			//-------------------------------- Projectile part
 
-			fread(&acv::projectiles_index, sizeof(btui32), 1, file);
+			fread(&acv::projectiles_index, sizeof(lui32), 1, file);
 			fread(&acv::projectiles, sizeof(acv::ProjectileRecord), acv::projectiles_index, file);
 
 			//-------------------------------- Item part
 
-			fread(&acv::item_index, sizeof(btui32), 1, file); // Read item count
-			for (btui32 i = 0; i < acv::item_index; i++)
+			fread(&acv::item_index, sizeof(lui32), 1, file); // Read item count
+			for (lui32 i = 0; i < acv::item_index; i++)
 			{
-				fread(&acv::item_types[i], sizeof(btui8), 1, file);
+				fread(&acv::item_types[i], sizeof(lui8), 1, file);
 
 				switch (acv::item_types[i])
 				{
@@ -883,7 +883,7 @@ namespace serializer
 
 			//-------------------------------- Entity Template part
 
-			fread(&acv::actor_template_index, sizeof(btui32), 1, file);
+			fread(&acv::actor_template_index, sizeof(lui32), 1, file);
 			fread(&acv::actor_templates, sizeof(acv::ActorRecord), acv::actor_template_index, file);
 
 			fclose(file); // Close file
@@ -903,61 +903,61 @@ namespace serializer
 
 			//-------------------------------- Asset part
 
-			btui32 count = acv::assetCount;
-			fwrite(&count, sizeof(btui32), 1, file); // Write number of filenames
+			lui32 count = acv::assetCount;
+			fwrite(&count, sizeof(lui32), 1, file); // Write number of filenames
 
-			for (btui32 i = 0u; i < acv::assetCount; i++) // Write file types
+			for (lui32 i = 0u; i < acv::assetCount; i++) // Write file types
 			{
 				fwrite(&acv::assets[i].handle, 8, 1, file);
-				fwrite(&acv::assets[i].file_pos, sizeof(btui64), 1, file);
-				fwrite(&acv::assets[i].file_size, sizeof(btui64), 1, file);
-				fwrite(&acv::assets[i].type, sizeof(btui8), 1, file);
+				fwrite(&acv::assets[i].file_pos, sizeof(lui64), 1, file);
+				fwrite(&acv::assets[i].file_size, sizeof(lui64), 1, file);
+				fwrite(&acv::assets[i].type, sizeof(lui8), 1, file);
 			}
 
 			//-------------------------------- Prop part
 
 			count = acv::prop_index;
-			fwrite(&count, sizeof(btui32), 1, file);
+			fwrite(&count, sizeof(lui32), 1, file);
 			fwrite(&acv::props, sizeof(acv::PropRecord), count, file);
 
 			//-------------------------------- Spell part
 
 			count = acv::spell_index;
-			fwrite(&count, sizeof(btui32), 1, file);
+			fwrite(&count, sizeof(lui32), 1, file);
 			fwrite(&acv::spells, sizeof(acv::SpellRecord), count, file);
 
 			//-------------------------------- Projectile part
 
 			count = acv::projectiles_index;
-			fwrite(&count, sizeof(btui32), 1, file);
+			fwrite(&count, sizeof(lui32), 1, file);
 			fwrite(&acv::projectiles, sizeof(acv::ProjectileRecord), count, file);
 
 			//-------------------------------- Item part
 
 			count = acv::item_index;
-			fwrite(&count, sizeof(btui32), 1, file);
-			for (btui32 i = 0; i < acv::item_index; i++)
+			fwrite(&count, sizeof(lui32), 1, file);
+			for (lui32 i = 0; i < acv::item_index; i++)
 			{
 				switch (acv::item_types[i])
 				{
 				default: // base (ITEM_ROOT)
-					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
+					fwrite(&acv::item_types[i], sizeof(lui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::ItemRecord), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MELEE:
-					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
+					fwrite(&acv::item_types[i], sizeof(lui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::ItemRecordMel), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MATCHGUN:
-					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
+					fwrite(&acv::item_types[i], sizeof(lui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::ItemRecordGun), 1, file);
 					break;
 				case ITEM_TYPE_WPN_MAGIC:
-					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
+					fwrite(&acv::item_types[i], sizeof(lui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::ItemRecordMgc), 1, file);
 					break;
 				case ITEM_TYPE_CONS:
-					fwrite(&acv::item_types[i], sizeof(btui8), 1, file);
+					fwrite(&acv::item_types[i], sizeof(lui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::ItemRecordCon), 1, file);
 					break;
 				}
@@ -966,7 +966,7 @@ namespace serializer
 			//-------------------------------- Actor Template part
 
 			count = acv::actor_template_index;
-			fwrite(&count, sizeof(btui32), 1, file);
+			fwrite(&count, sizeof(lui32), 1, file);
 			fwrite(&acv::actor_templates, sizeof(acv::ActorRecord), count, file);
 
 			fclose(file); // Close file
@@ -980,7 +980,7 @@ namespace serializer
 	{
 		int sum = 0;
 
-		btui8 read = 0ui8;
+		lui8 read = 0ui8;
 		int linecount = 0;
 
 		FILE* file_cpp = fopen(ARCHIVE_C_FILENAME, "w"); // Open file
@@ -990,12 +990,12 @@ namespace serializer
 			FILE* file_bin = fopen(ARCHIVE_FILENAME, "rb"); // Open file
 			if (file_bin != NULL) {
 				fseek(file_bin, 0, SEEK_END); // Seek file end
-				btui64 bytecount = ftell(file_bin); // Get file size
+				lui64 bytecount = ftell(file_bin); // Get file size
 				fseek(file_bin, 0, SEEK_SET); // Seek file beginning
 
 				fprintf(file_cpp, "char data[%i] {\n", bytecount);
 				// Add bytes
-				for (btui64 i = 0; i < bytecount; ++i) {
+				for (lui64 i = 0; i < bytecount; ++i) {
 					fread(&read, 1, 1, file_bin);
 					fprintf(file_cpp, "%i,", (int)read);
 					linecount++;
@@ -1012,12 +1012,12 @@ namespace serializer
 			file_bin = fopen(ARCHIVE_DATA_FILENAME, "rb"); // Open file
 			if (file_bin != NULL) {
 				fseek(file_bin, 0, SEEK_END); // Seek file end
-				btui64 bytecount = ftell(file_bin); // Get file size
+				lui64 bytecount = ftell(file_bin); // Get file size
 				fseek(file_bin, 0, SEEK_SET); // Seek file beginning
 
 				fprintf(file_cpp, "char data_data[%i] {\n", bytecount);
 				// Add bytes
-				for (btui64 i = 0; i < bytecount; ++i) {
+				for (lui64 i = 0; i < bytecount; ++i) {
 					fread(&read, 1, 1, file_bin);
 					fprintf(file_cpp, "%i,", (int)read);
 					linecount++;

@@ -13,10 +13,10 @@ extern "C" {
 
 #include "cfg.h"
 
-#define JOY_AXIS_MAX ((bti16)0b0111111111111111)
-#define JOY_AXIS_MIN ((bti16)0b1000000000000000)
-#define JOY_AXIS_THRESH_MAX ((bti16)0b0000011111111111)
-#define JOY_AXIS_THRESH_MIN ((bti16)0b1111100000000000)
+#define JOY_AXIS_MAX ((li16)0b0111111111111111)
+#define JOY_AXIS_MIN ((li16)0b1000000000000000)
+#define JOY_AXIS_THRESH_MAX ((li16)0b0000011111111111)
+#define JOY_AXIS_THRESH_MIN ((li16)0b1111100000000000)
 #define JOY_AXIS_MAX_F 32768.f
 
 namespace input
@@ -118,7 +118,7 @@ namespace input
 		};
 	}
 
-	enum enumJoyButton : btui8 {
+	enum enumJoyButton : lui8 {
 		JOY_FACE_A,
 		JOY_FACE_B,
 		JOY_FACE_Y,
@@ -131,7 +131,7 @@ namespace input
 		JOY_STICK_R,
 		JOY_BUTTON_COUNT,
 	};
-	enum enumJoyAxis : btui8 {
+	enum enumJoyAxis : lui8 {
 		JOY_AXIS_L_X,
 		JOY_AXIS_L_Y,
 		JOY_AXIS_TRIGGER_L,
@@ -141,7 +141,7 @@ namespace input
 		JOY_AXIS_COUNT,
 	};
 
-	key::Key2 ScancodeTransfer[512]{ key::NONE }; // uses btui8 to save space
+	key::Key2 ScancodeTransfer[512]{ key::NONE }; // uses lui8 to save space
 	key::Key2 JoyButtonTransfer[JOY_BUTTON_COUNT]{ key::NONE };
 	//key::Key2 JoyAxisTransfer[9]{ key::NONE };
 
@@ -266,13 +266,13 @@ namespace input
 			}
 			if ((e.jaxis.value < JOY_AXIS_THRESH_MIN) || (e.jaxis.value > JOY_AXIS_THRESH_MAX)) {
 				if (e.jaxis.axis == JOY_AXIS_L_X) // Left-right left stick
-					BUF_LOCALSET.joy_x_a = (btf32)e.jaxis.value / (btf32)JOY_AXIS_MAX_F;
+					BUF_LOCALSET.joy_x_a = (lf32)e.jaxis.value / (lf32)JOY_AXIS_MAX_F;
 				else if (e.jaxis.axis == JOY_AXIS_L_Y) // Up-Down left stick
-					BUF_LOCALSET.joy_y_a = (btf32)e.jaxis.value / (btf32)JOY_AXIS_MAX_F;
+					BUF_LOCALSET.joy_y_a = (lf32)e.jaxis.value / (lf32)JOY_AXIS_MAX_F;
 				else if (e.jaxis.axis == JOY_AXIS_R_X) // Left-right right stick
-					BUF_LOCALSET.joy_x_b = (btf32)e.jaxis.value / (btf32)JOY_AXIS_MAX_F;
+					BUF_LOCALSET.joy_x_b = (lf32)e.jaxis.value / (lf32)JOY_AXIS_MAX_F;
 				else if (e.jaxis.axis == JOY_AXIS_R_Y) // Up-Down right stick
-					BUF_LOCALSET.joy_y_b = (btf32)e.jaxis.value / (btf32)JOY_AXIS_MAX_F;
+					BUF_LOCALSET.joy_y_b = (lf32)e.jaxis.value / (lf32)JOY_AXIS_MAX_F;
 			}
 			else {
 				if (e.jaxis.axis == JOY_AXIS_L_X) // Left-right left stick
@@ -317,43 +317,43 @@ namespace input
 	void ClearHitsAndDelta() {
 		BUF_LOCALSET.mouse_x = 0.f;
 		BUF_LOCALSET.mouse_y = 0.f;
-		BUF_LOCALSET.keyBitsHit = (btui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
+		BUF_LOCALSET.keyBitsHit = (lui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
 	}
 
 	void ClearAll() {
-		BUF_LOCALSET.keyBitsHit = (btui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
-		BUF_LOCALSET.keyBitsHeld = (btui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
+		BUF_LOCALSET.keyBitsHit = (lui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
+		BUF_LOCALSET.keyBitsHeld = (lui64)0b0000000000000000000000000000000000000000000000000000000000000000u;
 	}
 
 	#ifdef DEF_NMP
-	bool GetHeld(btui32 index, key::Key2 i) {
-		return mem::bvget<btui64>(input_buffer[index].keyBitsHeld, (btui64)1u << (btui64)i);
+	bool GetHeld(lui32 index, key::Key2 i) {
+		return mem::bvget<lui64>(input_buffer[index].keyBitsHeld, (lui64)1u << (lui64)i);
 	}
-	bool GetHit(btui32 index, key::Key2 i) {
-		return mem::bvget<btui64>(input_buffer[index].keyBitsHit, (btui64)1u << (btui64)i);
+	bool GetHit(lui32 index, key::Key2 i) {
+		return mem::bvget<lui64>(input_buffer[index].keyBitsHit, (lui64)1u << (lui64)i);
 	}
 	#endif
 	bool GetHeld(key::Key2 i) {
-		return mem::bvget<btui64>(BUF_LOCALGET.keyBitsHeld, (btui64)1u << (btui64)i);
+		return mem::bvget<lui64>(BUF_LOCALGET.keyBitsHeld, (lui64)1u << (lui64)i);
 	}
 	bool GetHit(key::Key2 i) {
-		return mem::bvget<btui64>(BUF_LOCALGET.keyBitsHit, (btui64)1u << (btui64)i);
+		return mem::bvget<lui64>(BUF_LOCALGET.keyBitsHit, (lui64)1u << (lui64)i);
 	}
 	bool GetAnyHit() {
-		return mem::bvget<btui64>(BUF_LOCALGET.keyBitsHit, (btui64)0b1111111111111111111111111111111111111111111111111111111111111111);
+		return mem::bvget<lui64>(BUF_LOCALGET.keyBitsHit, (lui64)0b1111111111111111111111111111111111111111111111111111111111111111);
 	}
 	void Set(key::Key2 i) {
-		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i);
-		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i);
+		mem::bvset<lui64>(BUF_LOCALSET.keyBitsHeld, (lui64)1u << (lui64)i);
+		mem::bvset<lui64>(BUF_LOCALSET.keyBitsHit, (lui64)1u << (lui64)i);
 	}
 	void Unset(key::Key2 i) {
-		mem::bvunset<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i);
+		mem::bvunset<lui64>(BUF_LOCALSET.keyBitsHeld, (lui64)1u << (lui64)i);
 	}
 	void SetTo(key::Key2 i, bool b) {
-		mem::bvsetto<btui64>(BUF_LOCALSET.keyBitsHeld, (btui64)1u << (btui64)i, b);
-		mem::bvsetto<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i, b);
+		mem::bvsetto<lui64>(BUF_LOCALSET.keyBitsHeld, (lui64)1u << (lui64)i, b);
+		mem::bvsetto<lui64>(BUF_LOCALSET.keyBitsHit, (lui64)1u << (lui64)i, b);
 	}
 	void SetHit(key::Key2 i) {
-		mem::bvset<btui64>(BUF_LOCALSET.keyBitsHit, (btui64)1u << (btui64)i);
+		mem::bvset<lui64>(BUF_LOCALSET.keyBitsHit, (lui64)1u << (lui64)i);
 	}
 }

@@ -64,19 +64,19 @@ namespace mem
 
 	template <typename Type> class Buffer64 {
 	private:
-		btui32 index_end = 0u;
-		btui64 used = 0u;
+		lui32 index_end = 0u;
+		lui64 used = 0u;
 		Type buffer[64u];
 		inline void DecrementEnd() {
 			// Go back one step
 			--index_end;
 		}
 	public:
-		btui32 Add(Type element) {
-			for (btui32 i = 0; i < 64u; i++) { // For every space in the buffer
+		lui32 Add(Type element) {
+			for (lui32 i = 0; i < 64u; i++) { // For every space in the buffer
 				// If this space is free, copy what we created into it
-				if (!bvget(used, (btui64)1u << (btui64)i)) {
-					bvset(used, (btui64)1u << (btui64)i);
+				if (!bvget(used, (lui64)1u << (lui64)i)) {
+					bvset(used, (lui64)1u << (lui64)i);
 					buffer[i] = element;
 					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
 					return i; // End the loop
@@ -84,10 +84,10 @@ namespace mem
 			}
 			return 0u;
 		}
-		void Remove(btui32 index) {
+		void Remove(lui32 index) {
 			// If within range (attempt to fix buffer overrun)
 			if (index <= index_end) {
-				bvunset(used, (btui64)1u << (btui64)index);
+				bvunset(used, (lui64)1u << (lui64)index);
 				if (index == index_end && index > 0u) {
 					// Decrement index last (no point checking if it's not used, we already know)
 					DecrementEnd();
@@ -96,29 +96,29 @@ namespace mem
 				}
 			}
 		}
-		bool Used(btui32 index) {
-			return bvget(used, (btui64)1u << (btui64)index);
+		bool Used(lui32 index) {
+			return bvget(used, (lui64)1u << (lui64)index);
 		}
-		btui32 Size() { return index_end + 1u; }
-		Type& operator[](btui32 index) { return buffer[index]; }
+		lui32 Size() { return index_end + 1u; }
+		Type& operator[](lui32 index) { return buffer[index]; }
 	};
 
 	template <typename Type> class Buffer32
 	{
 	private:
-		btui32 index_end = 0u;
-		btui32 used = 0u;
+		lui32 index_end = 0u;
+		lui32 used = 0u;
 		Type buffer[32u];
 		inline void DecrementEnd() {
 			// Go back one step
 			--index_end;
 		}
 	public:
-		btui32 Add(Type element) {
-			for (btui32 i = 0; i < 32u; i++) { // For every space in the buffer
+		lui32 Add(Type element) {
+			for (lui32 i = 0; i < 32u; i++) { // For every space in the buffer
 				// If this space is free, copy what we created into it
-				if (!bvget(used, (btui32)1u << (btui32)i)) {
-					bvset(used, (btui32)1u << (btui32)i);
+				if (!bvget(used, (lui32)1u << (lui32)i)) {
+					bvset(used, (lui32)1u << (lui32)i);
 					buffer[i] = element;
 					if (i > index_end) index_end = i; // If we hit new ground, expand the end index
 					return i; // End the loop
@@ -126,10 +126,10 @@ namespace mem
 			}
 			return 0u;
 		}
-		void Remove(btui32 index) {
+		void Remove(lui32 index) {
 			// If within range (attempt to fix buffer overrun)
 			if (index <= index_end) {
-				bvunset(used, (btui32)1u << (btui32)index);
+				bvunset(used, (lui32)1u << (lui32)index);
 				if (index == index_end && index > 0u) {
 					// Decrement index last (no point checking if it's not used, we already know)
 					DecrementEnd();
@@ -138,23 +138,42 @@ namespace mem
 				}
 			}
 		}
-		bool Used(btui32 index) {
-			return bvget(used, (btui32)1u << (btui32)index);
+		bool Used(lui32 index) {
+			return bvget(used, (lui32)1u << (lui32)index);
 		}
-		btui32 Size() {
+		lui32 Size() {
 			// TODO: returns 1 on an empty array, needs to be fixed
 			return index_end + 1u;
 		}
-		Type& operator[](btui32 index) { return buffer[index]; }
+		Type& operator[](lui32 index) { return buffer[index]; }
 	};
 
+	typedef struct LtrID {
+	private:
+		lui64 guid;
+	public:
+		LtrID(lui32 _index, lui32 _instance) :
+			guid{ (lui64)_index | ((lui64)_instance << (lui64)32u) } {};
+		lui32 Index() {
+			return (lui32)(guid & (lui64)0b0000000000000000000000000000000011111111111111111111111111111111u);
+		};
+		lui32 Instance() {
+			return (lui32)((guid & (lui64)0b1111111111111111111111111111111100000000000000000000000000000000u) >> 32u);
+		};
+		lui64 GUID() {
+			return guid;
+		};
+	} LtrID;
+
 	// Fixed size object ID buffer (except this one holds its own data)
-	// TODO: store actual data in a separate 'compressed' private buffer
-	template <typename DataType, typename Type_Signifier, Type_Signifier type_null, btui32 SIZE> struct ObjBuf
+	// TODO: fast iteration
+	template <typename DataType, typename Type_Signifier, Type_Signifier type_null, lui32 SIZE> struct ObjBuf
 	{
 	private:
 		DataType data[SIZE];
 		Type_Signifier type[SIZE];
+		//lui32 instance[SIZE];
+		lui32 size = 0u;
 	public:
 		ObjBuf() {
 			for (int i = 0; i < SIZE; ++i) {
@@ -165,35 +184,34 @@ namespace mem
 		bool Used(int index) {
 			return type[index] != type_null;
 		}
-		btID index_end = 0;
 		// Assign new object this space on the buffer
-		btID Add(Type_Signifier _type) {
-			for (btID i = 0; i < SIZE; i++) { // For every space in the buffer
+		lid Add(Type_Signifier _type) {
+			for (lui32 i = 0; i < SIZE; i++) { // For every space in the buffer
 				if (Used(i)) continue;
 				type[i] = _type;
-				if (i > index_end) index_end = i; // If we hit new ground expand the end index
+				if (i >= size) size = i + 1u; // If we hit new ground expand the end index
 				return i; // End the loop
 			}
 			return BUF_NULL;
 		}
-		void AddForceID(Type_Signifier _type, btID id) {
-			if (Used(id)) {
+		void AddForceID(Type_Signifier _type, lui32 index) {
+			if (Used(index)) {
 				printf("Tried to overwrite buffer object! Bastard!\n");
 				return;
 			}
-			type[id] = _type;
-			if (id > index_end) index_end = id;
+			type[index] = _type;
+			if (index >= size) size = index + 1u;
 		}
 		// Clear this space on the buffer
-		void Remove(btID index) {
+		void Remove(lui32 index) {
 			type[index] = type_null;
-			if (index == index_end) {
-				--index_end; // Go back one step
-				while (!Used(index_end)) --index_end; // Continue rolling back until we reach the next last full space
+			if (index == size - 1u) {
+				--size; // Go back one step
+				while (size > 0u && !Used(size - 1u)) --size; // Continue rolling back until we reach the next last full space
 			}
 		}
 		void Clear() {
-			for (btID i = 0; i < SIZE; i++) { // For every space in the buffer
+			for (lui32 i = 0; i < SIZE; i++) { // For every space in the buffer
 				type[i] = type_null;
 			}
 		}
@@ -206,31 +224,37 @@ namespace mem
 		Type_Signifier* TypeRW() {
 			return (Type_Signifier*)&type;
 		}
+		lui32 Size() {
+			return size;
+		}
+		void SetSize(lui32 sz) {
+			size = sz;
+		}
 	};
 
 	// Location and size of entity
 	struct LumpPtr {
-		btui32 pos;
-		btui32 size;
+		lui32 pos;
+		lui32 size;
 	};
 	// Object storage containing anything
-	template <typename Type_Signifier, Type_Signifier type_null, btui32 array_size, btui32 memory_size> struct Lump {
+	template <typename Type_Signifier, Type_Signifier type_null, lui32 array_size, lui32 memory_size> struct Lump {
 	private:
 		mem::ObjBuf<LumpPtr, Type_Signifier, type_null, array_size> eptrs;
-		btui8 buf[memory_size];
-		inline btui32 AllocateSpace(btui32 size) {
+		lui8 buf[memory_size];
+		inline lui32 AllocateSpace(lui32 size) {
 			// Search for empty space between ents (or at the end, it just works)
 			// For all assigned spaces
-			for (int i = 0; i <= eptrs.index_end; ++i) {
+			for (int i = 0; i < eptrs.Size(); ++i) {
 				// Skip self or unused
 				if (!eptrs.Used(i)) continue;
-				btui32 this_end = eptrs.Data(i).pos + eptrs.Data(i).size;
-				btui32 nearest_start = memory_size - 1;
+				lui32 this_end = eptrs.Data(i).pos + eptrs.Data(i).size;
+				lui32 nearest_start = memory_size - 1;
 				// For all other spaces
-				for (int j = 0; j <= eptrs.index_end; ++j) {
+				for (int j = 0; j <= eptrs.Size(); ++j) {
 					// Skip self or comparing same or unused
 					if (j == i || !eptrs.Used(j)) continue;
-					btui32 next_start = eptrs.Data(j).pos;
+					lui32 next_start = eptrs.Data(j).pos;
 					if (next_start < nearest_start && next_start >= this_end)
 						nearest_start = next_start;
 				}
@@ -247,21 +271,21 @@ namespace mem
 		Lump() {
 			memset(&buf[0], 0, memory_size);
 		}
-		btui32 AddEntForceID(btui32 size, Type_Signifier type, btui32 id) {
-			btui32 pos = AllocateSpace(size);
+		lui32 AddEntForceID(lui32 size, Type_Signifier type, lui32 id) {
+			lui32 pos = AllocateSpace(size);
 			eptrs.AddForceID(type, id);
 			eptrs.Data(id).pos = pos;
 			eptrs.Data(id).size = size;
 			return id;
 		}
-		btui32 AddEnt(btui32 size, Type_Signifier type) {
-			btui32 pos = AllocateSpace(size);
-			btui32 index = eptrs.Add(type);
+		lui32 AddEnt(lui32 size, Type_Signifier type) {
+			lui32 pos = AllocateSpace(size);
+			lui32 index = eptrs.Add(type);
 			eptrs.Data(index).pos = pos;
 			eptrs.Data(index).size = size;
 			return index;
 		}
-		void RmvEnt(btui32 index) {
+		void RmvEnt(lui32 index) {
 			memset(&buf[eptrs.Data(index).pos], 0, eptrs.Data(index).size);
 			eptrs.Remove(index);
 		}
@@ -273,17 +297,17 @@ namespace mem
 			eptrs.Clear();
 			memset(&buf[0], 0, memory_size);
 		}
-		void* GetEnt(btui32 index) {
+		void* GetEnt(lui32 index) {
 			return &buf[eptrs.Data(index).pos];
 		}
-		Type_Signifier GetType(btui32 index) {
+		Type_Signifier GetType(lui32 index) {
 			return eptrs.Type(index);
 		}
-		bool EntExists(btui32 index) {
+		bool EntExists(lui32 index) {
 			return eptrs.Used(index);
 		}
-		btui32 GetLastIndex() {
-			return eptrs.index_end;
+		lui32 GetSize() {
+			return eptrs.Size();
 		}
 	};
 	
@@ -291,10 +315,10 @@ namespace mem
 	struct objbuf_caterpillar
 	{
 		bool used[BUF_SIZE]{ false };
-		btID index_first = 0;
-		btID index_last = 0;
-		btID add(); // Assign new object this space on the buffer
-		void remove(btID ID); // Clear this space on the buffer
+		lid index_first = 0u;
+		lid index_last = 0u;
+		lid add(); // Assign new object this space on the buffer
+		void remove(lid ID); // Clear this space on the buffer
 	};
 
 	#define IDBUF_SIZE 16u
@@ -302,7 +326,7 @@ namespace mem
 	struct idbuf
 	{
 	private:
-		btID ptr_id[IDBUF_SIZE]{
+		lid ptr_id[IDBUF_SIZE]{
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
@@ -312,16 +336,16 @@ namespace mem
 			//ID_NULL, ID_NULL, ID_NULL, ID_NULL,
 			//ID_NULL, ID_NULL, ID_NULL, ID_NULL };
 		bool ptr_used[IDBUF_SIZE]{ false };
-		btui32 id_end = 0u;
-		btui32 size = 0u;
+		lui32 id_end = 0u;
+		lui32 size = 0u;
 	public:
 		idbuf(); // Constructor
 		~idbuf(); // Destructor
-		void Add(btID ID);
-		void Remove(btID ID);
+		void Add(lid ID);
+		void Remove(lid ID);
 		void Clear();
-		btui32 Size();
-		btID operator[] (btui32 x);
+		lui32 Size();
+		lid operator[] (lui32 x);
 	};
 }
 

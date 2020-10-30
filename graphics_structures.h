@@ -13,15 +13,15 @@ extern "C" {
 
 	typedef struct vec2
 	{
-		btf32 x, y;
+		lf32 x, y;
 	} vec2;
 	typedef struct vec3
 	{
-		btf32 x, y, z;
+		lf32 x, y, z;
 	} vec3;
 	typedef struct vec4
 	{
-		btf32 x, y, z, w;
+		lf32 x, y, z, w;
 	} vec4;
 
 	//-------------------------------- VERTEX TYPES
@@ -33,7 +33,7 @@ extern "C" {
 		vec3 nor; // Normal
 		vec2 uvc; // UV Coords (TexCoords)
 		vec4 col; // Vertex Colour
-		btf32 matr[MD_MATRIX_COUNT];
+		lf32 matr[MD_MATRIX_COUNT];
 	};
 	#endif // DEF_ARCHIVER
 
@@ -61,7 +61,7 @@ extern "C" {
 		vec3 nor; // Normal
 		vec2 uvc; // UV Coords (TexCoords)
 		vec4 col; // Vertex Colour
-		btf32 mat[MD_MATRIX_COUNT];
+		lf32 mat[MD_MATRIX_COUNT];
 	} VertexDeform;
 
 	// Vertex structure for terrain mesh
@@ -70,7 +70,7 @@ extern "C" {
 		vec3 nor; // Normal
 		vec2 uvc; // UV Coords (TexCoords)
 		//vec4 col; // Vertex Colour
-		btf32 txtr[8u]; // Texture blend values
+		lf32 txtr[8u]; // Texture blend values
 	} VertexTerrain;
 
 	#ifdef __cplusplus

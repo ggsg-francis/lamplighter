@@ -7,14 +7,12 @@
 //i dont know what the point of using this one is
 #include "glm/gtc\type_ptr.hpp"
 
-#include "cfg.h"
-
 #include "maths.hpp"
 
 //-------------------------------- VERTEX ATTRIBUTES
 
 // This looks ridiculous, but the 'offsetof' macro was on the fritz in release builds with MSC for some reason.
-enum v_i : btui32 { // Vert Indices
+enum v_i : lui32 { // Vert Indices
 	VI_POS, VI_NOR, VI_UVC, VI_COL,
 };
 enum v_o : size_t { // Vert Offsets
@@ -30,7 +28,7 @@ enum v_o : size_t { // Vert Offsets
 	VO_COL = ((size_t)&reinterpret_cast<char const volatile&>((((struct Vertex*)0)->col))),
 	#endif
 };
-enum vb_i : btui32 { // VertBlend Indices
+enum vb_i : lui32 { // VertBlend Indices
 	vbi_pos_a, vbi_pos_b, vbi_nor_a, vbi_nor_b, vbi_uvc, vbi_col,
 };
 enum vb_o : size_t { // VertBlend Offsets
@@ -50,7 +48,7 @@ enum vb_o : size_t { // VertBlend Offsets
 	vb_col = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexBlend*)0)->col))),
 	#endif
 };
-enum vd_i : btui32 { // VertDeform Indices
+enum vd_i : lui32 { // VertDeform Indices
 	vdi_pos, vdi_nor, vdi_uvc, vdi_col, vdi_mat,
 };
 enum vd_o : size_t { // VertDeform Offsets
@@ -68,7 +66,7 @@ enum vd_o : size_t { // VertDeform Offsets
 	vd_mat = ((size_t)&reinterpret_cast<char const volatile&>((((struct VertexDeform*)0)->mat))),
 	#endif
 };
-enum vt_i : btui32 { // VertTerrain Indices
+enum vt_i : lui32 { // VertTerrain Indices
 	VT_I_POS, VT_I_NOR, VT_I_UVC, VT_I_TXTR,
 };
 enum vt_o : size_t { // VertTerrain Offsets
@@ -89,7 +87,7 @@ enum vt_o : size_t { // VertTerrain Offsets
 #define FILE_VERSION_M 0x0u
 #define FILE_VERSION_TEX 0x0u
 
-typedef btui16 version_t;
+typedef lui16 version_t;
 
 namespace graphics
 {
@@ -102,7 +100,7 @@ namespace graphics
 		);
 	}
 
-	/*btui8 font_kerning[] =
+	/*lui8 font_kerning[] =
 	{
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
@@ -123,7 +121,7 @@ namespace graphics
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
 	};*/
 
-	/*btui8 font_kerning[] =
+	/*lui8 font_kerning[] =
 	{
 		0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
 		0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
@@ -144,7 +142,7 @@ namespace graphics
 		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7
 	};*/
 
-	btui8 font_kerning[] =
+	lui8 font_kerning[] =
 	{
 		0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
 		0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
@@ -171,7 +169,7 @@ namespace graphics
 		7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7,	7
 	};
 
-	/*btui8 font_kerning[] =
+	/*lui8 font_kerning[] =
 	{
 		0u,	0u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
 		7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,	7u,
@@ -194,28 +192,28 @@ namespace graphics
 
 	struct Graphics
 	{
-		btui32 frameSizeX = 320u;
-		btui32 frameSizeY = 240u;
-		btui32 GUIframeSizeX = 320u;
-		btui32 GUIframeSizeY = 240u;
+		lui32 frameSizeX = 320u;
+		lui32 frameSizeY = 240u;
+		lui32 GUIframeSizeX = 320u;
+		lui32 GUIframeSizeY = 240u;
 		Shader shaders[S_COUNT];
 		bool bEditMode = false;
 		bool bSplitScreen = false;
-		btf32 fCameraFOV, fCameraNearClip, fCameraFarClip;
+		lf32 fCameraFOV, fCameraNearClip, fCameraFarClip;
 	};
 	Graphics* gPtr;
 
-	btui32 FrameSizeX() { return gPtr->frameSizeX; }
-	btui32 FrameSizeY() { return gPtr->frameSizeY; }
+	lui32 FrameSizeX() { return gPtr->frameSizeX; }
+	lui32 FrameSizeY() { return gPtr->frameSizeY; }
 
-	void SetFrameSize(btui32 x, btui32 y) {
+	void SetFrameSize(lui32 x, lui32 y) {
 		if (!gPtr->bEditMode) {
-			btui32 scale = x / SCREEN_UPSCALE_THRESHOLD + 1u;
+			lui32 scale = x / SCREEN_UPSCALE_THRESHOLD + 1u;
 			gPtr->frameSizeY = y / scale;
 			#ifndef DEF_NMP
 			if (gPtr->bSplitScreen) {
 				gPtr->frameSizeX = x / (scale * 2u);
-				x *= 0.5f;
+				x /= 2;
 			}
 			else
 				#endif
@@ -234,7 +232,7 @@ namespace graphics
 		gPtr->GUIframeSizeX = gPtr->frameSizeX;
 		gPtr->GUIframeSizeY = gPtr->frameSizeY;
 	}
-	void SetGUIFrameSize(btui32 x, btui32 y) {
+	void SetGUIFrameSize(lui32 x, lui32 y) {
 		gPtr->GUIframeSizeX = x;
 		gPtr->GUIframeSizeY = y;
 	}
@@ -251,15 +249,15 @@ namespace graphics
 	//________________________________________________________________________________________________________________________________
 	// INITIALIZATION ----------------------------------------------------------------------------------------------------------------
 
-	void MakeShaderSrc(char** outstring, btui32 num, ...) {
-		btui32 ssize = 0u;
+	void MakeShaderSrc(char** outstring, lui32 num, ...) {
+		lui32 ssize = 0u;
 		// Iterate through the strings
 		va_list args;
 		va_start(args, num);
-		for (btui32 i = 0; i < num; ++i) {
+		for (lui32 i = 0; i < num; ++i) {
 			char* workingstr = va_arg(args, char*);
-			btui32 oldsize = ssize;
-			ssize += strlen(workingstr);
+			lui32 oldsize = ssize;
+			ssize += (lui32)strlen(workingstr);
 			*outstring = (char*)realloc(*outstring, ssize + 1);
 			memset(&(*outstring)[oldsize], 0, ssize - oldsize);
 			strcat(*outstring, workingstr);
@@ -268,7 +266,8 @@ namespace graphics
 		va_end(args);
 	}
 
-	void Init() {
+	void Init(bool editmode, bool splitscreen, lf32 camerafov,
+		lf32 cameranearclip, lf32 camerafarclip, lui32 winx, lui32 winy) {
 		gPtr = new Graphics();
 
 		guibmp.Init();
@@ -333,16 +332,12 @@ namespace graphics
 		gPtr->shaders[S_POST].Init(SHADER_VERT_FRAMEBUFFER, SHADER_FRAG_FRAMEBUFFER_DEPTH_BUFFER);
 		#endif
 		
-		#ifndef DEF_ARCHIVER
-		gPtr->bEditMode = config.bEditMode;
-		gPtr->bSplitScreen = config.bSplitScreen;
-		gPtr->fCameraFOV = config.fCameraFOV;
-		gPtr->fCameraNearClip = config.fCameraNearClip;
-		gPtr->fCameraFarClip = config.fCameraFarClip;
-		SetFrameSize(config.iWinX, config.iWinY);
-		#else
-		SetFrameSize(ARCHIVER_WINDOW_W, ARCHIVER_WINDOW_H);
-		#endif
+		gPtr->bEditMode = editmode;
+		gPtr->bSplitScreen = splitscreen;
+		gPtr->fCameraFOV = camerafov;
+		gPtr->fCameraNearClip = cameranearclip;
+		gPtr->fCameraFarClip = camerafarclip;
+		SetFrameSize(winx, winy);
 
 		glEnable(GL_CULL_FACE); // Enable face culling
 		glCullFace(GL_FRONT); // Set culling mode
@@ -353,15 +348,15 @@ namespace graphics
 		gPtr = nullptr;
 	}
 
-	void SetSplitScreen(bool b) {
+	void SetSplitScreen(bool b, lui32 winx, lui32 winy) {
 		gPtr->bSplitScreen = b;
-		SetFrameSize(config.iWinX, config.iWinY);
+		SetFrameSize(winx, winy);
 	}
 
 	//________________________________________________________________________________________________________________________________
 	// MATRIX ------------------------------------------------------------------------------------------------------------------------
 
-	FRow4 operator*(const FRow4& row, const btf32 mult) {
+	FRow4 operator*(const FRow4& row, const lf32 mult) {
 		return FRow4(row[0] * mult, row[1] * mult, row[2] * mult, row[3] * mult);
 	};
 	FRow4 operator+(const FRow4& row_a, const FRow4& row_b) {
@@ -374,9 +369,9 @@ namespace graphics
 		return result;
 		//matrix[3] = matrix[0] * pos.x + matrix[1] * pos.y + matrix[2] * pos.z + matrix[3];
 	}
-	Matrix4x4 MatrixRotate(Matrix4x4 const& m, btf32 angle, m::Vector3 const& v) {
-		btf32 const c = cos(angle);
-		btf32 const s = sin(angle);
+	Matrix4x4 MatrixRotate(Matrix4x4 const& m, lf32 angle, m::Vector3 const& v) {
+		lf32 const c = cos(angle);
+		lf32 const s = sin(angle);
 
 		m::Vector3 axis = m::Normalize(v);
 		m::Vector3 temp = (1 - c) * axis;
@@ -437,23 +432,23 @@ namespace graphics
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 	}
-	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, btf32 yaw) {
+	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, lf32 yaw) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 
 		// Rotate matrix
-		btf32 c = cos(yaw); btf32 s = sin(yaw);
+		lf32 c = cos(yaw); lf32 s = sin(yaw);
 		Matrix4x4 m = matrix;
 		matrix[0] = m[0] * c + m[2] * -s;
 		matrix[1] = m[1] * (c + (1 - c));
 		matrix[2] = m[0] * s + m[2] * c;
 	}
-	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, btf32 yaw, btf32 pitch) {
+	void MatrixTransform(Matrix4x4& matrix, m::Vector3 const& pos, lf32 yaw, lf32 pitch) {
 		// Translate matrix
 		matrix[3] = FRow4(pos.x, pos.y, -pos.z, 1.f);
 
 		// Rotate matrix (yaw)
-		btf32 c = cos(yaw); btf32 s = sin(yaw);
+		lf32 c = cos(yaw); lf32 s = sin(yaw);
 		Matrix4x4 m = matrix;
 		matrix[0] = m[0] * c + m[2] * -s;
 		matrix[1] = m[1] * (c + (1 - c));
@@ -574,7 +569,7 @@ namespace graphics
 	m::Vector3 GetFocalCenter() {
 		return focus;
 	}
-	void SetMatProj(btf32 fovMult) {
+	void SetMatProj(lf32 fovMult) {
 		mat_proj = glm::perspective(glm::radians(gPtr->fCameraFOV) * fovMult, (float)FrameSizeX() / (float)FrameSizeY(), gPtr->fCameraNearClip * fovMult, gPtr->fCameraFarClip * fovMult);	}
 	void SetMatView(void* t, void* p, void* t2) {
 		view = *(m::Vector3*)p * m::Vector3(1.f, 1.f, -1.f);
@@ -613,12 +608,12 @@ namespace graphics
 	}
 
 	// good, but replace the std::vectors
-	void BindBuffers(std::vector<Vertex> &vertices, std::vector<btui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO) {
+	void BindBuffers(std::vector<Vertex> &vertices, std::vector<lui32> &indices, GLuint VAO, GLuint VBO, GLuint EBO) {
 		glBindVertexArray(VAO); // Bind this vertex array
 		glBindBuffer(GL_ARRAY_BUFFER, VBO); // Create vertex buffer in opengl
 		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // Create index buffer in opengl
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(btui32), &indices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(lui32), &indices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
 		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
@@ -671,7 +666,7 @@ namespace graphics
 			glDeleteShader(geometry);
 
 		// Search for all shader properties
-		for (btui32 i = 0u; i < LOCATION_COUNT; ++i) {
+		for (lui32 i = 0u; i < LOCATION_COUNT; ++i) {
 			location[i] = glGetUniformLocation(ID, names[i]);
 		}
 	}
@@ -805,33 +800,33 @@ namespace graphics
 	void(*SetEdgeMode[])() = { EMRepeat, EMRepeatMirror, EMClamp, EMRepeatXClampY, EMClampXRepeatY };
 
 	#if DEF_SWR
-	void Texture::Init(btui16 sx, btui16 sy, colour col) {
+	void Texture::Init(lui16 sx, lui16 sy, colour col) {
 		glGenTextures(1, &glID); // Initialize GL texture
 
 		width = sx;
 		height = sy;
 		// Read pixel buffer
 		buffer2 = new colour[width * height];
-		for (btui32 i = 0u; i < (btui32)(width * height); ++i) {
+		for (lui32 i = 0u; i < (lui32)(width * height); ++i) {
 			buffer2[i] = col;
 		}
 	}
-	void Texture::SetPixel(btui16 x, btui16 y, colour c) {
+	void Texture::SetPixel(lui16 x, lui16 y, colour c) {
 		buffer2[x * width + y] = c;
 	}
-	void Texture::SetPixelChannelR(btui16 x, btui16 y, btui8 val) {
+	void Texture::SetPixelChannelR(lui16 x, lui16 y, lui8 val) {
 		buffer2[x * width + y].r = val;
 	}
-	void Texture::SetPixelChannelG(btui16 x, btui16 y, btui8 val) {
+	void Texture::SetPixelChannelG(lui16 x, lui16 y, lui8 val) {
 		buffer2[x * width + y].g = val;
 	}
-	void Texture::SetPixelChannelB(btui16 x, btui16 y, btui8 val) {
+	void Texture::SetPixelChannelB(lui16 x, lui16 y, lui8 val) {
 		buffer2[x * width + y].b = val;
 	}
-	void Texture::SetPixelChannelA(btui16 x, btui16 y, btui8 val) {
+	void Texture::SetPixelChannelA(lui16 x, lui16 y, lui8 val) {
 		buffer2[x * width + y].a = val;
 	}
-	colour Texture::GetPixel(btui16 x, btui16 y) {
+	colour Texture::GetPixel(lui16 x, lui16 y) {
 		return buffer2[x * width + y];
 	}
 	void Texture::InitGLTest() {
@@ -861,8 +856,8 @@ namespace graphics
 		fread(&fm, 1, 1, file);
 		fread(&em, 1, 1, file);
 		// Read dimensions
-		fread(&width, sizeof(btui16), 1, file);
-		fread(&height, sizeof(btui16), 1, file);
+		fread(&width, sizeof(lui16), 1, file);
+		fread(&height, sizeof(lui16), 1, file);
 		// Read pixel buffer
 		#if DEF_SWR
 		buffer2 = new colour[width * height];
@@ -941,9 +936,9 @@ namespace graphics
 						buffer_array[i][x * (width / division) + y].b = buffer[(x * division) * width + (y * division)].b;
 						// Get minimum alpha
 						#if DEF_CUSTOM_MIPMAP_FOLIAGE_MIN
-						buffer_array[i][x * (width / division) + y].a = m::Min<btui8>(4u,
+						buffer_array[i][x * (width / division) + y].a = m::Min<lui8>(4u,
 							#else
-						buffer_array[i][x * (width / division) + y].a = m::Max<btui8>(4u,
+						buffer_array[i][x * (width / division) + y].a = m::Max<lui8>(4u,
 							#endif
 							buffer_array[i - 1][(x * 2)     * (width / (division / 2)) + (y * 2)].a,
 							buffer_array[i - 1][(x * 2 + 1) * (width / (division / 2)) + (y * 2)].a,
@@ -1113,7 +1108,7 @@ namespace graphics
 		//std::cout << "Loading " << fn << "... ";
 
 		//Vertex* vces; // Vertices
-		//btui32* ices; // Indices
+		//lui32* ices; // Indices
 
 		//-------------------------------- OPEN FILE
 
@@ -1121,7 +1116,7 @@ namespace graphics
 
 		//Vert* vces; // Vertices
 		//size_t vces_size;
-		//btui32* ices; // Indices
+		//lui32* ices; // Indices
 		//size_t ices_size;
 
 		version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
@@ -1135,7 +1130,7 @@ namespace graphics
 		//-------------------------------- READ INDICES
 
 		fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
-		ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
+		ices = (lui32*)malloc(sizeof(lui32) * ices_size); // Allocate buffer to hold our indicess
 		fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
 
 		//glID = (GLuint)ices_size; // Set number of indices used in Draw()
@@ -1149,7 +1144,7 @@ namespace graphics
 		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
 		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(lui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
 		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
@@ -1191,7 +1186,7 @@ namespace graphics
 
 		VertexBlend* vces; // Vertices
 		size_t vces_size;
-		btui32* ices; // Indices
+		lui32* ices; // Indices
 
 		version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
 
@@ -1204,7 +1199,7 @@ namespace graphics
 		//-------------------------------- READ INDICES
 
 		fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
-		ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
+		ices = (lui32*)malloc(sizeof(lui32) * ices_size); // Allocate buffer to hold our indicess
 		fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
 
 		ices_size = (GLuint)ices_size; // Set number of indices used in Draw()
@@ -1218,7 +1213,7 @@ namespace graphics
 		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
 		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexBlend), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(lui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(vbi_pos_a); // Set Vertex positions
 		glVertexAttribPointer(vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_a);
@@ -1260,7 +1255,7 @@ namespace graphics
 
 		VertexDeform* vces; // Vertices
 		size_t vces_size;
-		btui32* ices; // Indices
+		lui32* ices; // Indices
 
 		version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
 
@@ -1273,7 +1268,7 @@ namespace graphics
 		//-------------------------------- READ INDICES
 
 		fread(&ices_size, sizeof(size_t), 1, in); // Read number of indices
-		ices = (btui32*)malloc(sizeof(btui32) * ices_size); // Allocate buffer to hold our indicess
+		ices = (lui32*)malloc(sizeof(lui32) * ices_size); // Allocate buffer to hold our indicess
 		fread(&ices[0], sizeof(unsigned int), ices_size, in); // Read indices
 
 		ices_size = (GLuint)ices_size; // Set number of indices used in Draw()
@@ -1287,7 +1282,7 @@ namespace graphics
 		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
 		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexDeform), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(lui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(vdi_pos); // Set Vertex positions
 		glVertexAttribPointer(vdi_pos, 3u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_pos);
@@ -1298,9 +1293,9 @@ namespace graphics
 		glEnableVertexAttribArray(vdi_col); // Set Vertex colour
 		glVertexAttribPointer(vdi_col, 4u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)vd_col);
 		// Set the matrix value array
-		for (btui32 i = 0u; i < MD_MATRIX_COUNT; ++i) {
+		for (lui32 i = 0u; i < MD_MATRIX_COUNT; ++i) {
 			glEnableVertexAttribArray(vdi_mat + i); // Set Vertex colour
-			glVertexAttribPointer(vdi_mat + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)(vd_mat + (sizeof(btf32) * i)));
+			glVertexAttribPointer(vdi_mat + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexDeform), (void*)(vd_mat + (sizeof(lf32) * i)));
 		}
 
 		glBindVertexArray(0); // Bind default vertex array
@@ -1332,17 +1327,12 @@ namespace graphics
 		glUniform1i(glGetUniformLocation(shd, "texture_diffuse1"), 0);
 		glBindTexture(GL_TEXTURE_2D, tex); // Bind the texture
 		glBindVertexArray(vao); // Bind vertex array
-		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
+		glDrawElements(GL_TRIANGLES, (GLsizei)ices_size, GL_UNSIGNED_INT, 0); // Draw call
 		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
 	}
 	// TODO: add matrix offset
 	// read/search: c++ multiply vector3 x matrix4x4
 	void CompositeMesh::AddMesh(Mesh* mesh, Matrix4x4 position) {
-		glm::vec3 vector;
-		glm::mat4x4 matr;
-
-		//glm::vec3 vc2 = vector * matr;
-
 		//
 		size_t old_vces_size = vces_size;
 		size_t old_ices_size = ices_size;
@@ -1351,14 +1341,14 @@ namespace graphics
 		ices_size += mesh->IcesSize();
 		//
 		Vertex* vces_new = new Vertex[vces_size];
-		btui32* ices_new = new btui32[ices_size];
+		lui32* ices_new = new lui32[ices_size];
 		// copy existing vertices into the new buffer
 		for (int i = 0; i < old_vces_size; ++i)
 			vces_new[i] = vces[i];
 		for (int i = 0; i < old_ices_size; ++i)
 			ices_new[i] = ices[i];
 		// Copy in the things from the new mesh
-		for (int i = old_vces_size; i < vces_size; ++i) {
+		for (size_t i = old_vces_size; i < vces_size; ++i) {
 			vces_new[i] = mesh->Vces()[i - old_vces_size];
 			// temp
 			m::Vector3 vector = m::Vector3(vces_new[i].pos.x, vces_new[i].pos.y, vces_new[i].pos.z);
@@ -1367,8 +1357,8 @@ namespace graphics
 			vces_new[i].pos.y = vector.y;
 			vces_new[i].pos.z = vector.z;
 		}
-		for (int i = old_ices_size; i < ices_size; ++i) {
-			ices_new[i] = mesh->Ices()[i - old_ices_size] + old_vces_size;
+		for (size_t i = old_ices_size; i < ices_size; ++i) {
+			ices_new[i] = mesh->Ices()[i - old_ices_size] + (lui32)old_vces_size;
 		}
 		// Clear the old buffers from memory
 		delete[] vces; vces = vces_new;
@@ -1387,7 +1377,7 @@ namespace graphics
 		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
 		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(lui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
 		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
@@ -1402,11 +1392,6 @@ namespace graphics
 	}
 
 	void CompositeMesh::AddMesh(Mesh* mesh, m::Vector3 position, MeshOrientation ori) {
-		glm::vec3 vector;
-		glm::mat4x4 matr;
-
-		//glm::vec3 vc2 = vector * matr;
-
 		//
 		size_t old_vces_size = vces_size;
 		size_t old_ices_size = ices_size;
@@ -1415,14 +1400,14 @@ namespace graphics
 		ices_size += mesh->IcesSize();
 		//
 		Vertex* vces_new = new Vertex[vces_size];
-		btui32* ices_new = new btui32[ices_size];
+		lui32* ices_new = new lui32[ices_size];
 		// copy existing vertices into the new buffer
 		for (int i = 0; i < old_vces_size; ++i)
 			vces_new[i] = vces[i];
 		for (int i = 0; i < old_ices_size; ++i)
 			ices_new[i] = ices[i];
 		// Copy in the things from the new mesh
-		for (int i = old_vces_size; i < vces_size; ++i) {
+		for (size_t i = old_vces_size; i < vces_size; ++i) {
 			vces_new[i] = mesh->Vces()[i - old_vces_size];
 			// temp
 			m::Vector3 vector = m::Vector3(vces_new[i].pos.x, vces_new[i].pos.y, vces_new[i].pos.z);
@@ -1435,8 +1420,8 @@ namespace graphics
 			// BILINEAR
 			/*
 			out_height = m::Lerp(
-			m::Lerp((btf32)eCells[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y].height, (btf32)eCells[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y].height, abs(csinf.offsetx)),
-			m::Lerp((btf32)eCells[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y].height, (btf32)eCells[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y].height, abs(csinf.offsetx)),
+			m::Lerp((lf32)eCells[csinf.c[eCELL_I].x][csinf.c[eCELL_I].y].height, (lf32)eCells[csinf.c[eCELL_X].x][csinf.c[eCELL_X].y].height, abs(csinf.offsetx)),
+			m::Lerp((lf32)eCells[csinf.c[eCELL_Y].x][csinf.c[eCELL_Y].y].height, (lf32)eCells[csinf.c[eCELL_XY].x][csinf.c[eCELL_XY].y].height, abs(csinf.offsetx)),
 			abs(csinf.offsety)) / TERRAIN_HEIGHT_DIVISION;
 			*/
 
@@ -1471,8 +1456,8 @@ namespace graphics
 				break;
 			}
 		}
-		for (int i = old_ices_size; i < ices_size; ++i)
-			ices_new[i] = mesh->Ices()[i - old_ices_size] + (btui32)old_vces_size;
+		for (size_t i = old_ices_size; i < ices_size; ++i)
+			ices_new[i] = mesh->Ices()[i - old_ices_size] + (lui32)old_vces_size;
 		// Clear the old buffers from memory
 		delete[] vces; vces = vces_new;
 		delete[] ices; ices = ices_new;
@@ -1492,7 +1477,7 @@ namespace graphics
 		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
 		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(lui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(VI_POS); // Set Vertex positions
 		glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
@@ -1515,17 +1500,13 @@ namespace graphics
 
 	void TerrainMesh::Draw() {
 		glBindVertexArray(vao); // Bind vertex array
-		glDrawElements(GL_TRIANGLES, ices_size, GL_UNSIGNED_INT, 0); // Draw call
+		glDrawElements(GL_TRIANGLES, (GLsizei)ices_size, GL_UNSIGNED_INT, 0); // Draw call
 		glBindVertexArray(0); glActiveTexture(GL_TEXTURE0); // Return buffers to default (texture is duplicate call)
 	}
 
 	void TerrainMesh::GenerateFromHMap(
-		btui8(&hmap)[WORLD_SIZE][WORLD_SIZE],
-		btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]) {
-		glm::vec3 vector;
-		glm::mat4x4 matr;
-
-		//glm::vec3 vc2 = vector * matr;
+		lui8(&hmap)[WORLD_SIZE][WORLD_SIZE],
+		lui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE]) {
 
 		int tile_radius = 128;
 
@@ -1533,29 +1514,29 @@ namespace graphics
 		ices_size = 6u * (tile_radius * tile_radius);
 
 		vces = (VertexTerrain*)malloc(sizeof(VertexTerrain) * vces_size);
-		ices = (btui32*)malloc(sizeof(btui32) * ices_size);
+		ices = (lui32*)malloc(sizeof(lui32) * ices_size);
 
-		//btf32 uvscale = 0.125f;
-		btf32 uvscale = 0.25f;
+		//lf32 uvscale = 0.125f;
+		lf32 uvscale = 0.25f;
 		int v = 0;
 		int i = 0;
 		for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x) {
 			for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, v += 1, i += 6) {
 				// Copy in the things from the new mesh
-				vces[v].pos.x = (btf32)x;
-				vces[v].pos.z = (btf32)y;
-				vces[v].pos.y = (((btf32)hmap[x][y]) + (btf32)hmap[x][y]) / 2 / TERRAIN_HEIGHT_DIVISION;
+				vces[v].pos.x = (lf32)x;
+				vces[v].pos.z = (lf32)y;
+				vces[v].pos.y = (((lf32)hmap[x][y]) + (lf32)hmap[x][y]) / 2 / TERRAIN_HEIGHT_DIVISION;
 				vces[v].uvc.x = vces[v].pos.x * uvscale;
 				vces[v].uvc.y = vces[v].pos.z * uvscale;
 
 				vces[v].nor.y = 1.f; vces[v].nor.x = 0.f; vces[v].nor.z = 1.f;
-				vces[v].nor.x += (btf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-				vces[v].nor.x -= (btf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-				vces[v].nor.z += (btf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-				vces[v].nor.z -= (btf32)(hmap[x][y] - hmap[x][y - 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+				vces[v].nor.x += (lf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+				vces[v].nor.x -= (lf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+				vces[v].nor.z += (lf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+				vces[v].nor.z -= (lf32)(hmap[x][y] - hmap[x][y - 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
 
 				// normalize
-				btf32 nlen = sqrt(vces[v].nor.x * vces[v].nor.x + vces[v].nor.y * vces[v].nor.y + vces[v].nor.z * vces[v].nor.z);
+				lf32 nlen = sqrt(vces[v].nor.x * vces[v].nor.x + vces[v].nor.y * vces[v].nor.y + vces[v].nor.z * vces[v].nor.z);
 				if (nlen != 0) {
 					vces[v].nor.x = vces[v].nor.x / nlen;
 					vces[v].nor.y = vces[v].nor.y / nlen;
@@ -1634,7 +1615,7 @@ namespace graphics
 		free((void*)ices);
 	}
 
-	enum TerrainGenData : btui8
+	enum TerrainGenData : lui8
 	{
 		eTGEN_FACE_N_COR_E = 1u,
 		eTGEN_FACE_N_COR_W = 1u << 1u,
@@ -1643,20 +1624,18 @@ namespace graphics
 	};
 
 	void TerrainMesh::GenerateComplexEnv(
-		btui8(&hmap)[WORLD_SIZE][WORLD_SIZE],
-		btui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE],
-		btui32* flags,
-		btui32 flag_invisible,
-		btui8(&hmap_ne)[WORLD_SIZE][WORLD_SIZE],
-		btui8(&hmap_nw)[WORLD_SIZE][WORLD_SIZE],
-		btui8(&hmap_se)[WORLD_SIZE][WORLD_SIZE],
-		btui8(&hmap_sw)[WORLD_SIZE][WORLD_SIZE]) {
-		glm::vec3 vector;
-		glm::mat4x4 matr;
+		lui8(&hmap)[WORLD_SIZE][WORLD_SIZE],
+		lui8(&MATMAP)[WORLD_SIZE][WORLD_SIZE],
+		lui32* flags,
+		lui32 flag_invisible,
+		lui8(&hmap_ne)[WORLD_SIZE][WORLD_SIZE],
+		lui8(&hmap_nw)[WORLD_SIZE][WORLD_SIZE],
+		lui8(&hmap_se)[WORLD_SIZE][WORLD_SIZE],
+		lui8(&hmap_sw)[WORLD_SIZE][WORLD_SIZE]) {
 
 		int tile_radius = 128;
 
-		btui8 tgendata[128][128];
+		lui8 tgendata[128][128];
 		memset(tgendata, 0u, 128 * 128);
 
 		#define BVGET(x, y, flag) (flags[x * WORLD_SIZE + y] & flag)
@@ -1671,7 +1650,7 @@ namespace graphics
 			for (int x = 1024 - (tile_radius / 2); x < 1024 + (tile_radius / 2); ++x, ++datax) {
 				int datay = 0;
 				for (int y = 1024 - (tile_radius / 2); y < 1024 + (tile_radius / 2); ++y, ++datay) {
-					bool bInvisible = BVGET(x, y, flag_invisible);
+					bool bInvisible = BVGET(x, y, flag_invisible) == 1;
 
 					// if solid face
 					if (!bInvisible) {
@@ -1721,7 +1700,7 @@ namespace graphics
 		ices_size = face_IndexCount + edge_IndexCount;
 
 		vces = (VertexTerrain*)malloc(sizeof(VertexTerrain) * vces_size);
-		ices = (btui32*)malloc(sizeof(btui32) * ices_size);
+		ices = (lui32*)malloc(sizeof(lui32) * ices_size);
 
 		int v = 0;
 		int i = 0;
@@ -1733,34 +1712,34 @@ namespace graphics
 				// if top face is visible
 				if (!BVGET(x, y, flag_invisible)) {
 					//ne
-					vces[v].pos.x = (btf32)x + 0.5f;
-					vces[v].pos.z = (btf32)y + 0.5f;
-					vces[v].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v].pos.x = (lf32)x + 0.5f;
+					vces[v].pos.z = (lf32)y + 0.5f;
+					vces[v].pos.y = (lf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//nw
-					vces[v + 1u].pos.x = (btf32)x - 0.5f;
-					vces[v + 1u].pos.z = (btf32)y + 0.5f;
-					vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 1u].pos.x = (lf32)x - 0.5f;
+					vces[v + 1u].pos.z = (lf32)y + 0.5f;
+					vces[v + 1u].pos.y = (lf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//se
-					vces[v + 2u].pos.x = (btf32)x + 0.5f;
-					vces[v + 2u].pos.z = (btf32)y - 0.5f;
-					vces[v + 2u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 2u].pos.x = (lf32)x + 0.5f;
+					vces[v + 2u].pos.z = (lf32)y - 0.5f;
+					vces[v + 2u].pos.y = (lf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//sw
-					vces[v + 3u].pos.x = (btf32)x - 0.5f;
-					vces[v + 3u].pos.z = (btf32)y - 0.5f;
-					vces[v + 3u].pos.y = (btf32)hmap_sw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 3u].pos.x = (lf32)x - 0.5f;
+					vces[v + 3u].pos.z = (lf32)y - 0.5f;
+					vces[v + 3u].pos.y = (lf32)hmap_sw[x][y] / TERRAIN_HEIGHT_DIVISION;
 
-					for (btui32 i = 0; i < 4; ++i) {
+					for (lui32 i = 0; i < 4; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
 						vces[v + i].uvc.y = vces[v + i].pos.z * TERRAIN_UV_SCALE;
 						vces[v + i].nor.y = 1.f; vces[v + i].nor.x = 0.f; vces[v + i].nor.z = 0.f;
-						//vces[v + i].nor.x += (btf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-						//vces[v + i].nor.x -= (btf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-						//vces[v + i].nor.z += (btf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
-						//vces[v + i].nor.z -= (btf32)(hmap[x][y] - hmap[x][y - 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+						//vces[v + i].nor.x += (lf32)(hmap[x][y] - hmap[x + 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+						//vces[v + i].nor.x -= (lf32)(hmap[x][y] - hmap[x - 1][y]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+						//vces[v + i].nor.z += (lf32)(hmap[x][y] - hmap[x][y + 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
+						//vces[v + i].nor.z -= (lf32)(hmap[x][y] - hmap[x][y - 1]) / (TERRAIN_HEIGHT_DIVISION * 2.f);
 					}
 
 					// normalize
-					btf32 nlen = sqrt(vces[v].nor.x * vces[v].nor.x + vces[v].nor.y * vces[v].nor.y + vces[v].nor.z * vces[v].nor.z);
+					lf32 nlen = sqrt(vces[v].nor.x * vces[v].nor.x + vces[v].nor.y * vces[v].nor.y + vces[v].nor.z * vces[v].nor.z);
 					if (nlen != 0) {
 						vces[v].nor.x = vces[v].nor.x / nlen;
 						vces[v].nor.y = vces[v].nor.y / nlen;
@@ -1814,17 +1793,17 @@ namespace graphics
 				// If both corners require new faces
 				if ((tgendata[datax][datay] & eTGEN_FACE_N_COR_E) != 0 && (tgendata[datax][datay] & eTGEN_FACE_N_COR_W) != 0) {
 					//ne
-					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
-					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 0u].pos.x = (lf32)x + 0.5f; vces[v + 0u].pos.z = (lf32)y + 0.5f;
+					vces[v + 0u].pos.y = (lf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//nw
-					vces[v + 1u].pos.x = (btf32)x - 0.5f; vces[v + 1u].pos.z = (btf32)y + 0.5f;
-					vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 1u].pos.x = (lf32)x - 0.5f; vces[v + 1u].pos.z = (lf32)y + 0.5f;
+					vces[v + 1u].pos.y = (lf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//ne
-					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
-					vces[v + 2u].pos.y = (btf32)hmap_se[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 2u].pos.x = (lf32)x + 0.5f; vces[v + 2u].pos.z = (lf32)y + 0.5f;
+					vces[v + 2u].pos.y = (lf32)hmap_se[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
 					//nw
-					vces[v + 3u].pos.x = (btf32)x - 0.5f; vces[v + 3u].pos.z = (btf32)y + 0.5f;
-					vces[v + 3u].pos.y = (btf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 3u].pos.x = (lf32)x - 0.5f; vces[v + 3u].pos.z = (lf32)y + 0.5f;
+					vces[v + 3u].pos.y = (lf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
 
 					for (int i = 0; i < 4; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
@@ -1860,14 +1839,14 @@ namespace graphics
 				// If only one corner requires a face
 				else if ((tgendata[datax][datay] & eTGEN_FACE_N_COR_E) != 0) {
 					//ne
-					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
-					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 0u].pos.x = (lf32)x + 0.5f; vces[v + 0u].pos.z = (lf32)y + 0.5f;
+					vces[v + 0u].pos.y = (lf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//nw
-					vces[v + 1u].pos.x = (btf32)x - 0.5f; vces[v + 1u].pos.z = (btf32)y + 0.5f;
-					vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 1u].pos.x = (lf32)x - 0.5f; vces[v + 1u].pos.z = (lf32)y + 0.5f;
+					vces[v + 1u].pos.y = (lf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//ne
-					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
-					vces[v + 2u].pos.y = (btf32)hmap_se[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 2u].pos.x = (lf32)x + 0.5f; vces[v + 2u].pos.z = (lf32)y + 0.5f;
+					vces[v + 2u].pos.y = (lf32)hmap_se[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
 
 					for (int i = 0; i < 3; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
@@ -1892,14 +1871,14 @@ namespace graphics
 				}
 				else if ((tgendata[datax][datay] & eTGEN_FACE_N_COR_W) != 0) {
 					//ne
-					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
-					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 0u].pos.x = (lf32)x + 0.5f; vces[v + 0u].pos.z = (lf32)y + 0.5f;
+					vces[v + 0u].pos.y = (lf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//nw
-					vces[v + 1u].pos.x = (btf32)x - 0.5f; vces[v + 1u].pos.z = (btf32)y + 0.5f;
-					vces[v + 1u].pos.y = (btf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 1u].pos.x = (lf32)x - 0.5f; vces[v + 1u].pos.z = (lf32)y + 0.5f;
+					vces[v + 1u].pos.y = (lf32)hmap_nw[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//nw
-					vces[v + 2u].pos.x = (btf32)x - 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
-					vces[v + 2u].pos.y = (btf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 2u].pos.x = (lf32)x - 0.5f; vces[v + 2u].pos.z = (lf32)y + 0.5f;
+					vces[v + 2u].pos.y = (lf32)hmap_sw[x][y + 1] / TERRAIN_HEIGHT_DIVISION;
 
 					for (int i = 0; i < 3; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.x * TERRAIN_UV_SCALE;
@@ -1927,17 +1906,17 @@ namespace graphics
 				// If both corners require new faces
 				if ((tgendata[datax][datay] & eTGEN_FACE_E_COR_N) != 0 && (tgendata[datax][datay] & eTGEN_FACE_E_COR_S) != 0) {
 					//ne
-					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
-					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 0u].pos.x = (lf32)x + 0.5f; vces[v + 0u].pos.z = (lf32)y + 0.5f;
+					vces[v + 0u].pos.y = (lf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//se
-					vces[v + 1u].pos.x = (btf32)x + 0.5f; vces[v + 1u].pos.z = (btf32)y - 0.5f;
-					vces[v + 1u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 1u].pos.x = (lf32)x + 0.5f; vces[v + 1u].pos.z = (lf32)y - 0.5f;
+					vces[v + 1u].pos.y = (lf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//ne
-					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
-					vces[v + 2u].pos.y = (btf32)hmap_nw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 2u].pos.x = (lf32)x + 0.5f; vces[v + 2u].pos.z = (lf32)y + 0.5f;
+					vces[v + 2u].pos.y = (lf32)hmap_nw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
 					//se
-					vces[v + 3u].pos.x = (btf32)x + 0.5f; vces[v + 3u].pos.z = (btf32)y - 0.5f;
-					vces[v + 3u].pos.y = (btf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 3u].pos.x = (lf32)x + 0.5f; vces[v + 3u].pos.z = (lf32)y - 0.5f;
+					vces[v + 3u].pos.y = (lf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
 
 					for (int i = 0; i < 4; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
@@ -1974,14 +1953,14 @@ namespace graphics
 				// If only one corner requires a face
 				else if ((tgendata[datax][datay] & eTGEN_FACE_E_COR_N) != 0) {
 					//ne
-					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
-					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 0u].pos.x = (lf32)x + 0.5f; vces[v + 0u].pos.z = (lf32)y + 0.5f;
+					vces[v + 0u].pos.y = (lf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//se
-					vces[v + 1u].pos.x = (btf32)x + 0.5f; vces[v + 1u].pos.z = (btf32)y - 0.5f;
-					vces[v + 1u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 1u].pos.x = (lf32)x + 0.5f; vces[v + 1u].pos.z = (lf32)y - 0.5f;
+					vces[v + 1u].pos.y = (lf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//ne
-					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y + 0.5f;
-					vces[v + 2u].pos.y = (btf32)hmap_nw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 2u].pos.x = (lf32)x + 0.5f; vces[v + 2u].pos.z = (lf32)y + 0.5f;
+					vces[v + 2u].pos.y = (lf32)hmap_nw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
 
 					for (int i = 0; i < 3; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
@@ -2006,14 +1985,14 @@ namespace graphics
 				}
 				else if ((tgendata[datax][datay] & eTGEN_FACE_E_COR_S) != 0) {
 					//ne
-					vces[v + 0u].pos.x = (btf32)x + 0.5f; vces[v + 0u].pos.z = (btf32)y + 0.5f;
-					vces[v + 0u].pos.y = (btf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 0u].pos.x = (lf32)x + 0.5f; vces[v + 0u].pos.z = (lf32)y + 0.5f;
+					vces[v + 0u].pos.y = (lf32)hmap_ne[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//se
-					vces[v + 1u].pos.x = (btf32)x + 0.5f; vces[v + 1u].pos.z = (btf32)y - 0.5f;
-					vces[v + 1u].pos.y = (btf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 1u].pos.x = (lf32)x + 0.5f; vces[v + 1u].pos.z = (lf32)y - 0.5f;
+					vces[v + 1u].pos.y = (lf32)hmap_se[x][y] / TERRAIN_HEIGHT_DIVISION;
 					//se
-					vces[v + 2u].pos.x = (btf32)x + 0.5f; vces[v + 2u].pos.z = (btf32)y - 0.5f;
-					vces[v + 2u].pos.y = (btf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
+					vces[v + 2u].pos.x = (lf32)x + 0.5f; vces[v + 2u].pos.z = (lf32)y - 0.5f;
+					vces[v + 2u].pos.y = (lf32)hmap_sw[x + 1][y] / TERRAIN_HEIGHT_DIVISION;
 
 					for (int i = 0; i < 3; ++i) {
 						vces[v + i].uvc.x = vces[v + i].pos.z * TERRAIN_UV_SCALE;
@@ -2061,7 +2040,7 @@ namespace graphics
 		glBindBuffer(GL_ARRAY_BUFFER, vbo); // Create vertex buffer in opengl
 		glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexTerrain), &vces[0], GL_STATIC_DRAW); // Pass vertex struct to opengl
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Create index buffer in opengl
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(btui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(lui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
 		glEnableVertexAttribArray(VT_I_POS); // Set Vertex positions
 		glVertexAttribPointer(VT_I_POS, 3, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)VT_O_POS);
@@ -2070,9 +2049,9 @@ namespace graphics
 		glEnableVertexAttribArray(VT_I_UVC); // Set Vertex texture coords
 		glVertexAttribPointer(VT_I_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)VT_O_UVC);
 		// Set the texture blend value array
-		for (btui32 i = 0u; i < 8u; ++i) {
+		for (lui32 i = 0u; i < 8u; ++i) {
 			glEnableVertexAttribArray(VT_I_TXTR + i); // Set Vertex colour
-			glVertexAttribPointer(VT_I_TXTR + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)(VT_O_TXTR + (sizeof(btf32) * i)));
+			glVertexAttribPointer(VT_I_TXTR + i, 1u, GL_FLOAT, GL_FALSE, sizeof(VertexTerrain), (void*)(VT_O_TXTR + (sizeof(lf32) * i)));
 		}
 
 		//glEnableVertexAttribArray(VT_I_TXTR); // Set Vertex colour
@@ -2132,7 +2111,7 @@ namespace graphics
 	void GUIBitmap::SetTexture(GLuint tex) {
 		tid = tex;
 	}
-	void GUIBitmap::Draw(int posx, int posy, int w, int h, btf32 opacity) {
+	void GUIBitmap::Draw(int posx, int posy, int w, int h, lf32 opacity) {
 		// create transformations
 		glm::mat4 transform = glm::mat4(1.0f);
 		//scale to screen space
@@ -2236,7 +2215,7 @@ namespace graphics
 		glDeleteBuffers(1, &EBO);
 		initialized = false;
 	}
-	void GUIBox::ReGen(bti16 _xA, bti16 _xB, bti16 _yA, bti16 _yB, btui16 mg, btui16 bl) {
+	void GUIBox::ReGen(li16 _xA, li16 _xB, li16 _yA, li16 _yB, lui16 mg, lui16 bl) {
 		if (!initialized) Init();
 
 		// create transformations
@@ -2246,10 +2225,10 @@ namespace graphics
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
 
-		bti16 xA = _xA - bl;
-		bti16 xB = _xB + bl;
-		bti16 yA = _yA - bl;
-		bti16 yB = _yB + bl;
+		li16 xA = _xA - bl;
+		li16 xB = _xB + bl;
+		li16 yA = _yA - bl;
+		li16 yB = _yB + bl;
 
 		AddQuad(vertices, indices, quad(xA, xA + mg, yA, yA + mg, 0.f, 0.5f, 0.5f, 1.f), 0); // Down Left
 		AddQuad(vertices, indices, quad(xA + mg, xB - mg, yA, yA + mg, 0.5f, 0.5f, 0.5f, 1.f), 4); // Down Mid
@@ -2268,7 +2247,7 @@ namespace graphics
 		//scale to screen space
 		transform = glm::scale(transform, glm::vec3(2.f / gPtr->GUIframeSizeX, 2.f / gPtr->GUIframeSizeY, 1.0f));
 	}
-	void GUIBox::Draw(Texture* t, btf32 opacity) {
+	void GUIBox::Draw(Texture* t, lf32 opacity) {
 		Shader* s = &gPtr->shaders[S_GUI];
 
 		glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
@@ -2309,9 +2288,9 @@ namespace graphics
 	}
 
 	//backup
-	//void GUIText::ReGen(char* c, unsigned int stringlength, bti16 _xa, bti16 _xb, bti16 _y)
+	//void GUIText::ReGen(char* c, unsigned int stringlength, li16 _xa, li16 _xb, li16 _y)
 
-	void GUIText::ReGen(char* _c, bti16 _xa, bti16 _xb, bti16 _y, TextAlignMode align) {
+	void GUIText::ReGen(char* _c, li16 _xa, li16 _xb, li16 _y, TextAlignMode align) {
 		// this is necessary atm because we modify the string :(
 		char* c = new char[strlen(_c) + 1];
 		memcpy(c, _c, strlen(_c) + 1);
@@ -2334,7 +2313,7 @@ namespace graphics
 		std::vector<unsigned int> indices;
 		//character height
 		int x = xa; int y2 = y - ch - 2;
-		btui32 stringlength = strlen(c);
+		lui32 stringlength = (lui32)strlen(c);
 		int lastLineWidth = 0;
 		int width = 0;
 		int lines = 1;
@@ -2444,7 +2423,7 @@ namespace graphics
 		transform = glm::scale(transform, glm::vec3(2.f / gPtr->GUIframeSizeX, 2.f / gPtr->GUIframeSizeY, 1.0f));
 	}
 	//the 'scroll' boolean feels kind of clunky but it will work for now
-	void GUIText::Draw(Texture* t, btf32 opacity) {
+	void GUIText::Draw(Texture* t, lf32 opacity) {
 		Shader* s = &gPtr->shaders[S_GUI];
 
 		s->Use();
@@ -2459,21 +2438,21 @@ namespace graphics
 		glDrawElements(GL_TRIANGLES, cnum * 6, GL_UNSIGNED_INT, 0);
 	}
 
-	void DrawGUITexture(Texture* texture, bti32 x, bti32 y, bti32 w, bti32 h, btf32 opacity) {
+	void DrawGUITexture(Texture* texture, li32 x, li32 y, li32 w, li32 h, lf32 opacity) {
 		guibmp.SetTexture(texture->glID);
 		guibmp.Draw(x, y, w, h, opacity);
 	}
-	void DrawGUIBox(Texture* texture, bti16 xa, bti16 xb, bti16 ya, bti16 yb, btui16 margin_size, btui16 bleed_size) {
+	void DrawGUIBox(Texture* texture, li16 xa, li16 xb, li16 ya, li16 yb, lui16 margin_size, lui16 bleed_size) {
 		guibox.ReGen(xa, xb, ya, yb, margin_size, bleed_size);
 		guibox.Draw(texture);
 	}
-	void DrawGUIText(char* string, Texture* texture, bti32 xa, bti32 xb, bti32 y) {
+	void DrawGUIText(char* string, Texture* texture, li32 xa, li32 xb, li32 y) {
 		guitxt.ReGen(string, xa, xb, y);
 		guitxt.Draw(texture);
 	}
 }
 
-__forceinline void DrawMeshGL(btui32 mdl, btui32 ices_size, btui32 tex) {
+__forceinline void DrawMeshGL(lui32 mdl, lui32 ices_size, lui32 tex) {
 	glActiveTexture(GL_TEXTURE0); // active proper texture unit before binding
 	glBindTexture(GL_TEXTURE_2D, tex); // Bind the texture
 	glBindVertexArray(mdl); // Bind vertex array
@@ -2481,7 +2460,7 @@ __forceinline void DrawMeshGL(btui32 mdl, btui32 ices_size, btui32 tex) {
 	glBindVertexArray(0); // Return to default
 }
 
-void DrawMesh(btID id, graphics::Mesh& mdl, graphics::Texture tex,
+void DrawMesh(lid id, graphics::Mesh& mdl, graphics::Texture tex,
 	ShaderStyle charashader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
 	switch (charashader) {
@@ -2508,7 +2487,7 @@ void DrawMesh(btID id, graphics::Mesh& mdl, graphics::Texture tex,
 }
 
 void DrawParticles(graphics::Mesh& mdl, graphics::Texture tex,
-	graphics::Matrix4x4* matrix, btui32 count) {
+	graphics::Matrix4x4* matrix, lui32 count) {
 	graphics::Shader* shd = &graphics::GetShader(graphics::S_SOLID);
 
 	// Enable the shader
@@ -2525,7 +2504,7 @@ void DrawParticles(graphics::Mesh& mdl, graphics::Texture tex,
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
+void DrawBlendMesh(lid id, graphics::MeshBlend& mdl, lf32 bs, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
 	switch (charashader) {
 	case SS_NORMAL:
@@ -2553,8 +2532,8 @@ void DrawBlendMesh(btID id, graphics::MeshBlend& mdl, btf32 bs, graphics::Textur
 }
 
 void DrawMeshDeform(
-	btID id, graphics::MeshDeform& mdl, graphics::Texture tex,
-	ShaderStyle charashader, btui32 matrix_count,
+	lid id, graphics::MeshDeform& mdl, graphics::Texture tex,
+	ShaderStyle charashader, lui32 matrix_count,
 	graphics::Matrix4x4 transform_a = graphics::Matrix4x4(),
 	graphics::Matrix4x4 transform_b = graphics::Matrix4x4(),
 	graphics::Matrix4x4 transform_c = graphics::Matrix4x4(),
@@ -2588,7 +2567,7 @@ void DrawMeshDeform(
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
+void DrawCompositeMesh(lid id, graphics::CompositeMesh& mdl, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
 	switch (charashader) {
 	case SS_NORMAL:
@@ -2613,7 +2592,7 @@ void DrawCompositeMesh(btID id, graphics::CompositeMesh& mdl, graphics::Texture 
 	mdl.Draw(tex.glID, shd->ID);
 }
 
-void DrawTerrainMesh(btID id, graphics::TerrainMesh mdl,
+void DrawTerrainMesh(lid id, graphics::TerrainMesh mdl,
 	graphics::Texture tex_a, graphics::Texture tex_b,
 	graphics::Texture tex_c, graphics::Texture tex_d,
 	graphics::Texture tex_e, graphics::Texture tex_f,

@@ -20,32 +20,32 @@ namespace m
 
 	class Angle { // all calculations done in degrees
 	private:
-		btf32 deg;
+		lf32 deg;
 	public:
 		Angle() {
 			deg = 0.f;
 		};
-		Angle(btf32 angle) {
+		Angle(lf32 angle) {
 			Set(angle);
 		};
-		inline void Set(btf32 other) {
+		inline void Set(lf32 other) {
 			deg = other;
 			if (deg < 0.f)
 				deg += 360.f;
 			else if (deg >= 360.f)
 				deg -= 360.f;
 		}
-		inline void Rotate(btf32 other) {
+		inline void Rotate(lf32 other) {
 			Set(deg + other);
 		}
-		inline void RotateClamped(btf32 other, btf32 min, btf32 max) {
+		inline void RotateClamped(lf32 other, lf32 min, lf32 max) {
 			deg += other;
 			if (deg < min)
 				deg = min;
 			else if (deg > max)
 				deg = max;
 		}
-		inline void RotateTowards(btf32 other, btf32 amt) {
+		inline void RotateTowards(lf32 other, lf32 amt) {
 			// Sometimes the angles are jacked and stacked, so put them within range
 			while (other < 0.f)
 				other += 360.f;
@@ -71,13 +71,13 @@ namespace m
 					Rotate(-amt);
 			}
 		}
-		inline btf32 Deg() {
+		inline lf32 Deg() {
 			return deg;
 		}
-		inline btf32 Rad() {
-			return deg * (btf32)CONV_RAD;
+		inline lf32 Rad() {
+			return deg * (lf32)CONV_RAD;
 		}
-		inline btf32 GetDifference(btf32 other) {
+		inline lf32 GetDifference(lf32 other) {
 			//Set(deg + other);
 			return fabsf(deg - other);
 		}
@@ -92,10 +92,10 @@ namespace m
 	class Vector2 {
 	public:
 		//-------------------------------- VARIABLES
-		btf32 x, y;
+		lf32 x, y;
 		//-------------------------------- CONSTRUCTOR
-		Vector2(btf32 X = 0.f, btf32 Y = 0.f) : x{ X }, y{ Y } {};
-		Vector2(WCoord WC) : x{ (btf32)WC.x }, y{ (btf32)WC.y } {};
+		Vector2(lf32 X = 0.f, lf32 Y = 0.f) : x{ X }, y{ Y } {};
+		Vector2(WCoord WC) : x{ (lf32)WC.x }, y{ (lf32)WC.y } {};
 		//-------------------------------- OPERATORS
 		Vector2 operator+(Vector2);
 		Vector2 operator-(Vector2);
@@ -105,15 +105,15 @@ namespace m
 		Vector2 operator-=(Vector2);
 		Vector2 operator*=(Vector2);
 		Vector2 operator/=(Vector2);
-		Vector2 operator+(btf32);
-		Vector2 operator-(btf32);
-		Vector2 operator*(btf32);
-		Vector2 operator/(btf32);
-		Vector2 operator+=(btf32);
-		Vector2 operator-=(btf32);
-		Vector2 operator*=(btf32);
-		Vector2 operator/=(btf32);
-		Vector2 operator=(const btf32&);
+		Vector2 operator+(lf32);
+		Vector2 operator-(lf32);
+		Vector2 operator*(lf32);
+		Vector2 operator/(lf32);
+		Vector2 operator+=(lf32);
+		Vector2 operator-=(lf32);
+		Vector2 operator*=(lf32);
+		Vector2 operator/=(lf32);
+		Vector2 operator=(const lf32&);
 		bool operator==(const Vector2);
 	};
 
@@ -123,16 +123,16 @@ namespace m
 	class Vector3 {
 	public:
 		//-------------------------------- VARIABLES
-		btf32 x, y, z;
+		lf32 x, y, z;
 		//-------------------------------- CONSTRUCTORS
 		Vector3() : x{ 0.f }, y{ 0.f }, z{ 0.f } {};
-		Vector3(btf32 F) : x{ F }, y{ F }, z{ F } {};
-		Vector3(btf32 X, btf32 Y, btf32 Z) : x{ X }, y{ Y }, z{ Z } {};
+		Vector3(lf32 F) : x{ F }, y{ F }, z{ F } {};
+		Vector3(lf32 X, lf32 Y, lf32 Z) : x{ X }, y{ Y }, z{ Z } {};
 		Vector3(glm::vec3 V) : x{ V.x }, y{ V.y }, z{ V.z } {};
 		//-------------------------------- OPERATORS
 		Vector3 operator+(const Vector3& VECTOR);
 		Vector3 operator-(const Vector3& VECTOR);
-		Vector3 operator*(const btf32 FLOAT);
+		Vector3 operator*(const lf32 FLOAT);
 		Vector3 operator+=(const Vector3& VECTOR);
 		Vector3 operator-=(const Vector3& VECTOR);
 		Vector3 operator=(const glm::vec3& VECTOR); // GLM to Me
@@ -145,8 +145,8 @@ namespace m
 	Vector3 operator-(const Vector3& VECTOR_A, const Vector3& VECTOR_B);
 	Vector3 operator*(const Vector3& VECTOR_A, const Vector3& VECTOR_B);
 	Vector3 operator/(const Vector3& VECTOR_A, const Vector3& VECTOR_B);
-	Vector3 operator*(const btf32 FLOAT, const Vector3& VECTOR);
-	Vector3 operator/(const btf32 FLOAT, const Vector3& VECTOR);
+	Vector3 operator*(const lf32 FLOAT, const Vector3& VECTOR);
+	Vector3 operator/(const lf32 FLOAT, const Vector3& VECTOR);
 
 	glm::vec3 operator+(const glm::vec3& VECTOR_A, const Vector3& VECTOR_B);
 	glm::vec3 operator*(const glm::vec3& VECTOR_A, const Vector3& VECTOR_B);
@@ -157,11 +157,11 @@ namespace m
 	class Vector4 {
 	public:
 		//-------------------------------- VARIABLES
-		btf32 x, y, z, w;
+		lf32 x, y, z, w;
 		//-------------------------------- CONSTRUCTORS
 		Vector4() : x{ 0.f }, y{ 0.f }, z{ 0.f }, w{ 0.f } {};
-		Vector4(btf32 F) : x{ F }, y{ F }, z{ F }, w{ F } {};
-		Vector4(btf32 X, btf32 Y, btf32 Z, btf32 W) : x{ X }, y{ Y }, z{ Z }, w{ W } {};
+		Vector4(lf32 F) : x{ F }, y{ F }, z{ F }, w{ F } {};
+		Vector4(lf32 X, lf32 Y, lf32 Z, lf32 W) : x{ X }, y{ Y }, z{ Z }, w{ W } {};
 		Vector4(glm::vec4 V) : x{ V.x }, y{ V.y }, z{ V.z }, w{ V.w } {};
 	};
 
@@ -171,9 +171,9 @@ namespace m
 	class Quaternion {
 	public:
 		//-------------------------------- VARIABLES
-		btf32 x, y, z, w;
+		lf32 x, y, z, w;
 		//-------------------------------- CONSTRUCTORS
-		Quaternion(btf32 X = 0.f, btf32 Y = 0.f, btf32 Z = 0.f, btf32 W = 1.f) : x{ X }, y{ Y }, z{ Z }, w{ W } {};
+		Quaternion(lf32 X = 0.f, lf32 Y = 0.f, lf32 Z = 0.f, lf32 W = 1.f) : x{ X }, y{ Y }, z{ Z }, w{ W } {};
 		Quaternion(glm::quat Q) : x{ Q.x }, y{ Q.y }, z{ Q.z }, w{ Q.w } {};
 		//-------------------------------- OPERATORS
 		Quaternion operator*(const Quaternion& QUATERNION);
@@ -186,40 +186,40 @@ namespace m
 
 	char* ToString(int num, char* str, int base);
 
-	btf32 StepToward(btf32 a, btf32 b, btf32 t);
-	bti32 StepToward(bti32 a, bti32 b, bti32 t);
+	lf32 StepToward(lf32 a, lf32 b, lf32 t);
+	li32 StepToward(li32 a, li32 b, li32 t);
 
 	// The "smooth" value is between 0-1, and it represents how much of the
 	// original value remains after one second passes
 	// Smooth 0 means instant snap, 1 means never move at all
-	btf32 BlendToward(btf32 value, btf32 target, btf32 smooth, btf32 delta_time);
+	lf32 BlendToward(lf32 value, lf32 target, lf32 smooth, lf32 delta_time);
 	// The "smooth" value is between 0-1, and it represents how much of the
 	// original value remains after one second passes
 	// Smooth 0 means instant snap, 1 means never move at all
-	Vector2 BlendToward(Vector2 value, Vector2 target, btf32 smooth, btf32 delta_time);
+	Vector2 BlendToward(Vector2 value, Vector2 target, lf32 smooth, lf32 delta_time);
 	// The "smooth" value is between 0-1, and it represents how much of the
 	// original value remains after one second passes
 	// Smooth 0 means instant snap, 1 means never move at all
-	Vector3 BlendToward(Vector3 value, Vector3 target, btf32 smooth, btf32 delta_time);
+	Vector3 BlendToward(Vector3 value, Vector3 target, lf32 smooth, lf32 delta_time);
 
 	// Linear interpolate
-	btf32 Lerp(btf32 a, btf32 b, btf32 t);
+	lf32 Lerp(lf32 a, lf32 b, lf32 t);
 	// Linear interpolate Vector2
-	Vector2 Lerp(Vector2 vector_a, Vector2 vector_b, btf32 t);
+	Vector2 Lerp(Vector2 vector_a, Vector2 vector_b, lf32 t);
 	// Linear interpolate Vector3
-	Vector3 Lerp(Vector3 vector_a, Vector3 vector_b, btf32 t);
+	Vector3 Lerp(Vector3 vector_a, Vector3 vector_b, lf32 t);
 
 	// Interpolate towards a value, using a spring
-	void SpringDamper(btf32& out_value, btf32& out_velocity, btf32 target_value, btf32 mass, btf32 spring, btf32 damping);
+	void SpringDamper(lf32& out_value, lf32& out_velocity, lf32 target_value, lf32 mass, lf32 spring, lf32 damping);
 	template <class type> void SpringDamper2(type& out_value, type& out_velocity, type target_value) {
-		const btf32 mass = 1 / 3;
-		const btf32 timeStep = 0.28;
-		const btf32 k = 2;
-		const btf32 damping = 10;
+		const lf32 mass = 1 / 3;
+		const lf32 timeStep = 0.28;
+		const lf32 k = 2;
+		const lf32 damping = 10;
 
 		type springForceY = -k*(out_value - target_value);
 		type dampingForceY = damping * out_velocity;
-		//btf32 forceY = springForceY + mass - dampingForceY;
+		//lf32 forceY = springForceY + mass - dampingForceY;
 		type forceY = springForceY - dampingForceY;
 		//type accelerationY = forceY / mass;
 		type accelerationY = forceY * mass;
@@ -228,11 +228,11 @@ namespace m
 	}
 
 	// Get magnitude along a particular plane
-	btf32 Dot(const Vector2& veca, const Vector2& vecb);
+	lf32 Dot(const Vector2& veca, const Vector2& vecb);
 	// Get magnitude along a particular plane
-	btf32 Dot(const Vector3& veca, const Vector3& vecb);
+	lf32 Dot(const Vector3& veca, const Vector3& vecb);
 	// ?????????????????????????????????
-	btf32 Dot(const Quaternion& quata, const Quaternion& quatb);
+	lf32 Dot(const Quaternion& quata, const Quaternion& quatb);
 
 	// I can't remember what cross does
 	double Cross(Vector2 vector_a, Vector2 vector_b);
@@ -242,9 +242,9 @@ namespace m
 	Quaternion Cross(const Quaternion& quaternion_a, const Quaternion& quaternion_b);
 
 	// Get magnitude of a vector
-	btf32 Length(const Vector2& vector);
+	lf32 Length(const Vector2& vector);
 	// Get magnitude of a vector
-	btf32 Length(const Vector3& vector);
+	lf32 Length(const Vector3& vector);
 
 	// Convert vector to a magnitude of one
 	Vector2 Normalize(const Vector2& vector);
@@ -254,9 +254,9 @@ namespace m
 	Quaternion Normalize(const Quaternion& quaternion);
 
 	// Signed difference between two angles in degrees
-	btf32 AngDif(btf32 angle_a, btf32 angle_b);
+	lf32 AngDif(lf32 angle_a, lf32 angle_b);
 	// Absolute difference between two angles in degrees (Sometimes you only need an absolute value so use this, its quicker)
-	btf32 AngDifAbs(btf32 angle_a, btf32 angle_b);
+	lf32 AngDifAbs(lf32 angle_a, lf32 angle_b);
 	
 	// Take slope values and return an upwards-pointing normal
 	// This method of finding Y assumes the normal is a unit vector
@@ -264,32 +264,32 @@ namespace m
 	Vector3 NormalFromSlope(const Vector2& slope);
 
 	// Convert radians angle to Vector2
-	Vector2 AngToVec2(btf32 angle);
+	Vector2 AngToVec2(lf32 angle);
 	// Convert radians angle to Vector2 using right-handed rule
-	Vector2 AngToVec2RH(btf32 angle);
+	Vector2 AngToVec2RH(lf32 angle);
 	// Convert Vector2 to radians angle
-	btf32 Vec2ToAng(Vector2 vector);
+	lf32 Vec2ToAng(Vector2 vector);
 	// Convert Vector2 to radians angle using right-handed rule
-	btf32 Vec2ToAngRH(Vector2 vector);
+	lf32 Vec2ToAngRH(Vector2 vector);
 
 	// Get value for drawing blend mesh from A to B
-	btf32 BlendValueFromDistance(const Vector3& vector_src, const Vector3& vector_dst, btf32 min_length, btf32 max_length);
+	lf32 BlendValueFromDistance(const Vector3& vector_src, const Vector3& vector_dst, lf32 min_length, lf32 max_length);
 
 	// Create quaternion from axis and angle (does not work)
-	Quaternion QuatFromAxisAngle(Vector3& axis, btf32 angle);
+	Quaternion QuatFromAxisAngle(Vector3& axis, lf32 angle);
 
-	// Random btf32 between min and max
-	btf32 Random(btf32 min, btf32 max);
+	// Random lf32 between min and max
+	lf32 Random(lf32 min, lf32 max);
 	//
-	btf32 Clamp(btf32 val, btf32 min, btf32 max);
+	lf32 Clamp(lf32 val, lf32 min, lf32 max);
 	//
-	//btf32 MaxF(btui32 num, ...);
-	template <typename T> T Max(btui32 num, ...) {
+	//lf32 MaxF(lui32 num, ...);
+	template <typename T> T Max(lui32 num, ...) {
 		va_list args;
 		va_start(args, num);
 		T max, get;
 		max = va_arg(args, T);
-		for (btui32 x = 1; x < num; x++) {
+		for (lui32 x = 1; x < num; x++) {
 			get = va_arg(args, T);
 			if (get > max) max = get;
 		}
@@ -297,39 +297,39 @@ namespace m
 		return max;
 	}
 	//
-	template <typename T> T Min(btui32 num, ...) {
+	template <typename T> T Min(lui32 num, ...) {
 		va_list args;
 		va_start(args, num);
 		T min, get;
 		min = va_arg(args, T);
-		for (btui32 x = 1; x < num; x++) {
+		for (lui32 x = 1; x < num; x++) {
 			get = va_arg(args, T);
 			if (get < min) min = get;
 		}
 		va_end(args);
 		return min;
 	}
-	btf32 Min2(btf32 a, btf32 b);
-	btf32 Max2(btf32 a, btf32 b);
-	btf32 Min3(btf32 a, btf32 b, btf32 c);
-	btf32 Max3(btf32 a, btf32 b, btf32 c);
-	btui32 MinIndex(btui32 size, btf32* array);
-	btui32 MaxIndex(btui32 size, btf32* array);
+	lf32 Min2(lf32 a, lf32 b);
+	lf32 Max2(lf32 a, lf32 b);
+	lf32 Min3(lf32 a, lf32 b, lf32 c);
+	lf32 Max3(lf32 a, lf32 b, lf32 c);
+	lui32 MinIndex(lui32 size, lf32* array);
+	lui32 MaxIndex(lui32 size, lf32* array);
 
 	// Quadratic function -- Makes a parabola
-	btf32 Quadratic(const btf32 a, const btf32 b, const btf32 c, const btf32 x);
+	lf32 Quadratic(const lf32 a, const lf32 b, const lf32 c, const lf32 x);
 	// Quadratic function optimized for handling character footsteps
-	btf32 QuadraticFootstep(const btf32 step_height, const btf32 x);
+	lf32 QuadraticFootstep(const lf32 step_height, const lf32 x);
 
 	// Get angle between two vector2s
-	btf32 Vec2Angle(const Vector2& veca, const Vector2& vecb);
+	lf32 Vec2Angle(const Vector2& veca, const Vector2& vecb);
 	// Rotate a 2D vector by angle
-	Vector2 Rotate(Vector2& vector, btf32 angle);
+	Vector2 Rotate(Vector2& vector, lf32 angle);
 
 	// Rotate a vector by a quaternion
 	Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion);
 	// Rotate a quaternion around an axis by so many degrees
-	Quaternion Rotate(const Quaternion& quaternion, const btf32& angle, const Vector3& axis);
+	Quaternion Rotate(const Quaternion& quaternion, const lf32& angle, const Vector3& axis);
 }
 
 #endif // !MATHS_H

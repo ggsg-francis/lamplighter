@@ -5,11 +5,11 @@
 #include "core.h"
 #include "index.h"
 
-bool HeldConUse(btID id, ECActor* owner);
+bool HeldConUse(lid id, ECActor* owner);
 
 //-------------------------------- HELD ITEM MISC
 
-void HeldItemTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
+void HeldItemTick(lid id, lf32 dt, lid owner_id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 	self->t_item.SetPosition(m::Vector3(owner->t.position.x, owner->t.altitude, owner->t.position.y));
@@ -17,37 +17,37 @@ void HeldItemTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 	self->t_item.Rotate(owner->viewYaw.Rad(), m::Vector3(0, 1, 0));
 	self->t_item.TranslateLocal(m::Vector3(0.f, 0.f, 0.1f + acv::items[self->id_item_template]->f_radius)); // set pose
 }
-void HeldItemDraw(btID id, btID itemid)
+void HeldItemDraw(lid id, lid itemid)
 {
 	HeldItem* self = GETITEMINST(id);
 	DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldItemOnEquip(btID id, ECActor* owner)
+void HeldItemOnEquip(lid id, ECActor* owner)
 {
 	//
 }
-m::Vector3 HeldItemGetLHPos(btID id)
+m::Vector3 HeldItemGetLHPos(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	return self->t_item.GetPosition() + self->t_item.GetRight() * -((acv::ItemRecord*)acv::items[self->id_item_template])->f_radius;
 }
-m::Vector3 HeldItemGetRHPos(btID id)
+m::Vector3 HeldItemGetRHPos(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	return self->t_item.GetPosition() + self->t_item.GetRight() * ((acv::ItemRecord*)acv::items[self->id_item_template])->f_radius;
 }
-bool HeldItemBlockTurn(btID id)
+bool HeldItemBlockTurn(lid id)
 {
 	return false;
 }
-bool HeldItemBlockMove(btID id)
+bool HeldItemBlockMove(lid id)
 {
 	return false;
 }
 
 //-------------------------------- HELD ITEM MELEE
 
-void HeldMelTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
+void HeldMelTick(lid id, lf32 dt, lid owner_id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 
@@ -129,15 +129,15 @@ void HeldMelTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 	self->t_item.Rotate(glm::radians(self->yaw), m::Vector3(0.f, 1.f, 0.f));
 	self->t_item.Rotate(glm::radians(self->pitch), m::Vector3(1.f, 0.f, 0.f));
 }
-void HeldMelDraw(btID id, btID itemid)
+void HeldMelDraw(lid id, lid itemid)
 {
 	HeldItem* self = GETITEMINST(id);
 	DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldMelOnEquip(btID id, ECActor* owner)
+void HeldMelOnEquip(lid id, ECActor* owner)
 {
 }
-m::Vector3 HeldMelGetLHPos(btID id)
+m::Vector3 HeldMelGetLHPos(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	switch ((self->ePose))
@@ -151,7 +151,7 @@ m::Vector3 HeldMelGetLHPos(btID id)
 	}
 	return m::Vector3(0.f, 0.f, 0.f);
 }
-m::Vector3 HeldMelGetRHPos(btID id)
+m::Vector3 HeldMelGetRHPos(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	switch ((self->ePose))
@@ -165,22 +165,22 @@ m::Vector3 HeldMelGetRHPos(btID id)
 	}
 	return m::Vector3(0.f, 0.f, 0.f);
 }
-bool HeldMelBlockTurn(btID id)
+bool HeldMelBlockTurn(lid id)
 {
 	return false;
 }
-bool HeldMelBlockMove(btID id)
+bool HeldMelBlockMove(lid id)
 {
 	return false;
 }
 
 //-------------------------------- HELD ITEM GUN
 
-void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
+void HeldGunTick(lid id, lf32 dt, lid owner_id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 
-	bool bauto = (bool)((acv::ItemRecordGun*)acv::items[self->id_item_template])->b_automatic;
+	bool bauto = ((acv::ItemRecordGun*)acv::items[self->id_item_template])->b_automatic == 1u;
 	bool bgetfire;
 	if (bauto) bgetfire = owner->input.bits.get(IN_USE);
 	else bgetfire = owner->input.bits.get(IN_USE_HIT);
@@ -212,8 +212,8 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 				//index::SpawnProjectile(owner->faction, owner->t.position + (m::AngToVec2(owner->yaw.Rad()) * 0.55f), owner->t.height, owner->viewYaw.Rad(), owner->viewPitch.Rad(), 1.f);
 				m::Vector2 targetoffset = m::Normalize(target->t.position - (owner->t.position + (m::AngToVec2(owner->t.yaw.Rad()) * 0.55f)));
 				m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.altitude + target->height * 0.5f) - self->t_item.GetPosition().y);
-				btf32 angle_yaw = m::Vec2ToAng(targetoffset);
-				btf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
+				lf32 angle_yaw = m::Vec2ToAng(targetoffset);
+				lf32 angle_pit = glm::radians(-90.f) + m::Vec2ToAng(m::Normalize(targetoffsetVertical));
 				m::Vector3 spawnpos = self->t_item.GetPosition() + self->t_item.GetForward();
 
 				if (GetItemInstanceType(self->id_ammoInstance) == ITEM_TYPE_CONS)
@@ -260,7 +260,7 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 	{
 		ECCommon* target = (ECCommon*)GetEntityPtr(owner->atk_target);
 		m::Vector2 targetoffset = m::Normalize(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z));
-		btf32 angle_yaw = m::Vec2ToAng(targetoffset);
+		lf32 angle_yaw = m::Vec2ToAng(targetoffset);
 		self->ang_aim_offset_temp = -m::AngDif(owner->viewYaw.Deg(), glm::degrees(angle_yaw));
 
 		m::Vector2 targetoffsetVertical = m::Vector2(m::Length(target->t.position - m::Vector2(self->t_item.GetPosition().x, self->t_item.GetPosition().z)), (target->t.altitude + target->height * 0.5f) - self->t_item.GetPosition().y);
@@ -275,10 +275,10 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 		if (owner->aniRun) self->ang_aim_pitch += 15.f;
 	}
 
-	const btf32 mass = 4.f;
-	const btf32 spring_rot = 2.6f * 4.f;
-	const btf32 spring_mov = 1.8f * 4.f;
-	const btf32 damping = 7.f;
+	const lf32 mass = 4.f;
+	const lf32 spring_rot = 2.6f * 4.f;
+	const lf32 spring_mov = 1.8f * 4.f;
+	const lf32 damping = 7.f;
 
 	switch ((self->ePose))
 	{
@@ -340,7 +340,7 @@ void HeldGunTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 	self->t_item.Rotate(glm::radians(self->yaw), m::Vector3(0.f, 1.f, 0.f));
 	self->t_item.Rotate(glm::radians(self->pitch), m::Vector3(1.f, 0.f, 0.f));
 }
-void HeldGunDraw(btID id, btID itemid)
+void HeldGunDraw(lid id, lid itemid)
 {
 	HeldItem* self = GETITEMINST(id);
 
@@ -350,18 +350,18 @@ void HeldGunDraw(btID id, btID itemid)
 		DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
 
-void HeldGunOnEquip(btID id, ECActor* owner)
+void HeldGunOnEquip(lid id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 	self->loc = m::Vector3(0.3f, 1.1f, 0.f);
 	self->pitch = 90.f;
 	self->yaw = 0.f;
 	self->ePose = HeldItem::HOLDSTATE_AIM;
-	self->fire_time = 0.f;
+	self->fire_time = 0;
 	self->id_ammoInstance = owner->inventory.GetItemOfAmmunitionType(
 		((acv::ItemRecordGun*)acv::items[self->id_item_template])->ammunition_type);
 }
-m::Vector3 HeldGunGetLHPos(btID id)
+m::Vector3 HeldGunGetLHPos(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	if (self->ePose != HeldItem::HOLDSTATE_BARREL) // If holding normally
@@ -370,7 +370,7 @@ m::Vector3 HeldGunGetLHPos(btID id)
 	else
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 1.f;
 }
-m::Vector3 HeldGunGetRHPos(btID id)
+m::Vector3 HeldGunGetRHPos(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	if (self->ePose != HeldItem::HOLDSTATE_BARREL) // If holding normally
@@ -378,14 +378,14 @@ m::Vector3 HeldGunGetRHPos(btID id)
 	else
 		return self->t_item.GetPosition() + self->t_item.GetForward() * 0.75f;
 }
-bool HeldGunBlockTurn(btID id)
+bool HeldGunBlockTurn(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	if (self->ePose == HeldItem::HOLDSTATE_BARREL) // If holding barrel
 		return true;
 	else return false;
 }
-bool HeldGunBlockMove(btID id)
+bool HeldGunBlockMove(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	if (self->ePose == HeldItem::HOLDSTATE_BARREL) // If holding barrel
@@ -395,7 +395,7 @@ bool HeldGunBlockMove(btID id)
 
 //-------------------------------- HELD ITEM MAGIC
 
-void HeldMgcTick(btID id, btf32 dt, btID owner_id, ECActor * owner)
+void HeldMgcTick(lid id, lf32 dt, lid owner_id, ECActor * owner)
 {
 	HeldItem* self = GETITEMINST(id);
 	self->t_item.SetPosition(m::Vector3(owner->t.position.x, owner->t.altitude, owner->t.position.y));
@@ -404,7 +404,7 @@ void HeldMgcTick(btID id, btf32 dt, btID owner_id, ECActor * owner)
 	self->t_item.TranslateLocal(m::Vector3(0.f, 1.f, 0.25f + acv::items[self->id_item_template]->f_radius)); // set pose
 	self->t_item.Rotate(glm::radians(-35.f), m::Vector3(1, 0, 0));
 }
-void HeldMgcDraw(btID id, btID itemid)
+void HeldMgcDraw(lid id, lid itemid)
 {
 	HeldItem* self = GETITEMINST(id);
 	//self->t_item.SetPosition(m::Vector3(pos.x, height, pos.y));
@@ -414,34 +414,34 @@ void HeldMgcDraw(btID id, btID itemid)
 	//self->t_item.Rotate(glm::radians(-35.f), m::Vector3(1, 0, 0));
 	DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldMgcOnEquip(btID id, ECActor* owner)
+void HeldMgcOnEquip(lid id, ECActor* owner)
 {
 	//
 }
-m::Vector3 HeldMgcGetLHPos(btID id)
+m::Vector3 HeldMgcGetLHPos(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * -0.2f;
 	return self->t_item.GetPosition() + m::RotateVector(m::Vector3(-0.25f, 0.f, -0.25f), self->t_item.rot_glm);
 }
-m::Vector3 HeldMgcGetRHPos(btID id)
+m::Vector3 HeldMgcGetRHPos(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	//return self->t_item.GetPosition() + self->t_item.GetRight() * 0.2f;
 	return self->t_item.GetPosition() + m::RotateVector(m::Vector3(0.25f, 0.f, -0.25f), self->t_item.rot_glm);
 }
-bool HeldMgcBlockTurn(btID id)
+bool HeldMgcBlockTurn(lid id)
 {
 	return false;
 }
-bool HeldMgcBlockMove(btID id)
+bool HeldMgcBlockMove(lid id)
 {
 	return false;
 }
 
 //-------------------------------- HELD ITEM CONSUME
 
-bool HeldConUse(btID id, ECActor* owner)
+bool HeldConUse(lid id, ECActor* owner)
 {
 	// dont let AIs spend ammo (temp)
 	#if DEF_NPC_INFINITE_CONS
@@ -464,7 +464,7 @@ bool HeldConUse(btID id, ECActor* owner)
 	else return true;
 	#endif
 }
-void HeldConTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
+void HeldConTick(lid id, lf32 dt, lid owner_id, ECActor* owner)
 {
 	HeldItem* self = GETITEMINST(id);
 	if (owner->input.bits.get(IN_USE_HIT) && self->uses > 0u)
@@ -481,12 +481,12 @@ void HeldConTick(btID id, btf32 dt, btID owner_id, ECActor* owner)
 	self->t_item.Rotate(owner->viewYaw.Rad(), m::Vector3(0, 1, 0));
 	self->t_item.TranslateLocal(m::Vector3(0.f, 0.1f, 0.25f + acv::items[self->id_item_template]->f_radius)); // set pose
 }
-void HeldConDraw(btID id, btID itemid)
+void HeldConDraw(lid id, lid itemid)
 {
 	HeldItem* self = GETITEMINST(id);
 	DrawMesh(ID_NULL, acv::GetM(acv::items[itemid]->id_mesh), acv::GetT(acv::items[itemid]->id_tex), SS_NORMAL, self->t_item.getMatrix());
 }
-void HeldConOnEquip(btID id, ECActor* owner)
+void HeldConOnEquip(lid id, ECActor* owner)
 {
 	#if DEF_PROJECT == PROJECT_BC
 	// TODO: add real self-duping property
@@ -503,11 +503,11 @@ void HeldConOnEquip(btID id, ECActor* owner)
 
 // sort these later
 
-void HeldNothingInit(btID id)
+void HeldNothingInit(lid id)
 {
 
 }
-void HeldConInit(btID id)
+void HeldConInit(lid id)
 {
 	HeldItem* self = GETITEMINST(id);
 	self->uses = ((acv::ItemRecordCon*)acv::items[self->id_item_template])->use_count;
@@ -516,54 +516,54 @@ void HeldConInit(btID id)
 //________________________________________________________________________________________________________________________________
 // FUNCTION POINTER ARRAYS FOR REMOTE CALLING ------------------------------------------------------------------------------------
 
-void(*fpItemInit[ITEM_TYPE_COUNT])(btID) {
+void(*fpItemInit[ITEM_TYPE_COUNT])(lid) {
 	HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldNothingInit, HeldConInit
 };
-void(*fpItemTick[ITEM_TYPE_COUNT])(btID, btf32, btID, ECActor*) {
+void(*fpItemTick[ITEM_TYPE_COUNT])(lid, lf32, lid, ECActor*) {
 	HeldItemTick, HeldItemTick, HeldMelTick, HeldGunTick, HeldMgcTick, HeldConTick
 };
-void(*fpItemDraw[ITEM_TYPE_COUNT])(btID, btID) {
+void(*fpItemDraw[ITEM_TYPE_COUNT])(lid, lid) {
 	HeldItemDraw, HeldItemDraw, HeldMelDraw, HeldGunDraw, HeldMgcDraw, HeldConDraw
 };
-void(*fpItemOnEquip[ITEM_TYPE_COUNT])(btID, ECActor*) {
+void(*fpItemOnEquip[ITEM_TYPE_COUNT])(lid, ECActor*) {
 	HeldItemOnEquip, HeldItemOnEquip, HeldMelOnEquip, HeldGunOnEquip, HeldMgcOnEquip, HeldConOnEquip
 };
-m::Vector3(*fpItemGetLeftHandPos[ITEM_TYPE_COUNT])(btID) {
+m::Vector3(*fpItemGetLeftHandPos[ITEM_TYPE_COUNT])(lid) {
 	HeldItemGetLHPos, HeldItemGetLHPos, HeldMelGetLHPos, HeldGunGetLHPos, HeldMgcGetLHPos, HeldItemGetLHPos
 };
-m::Vector3(*fpItemGetRightHandPos[ITEM_TYPE_COUNT])(btID) {
+m::Vector3(*fpItemGetRightHandPos[ITEM_TYPE_COUNT])(lid) {
 	HeldItemGetRHPos, HeldItemGetRHPos, HeldMelGetRHPos, HeldGunGetRHPos, HeldMgcGetRHPos, HeldItemGetRHPos
 };
-bool(*fpItemBlockTurn[ITEM_TYPE_COUNT])(btID) {
+bool(*fpItemBlockTurn[ITEM_TYPE_COUNT])(lid) {
 	HeldItemBlockTurn, HeldItemBlockTurn, HeldItemBlockTurn, HeldItemBlockTurn, HeldItemBlockTurn, HeldItemBlockTurn
 };
-bool(*fpItemBlockMove[ITEM_TYPE_COUNT])(btID) {
+bool(*fpItemBlockMove[ITEM_TYPE_COUNT])(lid) {
 	HeldItemBlockMove, HeldItemBlockMove, HeldItemBlockMove, HeldItemBlockMove, HeldItemBlockMove, HeldItemBlockMove
 };
 
 //-------------------------------- REMOTE FUNCTIONS
 
-void ItemInit(btID item) {
+void ItemInit(lid item) {
 	fpItemInit[GetItemInstanceType(item)](item);
 }
-void ItemTick(btID item, btf32 b, btID owner_id, ECActor* c) {
+void ItemTick(lid item, lf32 b, lid owner_id, ECActor* c) {
 	fpItemTick[GetItemInstanceType(item)](item, b, owner_id, c);
 }
-void ItemDraw(btID item, btID b) {
+void ItemDraw(lid item, lid b) {
 	fpItemDraw[GetItemInstanceType(item)](item, b);
 }
-void ItemOnEquip(btID item, ECActor* b) {
+void ItemOnEquip(lid item, ECActor* b) {
 	fpItemOnEquip[GetItemInstanceType(item)](item, b);
 }
-m::Vector3 ItemLHPos(btID item) {
+m::Vector3 ItemLHPos(lid item) {
 	return fpItemGetLeftHandPos[GetItemInstanceType(item)](item);
 }
-m::Vector3 ItemRHPos(btID item) {
+m::Vector3 ItemRHPos(lid item) {
 	return fpItemGetRightHandPos[GetItemInstanceType(item)](item);
 }
-bool ItemBlockTurn(btID item) {
+bool ItemBlockTurn(lid item) {
 	return fpItemBlockTurn[GetItemInstanceType(item)](item);
 }
-bool ItemBlockMove(btID item) {
+bool ItemBlockMove(lid item) {
 	return fpItemBlockMove[GetItemInstanceType(item)](item);
 }

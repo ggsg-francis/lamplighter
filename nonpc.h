@@ -5,8 +5,8 @@
 #include "index.h"
 #include "entity.h"
 
-btf32 ai_vy_target = 0.f;
-btf32 ai_vp_target = 0.f;
+lf32 ai_vy_target = 0.f;
+lf32 ai_vp_target = 0.f;
 
 void NPCFocusEnemy(ECActor* actor)
 {
@@ -19,7 +19,7 @@ void NPCFocusEnemy(ECActor* actor)
 	actor->input.bits.set(IN_RUN);
 
 
-	btf32 attack_dist = 1.5f;
+	lf32 attack_dist = 1.5f;
 	// if its a ranged weapon, set the attack range higher
 	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN) {
 		attack_dist = 30.f;
@@ -32,10 +32,10 @@ void NPCFocusEnemy(ECActor* actor)
 		actor->input.move.x = 0.f;
 		actor->input.move.y = 0.f;
 
-		btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-		btf32 angle22 = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(TargetVectorVertical)));
+		lf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+		lf32 angle22 = -90.f + glm::degrees(m::Vec2ToAng(m::Normalize(TargetVectorVertical)));
 
-		//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
+		//lf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
 
 		//actor->viewYaw.Set(angle2);
 		//actor->viewPitch.Set(angle22);
@@ -47,7 +47,7 @@ void NPCFocusEnemy(ECActor* actor)
 		ai_vp_target = angle22;
 
 		// this method staggers their shooting
-		btf32 rand = m::Random(0.f, 100.f);
+		lf32 rand = m::Random(0.f, 100.f);
 		// spam single shot guns
 		actor->input.bits.setto(IN_USE_HIT, rand < 7.f);
 		// automatic guns
@@ -65,19 +65,19 @@ void NPCFocusEnemy(ECActor* actor)
 			float distance_to_ally = m::Length(AllyVector);
 			float offsetLR_ally = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), AllyVector);
 
-			const btf32 ally_follow_dist = 2.f;
+			const lf32 ally_follow_dist = 2.f;
 
 			// if ally is farther than enemy
 			if (distance_to_ally > distance_to_target || distance_to_ally < 4.f)
 			{
-				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+				lf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 				//actor->viewYaw.Set(angle2);
 				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
 				ai_vy_target = angle2;
 			}
 			else
 			{
-				btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(AllyVector)));
+				lf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(AllyVector)));
 
 				//actor->viewYaw.Set(angle2);
 				//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
@@ -87,8 +87,8 @@ void NPCFocusEnemy(ECActor* actor)
 		}
 		else
 		{
-			btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
-			//btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
+			lf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+			//lf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(actor->t.position - ENTITY(actor->target_ent)->t.position)));
 
 			//actor->viewYaw.Set(angle2);
 			//actor->viewYaw.RotateTowards(angle2, HEAD_TURN_SPEED);
@@ -101,7 +101,7 @@ void NPCFollowAlly(ECActor* actor)
 {
 	ECCommon* target = ENTITY(actor->ai_ally_ent);
 	m::Vector2 TargetVector = target->t.position - actor->t.position;
-	btf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
+	lf32 angle2 = glm::degrees(m::Vec2ToAng(m::Normalize(TargetVector)));
 	float distance_to_target = m::Length(TargetVector);
 
 	// crouch if targ is
@@ -174,7 +174,7 @@ void NPCIdle(ECActor* actor)
 	actor->input.bits.unset(IN_USE);
 }
 
-void NPCTick(btID id)
+void NPCTick(lid id)
 {
 	ai_vp_target = 0.f;
 	ai_vy_target = 0.f;
@@ -202,7 +202,7 @@ void NPCTick(btID id)
 			actor->atk_target = actor->ai_target_ent;
 			if (actor->ai_target_ent != BUF_NULL) // if we do find an enemy
 				aud::PlaySnd3D(aud::FILE_TAUNT, m::Vector3(actor->t_head.GetPosition()));
-			actor->ai_timer = tickCount + (btui64)m::Random(50, 250);
+			actor->ai_timer = tickCount + (lui64)m::Random(50, 250);
 		}
 		// Otherwise just set as null and we can retry later
 		else {
@@ -218,7 +218,7 @@ void NPCTick(btID id)
 		|| !ENTITY(actor->ai_ally_ent)->activeFlags.get(ECCommon::eALIVE)) {
 		if (actor->ai_timer <= tickCount) {
 			actor->ai_ally_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
-			actor->ai_timer = tickCount + (btui64)m::Random(100, 500);
+			actor->ai_timer = tickCount + (lui64)m::Random(100, 500);
 		}
 		else {
 			actor->ai_ally_ent = BUF_NULL;

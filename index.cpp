@@ -63,49 +63,49 @@ void IndexEnd()
 //-------------------------------- ENTITIES
 
 // Sizes of the various entity types
-btui32 sizes[ENTITY_TYPE_COUNT];
+lui32 sizes[ENTITY_TYPE_COUNT];
 // Return a string which will be printed to the screen when this entity is looked at
 char*(*fpName[ENTITY_TYPE_COUNT])(void*);
 // Tick this entity
-void(*fpTick[ENTITY_TYPE_COUNT])(btID, void*, btf32);
+void(*fpTick[ENTITY_TYPE_COUNT])(lid, void*, lf32);
 // Render graphics of this entity
-void(*fpDraw[ENTITY_TYPE_COUNT])(btID, void*);
+void(*fpDraw[ENTITY_TYPE_COUNT])(lid, void*);
 
-char* EntityName(btID id) {
+char* EntityName(lid id) {
 	return fpName[GetEntityType(id)](ENT_VOID(id));
 }
-void EntityTick(btID id, btf32 dt) {
+void EntityTick(lid id, lf32 dt) {
 	fpTick[GetEntityType(id)](id, ENTITY(id), dt); // Call tick on entity
 }
-void EntityDraw(btID id) {
+void EntityDraw(lid id) {
 	fpDraw[GetEntityType(id)](id, ENTITY(id)); // Call draw on entity
 }
-void IndexRegisterEntityMeta(EntityType type, btui32 size,
-	char*(*_fpName)(void*), void(*_fpTick)(btID, void*, btf32), void(*_fpDraw)(btID, void*)) {
+void IndexRegisterEntityMeta(EntityType type, lui32 size,
+	char*(*_fpName)(void*), void(*_fpTick)(lid, void*, lf32), void(*_fpDraw)(lid, void*)) {
 	sizes[type] = size;
 	fpName[type] = _fpName;
 	fpTick[type] = _fpTick;
 	fpDraw[type] = _fpDraw;
 }
-void IndexSpawnEntityFixedID(EntityType type, btID id) {
+void IndexSpawnEntityFixedID(EntityType type, lid id) {
 	eb->AddEntForceID(sizes[type], type, id);
 }
-btID IndexSpawnEntity(EntityType type) {
+lid IndexSpawnEntity(EntityType type) {
 	return eb->AddEnt(sizes[type], type);
 }
-bool GetEntityExists(btID id) {
+bool GetEntityExists(lid id) {
 	return eb->EntExists(id);
 }
-btID GetLastEntity() {
-	return eb->GetLastIndex();
+lid GetEntityArraySize() {
+	return eb->GetSize();
 }
-void* GetEntityPtr(btID id) {
+void* GetEntityPtr(lid id) {
 	return eb->GetEnt(id);
 }
-EntityType GetEntityType(btID id) {
+EntityType GetEntityType(lid id) {
 	return eb->GetType(id);
 }
-void IndexDeleteEntity(btID id) {
+void IndexDeleteEntity(lid id) {
 	eb->RmvEnt(id);
 }
 void IndexClearEntities() {
@@ -114,19 +114,19 @@ void IndexClearEntities() {
 
 //-------------------------------- ITEMS
 
-btID InitItemInstance(ItemType type) {
+lid InitItemInstance(ItemType type) {
 	return buf_iteminst->Add(type);
 }
-bool ItemInstanceExists(btID id) {
+bool ItemInstanceExists(lid id) {
 	return buf_iteminst->Used(id);
 }
-void* GetItemInstance(btID id) {
+void* GetItemInstance(lid id) {
 	return &buf_iteminst->Data(id);
 }
-ItemType GetItemInstanceType(btID id) {
+ItemType GetItemInstanceType(lid id) {
 	return buf_iteminst->Type(id);
 }
-void FreeItemInstance(btID id) {
+void FreeItemInstance(lid id) {
 	if (buf_iteminst->Used(id))
 		buf_iteminst->Remove(id);
 }
@@ -140,7 +140,7 @@ void IndexClearItemInstances() {
 PrjID MakePrjID(int i)
 {
 	PrjID h;
-	h.id = (btID)i;
+	h.id = (lid)i;
 	return h;
 }
 

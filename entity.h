@@ -7,7 +7,7 @@
 #include "ec_actor.h"
 #include "ec_misc.h"
 
-enum EntityType : btui8 {
+enum EntityType : lui8 {
 	// Types
 	ENTITY_TYPE_TAR_BUBBLE,
 	ENTITY_TYPE_RESTING_ITEM,

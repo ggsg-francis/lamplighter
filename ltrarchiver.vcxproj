@@ -36,7 +36,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DF93715E-CAAB-44EE-BF92-FA0072AF7DBE}</ProjectGuid>
-    <RootNamespace>bt_archiver</RootNamespace>
+    <RootNamespace>ltrarchiver</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -251,7 +251,6 @@
     <ClCompile Include="archiver_main.cpp" />
     <ClCompile Include="archiver_graphics_convert.cpp" />
     <ClCompile Include="archive_read_write.cpp" />
-    <ClCompile Include="cfg.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="maths.cpp" />
@@ -259,8 +258,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="archive.hpp" />
-    <ClInclude Include="archiver_loop.h" />
-    <ClInclude Include="cfg.h" />
     <ClInclude Include="global-archiver.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="archiver_graphics_convert.h" />

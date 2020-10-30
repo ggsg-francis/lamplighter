@@ -27,7 +27,7 @@
 #define DEFAULT_MESHBLEND 2u
 #define DEFAULT_MESHDEFORM 3u
 
-typedef btui16 assetID;
+typedef lui16 assetID;
 
 namespace acv
 {
@@ -90,32 +90,32 @@ namespace acv
 	// art assets archive
 	struct Resource {
 		char handle[8];
-		btui64 file_pos = 0u;
-		btui64 file_size = 0u;
+		lui64 file_pos = 0u;
+		lui64 file_size = 0u;
 		AssetType type = ASSET_NONE;
 		bool loaded = false;
-		btui64 tickLastAccessed = 0u;
-		btui32 asset = ID_NULL;
+		lui64 tickLastAccessed = 0u;
+		lui32 asset = ID_NULL;
 	};
 
-	graphics::Texture& GetT(btui32 index);
-	graphics::Mesh& GetM(btui32 index);
-	graphics::MeshBlend& GetMB(btui32 index);
-	graphics::MeshDeform& GetMD(btui32 index);
+	graphics::Texture& GetT(lui32 index);
+	graphics::Mesh& GetM(lui32 index);
+	graphics::MeshBlend& GetMB(lui32 index);
+	graphics::MeshDeform& GetMD(lui32 index);
 
-	bool IsTexture(btui32 index);
-	bool IsMesh(btui32 index);
-	bool IsMeshBlend(btui32 index);
+	bool IsTexture(lui32 index);
+	bool IsMesh(lui32 index);
+	bool IsMeshBlend(lui32 index);
 
 	void Init();
 	void End();
 
 	#ifndef DEF_ARCHIVER
 
-	void LoadAsset(btui32 INDEX);
-	void UnloadAsset(btui32 INDEX);
-	bool IsLoaded(btui32 INDEX);
-	btui32 AssetCount();
+	void LoadAsset(lui32 INDEX);
+	void UnloadAsset(lui32 INDEX);
+	bool IsLoaded(lui32 INDEX);
+	lui32 AssetCount();
 
 	#endif // DEF_ARCHIVER
 
@@ -124,7 +124,7 @@ namespace acv
 	//#endif
 
 	struct PropRecord {
-		enum EnvPropFloorMat : btui8 {
+		enum EnvPropFloorMat : lui8 {
 			FLOOR_STANDARD,
 			FLOOR_WATER,
 			FLOOR_TAR,
@@ -134,7 +134,7 @@ namespace acv
 			FLOOR_ACID,
 		};
 		// well.... maybe this should be directly in the tiles
-		enum EnvPropPhysShape : btui8 {
+		enum EnvPropPhysShape : lui8 {
 			eSHAPE_NONE, // No shape, just floor
 			eSHAPE_BOX, // full square impassable tile
 			eSHAPE_DIAG_NE, // Diagonal face
@@ -147,7 +147,7 @@ namespace acv
 			eSHAPE_QUARTER_CIRCLE_SE, // Quarter-circle with 1 radius
 			eSHAPE_QUARTER_CIRCLE_SW, // Quarter-circle with 1 radius
 		};
-		enum EnvPropFlags : btui8 {
+		enum EnvPropFlags : lui8 {
 			eBLOCK_LIGHT_SKY = 0b00000001,
 			eNONE1 = 0b00000010,
 			eNONE2 = 0b00000100,
@@ -157,49 +157,49 @@ namespace acv
 			eNONE6 = 0b01000000,
 			eNONE7 = 0b10000000,
 		};
-		btID idMesh = ID_NULL;
-		btID idTxtr = ID_NULL;
+		lid idMesh = ID_NULL;
+		lid idTxtr = ID_NULL;
 		EnvPropFloorMat floorType;
 		EnvPropPhysShape physShape;
-		//mem::bv<btui8, EnvPropFlags> flags;
+		//mem::bv<lui8, EnvPropFlags> flags;
 		EnvPropFlags flags;
-		btui8 placeholder;
+		lui8 placeholder;
 	};
 
-	enum SpellCastType : btui8 {
+	enum SpellCastType : lui8 {
 		ON_CASTER,
 		ON_TARGET,
 		ON_CASTER_AND_TARGET,
 	};
 	typedef struct SpellRecord {
 		char handle[8];
-		bti8 name[32];
+		li8 name[32];
 		SpellCastType cast_type = ON_TARGET;
-		btui8 filler;
-		btui16 target_effect_type;
-		btf32 target_effect_duration;
-		btui32 target_effect_magnitude;
-		btID icon;
-		btui16 filler2;
+		lui8 filler;
+		lui16 target_effect_type;
+		lf32 target_effect_duration;
+		lui32 target_effect_magnitude;
+		lid icon;
+		lui16 filler2;
 	} Spell;
 
 	typedef struct ProjectileRecord {
 		char handle[8];
-		btui32 damage;
+		lui32 damage;
 		bool saveOnHit;
-		btui8 ammunition_type;
-		btID mesh;
-		btID texture;
+		lui8 ammunition_type;
+		lid mesh;
+		lid texture;
 	} ProjectileTemplate;
 
 	#define ENTITY_MAX_LIMB_NUM 4
 	typedef struct ActorRecord {
 		char handle[8];
-		btID m_head, m_body, m_arm, m_leg;
-		btID t_head, t_body, t_arm, t_leg;
-		btf32 jpos_arm_fw, jpos_arm_rt, jpos_arm_up, leng_arm;
-		btf32 jpos_leg_fw, jpos_leg_rt, jpos_leg_up, leng_leg;
-		btf32 leng_body;
+		lid m_head, m_body, m_arm, m_leg;
+		lid t_head, t_body, t_arm, t_leg;
+		lf32 jpos_arm_fw, jpos_arm_rt, jpos_arm_up, leng_arm;
+		lf32 jpos_leg_fw, jpos_leg_rt, jpos_leg_up, leng_leg;
+		lf32 leng_body;
 	} ActorRecord;
 
 	struct ItemRecord {
@@ -210,63 +210,63 @@ namespace acv
 			eUNUSED3 = 1u << 3u,
 		};
 		char handle[8];
-		bti8 name[64];
-		btID id_icon = 0u;
-		btui16 bv_base = 0u;
-		btf32 f_weight = 0.f;
-		btui32 f_value_base = 0u;
-		btf32 f_radius = 0.f;
-		btf32 f_model_height = 0.f;
-		btID id_mesh = 0u;
-		btID id_mesh_lod = 0u;
-		btID id_tex = 0u;
-		bti16 FILLER2 = 0u;
+		li8 name[64];
+		lid id_icon = 0u;
+		lui16 bv_base = 0u;
+		lf32 f_weight = 0.f;
+		lui32 f_value_base = 0u;
+		lf32 f_radius = 0.f;
+		lf32 f_model_height = 0.f;
+		lid id_mesh = 0u;
+		lid id_mesh_lod = 0u;
+		lid id_tex = 0u;
+		li16 FILLER2 = 0u;
 	};
 	struct ItemRecordEqp : public ItemRecord {
-		btID id_mesh_head; btID id_texture_head;
-		btID id_mesh_arms; btID id_texture_arms;
-		btID id_mesh_legs; btID id_texture_legs;
+		lid id_mesh_head; lid id_texture_head;
+		lid id_mesh_arms; lid id_texture_arms;
+		lid id_mesh_legs; lid id_texture_legs;
 		float block_pierce; float block_slice; float block_slam;
 	};
 	struct ItemRecordMel : public ItemRecord {
 		float f_dam_pierce; float f_dam_slash; float f_dam_slam;
 	};
 	struct ItemRecordGun : public ItemRecord {
-		btui8 b_automatic;
-		btui8 ammunition_type;
+		lui8 b_automatic;
+		lui8 ammunition_type;
 	};
 	struct ItemRecordMgc : public ItemRecord {
 		float f_temp;
 	};
 	struct ItemRecordCon : public ItemRecord {
-		btui32 use_count;
-		btID id_effect;
-		btID id_projectile;
+		lui32 use_count;
+		lid id_effect;
+		lid id_projectile;
 	};
 
 	struct ActivatorRecord {
-		btui32 type;
+		lui32 type;
 	};
 
 	//items (also make inaccessable)
 	extern ItemRecord* items[ITEM_RECORD_COUNT];
 	extern ItemType item_types[ITEM_RECORD_COUNT];
-	extern btui32 item_index; // number of items, I think
+	extern lui32 item_index; // number of items, I think
 
 	extern PropRecord props[PROP_RECORD_COUNT];
-	extern btui32 prop_index;
+	extern lui32 prop_index;
 
 	extern SpellRecord spells[SPELL_RECORD_COUNT];
-	extern btui32 spell_index;
+	extern lui32 spell_index;
 
 	extern ProjectileRecord projectiles[PROJECTILE_RECORD_COUNT];
-	extern btui32 projectiles_index;
+	extern lui32 projectiles_index;
 
 	extern ActorRecord actor_templates[ACTOR_RECORD_COUNT];
-	extern btui32 actor_template_index;
+	extern lui32 actor_template_index;
 
 	extern ActivatorRecord activators[ACTIVATOR_RECORD_COUNT];
-	extern btui32 activator_index;
+	extern lui32 activator_index;
 }
 
 #endif

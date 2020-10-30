@@ -57,7 +57,7 @@ namespace aud
 	cs_play_sound_def_t def_shot;
 	cs_playing_sound_t* sound_shot;
 
-	btf32 mstrVol = 0.5f;
+	lf32 mstrVol = 0.5f;
 
 	void Init(void* handle)
 	{
@@ -85,7 +85,7 @@ namespace aud
 		}
 	}
 
-	void Update(btf64 dt)
+	void Update(lf64 dt)
 	{
 		#if DEF_PROJECT == PROJECT_BC
 		if (config.b3PP != tpptemp) {
@@ -116,7 +116,7 @@ namespace aud
 		}
 	}
 
-	void PlaySnd(AudioFile file, btf32 volume)
+	void PlaySnd(AudioFile file, lf32 volume)
 	{
 		// play the sound		
 		sound[file] = cs_play_sound(ctx, def[file]);
@@ -131,24 +131,24 @@ namespace aud
 		#ifdef DEF_NMP
 		// TODO: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
-		btf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[network::nid])->t.position);
+		lf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[network::nid])->t.position);
 		// get closest distance (temp until using panning)
 		// stop this function if the distance is too large
 		if (distance > 15.f) return;
 		// calculate volume from distance
-		btf32 vol = (15.f - distance) / 15.f;
+		lf32 vol = (15.f - distance) / 15.f;
 		#else
 		// TODO: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
-		btf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[0])->t.position);
-		btf32 distance_1 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[1])->t.position);
+		lf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[0])->t.position);
+		lf32 distance_1 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[1])->t.position);
 		// get closest distance (temp until using panning)
-		btf32 distance = distance_1;
+		lf32 distance = distance_1;
 		if (distance_0 <= distance_1) { distance = distance_0; }
 		// stop this function if the distance is too large
 		if (distance > 15.f) return;
 		// calculate volume from distance
-		btf32 vol = (15.f - distance) / 15.f;
+		lf32 vol = (15.f - distance) / 15.f;
 		#endif // DEF_NMP
 		// play the sound		
 		sound[file] = cs_play_sound(ctx, def[file]);
@@ -191,9 +191,9 @@ namespace aud
 	ma_device device;
 
 	bool sound_playing[FILE_COUNT];
-	btf32 sound_volume[FILE_COUNT];
+	lf32 sound_volume[FILE_COUNT];
 
-	btf32 mstrVol = 0.5f;
+	lf32 mstrVol = 0.5f;
 
 	//ma_event g_stopEvent; /* <-- Signaled by the audio thread, waited on by the main thread. */
 
@@ -202,8 +202,8 @@ namespace aud
 	// The way mixing works is that we just read into a temporary buffer, then take the contents of that buffer and mix it with the
 	// contents of the output buffer by simply adding the samples together. You could also clip the samples to -1..+1, but I'm not
 	// doing that in this example.
-	ma_uint32 MixS16(ma_decoder* pDecoder, bti16* pOutputS16, ma_uint32 frameCount, btf32 volume) {
-		bti16 temp[4096];
+	ma_uint32 MixS16(ma_decoder* pDecoder, li16* pOutputS16, ma_uint32 frameCount, lf32 volume) {
+		li16 temp[4096];
 		ma_uint32 tempCapInFrames = ma_countof(temp) / CHANNEL_COUNT;
 		ma_uint32 totalFramesRead = 0;
 
@@ -223,15 +223,15 @@ namespace aud
 
 			/* Mix the frames together. */
 			for (iSample = 0; iSample < framesReadThisIteration * CHANNEL_COUNT; ++iSample) {
-				bti64 output = pOutputS16[totalFramesRead * CHANNEL_COUNT + iSample] + temp[iSample];
+				li64 output = pOutputS16[totalFramesRead * CHANNEL_COUNT + iSample] + temp[iSample];
 				// vol test
-				output = (bti64)((btf32)output * volume);
+				output = (li64)((lf32)output * volume);
 				// Clamp to 16 bit int range
-				if (output > (bti64)((bti16)0b0111111111111111))
-					output = (bti64)((bti16)0b0111111111111111);
-				if (output < (bti64)((bti16)0b1000000000000000))
-					output = (bti64)((bti16)0b1000000000000000);
-				pOutputS16[totalFramesRead * CHANNEL_COUNT + iSample] = (bti16)output;
+				if (output > (li64)((li16)0b0111111111111111))
+					output = (li64)((li16)0b0111111111111111);
+				if (output < (li64)((li16)0b1000000000000000))
+					output = (li64)((li16)0b1000000000000000);
+				pOutputS16[totalFramesRead * CHANNEL_COUNT + iSample] = (li16)output;
 			}
 
 			totalFramesRead += framesReadThisIteration;
@@ -249,7 +249,7 @@ namespace aud
 		// In playback mode copy data to pOutput. In capture mode read data from pInput. In full-duplex mode, both
 		// pOutput and pInput will be valid and you can move data from pInput into pOutput. Never process more than
 		// frameCount frames.
-		bti16* pOutputS16 = (bti16*)pOutput;
+		li16* pOutputS16 = (li16*)pOutput;
 		//MA_ASSERT(pDevice->playback.format == SAMPLE_FORMAT);   // <-- Important for this example.
 		for (int iDecoder = 0; iDecoder < FILE_COUNT; ++iDecoder) {
 			if (!sound_playing[iDecoder]) continue;
@@ -305,7 +305,7 @@ namespace aud
 		}
 	}
 
-	void Update(btf64 dt)
+	void Update(lf64 dt)
 	{
 		// Do something here. Probably your program's main loop.
 		if (config.b3PP) {
@@ -322,7 +322,7 @@ namespace aud
 		}
 	}
 
-	void PlaySnd(AudioFile file, btf32 volume)
+	void PlaySnd(AudioFile file, lf32 volume)
 	{
 		// reset file to beginning
 		ma_decoder_seek_to_pcm_frame(&decoders[file], 0);
@@ -335,24 +335,24 @@ namespace aud
 		#ifdef DEF_NMP
 		// TODO: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
-		btf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[network::nid])->t.position);
+		lf32 distance = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[network::nid])->t.position);
 		// get closest distance (temp until using panning)
 		// stop this function if the distance is too large
 		if (distance > 15.f) return;
 		// calculate volume from distance
-		btf32 vol = (15.f - distance) / 15.f;
+		lf32 vol = (15.f - distance) / 15.f;
 		#else
 		// TODO: caluclate panning based on proximity to L and R player
 		// calculate the distance between this sound and each listener (just one atm)
-		btf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[0])->t.position);
-		btf32 distance_1 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[1])->t.position);
+		lf32 distance_0 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[0])->t.position);
+		lf32 distance_1 = m::Length(m::Vector2(src.x, src.z) - ENTITY(core::players[1])->t.position);
 		// get closest distance (temp until using panning)
-		btf32 distance = distance_1;
+		lf32 distance = distance_1;
 		if (distance_0 <= distance_1) { distance = distance_0; }
 		// stop this function if the distance is too large
 		if (distance > 15.f) return;
 		// calculate volume from distance
-		btf32 vol = (15.f - distance) / 15.f;
+		lf32 vol = (15.f - distance) / 15.f;
 		#endif // DEF_NMP
 		// play the sound	
 		ma_decoder_seek_to_pcm_frame(&decoders[file], 0);

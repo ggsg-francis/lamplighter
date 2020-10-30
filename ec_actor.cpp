@@ -170,13 +170,13 @@ void ActorOnHitGround(ECActor* chr)
 	else if (chr->foot_state == ECActor::eR_DOWN) chr->foot_state = ECActor::eL_DOWN;
 }
 
-void ActorTryHoldHand(btID id_self, btID id)
+void ActorTryHoldHand(lid id_self, lid id)
 {
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
 	ECActor* actr = (ECActor*)GetEntityPtr(id);
 
-	btui32 id1 = self->inventory.GetFirstEmptySpace();
-	btui32 id2 = actr->inventory.GetFirstEmptySpace();
+	lui32 id1 = self->inventory.GetFirstEmptySpace();
+	lui32 id2 = actr->inventory.GetFirstEmptySpace();
 	if (id1 != ID_NULL && id2 != ID_NULL) {
 		self->inv_active_slot = id1;
 		actr->inv_active_slot = id2;
@@ -191,12 +191,12 @@ void ActorTryHoldHand(btID id_self, btID id)
 	}
 }
 
-void ActorTakeItem(btID id_self, btID id)
+void ActorTakeItem(lid id_self, lid id)
 {
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
 	ECSingleItem* item = (ECSingleItem*)GetEntityPtr(id);
 	HeldItem* item_held = GETITEMINST(item->item_instance);
-	btui32 slot_added = self->inventory.TransferItemRecv(item->item_instance);
+	lui32 slot_added = self->inventory.TransferItemRecv(item->item_instance);
 	core::DestroyEntity(id);
 	if (slot_added == self->inv_active_slot)
 		ItemOnEquip(self->inventory.items[self->inv_active_slot], self);
@@ -214,13 +214,13 @@ void ActorTakeItem(btID id_self, btID id)
 	}
 }
 
-void ActorDropItem(btID id_self, btID slot)
+void ActorDropItem(lid id_self, lid slot)
 {
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
 	if (slot < self->inventory.items.Size() && self->inventory.items.Used(slot))
 	{
 		m::Vector2 throwDir = m::AngToVec2(self->viewYaw.Rad());
-		btID item_entity = core::SpawnEntityItem(self->inventory.items[slot],
+		lid item_entity = core::SpawnEntityItem(self->inventory.items[slot],
 			self->t.position + (throwDir * (self->radius + acv::items[((HeldItem*)GetItemInstance(self->inventory.items[slot]))->id_item_template]->f_radius)),
 			self->t.altitude, self->viewYaw.Deg());
 		ENTITY(item_entity)->velocity = throwDir * 0.05f + self->velocity;
@@ -229,10 +229,10 @@ void ActorDropItem(btID id_self, btID slot)
 	}
 }
 
-void ActorDropAllItems(btID id_self)
+void ActorDropAllItems(lid id_self)
 {
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
-	for (btui32 slot = 0u; slot < INV_SIZE; ++slot)
+	for (lui32 slot = 0u; slot < INV_SIZE; ++slot)
 	{
 		if (slot < self->inventory.items.Size() && self->inventory.items.Used(slot))
 		{
@@ -247,7 +247,7 @@ void ActorDropAllItems(btID id_self)
 	}
 }
 
-void ActorSetEquipSlot(btID id_self, btui32 index)
+void ActorSetEquipSlot(lid id_self, lui32 index)
 {
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
 	if (index < self->inventory.items.Size())
@@ -258,7 +258,7 @@ void ActorSetEquipSlot(btID id_self, btui32 index)
 	}
 }
 
-void ActorIncrEquipSlot(btID id_self)
+void ActorIncrEquipSlot(lid id_self)
 {
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
 	if (self->inv_active_slot < self->inventory.items.Size() - 1u)
@@ -269,7 +269,7 @@ void ActorIncrEquipSlot(btID id_self)
 	}
 }
 
-void ActorDecrEquipSlot(btID id_self)
+void ActorDecrEquipSlot(lid id_self)
 {
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
 	if (self->inv_active_slot > 0u)
@@ -280,11 +280,11 @@ void ActorDecrEquipSlot(btID id_self)
 	}
 }
 
-btf32 Actor_FindGroundHeight(m::Vector3 position)
+lf32 Actor_FindGroundHeight(m::Vector3 position)
 {
 	CellSpace cs;
 	core::GetCellSpaceInfo(m::Vector2(position.x, position.z), cs);
-	btf32 height;
+	lf32 height;
 	#if DEF_GRID
 	env::GetHeight(height, cs);
 	#else
@@ -306,7 +306,7 @@ void Actor_ClampLegs(ECActor* chr)
 		chr->fpCurrentR = jointPosR + m::Normalize(chr->fpCurrentR - jointPosR) * LEGLEN(chr->actorBase, 0);
 }
 
-void ActorTick(btID id, void* ent, btf32 dt)
+void ActorTick(lid id, void* ent, lf32 dt)
 {
 	ECActor* chr = (ECActor*)ent;
 
@@ -330,7 +330,7 @@ void ActorTick(btID id, void* ent, btf32 dt)
 	chr->aniRun = chr->input.bits.get(IN_RUN);
 
 	// Animate slide crouch
-	btf32 slide = (m::Length(chr->slideVelocity) / dt) * 0.5f;
+	lf32 slide = (m::Length(chr->slideVelocity) / dt) * 0.5f;
 	if (slide > 1.f) chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, 1.f, 0.3f);
 	else chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, slide, 0.3f);
 
@@ -346,14 +346,24 @@ void ActorTick(btID id, void* ent, btf32 dt)
 		chr->aniHandHoldTarget = ID_NULL;
 
 	bool canJump = true;
+	#if DEF_GRID
 	switch (acv::props[env::eCells.prop[chr->t.csi.c[eCELL_I].x][chr->t.csi.c[eCELL_I].y]].floorType) {
 	case acv::PropRecord::FLOOR_QUICKSAND:
 		canJump = false;
 		chr->aniRun = false;
 		break;
 	}
+	#else
+	//env::get
+	/*switch (acv::props[env::eCells.prop[chr->t.csi.c[eCELL_I].x][chr->t.csi.c[eCELL_I].y]].floorType) {
+	case acv::PropRecord::FLOOR_QUICKSAND:
+		canJump = false;
+		chr->aniRun = false;
+		break;
+	}*/
+	#endif
 
-	btf32 speedMult = 1.f;
+	lf32 speedMult = 1.f;
 	if (chr->aniRun) speedMult = 2.15f;
 
 	// Jump input
@@ -402,7 +412,7 @@ void ActorTick(btID id, void* ent, btf32 dt)
 			}
 		}
 		if (can_turn) {
-			btf32 angdif = m::AngDifAbs(chr->t.yaw.Deg(), chr->viewYaw.Deg());
+			lf32 angdif = m::AngDifAbs(chr->t.yaw.Deg(), chr->viewYaw.Deg());
 			if (angdif > 85.f)
 				if (angdif - 85.f < 8.f)
 					chr->t.yaw.RotateTowards(chr->viewYaw.Deg(), angdif - 85.f); // Rotate body towards the target direction
@@ -436,7 +446,7 @@ void ActorTick(btID id, void* ent, btf32 dt)
 	//________________________________________________________________
 	//------------- SET TRANSFORMATIONS FOR GRAPHICS -----------------
 
-	btf32 velLen = m::Length(chr->velocity);
+	lf32 velLen = m::Length(chr->velocity);
 
 	//-------------------------------- HANDLE ANIMATION
 
@@ -447,7 +457,7 @@ void ActorTick(btID id, void* ent, btf32 dt)
 	graphics::Matrix4x4 rootMatrix_arms;
 	{
 		m::Angle angtest = chr->t.yaw;
-		btf32 angdif = m::AngDifAbs(chr->t.yaw.Deg(), chr->viewYaw.Deg());
+		lf32 angdif = m::AngDifAbs(chr->t.yaw.Deg(), chr->viewYaw.Deg());
 		angtest.RotateTowards(chr->viewYaw.Deg(), angdif * 0.5f);
 
 		graphics::MatrixTransform(rootMatrix_vel,
@@ -518,8 +528,8 @@ void ActorTick(btID id, void* ent, btf32 dt)
 		graphics::MatrixGetUp(rootMatrix_legs) * animFootR.y +
 		graphics::MatrixGetForward(rootMatrix_vel) * animFootR.z;
 	// Raise feet above ground height
-	btf32 hl = chr->t.altitude - Actor_FindGroundHeight(chr->fpCurrentL) + 0.075f;
-	btf32 hr = chr->t.altitude - Actor_FindGroundHeight(chr->fpCurrentR) + 0.075f;
+	lf32 hl = chr->t.altitude - Actor_FindGroundHeight(chr->fpCurrentL) + 0.075f;
+	lf32 hr = chr->t.altitude - Actor_FindGroundHeight(chr->fpCurrentR) + 0.075f;
 	if (chr->fpCurrentL.y < hl) chr->fpCurrentL.y = hl;
 	if (chr->fpCurrentR.y < hr) chr->fpCurrentR.y = hr;
 	// Clamp positions so they never exceed the length of a leg in distance
@@ -633,12 +643,12 @@ void ActorTick(btID id, void* ent, btf32 dt)
 	}
 }
 
-void MatrixIK(btf32 iklen, m::Vector3 start, m::Vector3 target, m::Vector3 elbowdir,
+void MatrixIK(lf32 iklen, m::Vector3 start, m::Vector3 target, m::Vector3 elbowdir,
 	graphics::Matrix4x4* mat1, graphics::Matrix4x4* mat2, graphics::Matrix4x4* mat3,
-	bool inverse_bend, bool XFlip, btf32 handlen) {
-	btf32 len = m::Length(start - target) - handlen;
+	bool inverse_bend, bool XFlip, lf32 handlen) {
+	lf32 len = m::Length(start - target) - handlen;
 	if (len > iklen) len = iklen;
-	btf32 lenUp = sqrtf(iklen * iklen - len * len); // Pythagorean theorem
+	lf32 lenUp = sqrtf(iklen * iklen - len * len); // Pythagorean theorem
 	m::Vector3 vecfw = m::Normalize(target - start);
 	m::Vector3 vecside = m::Normalize(m::Cross(vecfw, elbowdir));
 	m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside)) * -1.f;
@@ -660,7 +670,7 @@ void MatrixIK(btf32 iklen, m::Vector3 start, m::Vector3 target, m::Vector3 elbow
 	}
 }
 
-void ActorDraw(btID id, void* ent)
+void ActorDraw(lid id, void* ent)
 {
 	ECActor* chr = (ECActor*)ent;
 
@@ -669,7 +679,7 @@ void ActorDraw(btID id, void* ent)
 	graphics::Matrix4x4 rootMatrix;
 	{
 		m::Angle angtest = chr->t.yaw;
-		btf32 angdif = m::AngDifAbs(chr->t.yaw.Deg(), chr->viewYaw.Deg());
+		lf32 angdif = m::AngDifAbs(chr->t.yaw.Deg(), chr->viewYaw.Deg());
 		angtest.RotateTowards(chr->viewYaw.Deg(), angdif * 0.5f);
 
 		//graphics::MatrixTransform(rootMatrix, m::Vector3(chr->t.position.x, chr->t.altitude, chr->t.position.y), chr->viewYaw.Rad());
@@ -683,7 +693,7 @@ void ActorDraw(btID id, void* ent)
 	Transform3D t_upperbody = chr->t_body;
 	t_upperbody.Rotate(glm::radians(m::AngDif(chr->viewYaw.Deg(), chr->t.yaw.Deg())), m::Vector3(0, 1, 0));
 
-	btf32 lerpAmt = 0.05f * chr->speed;
+	lf32 lerpAmt = 0.05f * chr->speed;
 
 	//-------------------------------- SET ACTOR SHADER PARAMETERS
 
@@ -697,9 +707,9 @@ void ActorDraw(btID id, void* ent)
 
 	//-------------------------------- DRAW BODY
 
-	btf32 len = m::Length(chr->t_body.GetPosition() - chr->t_head.GetPosition());
+	lf32 len = m::Length(chr->t_body.GetPosition() - chr->t_head.GetPosition());
 	if (len > BODYLEN) len = BODYLEN;
-	btf32 lenUp = sqrtf(BODYLEN * BODYLEN - len * len); // Pythagorean theorem
+	lf32 lenUp = sqrtf(BODYLEN * BODYLEN - len * len); // Pythagorean theorem
 	m::Vector3 vecfw = m::Normalize(chr->t_body.GetPosition() - chr->t_head.GetPosition());
 	m::Vector3 vecside = m::Normalize(m::Cross(vecfw, chr->t_body.GetForward()));
 	m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));
@@ -719,7 +729,7 @@ void ActorDraw(btID id, void* ent)
 
 	m::Vector3 chestOrigin = graphics::MatrixGetPosition(matBodyUp) - graphics::MatrixGetForward(matBodyUp) * (BODYLEN - 0.1f);
 
-	btf32 shoulder_width = 0.12f;
+	lf32 shoulder_width = 0.12f;
 
 	m::Vector3 jointPosR = chestOrigin + graphics::MatrixGetRight(matBodyUp) * shoulder_width;
 	m::Vector3 jointPosL = chestOrigin + graphics::MatrixGetRight(matBodyUp) * -shoulder_width;
@@ -758,7 +768,7 @@ void ActorDraw(btID id, void* ent)
 
 	if (chr->activeFlags.get(ECCommon::eALIVE))
 	{
-		btf32 velocityAmt = m::Length(chr->velocity - chr->slideVelocity);
+		lf32 velocityAmt = m::Length(chr->velocity - chr->slideVelocity);
 
 		m::Vector3 newpos = chr->t_body.GetPosition();
 
@@ -768,9 +778,9 @@ void ActorDraw(btID id, void* ent)
 		// generate matrices
 
 		// Leg right
-		btf32 len = m::Length(jointPosR - chr->fpCurrentR);
+		lf32 len = m::Length(jointPosR - chr->fpCurrentR);
 		if (len > LEGLEN(chr->actorBase, 0)) len = LEGLEN(chr->actorBase, 0);
-		btf32 lenUp = sqrtf(LEGLEN(chr->actorBase, 0) * LEGLEN(chr->actorBase, 0) - len * len); // Pythagorean theorem
+		lf32 lenUp = sqrtf(LEGLEN(chr->actorBase, 0) * LEGLEN(chr->actorBase, 0) - len * len); // Pythagorean theorem
 		m::Vector3 vecfw = m::Normalize(chr->fpCurrentR - jointPosR);
 		m::Vector3 vecside = m::Normalize(m::Cross(vecfw, (m::Normalize(chr->t_body.GetForward() + chr->t_body.GetRight() * 0.23f))));
 		m::Vector3 vecup = m::Normalize(m::Cross(vecfw, vecside));

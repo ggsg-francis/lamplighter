@@ -6,7 +6,7 @@
 namespace fac
 {
 	// What are the factions
-	enum faction : btui8
+	enum faction : lui8
 	{
 		none,
 		player,
@@ -16,7 +16,7 @@ namespace fac
 	};
 
 	// How does a faction treat another faction
-	enum facalleg : btui8
+	enum facalleg : lui8
 	{
 		neutral, // not yet used
 		liked, // not yet used

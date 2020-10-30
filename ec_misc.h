@@ -5,26 +5,26 @@
 // Entity type representing placed items
 struct ECSingleItem : public ECCommon
 {
-	btID item_instance;
+	lid item_instance;
 	graphics::Matrix4x4 matrix;
 };
 
 char* RestingItemName(void* ent); // <- this seems really unneeded...
-void RestingItemTick(btID id, void* ent, btf32 dt);
-void RestingItemDraw(btID id, void* ent);
+void RestingItemTick(lid id, void* ent, lf32 dt);
+void RestingItemDraw(lid id, void* ent);
 
 struct ECTarBubble : public ECCommon
 {
-	btf32 tb_state;
+	lf32 tb_state;
 };
 
-void TarBubbleTick(btID id, void* ent, btf32 dt);
-void TarBubbleDraw(btID id, void* ent);
+void TarBubbleTick(lid id, void* ent, lf32 dt);
+void TarBubbleDraw(lid id, void* ent);
 
 struct ECWallBug : public ECCommon
 {
-	btf32 test;
+	lf32 test;
 };
 
-void WallBugTick(btID id, void* ent, btf32 dt);
-void WallBugDraw(btID id, void* ent);
+void WallBugTick(lid id, void* ent, lf32 dt);
+void WallBugDraw(lid id, void* ent);

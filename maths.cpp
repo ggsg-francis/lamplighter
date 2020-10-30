@@ -6,7 +6,7 @@ Angle -> Vector2
 Vector2 angleVector = Vector2( Cos( myAngleInRadians ), -Sin( myAngleInRadians ) );
 
 Vector2 -> Angle
-btf32 angleFromVector = Atan2( angleVector.X, -angleVector.Y );
+lf32 angleFromVector = Atan2( angleVector.X, -angleVector.Y );
 */
 
 
@@ -27,17 +27,17 @@ namespace m
 	Vector2 Vector2::operator*=(Vector2 f) { return Vector2(x *= f.x, y *= f.y); }
 	Vector2 Vector2::operator/=(Vector2 f) { return Vector2(x /= f.x, y /= f.y); }
 
-	Vector2 Vector2::operator+(btf32 f) { return Vector2(x + f, y + f); }
-	Vector2 Vector2::operator-(btf32 f) { return Vector2(x - f, y - f); }
-	Vector2 Vector2::operator*(btf32 f) { return Vector2(x * f, y * f); }
-	Vector2 Vector2::operator/(btf32 f) { return Vector2(x / f, y / f); }
+	Vector2 Vector2::operator+(lf32 f) { return Vector2(x + f, y + f); }
+	Vector2 Vector2::operator-(lf32 f) { return Vector2(x - f, y - f); }
+	Vector2 Vector2::operator*(lf32 f) { return Vector2(x * f, y * f); }
+	Vector2 Vector2::operator/(lf32 f) { return Vector2(x / f, y / f); }
 
-	Vector2 Vector2::operator+=(btf32 f) { return Vector2(x += f, y += f); }
-	Vector2 Vector2::operator-=(btf32 f) { return Vector2(x -= f, y -= f); }
-	Vector2 Vector2::operator*=(btf32 f) { return Vector2(x *= f, y *= f); }
-	Vector2 Vector2::operator/=(btf32 f) { return Vector2(x /= f, y /= f); }
+	Vector2 Vector2::operator+=(lf32 f) { return Vector2(x += f, y += f); }
+	Vector2 Vector2::operator-=(lf32 f) { return Vector2(x -= f, y -= f); }
+	Vector2 Vector2::operator*=(lf32 f) { return Vector2(x *= f, y *= f); }
+	Vector2 Vector2::operator/=(lf32 f) { return Vector2(x /= f, y /= f); }
 
-	Vector2 Vector2::operator=(const btf32& f) { return Vector2(f, f); }
+	Vector2 Vector2::operator=(const lf32& f) { return Vector2(f, f); }
 
 	bool Vector2::operator==(const Vector2 f) { return x == f.x && y == f.y; }
 
@@ -45,7 +45,7 @@ namespace m
 
 	Vector3 Vector3::operator+(const Vector3& v) { return Vector3(x + v.x, y + v.y, z + v.z); }
 	Vector3 Vector3::operator-(const Vector3& v) { return Vector3(x - v.x, y - v.y, z - v.z); }
-	Vector3 Vector3::operator*(const btf32 f) { return Vector3(x * f, y * f, z * f); }
+	Vector3 Vector3::operator*(const lf32 f) { return Vector3(x * f, y * f, z * f); }
 	//Vector3 Vector3::operator*(const Vector3& v) { return Vector3(x * v.x, y * v.y, z * v.z); }
 	//Vector3 Vector3::operator/(const Vector3& v) { return Vector3(x / v.x, y / v.y, z / v.z); }
 	Vector3 Vector3::operator+=(const Vector3& v) { x += v.x; y += v.y; z += v.z; return Vector3(x + v.x, y + v.y, z + z); }
@@ -57,8 +57,8 @@ namespace m
 	Vector3 operator-(const Vector3 & va, const Vector3 & vb) { return Vector3(va.x - vb.x, va.y - vb.y, va.z - vb.z); }
 	Vector3 operator*(const Vector3 & va, const Vector3 & vb) { return Vector3(va.x * vb.x, va.y * vb.y, va.z * vb.z); }
 	Vector3 operator/(const Vector3 & va, const Vector3 & vb) { return Vector3(va.x / vb.x, va.y / vb.y, va.z / vb.z); }
-	Vector3 operator*(const btf32 f, const Vector3& v) { return Vector3(v.x * f, v.y * f, v.z * f); }
-	Vector3 operator/(const btf32 f, const Vector3& v) { return Vector3(v.x / f, v.y / f, v.z / f); }
+	Vector3 operator*(const lf32 f, const Vector3& v) { return Vector3(v.x * f, v.y * f, v.z * f); }
+	Vector3 operator/(const lf32 f, const Vector3& v) { return Vector3(v.x / f, v.y / f, v.z / f); }
 
 	glm::vec3 operator+(const glm::vec3& va, const Vector3& vb) { return glm::vec3(va.x + vb.x, va.y + vb.y, va.z + vb.z); }
 	glm::vec3 operator*(const glm::vec3& va, const Vector3& vb) { return glm::vec3(va.x * vb.x, va.y * vb.y, va.z * vb.z); }
@@ -77,71 +77,71 @@ namespace m
 
 	//-------------------------------- STEP
 
-	btf32 StepToward(btf32 a, btf32 b, btf32 t) {
+	lf32 StepToward(lf32 a, lf32 b, lf32 t) {
 		if (b < a - t) return a - t;
 		if (b > a + t) return a + t;
 		return b;
 	}
-	bti32 StepToward(bti32 a, bti32 b, bti32 t) {
+	li32 StepToward(li32 a, li32 b, li32 t) {
 		if (b < a - t) return a - t;
 		if (b > a + t) return a + t;
 		return b;
 	}
 
-	btf32 BlendToward(btf32 value, btf32 target, btf32 smooth, btf32 dt) {
+	lf32 BlendToward(lf32 value, lf32 target, lf32 smooth, lf32 dt) {
 		return Lerp(value, target, 1 - pow(smooth, dt));
 	}
-	Vector2 BlendToward(Vector2 value, Vector2 target, btf32 smooth, btf32 dt) {
+	Vector2 BlendToward(Vector2 value, Vector2 target, lf32 smooth, lf32 dt) {
 		return Lerp(value, target, 1 - pow(smooth, dt));
 	}
-	Vector3 BlendToward(Vector3 value, Vector3 target, btf32 smooth, btf32 dt) {
+	Vector3 BlendToward(Vector3 value, Vector3 target, lf32 smooth, lf32 dt) {
 		return Lerp(value, target, 1 - pow(smooth, dt));
 	}
 
 	//-------------------------------- LERP
 
-	btf32 Lerp(btf32 a, btf32 b, btf32 t) {
+	lf32 Lerp(lf32 a, lf32 b, lf32 t) {
 		return (1 - t) * a + t * b;
 	}
-	Vector2 Lerp(Vector2 a, Vector2 b, btf32 t) {
+	Vector2 Lerp(Vector2 a, Vector2 b, lf32 t) {
 		return a * (1 - t) + b * t;
 	}
-	Vector3 Lerp(Vector3 a, Vector3 b, btf32 t) {
+	Vector3 Lerp(Vector3 a, Vector3 b, lf32 t) {
 		return a * (1 - t) + b * t;
 	}
 
 	//-------------------------------- SPRING DAMPER
 
-	void SpringDamper(btf32& out_value, btf32& out_velocity, btf32 target_value, btf32 mass = 30.f, btf32 k = 2.f, btf32 damping = 10.f) {
-		//const btf32 mass = 30;
-		const btf32 timeStep = 0.28;
-		//const btf32 damping = 10;
+	void SpringDamper(lf32& out_value, lf32& out_velocity, lf32 target_value, lf32 mass = 30.f, lf32 k = 2.f, lf32 damping = 10.f) {
+		//const lf32 mass = 30;
+		const lf32 timeStep = 0.28;
+		//const lf32 damping = 10;
 
-		/*btf32 springForceY = -k*(out_value - target_value);
-		btf32 dampingForceY = damping * out_velocity;
-		btf32 forceY = springForceY + mass - dampingForceY;
-		btf32 accelerationY = forceY / mass;
+		/*lf32 springForceY = -k*(out_value - target_value);
+		lf32 dampingForceY = damping * out_velocity;
+		lf32 forceY = springForceY + mass - dampingForceY;
+		lf32 accelerationY = forceY / mass;
 		out_velocity += accelerationY * timeStep;
 		out_value += out_velocity * timeStep;*/
 
-		btf32 springForceY = -k*(out_value - target_value);
-		btf32 dampingForceY = damping * out_velocity;
-		//btf32 forceY = springForceY + mass - dampingForceY;
-		btf32 forceY = springForceY - dampingForceY;
-		btf32 accelerationY = forceY / mass;
+		lf32 springForceY = -k*(out_value - target_value);
+		lf32 dampingForceY = damping * out_velocity;
+		//lf32 forceY = springForceY + mass - dampingForceY;
+		lf32 forceY = springForceY - dampingForceY;
+		lf32 accelerationY = forceY / mass;
 		out_velocity += accelerationY * timeStep;
 		out_value += out_velocity * timeStep;
 	}
 
 	//-------------------------------- DOT
 
-	btf32 Dot(const Vector2 & va, const Vector2 & vb) {
+	lf32 Dot(const Vector2 & va, const Vector2 & vb) {
 		return va.x * vb.x + va.y * vb.y;
 	}
-	btf32 Dot(const Vector3& va, const Vector3& vb) {
+	lf32 Dot(const Vector3& va, const Vector3& vb) {
 		return va.x * vb.x + va.y * vb.y + va.z * vb.z;
 	}
-	btf32 Dot(const Quaternion& qa, const Quaternion& qb) {
+	lf32 Dot(const Quaternion& qa, const Quaternion& qb) {
 		return qa.x * qb.x + qa.y * qb.y + qa.z * qb.z + qa.w * qb.w;
 	}
 
@@ -163,11 +163,11 @@ namespace m
 
 	//-------------------------------- LENGTH
 
-	btf32 Length(const Vector2& v) {
+	lf32 Length(const Vector2& v) {
 		//return the square root of all axes squared
 		return sqrt(v.x * v.x + v.y * v.y);
 	}
-	btf32 Length(const Vector3& v) {
+	lf32 Length(const Vector3& v) {
 		//return the square root of all axes squared
 		return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 	}
@@ -176,7 +176,7 @@ namespace m
 
 	Vector2 Normalize(const Vector2 & v) {
 		Vector2 vector;
-		btf32 length = Length(v);
+		lf32 length = Length(v);
 		if (length != 0) {
 			vector.x = v.x / length;
 			vector.y = v.y / length;
@@ -185,7 +185,7 @@ namespace m
 	}
 	Vector3 Normalize(const Vector3& v) {
 		Vector3 vector;
-		btf32 length = Length(v);
+		lf32 length = Length(v);
 		if (length != 0) {
 			vector.x = v.x / length;
 			vector.y = v.y / length;
@@ -194,21 +194,21 @@ namespace m
 		return vector;
 	}
 	Quaternion Normalize(const Quaternion& q) {
-		const btf32 f = 1.0f / sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+		const lf32 f = 1.0f / sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
 		return Quaternion(q.x * f, q.y * f, q.z * f, q.w * f);
 	}
 
 	//-------------------------------- ANGLE STUFF
 
-	btf32 AngDif(btf32 anga, btf32 angb) {
-		btf32 angdif = angb - anga;
+	lf32 AngDif(lf32 anga, lf32 angb) {
+		lf32 angdif = angb - anga;
 		if (angdif > 180.f)
 			angdif -= 360.f;
 		else if (angdif < -180.f)
 			angdif += 360.f;
 		return angdif;
 	}
-	btf32 AngDifAbs(btf32 anga, btf32 angb) {
+	lf32 AngDifAbs(lf32 anga, lf32 angb) {
 		return 180.f - fabsf(fabsf(anga - angb) - 180.f);
 	}
 
@@ -218,28 +218,28 @@ namespace m
 
 	//-------------------------------- ANGLE / VECTOR2 CONVERSION
 
-	Vector2 AngToVec2(btf32 angle) {
+	Vector2 AngToVec2(lf32 angle) {
 		return Vector2(sin(angle), cos(angle));
 	}
-	Vector2 AngToVec2RH(btf32 angle) {
+	Vector2 AngToVec2RH(lf32 angle) {
 		return Vector2(cos(angle), sin(angle));
 	}
-	btf32 Vec2ToAng(Vector2 vec) {
+	lf32 Vec2ToAng(Vector2 vec) {
 		if (vec.x > 0.f)
-			return (btf32)acos(vec.y);
+			return (lf32)acos(vec.y);
 		else
-			return -(btf32)acos(vec.y);
+			return -(lf32)acos(vec.y);
 	}
-	btf32 Vec2ToAngRH(Vector2 vec) {
+	lf32 Vec2ToAngRH(Vector2 vec) {
 		if (vec.y > 0.f)
-			return (btf32)acos(vec.x);
+			return (lf32)acos(vec.x);
 		else
-			return -(btf32)acos(vec.x);
+			return -(lf32)acos(vec.x);
 	}
 
 	//-------------------------------- MISC FUNCTIONS
 
-	btf32 BlendValueFromDistance(const Vector3& src, const Vector3& dst, btf32 min = 0.25f, btf32 max = 1.0f) {
+	lf32 BlendValueFromDistance(const Vector3& src, const Vector3& dst, lf32 min = 0.25f, lf32 max = 1.0f) {
 		#define DEADZONE min
 		#define MULT (max / (max - DEADZONE))
 		return Length(src - dst) * MULT - DEADZONE;
@@ -323,10 +323,10 @@ namespace m
 	}
 	*/
 
-	Quaternion QuatFromAxisAngle(Vector3& axis, btf32 angle) {
+	Quaternion QuatFromAxisAngle(Vector3& axis, lf32 angle) {
 		Quaternion q;
 
-		btf32 s = sin(angle / 2);
+		lf32 s = sin(angle / 2);
 		q.x = axis.x * s;
 		q.y = axis.y * s;
 		q.z = axis.z * s;
@@ -359,7 +359,7 @@ namespace m
 
 		Quaternion q;
 		q.w = sqrt(1.0 + matr.m[0][0] + matr.m[1][1] + matr.m[2][2]) / 2.0;
-		btf32 w4 = (4.0 * q.w);
+		lf32 w4 = (4.0 * q.w);
 		q.x = (matr.m[2][1] - matr.m[1][2]) / w4;
 		q.y = (matr.m[0][2] - matr.m[2][0]) / w4;
 		q.z = (matr.m[1][0] - matr.m[0][1]) / w4;
@@ -367,79 +367,79 @@ namespace m
 		return q;
 	}*/
 
-	btf32 Random(btf32 min, btf32 max) {
-		return min + static_cast <btf32> (rand()) / (static_cast <btf32> (RAND_MAX / (max - min)));
+	lf32 Random(lf32 min, lf32 max) {
+		return min + static_cast <lf32> (rand()) / (static_cast <lf32> (RAND_MAX / (max - min)));
 	}
-	btf32 Clamp(btf32 val, btf32 min, btf32 max) {
+	lf32 Clamp(lf32 val, lf32 min, lf32 max) {
 		if (val < min) return min;
 		if (val > max) return max;
 		return val;
 	}
 
-	btf32 Min2(btf32 a, btf32 b) {
-		btf32 min = a;
+	lf32 Min2(lf32 a, lf32 b) {
+		lf32 min = a;
 		if (b < min) min = b;
 		return min;
 	}
-	btf32 Max2(btf32 a, btf32 b) {
-		btf32 max = a;
+	lf32 Max2(lf32 a, lf32 b) {
+		lf32 max = a;
 		if (b > max) max = b;
 		return max;
 	}
-	btf32 Min3(btf32 a, btf32 b, btf32 c) {
-		btf32 min = a;
+	lf32 Min3(lf32 a, lf32 b, lf32 c) {
+		lf32 min = a;
 		if (b < min) min = b;
 		if (c < min) min = c;
 		return min;
 	}
-	btf32 Max3(btf32 a, btf32 b, btf32 c) {
-		btf32 max = a;
+	lf32 Max3(lf32 a, lf32 b, lf32 c) {
+		lf32 max = a;
 		if (b > max) max = b;
 		if (c > max) max = c;
 		return max;
 	}
-	btui32 MinIndex(btui32 size, btf32* array) {
-		btui32 min = 0;
-		for (btui32 i = 1; i < size; ++i) {
+	lui32 MinIndex(lui32 size, lf32* array) {
+		lui32 min = 0;
+		for (lui32 i = 1; i < size; ++i) {
 			if (array[i] < array[min]) min = i;
 		}
 		return min;
 	}
-	btui32 MaxIndex(btui32 size, btf32* array) {
-		btui32 max = 0;
-		for (btui32 i = 1; i < size; ++i) {
+	lui32 MaxIndex(lui32 size, lf32* array) {
+		lui32 max = 0;
+		for (lui32 i = 1; i < size; ++i) {
 			if (array[i] > array[max]) max = i;
 		}
 		return max;
 	}
 
-	btf32 Quadratic(const btf32 a = -1.f, const btf32 b = 0.f, const btf32 c = 1.f, const btf32 x = 0.f) {
+	lf32 Quadratic(const lf32 a = -1.f, const lf32 b = 0.f, const lf32 c = 1.f, const lf32 x = 0.f) {
 		//f(x) = ax 2 + bx + c
 		return pow(a*x, 2) + (b * x) + c;
 	}
-	btf32 QuadraticFootstep(const btf32 step_height = 2.f, const btf32 x = 0.f) {
+	lf32 QuadraticFootstep(const lf32 step_height = 2.f, const lf32 x = 0.f) {
 		// TODO: optimize plz
 		return step_height - (pow(-step_height * x, 2)) - (step_height * 0.5f);
 	}
 
-	btf32 Vec2Angle(const Vector2& va, const Vector2& vb) {
-		//btf32 dot = va.x*vb.x + va.y*vb.y; // dot product between[va.x, va.y] and [vb.x, vb.y]
-		//btf32 det = va.x*vb.y - va.y*vb.x;  // determinant
-		//btf32 angle = atan2(det, dot); //  # atan2(y, x) or atan2(sin, cos)
+	lf32 Vec2Angle(const Vector2& va, const Vector2& vb) {
+		//lf32 dot = va.x*vb.x + va.y*vb.y; // dot product between[va.x, va.y] and [vb.x, vb.y]
+		//lf32 det = va.x*vb.y - va.y*vb.x;  // determinant
+		//lf32 angle = atan2(det, dot); //  # atan2(y, x) or atan2(sin, cos)
 
-		btf32 dot = Dot(va, vb);
-		//btf32 angle = atan(dot);
-		btf32 angle = acos(dot);
+		lf32 dot = Dot(va, vb);
+		//lf32 angle = atan(dot);
+		lf32 angle = acos(dot);
 
 		return angle;
 	}
 
 	// WIP
-	Vector2 Rotate(Vector2& v, btf32 r) {
-		btf32 theta = r;
+	Vector2 Rotate(Vector2& v, lf32 r) {
+		lf32 theta = r;
 
-		btf32 cs = cos(theta);
-		btf32 sn = sin(theta);
+		lf32 cs = cos(theta);
+		lf32 sn = sin(theta);
 
 		Vector2 v2;
 
@@ -450,20 +450,20 @@ namespace m
 	}
 
 	Vector3 RotateVector(const Vector3& v, const Quaternion& q) {
-		const btf32 vx = 2.0f * v.x;
-		const btf32 vy = 2.0f * v.y;
-		const btf32 vz = 2.0f * v.z;
-		const btf32 w2 = q.w * q.w - 0.5f;
-		const btf32 dot2 = (q.x * vx + q.y * vy + q.z * vz);
+		const lf32 vx = 2.0f * v.x;
+		const lf32 vy = 2.0f * v.y;
+		const lf32 vz = 2.0f * v.z;
+		const lf32 w2 = q.w * q.w - 0.5f;
+		const lf32 dot2 = (q.x * vx + q.y * vy + q.z * vz);
 		return Vector3(
 			(vx * w2 + (q.y * vz - q.z * vy) * q.w + q.x * dot2),
 			(vy * w2 + (q.z * vx - q.x * vz) * q.w + q.y * dot2),
 			(vz * w2 + (q.x * vy - q.y * vx) * q.w + q.z * dot2));
 	}
 
-	Quaternion Rotate(const Quaternion& q, const btf32& angle, const Vector3& v) {
+	Quaternion Rotate(const Quaternion& q, const lf32& angle, const Vector3& v) {
 		Vector3 norm = Normalize(v);
-		btf32 const s = sin(angle * 0.5f);
+		lf32 const s = sin(angle * 0.5f);
 		return Cross(q, Quaternion(norm.x * s, norm.y * s, norm.z * s, cos(angle * 0.5f)));
 	}
 
@@ -496,15 +496,15 @@ namespace m
 	Quaternion Normalize2(const Quaternion& q) {
 		//magnitude				=		sqrt(magnitudesquared());
 		//magnitudesquared		=		x * x + y * y + z * z + w * w;
-		const btf32 f = 1.0f / sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+		const lf32 f = 1.0f / sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
 		return Quaternion(q.x * f, q.y * f, q.z * f, q.w * f);
 	}
 
-	btf32 Pitch(Quaternion& q) {
+	lf32 Pitch(Quaternion& q) {
 		//return atan(2.f * (q.y * q.z + q.w * q.x), q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z);
 		
-		const btf32 y = 2.f * (q.y * q.z + q.w * q.x);
-		const btf32 x = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
+		const lf32 y = 2.f * (q.y * q.z + q.w * q.x);
+		const lf32 x = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
 		/*
 		if (detail::compute_equal<T>::call(y, static_cast<T>(0)) && detail::compute_equal<T>::call(x, static_cast<T>(0))) //avoid atan2(0,0) - handle singularity - Matiis
 			return static_cast<T>(static_cast<T>(2) * atan(q.x, q.w));
@@ -513,10 +513,10 @@ namespace m
 		*/
 		return 0;
 	}
-	btf32 Yaw(Quaternion& q) {
+	lf32 Yaw(Quaternion& q) {
 		return 0;
 	}
-	btf32 Roll(Quaternion& q) {
+	lf32 Roll(Quaternion& q) {
 		return 0;
 	}
 	Vector3 EulerAngles(Quaternion& q) {

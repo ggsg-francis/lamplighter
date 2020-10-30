@@ -3,7 +3,7 @@
 
 #include "global.h"
 
-btID GUIAddButton(void(*callback)(void*), void* callbackData, char* string, btID texture, bti32 xstart, bti32 xend, bti32 ystart, bti32 yend);
+lid GUIAddButton(void(*callback)(void*), void* callbackData, char* string, lid texture, li32 xstart, li32 xend, li32 ystart, li32 yend);
 void GUIUpdatNeighbors();
 void GUITick();
 void GUIDraw();

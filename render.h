@@ -14,7 +14,7 @@
 #define Y_MULT 0.75
 #define Z_OFFSET_MULT 0.661437809
 
-void RenderDrawMesh(graphics::Mesh* mesh, graphics::Texture* txtr, m::Vector3 p, m::Quaternion r);
+void RenderDrawMesh(graphics::Mesh* mesh, graphics::Texture* txtr);
 
 void RenderInit();
 

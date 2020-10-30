@@ -9,17 +9,17 @@ namespace mem
 	//--------------------------- FIXED SIZE OBJECT ID BUFFER ------------------------------------------------------------------------
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-	btID objbuf_caterpillar::add()
+	lid objbuf_caterpillar::add()
 	{
 		used[index_last] = true; // Index is taken
-		btID index = index_last; // Store index for return value
+		lid index = index_last; // Store index for return value
 		++index_last; // Iterate
 		if (index_last == BUF_SIZE) // Have we overrun?
 			index_last = 0; // Wrap around
 		return index; // Return added ID
 	}
 
-	void objbuf_caterpillar::remove(btID i)
+	void objbuf_caterpillar::remove(lid i)
 	{
 		used[i] = false;
 		if (i == index_first) // If this is the first element in the buffer
@@ -52,17 +52,17 @@ namespace mem
 	{
 	}
 
-	void idbuf::Add(btID id)
+	void idbuf::Add(lid id)
 	{
 		// Search this vector ahead of time for a matching ID
-		for (btui32 i = 0; i < IDBUF_SIZE; i++)
+		for (lui32 i = 0; i < IDBUF_SIZE; i++)
 			if (ptr_id[i] == id)
 			{
 				std::cout << "IDBUF ID already in array!" << std::endl;
 				return;
 			}
 		// If that passes, look for the first empty space (can optimize this)
-		for (btui32 i = 0; i < IDBUF_SIZE; i++)
+		for (lui32 i = 0; i < IDBUF_SIZE; i++)
 			// if no ptr in this vector
 			if (ptr_used[i] == false) {
 				// Add the ID
@@ -78,10 +78,10 @@ namespace mem
 
 	// I realize that this is slow, but it will do for now
 	// otherwise, store in every entity a 'cell ID' so it can remove itself from the cell faster
-	void idbuf::Remove(btID id)
+	void idbuf::Remove(lid id)
 	{
 		//search this vector
-		for (btui32 i = 0; i < IDBUF_SIZE; i++)
+		for (lui32 i = 0; i < IDBUF_SIZE; i++)
 			//if we found ptr in this vector
 			if (ptr_id[i] == id && ptr_used[i] == true)
 			{
@@ -110,12 +110,12 @@ namespace mem
 		size = 0;
 	}
 
-	btui32 idbuf::Size()
+	lui32 idbuf::Size()
 	{
 		return size;
 	}
 
-	btID idbuf::operator[] (btui32 x)
+	lid idbuf::operator[] (lui32 x)
 	{
 		if (x >= 0u && x < IDBUF_SIZE && ptr_used[x] == true)
 			return ptr_id[x];

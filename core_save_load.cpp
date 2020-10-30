@@ -46,15 +46,15 @@ void SaveState()
 
 	// clean all unused item instances
 	// this is a hack and i know it
-	for (btID index_item = 0; index_item <= buf_iteminst->index_end; index_item++) { // For every item
+	for (lid index_item = 0; index_item < buf_iteminst->Size(); index_item++) { // For every item
 		if (!buf_iteminst->Used(index_item)) continue;
-		btui32 item_reference_count = 0u;
-		for (btID index_ent = 0; index_ent <= GetLastEntity(); index_ent++) { // For every entity
+		lui32 item_reference_count = 0u;
+		for (lid index_ent = 0; index_ent < GetEntityArraySize(); index_ent++) { // For every entity
 			if (!GetEntityExists(index_ent)) continue;
 			// if this entity has an inventory
 			if (GetEntityType(index_ent) == ENTITY_TYPE_ACTOR) {
 				// for every invntory slot
-				for (btui32 inv_slot = 0; inv_slot < ACTOR(index_ent)->inventory.items.Size(); ++inv_slot) {
+				for (lui32 inv_slot = 0; inv_slot < ACTOR(index_ent)->inventory.items.Size(); ++inv_slot) {
 					// if this slot contains this item
 					if (ACTOR(index_ent)->inventory.items[inv_slot] != index_item) continue;
 					item_reference_count++;
@@ -73,10 +73,10 @@ void SaveState()
 		}
 	}
 
-	btui32 FILE_VER = FILE_OUT_VER;
-	btui32 GAME_VER = VERSION_MAJOR;
-	btui32 PROJ_VER = VERSION_PROJECT;
-	btui32 TEMP_VER = 0u;
+	lui32 FILE_VER = FILE_OUT_VER;
+	lui32 GAME_VER = VERSION_MAJOR;
+	lui32 PROJ_VER = VERSION_PROJECT;
+	lui32 TEMP_VER = 0u;
 
 	FILE* file = fopen("save/save.bin", "wb"); // Open file
 	if (file != NULL)
@@ -91,14 +91,14 @@ void SaveState()
 		// Actual game state
 		fwrite(&tickCount, SIZE_64, 1, file);
 		fwrite(&core::players, SIZE_16, NUM_PLAYERS, file);
-		btui64 temp = 0;
+		lui64 temp = 0;
 		fwrite(&temp, SIZE_64, 1, file);
 
 		//-------------------------------- ENTITIES
 
-		btui32 ent_count = GetLastEntity();
+		lui32 ent_count = GetEntityArraySize();
 		fwrite(&ent_count, SIZE_32, 1, file);
-		for (btID i = 0; i <= ent_count; i++) // For every entity
+		for (lid i = 0; i < ent_count; i++) // For every entity
 		{
 			// Could probably just write the type straight up as type_null means unused now
 			bool ent_exists = GetEntityExists(i);
@@ -108,7 +108,7 @@ void SaveState()
 				fwrite(&type, SIZE_8, 1, file);
 			}
 		}
-		for (btID i = 0; i <= ent_count; i++) // For every entity
+		for (lid i = 0; i < ent_count; i++) // For every entity
 		{
 			if (GetEntityExists(i))
 			{
@@ -185,10 +185,11 @@ void SaveState()
 
 		//-------------------------------- ITEMS
 
-		fwrite(&buf_iteminst->index_end, SIZE_16, 1, file);
-		fwrite(buf_iteminst->TypeRW(), SIZE_8, (size_t)(buf_iteminst->index_end + 1u), file);
+		lui32 itemsize = buf_iteminst->Size();
+		fwrite(&itemsize, SIZE_16, 1, file);
+		fwrite(buf_iteminst->TypeRW(), SIZE_8, (size_t)itemsize, file);
 
-		for (btID i = 0; i <= buf_iteminst->index_end; i++) // For every item
+		for (lid i = 0; i < itemsize; i++) // For every item
 		{
 			if (buf_iteminst->Used(i))
 			{
@@ -248,7 +249,7 @@ void SaveState()
 }
 void LoadStateFileV001()
 {
-	btui32 empty = 0u;
+	lui32 empty = 0u;
 
 	FILE* file = fopen("save/save.bin", "rb"); // Open file
 	if (file != NULL)
@@ -263,14 +264,14 @@ void LoadStateFileV001()
 		// Actual game state
 		fread(&tickCount, SIZE_64, 1, file);
 		fread(&core::players, SIZE_16, NUM_PLAYERS, file);
-		btui64 temp = 0;
+		lui64 temp = 0;
 		fread(&temp, SIZE_64, 1, file);
 
 		//-------------------------------- ENTITIES
 
-		btui32 ent_count = 0u;
+		lui32 ent_count = 0u;
 		fread(&ent_count, SIZE_32, 1, file);
-		for (btID i = 0; i <= ent_count; i++) // For every entity
+		for (lid i = 0; i < ent_count; i++) // For every entity
 		{
 			// Could probably just write the type straight up as type_null means unused now
 			bool ent_exists = false;
@@ -282,7 +283,7 @@ void LoadStateFileV001()
 			}
 		}
 
-		for (btID i = 0; i <= GetLastEntity(); i++) // For every entity
+		for (lid i = 0; i < ent_count; i++) // For every entity
 		{
 			if (GetEntityExists(i))
 			{
@@ -360,14 +361,16 @@ void LoadStateFileV001()
 
 		//-------------------------------- ITEMS
 
-		fread(&buf_iteminst->index_end, SIZE_16, 1, file);
-		fread(buf_iteminst->TypeRW(), SIZE_8, (size_t)(buf_iteminst->index_end + 1u), file);
+		lui32 itemsize = 0u;
+		fread(&itemsize, SIZE_16, 1, file);
+		buf_iteminst->SetSize(itemsize);
+		fread(buf_iteminst->TypeRW(), SIZE_8, (size_t)itemsize, file);
 
-		for (btID i = 0; i <= buf_iteminst->index_end; i++) // For every entity
+		for (lid i = 0; i < itemsize; i++) // For every entity
 		{
 			if (buf_iteminst->Used(i))
 			{
-				btID template_temp;
+				lid template_temp;
 				fread(&template_temp, SIZE_16, 1, file);
 
 				HeldItem* itemptr = GETITEMINST(i);
@@ -420,10 +423,10 @@ void LoadStateFileV001()
 }
 bool LoadState()
 {
-	btui32 FILE_VER = 0b11111111111111111111111111111111;
-	btui32 GAME_VER = 0b11111111111111111111111111111111;
-	btui32 PROJ_VER = 0b11111111111111111111111111111111;
-	btui32 TEMP_VER = 0b11111111111111111111111111111111;
+	lui32 FILE_VER = 0b11111111111111111111111111111111;
+	lui32 GAME_VER = 0b11111111111111111111111111111111;
+	lui32 PROJ_VER = 0b11111111111111111111111111111111;
+	lui32 TEMP_VER = 0b11111111111111111111111111111111;
 
 	FILE* file = fopen("save/save.bin", "rb"); // Open file
 	if (file == NULL) goto loadfailed_nofile;

@@ -6,24 +6,24 @@
 struct InputBuffer
 {
 	// new test keys
-	btui64 keyBitsHeld = 0u;
-	btui64 keyBitsHit = 0u;
+	lui64 keyBitsHeld = 0u;
+	lui64 keyBitsHit = 0u;
 
-	btf32 mouse_x = 0.f;
-	btf32 mouse_y = 0.f;
-	btf32 mouse_last_x = 0.f;
-	btf32 mouse_last_y = 0.f;
-	btf32 joy_x_a = 0.f;
-	btf32 joy_y_a = 0.f;
-	btf32 joy_x_b = 0.f;
-	btf32 joy_y_b = 0.f;
+	lf32 mouse_x = 0.f;
+	lf32 mouse_y = 0.f;
+	lf32 mouse_last_x = 0.f;
+	lf32 mouse_last_y = 0.f;
+	lf32 joy_x_a = 0.f;
+	lf32 joy_y_a = 0.f;
+	lf32 joy_x_b = 0.f;
+	lf32 joy_y_b = 0.f;
 };
 
 namespace input
 {
 	namespace scancode
 	{
-		enum ScanCode : btui32
+		enum ScanCode : lui32
 		{
 			Q = 0X10,
 			W = 0X11,
@@ -57,7 +57,7 @@ namespace input
 
 	namespace key
 	{
-		enum Key2 : btui8
+		enum Key2 : lui8
 		{
 			NONE, // Empty input
 
@@ -142,8 +142,8 @@ namespace input
 	void ClearAll();
 
 	#ifdef DEF_NMP
-	bool GetHeld(btui32 INDEX, key::Key2 KEY);
-	bool GetHit(btui32 INDEX, key::Key2 KEY);
+	bool GetHeld(lui32 INDEX, key::Key2 KEY);
+	bool GetHit(lui32 INDEX, key::Key2 KEY);
 	#endif
 	bool GetHeld(key::Key2 KEY);
 	bool GetHit(key::Key2 KEY);
