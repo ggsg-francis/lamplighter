@@ -9,47 +9,53 @@
 //-------------------------------- ENTITIES
 
 // Return a string which will be printed to the screen when this entity is looked at
-char* EntityName(lid id);
+char* EntityName(lui32 index);
 // Tick this entity
-void EntityTick(lid id, lf32 dt);
+void EntityTick(lui32 index, lf32 dt);
 // Render graphics of this entity
-void EntityDraw(lid id);
+void EntityDraw(lui32 index);
 // Set properties of an entity so that we can use it in-game
 void IndexRegisterEntityMeta(EntityType type, lui32 size,
-	char*(*_fpName)(void*), void(*_fpTick)(lid, void*, lf32), void(*_fpDraw)(lid, void*));
+	char*(*_fpName)(void*), void(*_fpTick)(LtrID, void*, lf32), void(*_fpDraw)(LtrID, void*));
 // Make an entity at this specified address
-void IndexSpawnEntityFixedID(EntityType TYPE, lid ID);
+void IndexSpawnEntityFixedID(EntityType TYPE, LtrID ID);
 // Make an entity, return ID
-lid IndexSpawnEntity(EntityType TYPE);
+LtrID IndexSpawnEntity(EntityType TYPE);
 // Get whether an entity with this ID exists
-bool GetEntityExists(lid ID);
+bool GetEntityExists(LtrID id);
+// Get whether any entity is taking up this space (for iterating (temp?))
+bool AnyEntityHere(lui32 index);
 // Get the ID of the last entity
-lid GetEntityArraySize();
+lui32 GetEntityArraySize();
 // Get the pointer address of the entity at X ID
-void* GetEntityPtr(lid ID);
+void* GetEntityPtr(lui32 index);
+//
+LtrID GetEntityID(lui32 index);
 // Replaces the old ENTITY() etc. macros
-template <typename Type> Type* GetEntity(lid id) {
-	return (Type*)GetEntityPtr(id);
+template <typename Type> Type* GetEntity(lui32 index) {
+	return (Type*)GetEntityPtr(index);
 }
 // Get the type of the entity at ID
-EntityType GetEntityType(lid ID);
+EntityType GetEntityType(lui32 index);
 //
-void IndexDeleteEntity(lid ID);
+void IndexDeleteEntity(lui32 index);
 //
 void IndexClearEntities();
 
 //-------------------------------- ITEMS
 
 // Make an item, return ID
-lid InitItemInstance(ItemType TYPE);
+LtrID InitItemInstance(ItemType TYPE);
 // Get whether an item with this ID exists
-bool ItemInstanceExists(lid ID);
+bool ItemInstanceExists(LtrID ID);
 // Get the pointer address of the item at ID
-void* GetItemInstance(lid ID);
-// Get the type of the item at ID
-ItemType GetItemInstanceType(lid ID);
+void* GetItemInstance(lui32 index);
 //
-void FreeItemInstance(lid ID);
+LtrID GetItemInstanceID(lui32 index);
+// Get the type of the item at ID
+ItemType GetItemInstanceType(lui32 index);
+//
+void FreeItemInstance(lui32 index);
 //
 void IndexClearItemInstances();
 
@@ -57,20 +63,23 @@ void IndexClearItemInstances();
 
 // TODO: working on reducing the use of these functions
 //  ok
-#define ENT_VOID(a) (GetEntityPtr(a))
+#define ENT_VOID(a) (GetEntityPtr(a.Index()))
 // not ok
-#define ACTOR(a) ((ECActor*)GetEntityPtr(a))
+#define ACTOR(a) ((ECActor*)GetEntityPtr(a.Index()))
 // not ok
-#define ENTITY(a) ((ECCommon*)GetEntityPtr(a))
+#define ENTITY(a) ((ECCommon*)GetEntityPtr(a.Index()))
 // not ok
-#define ITEM(a) ((ECSingleItem*)GetEntityPtr(a))
+#define ITEM(a) ((ECSingleItem*)GetEntityPtr(a.Index()))
 
 // Get address of item instance by index
-#define GETITEMINST(a) ((HeldItem*)GetItemInstance(a))
+#define GETITEMINST(a) ((HeldItem*)GetItemInstance(a.Index()))
+
+#define IDCHECK(a) (a.GUID() != ID2_NULL.GUID())
+#define IDCOMPARE(a, b) (a.GUID() == b.GUID())
 
 //-------------------------------- PROJECTILES
 
-typedef struct _prjid { lid id; } PrjID;
+typedef struct _prjid { ID16 id; } PrjID;
 
 PrjID MakePrjID(int i);
 
@@ -96,7 +105,7 @@ typedef struct
 	TransformC t;
 	lui64 ttd;
 	lui32 faction;
-	lid type;
+	ID16 type;
 } Projectile;
 
 PrjID IndexSpawnProjectile();

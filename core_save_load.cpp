@@ -46,29 +46,30 @@ void SaveState()
 
 	// clean all unused item instances
 	// this is a hack and i know it
-	for (lid index_item = 0; index_item < buf_iteminst->Size(); index_item++) { // For every item
-		if (!buf_iteminst->Used(index_item)) continue;
+	for (ID16 index_item = 0; index_item < buf_iteminst->Size(); index_item++) { // For every item
+		if (!buf_iteminst->AnyHere(index_item)) continue;
 		lui32 item_reference_count = 0u;
-		for (lid index_ent = 0; index_ent < GetEntityArraySize(); index_ent++) { // For every entity
-			if (!GetEntityExists(index_ent)) continue;
+		for (ID16 index_ent = 0; index_ent < GetEntityArraySize(); index_ent++) { // For every entity
+			if (!AnyEntityHere(index_ent)) continue;
 			// if this entity has an inventory
 			if (GetEntityType(index_ent) == ENTITY_TYPE_ACTOR) {
 				// for every invntory slot
-				for (lui32 inv_slot = 0; inv_slot < ACTOR(index_ent)->inventory.items.Size(); ++inv_slot) {
+				for (lui32 inv_slot = 0; inv_slot < GetEntity<ECActor>(index_ent)->inventory.items.Size(); ++inv_slot) {
 					// if this slot contains this item
-					if (ACTOR(index_ent)->inventory.items[inv_slot] != index_item) continue;
+					if (GetEntity<ECActor>(index_ent)->inventory.items[inv_slot].Index() != index_item) continue;
 					item_reference_count++;
 					goto item_done; // we found our reference so can skip the rest
 				}
 			}
-			else if (GetEntityType(index_ent) == ENTITY_TYPE_RESTING_ITEM && ITEM(index_ent)->item_instance == index_item) {
+			else if (GetEntityType(index_ent) == ENTITY_TYPE_RESTING_ITEM &&
+				GetEntity<ECSingleItem>(index_ent)->item_instance.Index() == index_item) {
 				item_reference_count++;
 				goto item_done; // we found our reference so can skip the rest
 			}
 		}
 	item_done:
 		if (item_reference_count == 0u) {
-			core::DestroyItem(index_item);
+			core::DestroyItem(GetItemInstanceID(index_item));
 			std::cout << "Destroyed Item with no references!" << std::endl;
 		}
 	}
@@ -90,7 +91,7 @@ void SaveState()
 
 		// Actual game state
 		fwrite(&tickCount, SIZE_64, 1, file);
-		fwrite(&core::players, SIZE_16, NUM_PLAYERS, file);
+		fwrite(&core::players, SIZE_64, NUM_PLAYERS, file);
 		lui64 temp = 0;
 		fwrite(&temp, SIZE_64, 1, file);
 
@@ -98,21 +99,23 @@ void SaveState()
 
 		lui32 ent_count = GetEntityArraySize();
 		fwrite(&ent_count, SIZE_32, 1, file);
-		for (lid i = 0; i < ent_count; i++) // For every entity
+		for (ID16 i = 0; i < ent_count; i++) // For every entity
 		{
 			// Could probably just write the type straight up as type_null means unused now
-			bool ent_exists = GetEntityExists(i);
+			bool ent_exists = AnyEntityHere(i);
 			fwrite(&ent_exists, SIZE_8, 1, file);
 			if (ent_exists) {
 				EntityType type = GetEntityType(i);
 				fwrite(&type, SIZE_8, 1, file);
+				LtrID id = GetEntityID(i);
+				fwrite(&id, SIZE_64, 1, file);
 			}
 		}
-		for (lid i = 0; i < ent_count; i++) // For every entity
+		for (ID16 i = 0; i < ent_count; i++) // For every entity
 		{
-			if (GetEntityExists(i))
+			if (AnyEntityHere(i))
 			{
-				ECCommon* entptr = ENTITY(i);
+				ECCommon* entptr = ENTITY(GetEntityID(i));
 				fwrite(&entptr->name, 32, 1, file);
 				fwrite(&entptr->physicsFlags, SIZE_8, 1, file);
 				fwrite(&entptr->faction, SIZE_8, 1, file);
@@ -137,12 +140,12 @@ void SaveState()
 				{
 				case ENTITY_TYPE_RESTING_ITEM:
 				{
-					fwrite(&ITEM(i)->item_instance, SIZE_16, 1, file);
+					fwrite(&ITEM(GetEntityID(i))->item_instance, SIZE_64, 1, file);
 				}
 				break;
 				case ENTITY_TYPE_ACTOR:
 				{
-					ECActor* actptr = ACTOR(i);
+					ECActor* actptr = ACTOR(GetEntityID(i));
 					fwrite(&actptr->input.bits, SIZE_16, 1, file);
 					fwrite(&actptr->input.move.x, SIZE_32, 1, file);
 					fwrite(&actptr->input.move.y, SIZE_32, 1, file);
@@ -157,7 +160,7 @@ void SaveState()
 					fwrite(&actptr->stamina, sizeof(MaxedStat), 1, file);
 					fwrite(&actptr->inventory, sizeof(Inventory), 1, file);
 					fwrite(&actptr->inv_active_slot, SIZE_32, 1, file);
-					fwrite(&actptr->atk_target, SIZE_16, 1, file);
+					fwrite(&actptr->atk_target, SIZE_64, 1, file);
 					fwrite(&temp, SIZE_8, 1, file);
 					fwrite(&actptr->foot_state, SIZE_8, 1, file);
 					fwrite(&actptr->jump_state, SIZE_8, 1, file);
@@ -170,9 +173,9 @@ void SaveState()
 					fwrite(&actptr->aniCrouch, SIZE_8, 1, file);
 					fwrite(&actptr->aniSlideResponse, SIZE_32, 1, file);
 					fwrite(&actptr->aniRun, SIZE_8, 1, file);
-					fwrite(&actptr->aniHandHoldTarget, SIZE_16, 1, file);
-					fwrite(&actptr->ai_target_ent, SIZE_16, 1, file);
-					fwrite(&actptr->ai_ally_ent, SIZE_16, 1, file);
+					fwrite(&actptr->aniHandHoldTarget, SIZE_64, 1, file);
+					fwrite(&actptr->ai_target_ent, SIZE_64, 1, file);
+					fwrite(&actptr->ai_ally_ent, SIZE_64, 1, file);
 					fwrite(&actptr->aiControlled, SIZE_8, 1, file);
 					fwrite(&actptr->ai_path, sizeof(path::Path), 1, file);
 					fwrite(&actptr->ai_path_current_index, SIZE_8, 1, file);
@@ -189,11 +192,11 @@ void SaveState()
 		fwrite(&itemsize, SIZE_16, 1, file);
 		fwrite(buf_iteminst->TypeRW(), SIZE_8, (size_t)itemsize, file);
 
-		for (lid i = 0; i < itemsize; i++) // For every item
+		for (ID16 i = 0; i < itemsize; i++) // For every item
 		{
-			if (buf_iteminst->Used(i))
+			if (buf_iteminst->AnyHere(i))
 			{
-				HeldItem* itemptr = GETITEMINST(i);
+				HeldItem* itemptr = GETITEMINST(GetItemInstanceID(i));
 
 				fwrite(&itemptr->id_item_template, SIZE_16, 1, file);
 
@@ -211,7 +214,7 @@ void SaveState()
 				fwrite(&itemptr->ang_aim_offset_temp, SIZE_32, 1, file);
 				fwrite(&itemptr->ang_aim_pitch, SIZE_32, 1, file);
 				fwrite(&itemptr->fire_time, SIZE_64, 1, file);
-				fwrite(&itemptr->id_ammoInstance, SIZE_16, 1, file);
+				fwrite(&itemptr->id_ammoInstance, SIZE_64, 1, file);
 				
 				fwrite(&itemptr->charge, SIZE_32, 1, file);
 				
@@ -263,7 +266,7 @@ void LoadStateFileV001()
 
 		// Actual game state
 		fread(&tickCount, SIZE_64, 1, file);
-		fread(&core::players, SIZE_16, NUM_PLAYERS, file);
+		fread(&core::players, SIZE_64, NUM_PLAYERS, file);
 		lui64 temp = 0;
 		fread(&temp, SIZE_64, 1, file);
 
@@ -271,7 +274,7 @@ void LoadStateFileV001()
 
 		lui32 ent_count = 0u;
 		fread(&ent_count, SIZE_32, 1, file);
-		for (lid i = 0; i < ent_count; i++) // For every entity
+		for (ID16 i = 0; i < ent_count; i++) // For every entity
 		{
 			// Could probably just write the type straight up as type_null means unused now
 			bool ent_exists = false;
@@ -279,15 +282,17 @@ void LoadStateFileV001()
 			if (ent_exists) {
 				EntityType type = ENTITY_TYPE_NULL;
 				fread(&type, SIZE_8, 1, file);
-				IndexSpawnEntityFixedID(type, i);
+				LtrID id = ID2_NULL;
+				fread(&id, SIZE_64, 1, file);
+				IndexSpawnEntityFixedID(type, id);
 			}
 		}
 
-		for (lid i = 0; i < ent_count; i++) // For every entity
+		for (ID16 i = 0; i < ent_count; i++) // For every entity
 		{
-			if (GetEntityExists(i))
+			if (AnyEntityHere(i))
 			{
-				ECCommon* entptr = ENTITY(i);
+				ECCommon* entptr = ENTITY(GetEntityID(i));
 				fread(&entptr->name, 32, 1, file);
 				fread(&entptr->physicsFlags, SIZE_8, 1, file);
 				fread(&entptr->faction, SIZE_8, 1, file);
@@ -312,12 +317,12 @@ void LoadStateFileV001()
 				{
 				case ENTITY_TYPE_RESTING_ITEM:
 				{
-					fread(&ITEM(i)->item_instance, SIZE_16, 1, file);
+					fread(&ITEM(GetEntityID(i))->item_instance, SIZE_64, 1, file);
 				}
 				break;
 				case ENTITY_TYPE_ACTOR:
 				{
-					ECActor* actptr = ACTOR(i);
+					ECActor* actptr = ACTOR(GetEntityID(i));
 					fread(&actptr->input.bits, SIZE_16, 1, file);
 					fread(&actptr->input.move.x, SIZE_32, 1, file);
 					fread(&actptr->input.move.y, SIZE_32, 1, file);
@@ -332,7 +337,7 @@ void LoadStateFileV001()
 					fread(&actptr->stamina, sizeof(MaxedStat), 1, file);
 					fread(&actptr->inventory, sizeof(Inventory), 1, file);
 					fread(&actptr->inv_active_slot, SIZE_32, 1, file);
-					fread(&actptr->atk_target, SIZE_16, 1, file);
+					fread(&actptr->atk_target, SIZE_64, 1, file);
 					fread(&temp, SIZE_8, 1, file);
 					fread(&actptr->foot_state, SIZE_8, 1, file);
 					fread(&actptr->jump_state, SIZE_8, 1, file);
@@ -345,9 +350,9 @@ void LoadStateFileV001()
 					fread(&actptr->aniCrouch, SIZE_8, 1, file);
 					fread(&actptr->aniSlideResponse, SIZE_32, 1, file);
 					fread(&actptr->aniRun, SIZE_8, 1, file);
-					fread(&actptr->aniHandHoldTarget, SIZE_16, 1, file);
-					fread(&actptr->ai_target_ent, SIZE_16, 1, file);
-					fread(&actptr->ai_ally_ent, SIZE_16, 1, file);
+					fread(&actptr->aniHandHoldTarget, SIZE_64, 1, file);
+					fread(&actptr->ai_target_ent, SIZE_64, 1, file);
+					fread(&actptr->ai_ally_ent, SIZE_64, 1, file);
 					fread(&actptr->aiControlled, SIZE_8, 1, file);
 					fread(&actptr->ai_path, sizeof(path::Path), 1, file);
 					fread(&actptr->ai_path_current_index, SIZE_8, 1, file);
@@ -366,14 +371,14 @@ void LoadStateFileV001()
 		buf_iteminst->SetSize(itemsize);
 		fread(buf_iteminst->TypeRW(), SIZE_8, (size_t)itemsize, file);
 
-		for (lid i = 0; i < itemsize; i++) // For every entity
+		for (ID16 i = 0; i < itemsize; i++) // For every entity
 		{
-			if (buf_iteminst->Used(i))
+			if (buf_iteminst->AnyHere(i))
 			{
-				lid template_temp;
+				ID16 template_temp;
 				fread(&template_temp, SIZE_16, 1, file);
 
-				HeldItem* itemptr = GETITEMINST(i);
+				HeldItem* itemptr = GETITEMINST(GetItemInstanceID(i));
 
 				itemptr->id_item_template = template_temp;
 
@@ -391,7 +396,7 @@ void LoadStateFileV001()
 				fread(&itemptr->ang_aim_offset_temp, SIZE_32, 1, file);
 				fread(&itemptr->ang_aim_pitch, SIZE_32, 1, file);
 				fread(&itemptr->fire_time, SIZE_64, 1, file);
-				fread(&itemptr->id_ammoInstance, SIZE_16, 1, file);
+				fread(&itemptr->id_ammoInstance, SIZE_64, 1, file);
 
 				fread(&itemptr->charge, SIZE_32, 1, file);
 

@@ -72,19 +72,23 @@ namespace acv
 			switch (assets[i].type) {
 			case ASSET_TEXTURE_FILE:
 				assets[i].asset = assetLump->AddEnt(sizeof(graphics::Texture), ASSET_TEXTURE_FILE);
-				((graphics::Texture*)assetLump->GetEnt(assets[i].asset))->LoadFile(fileARCHIVE);
+				((graphics::Texture*)assetLump->GetEnt(assets[i].asset.Index()))->LoadFile(fileARCHIVE);
 				break;
 			case ASSET_MESH_FILE:
 				assets[i].asset = assetLump->AddEnt(sizeof(graphics::Mesh), ASSET_MESH_FILE);
-				((graphics::Mesh*)assetLump->GetEnt(assets[i].asset))->LoadFile(fileARCHIVE, false);
+				((graphics::Mesh*)assetLump->GetEnt(assets[i].asset.Index()))->LoadFile(fileARCHIVE, false);
 				break;
 			case ASSET_MESHBLEND_FILE:
 				assets[i].asset = assetLump->AddEnt(sizeof(graphics::MeshBlend), ASSET_MESHBLEND_FILE);
-				((graphics::MeshBlend*)assetLump->GetEnt(assets[i].asset))->LoadFile(fileARCHIVE);
+				((graphics::MeshBlend*)assetLump->GetEnt(assets[i].asset.Index()))->LoadFile(fileARCHIVE);
+				break;
+			case ASSET_MESHSET_FILE:
+				assets[i].asset = assetLump->AddEnt(sizeof(graphics::MeshSet), ASSET_MESHSET_FILE);
+				((graphics::MeshSet*)assetLump->GetEnt(assets[i].asset.Index()))->LoadFile(fileARCHIVE);
 				break;
 			case ASSET_MESHDEFORM_FILE:
 				assets[i].asset = assetLump->AddEnt(sizeof(graphics::MeshDeform), ASSET_MESHDEFORM_FILE);
-				((graphics::MeshDeform*)assetLump->GetEnt(assets[i].asset))->LoadFile(fileARCHIVE);
+				((graphics::MeshDeform*)assetLump->GetEnt(assets[i].asset.Index()))->LoadFile(fileARCHIVE);
 				break;
 			};
 			assets[i].loaded = true;
@@ -95,25 +99,28 @@ namespace acv
 	}
 
 	void UnloadAsset(lui32 i) {
-		if (assets[i].asset != ID_NULL && assets[i].loaded) {
+		if (assets[i].asset.GUID() != ID2_NULL.GUID() && assets[i].loaded) {
 			switch (assets[i].type) {
 			case ASSET_TEXTURE_FILE:
-				((graphics::Texture*)assetLump->GetEnt(assets[i].asset))->Unload();
+				((graphics::Texture*)assetLump->GetEnt(assets[i].asset.Index()))->Unload();
 				break;
 			case ASSET_MESH_FILE:
-				((graphics::Mesh*)assetLump->GetEnt(assets[i].asset))->Unload();
+				((graphics::Mesh*)assetLump->GetEnt(assets[i].asset.Index()))->Unload();
 				break;
 			case ASSET_MESHBLEND_FILE:
-				((graphics::MeshBlend*)assetLump->GetEnt(assets[i].asset))->Unload();
+				((graphics::MeshBlend*)assetLump->GetEnt(assets[i].asset.Index()))->Unload();
+				break;
+			case ASSET_MESHSET_FILE:
+				((graphics::MeshSet*)assetLump->GetEnt(assets[i].asset.Index()))->Unload();
 				break;
 			case ASSET_MESHDEFORM_FILE:
-				((graphics::MeshDeform*)assetLump->GetEnt(assets[i].asset))->Unload();
+				((graphics::MeshDeform*)assetLump->GetEnt(assets[i].asset.Index()))->Unload();
 				break;
 			};
 			assets[i].loaded = false;
 			asset_loaded_size -= assets[i].file_size;
-			assetLump->RmvEnt(assets[i].asset);
-			assets[i].asset = ID_NULL;
+			assetLump->RmvEnt(assets[i].asset.Index());
+			assets[i].asset = ID2_NULL;
 		}
 	};
 
@@ -151,37 +158,46 @@ namespace acv
 	graphics::Texture& GetT(lui32 index) {
 		if (index < assetCount && assets[index].type == ASSET_TEXTURE_FILE) {
 			AssetAccessCheck(index);
-			return *(graphics::Texture*)assetLump->GetEnt(assets[index].asset);
+			return *(graphics::Texture*)assetLump->GetEnt(assets[index].asset.Index());
 		}
 		AssetAccessCheck(DEFAULT_TEXTURE);
-		return *(graphics::Texture*)assetLump->GetEnt(assets[DEFAULT_TEXTURE].asset);
+		return *(graphics::Texture*)assetLump->GetEnt(assets[DEFAULT_TEXTURE].asset.Index());
 	}
 
 	graphics::Mesh& GetM(lui32 index) {
 		if (index < assetCount && assets[index].type == ASSET_MESH_FILE) {
 			AssetAccessCheck(index);
-			return *(graphics::Mesh*)assetLump->GetEnt(assets[index].asset);
+			return *(graphics::Mesh*)assetLump->GetEnt(assets[index].asset.Index());
 		}
 		AssetAccessCheck(DEFAULT_MESH);
-		return *(graphics::Mesh*)assetLump->GetEnt(assets[DEFAULT_MESH].asset);
+		return *(graphics::Mesh*)assetLump->GetEnt(assets[DEFAULT_MESH].asset.Index());
 	}
 
 	graphics::MeshBlend& GetMB(lui32 index) {
 		if (index < assetCount && assets[index].type == ASSET_MESHBLEND_FILE) {
 			AssetAccessCheck(index);
-			return *(graphics::MeshBlend*)assetLump->GetEnt(assets[index].asset);
+			return *(graphics::MeshBlend*)assetLump->GetEnt(assets[index].asset.Index());
 		}
 		AssetAccessCheck(DEFAULT_MESHBLEND);
-		return *(graphics::MeshBlend*)assetLump->GetEnt(assets[DEFAULT_MESHBLEND].asset);
+		return *(graphics::MeshBlend*)assetLump->GetEnt(assets[DEFAULT_MESHBLEND].asset.Index());
+	}
+
+	graphics::MeshSet& GetMS(lui32 index) {
+		if (index < assetCount && assets[index].type == ASSET_MESHSET_FILE) {
+			AssetAccessCheck(index);
+			return *(graphics::MeshSet*)assetLump->GetEnt(assets[index].asset.Index());
+		}
+		AssetAccessCheck(DEFAULT_MESHSET);
+		return *(graphics::MeshSet*)assetLump->GetEnt(assets[ASSET_MESHSET_FILE].asset.Index());
 	}
 
 	graphics::MeshDeform& GetMD(lui32 index) {
 		if (index < assetCount && assets[index].type == ASSET_MESHDEFORM_FILE) {
 			AssetAccessCheck(index);
-			return *(graphics::MeshDeform*)assetLump->GetEnt(assets[index].asset);
+			return *(graphics::MeshDeform*)assetLump->GetEnt(assets[index].asset.Index());
 		}
 		AssetAccessCheck(DEFAULT_MESHDEFORM);
-		return *(graphics::MeshDeform*)assetLump->GetEnt(assets[DEFAULT_MESHDEFORM].asset);
+		return *(graphics::MeshDeform*)assetLump->GetEnt(assets[DEFAULT_MESHDEFORM].asset.Index());
 	}
 
 	bool IsTexture(lui32 index) {

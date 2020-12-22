@@ -25,11 +25,17 @@ li16 tx_depth2[(LR_RENDER_W * LR_RENDER_H) + 4];
 m::Vector3 viewP;
 m::Quaternion viewR;
 
-glm::vec4 ProjectVert(m::Vector3 input) {
+m::Vector3 ProjectNormal(m::Vector3 input, graphics::Matrix4x4* modelmat) {
+	glm::vec4 glpos = glm::vec4(input.x, input.y, -input.z, 0.f);
+	glm::vec4 pr = (*(glm::mat4*)modelmat * glpos);
+
+	return m::Normalize(m::Vector3(pr.x, pr.y, pr.z));
+}
+glm::vec4 ProjectVert(m::Vector3 input, graphics::Matrix4x4* modelmat) {
 	glm::vec4 glpos = glm::vec4(input.x, input.y, -input.z, 1.f);
 	glm::mat4 matv = graphics::GetMatView();
 	glm::mat4 matp = graphics::GetMatProj();
-	glm::vec4 pr = matp * matv * glpos;
+	glm::vec4 pr = matp * matv * (*(glm::mat4*)modelmat * glpos);
 
 	pr.z = -pr.z; // Don't ask me
 	pr.y = -pr.y; // Don't ask me
@@ -54,7 +60,7 @@ glm::vec4 ProjectVert(m::Vector3 input) {
 //#define TF_SCALE_X LR_RENDER_W * 0.125
 //#define TF_SCALE_Y LR_RENDER_H * 0.125
 
-void RenderDrawMesh(graphics::Mesh* mesh, graphics::Texture* txtr)
+void RenderDrawMesh(graphics::Mesh* mesh, graphics::Texture* txtr, graphics::Matrix4x4 matr)
 {
 	Vertex* vces = mesh->Vces();
 	lui32* ices = mesh->Ices();
@@ -65,17 +71,14 @@ void RenderDrawMesh(graphics::Mesh* mesh, graphics::Texture* txtr)
 		m::Quaternion r;
 
 		// rotated normals
-		m::Vector3 newnor1 = m::RotateVector(m::Vector3(glm::vec4((vces[ices[i]].nor.x), (vces[ices[i]].nor.y), (vces[ices[i]].nor.z), 1.f)), r);
-		m::Vector3 newnor2 = m::RotateVector(m::Vector3(glm::vec4((vces[ices[i + 1]].nor.x), (vces[ices[i + 1]].nor.y), (vces[ices[i + 1]].nor.z), 1.f)), r);
-		m::Vector3 newnor3 = m::RotateVector(m::Vector3(glm::vec4((vces[ices[i + 2]].nor.x), (vces[ices[i + 2]].nor.y), (vces[ices[i + 2]].nor.z), 1.f)), r);
-		//m::Vector3 newnor1 = m::Vector3(glm::vec4((vces[ices[i]].nor.x), (vces[ices[i]].nor.y), (vces[ices[i]].nor.z), 1.f));
-		//m::Vector3 newnor2 = m::Vector3(glm::vec4((vces[ices[i + 1]].nor.x), (vces[ices[i + 1]].nor.y), (vces[ices[i + 1]].nor.z), 1.f));
-		//m::Vector3 newnor3 = m::Vector3(glm::vec4((vces[ices[i + 2]].nor.x), (vces[ices[i + 2]].nor.y), (vces[ices[i + 2]].nor.z), 1.f));
+		m::Vector3 newnor1 = ProjectNormal(m::Vector3(vces[ices[i]].nor.x, vces[ices[i]].nor.y, vces[ices[i]].nor.z), &matr);
+		m::Vector3 newnor2 = ProjectNormal(m::Vector3(vces[ices[i + 1]].nor.x, vces[ices[i + 1]].nor.y, vces[ices[i + 1]].nor.z), &matr);
+		m::Vector3 newnor3 = ProjectNormal(m::Vector3(vces[ices[i + 2]].nor.x, vces[ices[i + 2]].nor.y, vces[ices[i + 2]].nor.z), &matr);
 
 		// dots
-		lf32 ndotl = m::Clamp(m::Dot(newnor1, m::Normalize(m::Vector3(1.f, 0.f, 1.f))), 0.f, 1.f);
-		lf32 ndotl_b = m::Clamp(m::Dot(newnor2, m::Normalize(m::Vector3(1.f, 0.f, 1.f))), 0.f, 1.f);
-		lf32 ndotl_c = m::Clamp(m::Dot(newnor3, m::Normalize(m::Vector3(1.f, 0.f, 1.f))), 0.f, 1.f);
+		lf32 ndotl = m::Clamp(m::Dot(newnor1, m::Normalize(m::Vector3(0.5f, 1.f, 0.5f))), 0.f, 1.f);
+		lf32 ndotl_b = m::Clamp(m::Dot(newnor2, m::Normalize(m::Vector3(0.5f, 1.f, 0.5f))), 0.f, 1.f);
+		lf32 ndotl_c = m::Clamp(m::Dot(newnor3, m::Normalize(m::Vector3(0.5f, 1.f, 0.5f))), 0.f, 1.f);
 
 		glm::vec4 pos_passtwo = glm::vec4();
 		bool passtwo = false;
@@ -83,9 +86,9 @@ void RenderDrawMesh(graphics::Mesh* mesh, graphics::Texture* txtr)
 	redotest:
 
 		// add camera rotation
-		glm::vec4 newpos1 = ProjectVert(m::Vector3((vces[ices[i]].pos.x), (vces[ices[i]].pos.y), (vces[ices[i]].pos.z)));
-		glm::vec4 newpos2 = ProjectVert(m::Vector3((vces[ices[i + 1]].pos.x), (vces[ices[i + 1]].pos.y), (vces[ices[i + 1]].pos.z)));
-		glm::vec4 newpos3 = ProjectVert(m::Vector3((vces[ices[i + 2]].pos.x), (vces[ices[i + 2]].pos.y), (vces[ices[i + 2]].pos.z)));
+		glm::vec4 newpos1 = ProjectVert(m::Vector3((vces[ices[i]].pos.x), (vces[ices[i]].pos.y), (vces[ices[i]].pos.z)), &matr);
+		glm::vec4 newpos2 = ProjectVert(m::Vector3((vces[ices[i + 1]].pos.x), (vces[ices[i + 1]].pos.y), (vces[ices[i + 1]].pos.z)), &matr);
+		glm::vec4 newpos3 = ProjectVert(m::Vector3((vces[ices[i + 2]].pos.x), (vces[ices[i + 2]].pos.y), (vces[ices[i + 2]].pos.z)), &matr);
 
 		#if NEAR_CLIPPING
 
@@ -352,30 +355,30 @@ void RenderInit()
 	//tx.Init(CT_RENDER_W, CT_RENDER_H, graphics::colour(128, 128, 128, 255));
 }
 
-void DrawTexture(li32 x, li32 y, graphics::Texture* tx) {
-	lr::LRDrawTxtr(36, 36, tx->buffer2, tx->width, tx->height);
-}
-
-void LRDrawFrame()
+void RenderClear()
 {
 	lr::LRClear();
+}
 
-	// set camera position
+void RenderTexture(li32 x, li32 y, graphics::Texture* tx) {
+	lr::LRDrawTxtr(x, y, tx->buffer2, tx->width, tx->height);
+}
+void RenderSprite(li32 x, li32 y, graphics::Texture* tx, lui32 spritesize, lui32 num) {
+	int x2 = num % (tx->width / spritesize);
+	int y2 = num / (tx->height / spritesize);
+	lr::LRDrawTxtrSegment(x, y, tx->buffer2, tx->width, tx->height, spritesize, spritesize, x2 * spritesize, y2 * spritesize);
+}
 
-	viewP = m::Vector3(0.f, -1.f, 0.f);
-	//viewR = m::Rotate(m::Quaternion(0, 0, 0, 1), glm::radians(45.f), m::Vector3(0, 0, 1));
-	viewR = m::Rotate(m::Quaternion(0, 0, 0, 1), glm::radians(0.f), m::Vector3(0, 0, 1));
-
-	RenderDrawMesh(&acv::GetM(acv::m_world), &acv::GetT(acv::t_terrain_03));
-
+void RenderPrint()
+{
 	// do this if not using opengl
 	//SDL_UpdateWindowSurface(sdl_window);
 
 	// update opengl display
 	tx.ReBindGL(graphics::TextureFilterMode::eLINEAR, graphics::TextureEdgeMode::eCLAMP);
 	//tx.ReBindGL(graphics::TextureFilterMode::eNEAREST, graphics::TextureEdgeMode::eCLAMP);
-	graphics::DrawGUITexture((graphics::Texture*)&tx, 0, 0, LR_RENDER_W, LR_RENDER_H);
-	//graphics::DrawGUITexture((graphics::Texture*)&tx, 0, 0, LR_RENDER_W * 2, LR_RENDER_H * 2);
+	//graphics::DrawGUITexture((graphics::Texture*)&tx, 0, 0, LR_RENDER_W, LR_RENDER_H);
+	graphics::DrawGUITexture((graphics::Texture*)&tx, 0, 0, LR_RENDER_W * 2, LR_RENDER_H * 2);
 }
 
 #endif

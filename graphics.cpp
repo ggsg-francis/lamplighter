@@ -9,6 +9,8 @@
 
 #include "maths.hpp"
 
+#include "render.h"
+
 //-------------------------------- VERTEX ATTRIBUTES
 
 // This looks ridiculous, but the 'offsetof' macro was on the fritz in release builds with MSC for some reason.
@@ -328,6 +330,7 @@ namespace graphics
 		gPtr->shaders[S_GUI].Init(SHADER_VERT_GUI, SHADER_FRAG_GUI);
 		#if !DEF_DEPTH_BUFFER_RW
 		gPtr->shaders[S_POST].Init(SHADER_VERT_FRAMEBUFFER, SHADER_FRAG_FRAMEBUFFER);
+		//gPtr->shaders[S_POST].Init(SHADER_VERT_FRAMEBUFFER, SHADER_FRAG_FRAMEBUFFER_EFFECT);
 		#else
 		gPtr->shaders[S_POST].Init(SHADER_VERT_FRAMEBUFFER, SHADER_FRAG_FRAMEBUFFER_DEPTH_BUFFER);
 		#endif
@@ -475,9 +478,15 @@ namespace graphics
 		// The 3 direction vectors translate directly into the matrix
 		// The third values are inverted for some reason beyond me.
 		// (Don't know why forward must be inverted but will leave for now)
+		#if DEF_SWR
+		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = vSide.z;
+		matrix[1][0] = vLoUp.x; matrix[1][1] = vLoUp.y; matrix[1][2] = vLoUp.z;
+		matrix[2][0] = vForw.x; matrix[2][1] = vForw.y; matrix[2][2] = vForw.z;
+		#else
 		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = -vSide.z;
 		matrix[1][0] = vLoUp.x; matrix[1][1] = vLoUp.y; matrix[1][2] = -vLoUp.z;
 		matrix[2][0] = vForw.x; matrix[2][1] = vForw.y; matrix[2][2] = -vForw.z;
+		#endif
 	}
 	void MatrixTransformForwardUp(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0)) {
 		// Translate matrix
@@ -493,9 +502,15 @@ namespace graphics
 		// The 3 direction vectors translate directly into the matrix
 		// The third values are inverted for some reason beyond me.
 		// (Don't know why forward must be inverted but will leave for now)
+		#if DEF_SWR
+		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = vSide.z;
+		matrix[1][0] = vForw.x; matrix[1][1] = vForw.y; matrix[1][2] = vForw.z;
+		matrix[2][0] = -vLoUp.x; matrix[2][1] = -vLoUp.y; matrix[2][2] = -vLoUp.z;
+		#else
 		matrix[0][0] = vSide.x; matrix[0][1] = vSide.y; matrix[0][2] = -vSide.z;
 		matrix[1][0] = vForw.x; matrix[1][1] = vForw.y; matrix[1][2] = -vForw.z;
 		matrix[2][0] = -vLoUp.x; matrix[2][1] = -vLoUp.y; matrix[2][2] = vLoUp.z;
+		#endif
 	}
 	void MatrixTransformXFlip(Matrix4x4& matrix, m::Vector3 const& pos, m::Vector3 const& dir, m::Vector3 const& up = m::Vector3(0, 1, 0)) {
 		// Translate matrix
@@ -1241,6 +1256,102 @@ namespace graphics
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(1, &vbo);
 		glDeleteBuffers(1, &ebo);
+	}
+
+	//________________________________________________________________________________________________________________________________
+	// MESH SET ----------------------------------------------------------------------------------------------------------------------
+	
+	void MeshSet::LoadFile(void* file)
+	{
+		//-------------------------------- OPEN FILE
+
+		FILE* in = (FILE*)file;
+
+		Vertex* vces[MESHSET_MAX_COUNT]; // Vertices
+		lui32 vces_size;
+		lui32* ices; // Indices
+		//lui32 ices_size;
+
+		version_t v; fread(&v, sizeof(version_t), 1, in); // Read version
+
+		while (true) {
+			lui8 temp;
+			fread(&temp, 1, 1, in);
+			// If there is a mesh here
+			if (temp == 1u) {
+				// Read these once only
+				if (count == 0u) {
+					// Read vertex/index counts
+					fread(&ices_size, 4, 1, in);
+					fread(&vces_size, 4, 1, in);
+
+					vces[count] = (Vertex*)malloc(sizeof(Vertex) * vces_size); // Allocate buffer to hold our vertices
+					ices = (lui32*)malloc(sizeof(lui32) * ices_size); // Allocate buffer to hold our indicess
+
+					// read other stuff
+					for (int i = 0; i < ices_size; i++) {
+						fread(&ices[i], 4, 1, in);
+					}
+					for (int i = 0; i < vces_size; i++) {
+						fread(&vces[count][i].uvc, sizeof(vec2), 1, in);
+						fread(&vces[count][i].col, sizeof(vec4), 1, in); // Colour is useless, OBJ meshes won't have them anyway
+					}
+				}
+				else {
+					vces[count] = (Vertex*)malloc(sizeof(Vertex) * vces_size); // Allocate buffer to hold our vertices
+					// Copy duplicated values (decompression)
+					memcpy(&vces[count][0], &vces[0][0], sizeof(Vertex) * vces_size);
+				}
+				// Read every time
+				for (int i = 0; i < vces_size; i++) {
+					fread(&vces[count][i].pos, sizeof(vec3), 1, in);
+					fread(&vces[count][i].nor, sizeof(vec3), 1, in);
+				}
+				++count;
+			}
+			// No meshes left
+			else {
+				break;
+			}
+		}
+
+		//-------------------------------- INITIALIZE OPENGL BUFFERS
+
+		for (int i = 0; i < count; ++i) {
+			glGenVertexArrays(1, &vao[i]); // Create vertex buffer
+			glGenBuffers(1, &vbo[i]); glGenBuffers(1, &ebo[i]); // Generate vertex and element buffer
+
+			glBindVertexArray(vao[i]); // Bind this vertex array
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[i]); // Create vertex buffer in opengl
+			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[i][0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[i]); // Create index buffer in opengl
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(lui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
+
+			glEnableVertexAttribArray(VI_POS); // Set Vertex positions
+			glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
+			glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
+			glVertexAttribPointer(VI_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_NOR);
+			glEnableVertexAttribArray(VI_UVC); // Set Vertex texture coords
+			glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
+			glEnableVertexAttribArray(VI_COL); // Set Vertex colour
+			glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
+		}
+
+		glBindVertexArray(0); // Bind default vertex array
+
+		for (int i = 0; i < count; ++i)
+			free(vces[i]);
+		free(ices);
+
+		std::cout << "Generated Mesh Set!" << std::endl;
+	}
+	void MeshSet::Unload()
+	{
+		for (int i = 0; i < count; ++i) {
+			glDeleteVertexArrays(1, &vao[i]);
+			glDeleteBuffers(1, &vbo[i]);
+			glDeleteBuffers(1, &ebo[i]);
+		}
 	}
 
 	//________________________________________________________________________________________________________________________________
@@ -2460,8 +2571,11 @@ __forceinline void DrawMeshGL(lui32 mdl, lui32 ices_size, lui32 tex) {
 	glBindVertexArray(0); // Return to default
 }
 
-void DrawMesh(lid id, graphics::Mesh& mdl, graphics::Texture tex,
+void DrawMesh(graphics::Mesh& mdl, graphics::Texture tex,
 	ShaderStyle charashader, graphics::Matrix4x4 matrix) {
+	#if DEF_SWR
+	RenderDrawMesh(&mdl, &tex, matrix);
+	#else
 	graphics::Shader* shd = nullptr;
 	switch (charashader) {
 	case SS_NORMAL:
@@ -2484,6 +2598,7 @@ void DrawMesh(lid id, graphics::Mesh& mdl, graphics::Texture tex,
 
 	// Render the mesh
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
+	#endif
 }
 
 void DrawParticles(graphics::Mesh& mdl, graphics::Texture tex,
@@ -2504,7 +2619,7 @@ void DrawParticles(graphics::Mesh& mdl, graphics::Texture tex,
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawBlendMesh(lid id, graphics::MeshBlend& mdl, lf32 bs, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
+void DrawBlendMesh(graphics::MeshBlend& mdl, lf32 bs, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
 	switch (charashader) {
 	case SS_NORMAL:
@@ -2531,8 +2646,34 @@ void DrawBlendMesh(lid id, graphics::MeshBlend& mdl, lf32 bs, graphics::Texture 
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawMeshDeform(
-	lid id, graphics::MeshDeform& mdl, graphics::Texture tex,
+void DrawMeshSet(graphics::MeshSet& meshset, lui32 meshindex,
+	graphics::Texture texture, ShaderStyle shader, graphics::Matrix4x4 matrix) {
+	graphics::Shader* shd = nullptr;
+	switch (shader) {
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
+		break;
+	};
+
+	// Enable the shader
+	shd->Use();
+
+	// Set matrices on shader
+	glm::mat4 gmatp = graphics::GetMatProj();
+	glm::mat4 gmatv = graphics::GetMatView();
+	shd->setMat4(shd->matProject, *(graphics::Matrix4x4*)&gmatp);
+	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&gmatv);
+	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
+
+	// Render the mesh
+	meshindex = meshindex % meshset.count; // Loop animation if we must
+	DrawMeshGL(meshset.vao[meshindex], meshset.ices_size, texture.glID);
+}
+
+void DrawMeshDeform(graphics::MeshDeform& mdl, graphics::Texture tex,
 	ShaderStyle charashader, lui32 matrix_count,
 	graphics::Matrix4x4 transform_a = graphics::Matrix4x4(),
 	graphics::Matrix4x4 transform_b = graphics::Matrix4x4(),
@@ -2567,7 +2708,8 @@ void DrawMeshDeform(
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawCompositeMesh(lid id, graphics::CompositeMesh& mdl, graphics::Texture tex, ShaderStyle charashader, graphics::Matrix4x4 matrix) {
+void DrawCompositeMesh(graphics::CompositeMesh& mdl, graphics::Texture tex,
+	ShaderStyle charashader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
 	switch (charashader) {
 	case SS_NORMAL:
@@ -2592,7 +2734,7 @@ void DrawCompositeMesh(lid id, graphics::CompositeMesh& mdl, graphics::Texture t
 	mdl.Draw(tex.glID, shd->ID);
 }
 
-void DrawTerrainMesh(lid id, graphics::TerrainMesh mdl,
+void DrawTerrainMesh(graphics::TerrainMesh mdl,
 	graphics::Texture tex_a, graphics::Texture tex_b,
 	graphics::Texture tex_c, graphics::Texture tex_d,
 	graphics::Texture tex_e, graphics::Texture tex_f,

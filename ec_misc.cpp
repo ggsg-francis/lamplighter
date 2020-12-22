@@ -11,7 +11,7 @@ char* RestingItemName(void* ent) {
 	return (char*)acv::items[GETITEMINST(((ECSingleItem*)ent)->item_instance)->id_item_template]->name;
 }
 
-void RestingItemTick(lid id, void* ent, lf32 dt)
+void RestingItemTick(LtrID id, void* ent, lf32 dt)
 {
 	ECSingleItem* self = (ECSingleItem*)ent;
 
@@ -51,44 +51,44 @@ void RestingItemTick(lid id, void* ent, lf32 dt)
 	// align to surface
 	#if DEF_PROJECT == PROJECT_BC
 	graphics::MatrixTransform(self->matrix, m::Vector3(self->t.position.x,
-		self->t.altitude + acv::items[((HeldItem*)GetItemInstance(self->item_instance))->id_item_template]->f_model_height,
+		self->t.altitude + acv::items[(GETITEMINST(self->item_instance))->id_item_template]->f_model_height,
 		self->t.position.y), cross, nor);
 	#endif
 	// align to surface sideways
 	#if DEF_PROJECT == PROJECT_EX
 	graphics::MatrixTransform(self->matrix, m::Vector3(self->t.position.x,
-		self->t.altitude + acv::items[((HeldItem*)GetItemInstance(self->item_instance))->id_item_template]->f_model_height,
+		self->t.altitude + acv::items[((HeldItem*)GetItemInstance(self->item_instance.Index()))->id_item_template]->f_model_height,
 		self->t.position.y), cross, m::Cross(cross, nor));
 	#endif
 }
 
-void RestingItemDraw(lid id, void* ent)
+void RestingItemDraw(LtrID id, void* ent)
 {
 	ECSingleItem* self = (ECSingleItem*)ent;
 	// Draw the mesh of our item id
 	//DrawMesh(ent, acv::GetM(acv::items[index::GetItem(item->item_instance)->item_template]->id_mesh), acv::GetT(acv::items[index::GetItem(item->item_instance)->item_template]->id_tex), SS_NORMAL, item->t_item.getMatrix());
 	if (m::Length(graphics::GetViewPos() - m::Vector3(self->t.position.x, self->t.altitude, -self->t.position.y)) > 5.f)
-		DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh_lod), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
+		DrawMesh(acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh_lod), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
 	else
-		DrawMesh(ID_NULL, acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
+		DrawMesh(acv::GetM(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_mesh), acv::GetT(acv::items[GETITEMINST(self->item_instance)->id_item_template]->id_tex), SS_NORMAL, self->matrix);
 }
 
-void TarBubbleTick(lid id, void* ent, lf32 dt)
+void TarBubbleTick(LtrID id, void* ent, lf32 dt)
 {
 	
 }
 
-void TarBubbleDraw(lid id, void* ent)
+void TarBubbleDraw(LtrID id, void* ent)
 {
 
 }
 
-void WallBugTick(lid id, void* ent, lf32 dt)
+void WallBugTick(LtrID id, void* ent, lf32 dt)
 {
 
 }
 
-void WallBugDraw(lid id, void* ent)
+void WallBugDraw(LtrID id, void* ent)
 {
 
 }

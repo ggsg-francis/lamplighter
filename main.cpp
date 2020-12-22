@@ -126,9 +126,9 @@ void TransferGameInput()
 {
 	if (config.b3PP) {
 		#ifdef DEF_NMP
-		for (lid i = 0u; i < config.iNumNWPlayers; ++i) {
+		for (ID16 i = 0u; i < config.iNumNWPlayers; ++i) {
 			// Set input
-			core::SetPlayerInput((lid)i,
+			core::SetPlayerInput((ID16)i,
 				m::Vector2(0.f, (lf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
 				(lf32)(input::GetHeld(i, input::key::DIR_R) - input::GetHeld(i, input::key::DIR_L)) * 6.f, 0.f,
 				input::GetHeld(i, input::key::USE),
@@ -158,13 +158,12 @@ void TransferGameInput()
 			input::GetHit(input::key::CROUCH),
 			input::GetHeld(input::key::JUMP));
 		if (config.bSplitScreen) {
+			// Set input for player 1
 			float f;
 			if (input::BUF_LOCALGET.joy_y_a > 0.f)
 				f = -input::BUF_LOCALGET.joy_x_a * 6.f;
 			else
 				f = input::BUF_LOCALGET.joy_x_a * 6.f;
-
-			// Set input for player 1
 			core::SetPlayerInput(1u,
 				m::Vector2(0.f, -input::BUF_LOCALGET.joy_y_a),
 				f, 0.f,
@@ -183,40 +182,44 @@ void TransferGameInput()
 	}
 	else {
 		#ifdef DEF_NMP
-		for (lid i = 0u; i < config.iNumNWPlayers; ++i) {
+		for (ID16 i = 0u; i < config.iNumNWPlayers; ++i) {
 			// Set input
-			core::SetPlayerInput((lid)i,
-				m::Vector2((lf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R)),
-				(lf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))),
-				input::input_buffer[i].mouse_x * 0.25f, input::input_buffer[i].mouse_y * 0.25f,
-				input::GetHeld(i, input::key::USE),
-				input::GetHit(i, input::key::USE),
-				input::GetHit(i, input::key::USE_ALT),
-				input::GetHeld(i, input::key::RUN),
+			core::SetPlayerInput((ID16)i,
+				m::Vector2(
+				(lf32)(input::GetHeld(i, input::key::DIR_L) - input::GetHeld(i, input::key::DIR_R))
+					- input::input_buffer[i].joy_x_a,
+					(lf32)(input::GetHeld(i, input::key::DIR_F) - input::GetHeld(i, input::key::DIR_B))
+					- input::input_buffer[i].joy_y_a),
+				input::input_buffer[i].mouse_x * 0.25f + input::input_buffer[i].joy_x_b * 8.f,
+				input::input_buffer[i].mouse_y * 0.25f + input::input_buffer[i].joy_y_b * 8.f,
+				input::GetHeld(i, input::key::USE) || input::GetHeld(i, input::key::C_USE),
+				input::GetHit(i, input::key::USE) || input::GetHit(i, input::key::C_USE),
+				input::GetHit(i, input::key::USE_ALT) || input::GetHit(i, input::key::C_USE_ALT),
+				input::GetHeld(i, input::key::RUN) || input::GetHeld(i, input::key::C_RUN),
 				false,
-				input::GetHit(i, input::key::ACTION_A),
-				input::GetHit(i, input::key::ACTION_B),
-				input::GetHit(i, input::key::ACTION_C),
-				input::GetHit(i, input::key::CROUCH),
-				input::GetHit(i, input::key::JUMP));
+				input::GetHit(i, input::key::ACTION_A) || input::GetHit(i, input::key::C_ACTION_A),
+				input::GetHit(i, input::key::ACTION_B) || input::GetHit(i, input::key::C_ACTION_B),
+				input::GetHit(i, input::key::ACTION_C) || input::GetHit(i, input::key::C_ACTION_C),
+				input::GetHit(i, input::key::CROUCH) || input::GetHit(i, input::key::C_CROUCH),
+				input::GetHeld(i, input::key::JUMP) || input::GetHeld(i, input::key::C_JUMP));
 		}
 		#else
-		// Set input for player 0
-		core::SetPlayerInput(0u,
-			m::Vector2((lf32)(input::GetHeld(input::key::DIR_L) - input::GetHeld(input::key::DIR_R)),
-			(lf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
-			input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
-			input::GetHeld(input::key::USE),
-			input::GetHit(input::key::USE),
-			input::GetHit(input::key::USE_ALT),
-			input::GetHeld(input::key::RUN),
-			false,
-			input::GetHit(input::key::ACTION_A),
-			input::GetHit(input::key::ACTION_B),
-			input::GetHit(input::key::ACTION_C),
-			input::GetHit(input::key::CROUCH),
-			input::GetHeld(input::key::JUMP));
 		if (config.bSplitScreen) {
+			// Set input for player 0
+			core::SetPlayerInput(0u,
+				m::Vector2((lf32)(input::GetHeld(input::key::DIR_L) - input::GetHeld(input::key::DIR_R)),
+				(lf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))),
+				input::BUF_LOCALGET.mouse_x * 0.25f, input::BUF_LOCALGET.mouse_y * 0.25f,
+				input::GetHeld(input::key::USE),
+				input::GetHit(input::key::USE),
+				input::GetHit(input::key::USE_ALT),
+				input::GetHeld(input::key::RUN),
+				false,
+				input::GetHit(input::key::ACTION_A),
+				input::GetHit(input::key::ACTION_B),
+				input::GetHit(input::key::ACTION_C),
+				input::GetHit(input::key::CROUCH),
+				input::GetHeld(input::key::JUMP));
 			// Set input for player 1
 			core::SetPlayerInput(1u,
 				m::Vector2(-input::BUF_LOCALGET.joy_x_a, -input::BUF_LOCALGET.joy_y_a),
@@ -231,6 +234,27 @@ void TransferGameInput()
 				input::GetHit(input::key::C_ACTION_C),
 				input::GetHit(input::key::C_CROUCH),
 				input::GetHeld(input::key::C_JUMP));
+	}
+		else {
+			// Set input for player 0
+			core::SetPlayerInput(0u,
+				m::Vector2(
+					(lf32)(input::GetHeld(input::key::DIR_L) - input::GetHeld(input::key::DIR_R))
+					- input::BUF_LOCALGET.joy_x_a,
+					(lf32)(input::GetHeld(input::key::DIR_F) - input::GetHeld(input::key::DIR_B))
+					- input::BUF_LOCALGET.joy_y_a),
+				input::BUF_LOCALGET.mouse_x * 0.25f + input::BUF_LOCALGET.joy_x_b * 8.f,
+				input::BUF_LOCALGET.mouse_y * 0.25f + input::BUF_LOCALGET.joy_y_b * 8.f,
+				input::GetHeld(input::key::USE) || input::GetHeld(input::key::C_USE),
+				input::GetHit(input::key::USE) || input::GetHit(input::key::C_USE),
+				input::GetHit(input::key::USE_ALT) || input::GetHit(input::key::C_USE_ALT),
+				input::GetHeld(input::key::RUN) || input::GetHeld(input::key::C_RUN),
+				false,
+				input::GetHit(input::key::ACTION_A) || input::GetHit(input::key::C_ACTION_A),
+				input::GetHit(input::key::ACTION_B) || input::GetHit(input::key::C_ACTION_B),
+				input::GetHit(input::key::ACTION_C) || input::GetHit(input::key::C_ACTION_C),
+				input::GetHit(input::key::CROUCH) || input::GetHit(input::key::C_CROUCH),
+				input::GetHeld(input::key::JUMP) || input::GetHeld(input::key::C_JUMP));
 		}
 		#endif
 	}
@@ -271,16 +295,22 @@ void MainDraw()
 	glm::vec3* fogC = (glm::vec3*)weather::FogColour();
 	glClearColor(fogC->r, fogC->g, fogC->b, 1.0f);
 
+	#if DEF_SWR
+	RenderClear();
+	#endif
+
 	#ifndef DEF_NMP
 	//-------------------------------- BUFFER 1 (LEFT SCREEN)
 	// Set GL properties for solid rendering
 	glEnable(GL_DEPTH_TEST); glDisable(GL_BLEND); glBlendFunc(GL_ONE, GL_ZERO);
 	//-------------------------------- RENDER SHADOWMAP
+	#if !DEF_SWR
 	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_shadow);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	core::SetViewFocus(0u); // Set render POV
 	core::Draw(false);
+	#endif
 	//-------------------------------- RENDER VIEW
 	glViewport(0, 0, graphics::FrameSizeX(), graphics::FrameSizeY());
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_1);
@@ -678,6 +708,8 @@ updtime:
 
 	//-------------------------------- DRAW FRAMEBUFFER (TODO: try and clean this up a bit!)
 
+	#if !DEF_SWR
+
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
@@ -765,6 +797,8 @@ updtime:
 	}
 	#endif // MP
 
+	#endif
+
 	// TODO check up on this later!!
 	glActiveTexture(GL_TEXTURE0); // For some reason or other, the texture must be reset (probably forgotten elsewhere)
 
@@ -774,7 +808,7 @@ updtime:
 	core::DrawPostDraw(FRAME_TIME);
 
 	#if DEF_SWR
-	LRDrawFrame();
+	RenderPrint();
 	#endif
 
 	glFrontFace(GL_CCW);
@@ -816,6 +850,10 @@ LoopMode LoopEditor() {
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ZERO);
+
+		#if DEF_SWR
+		RenderClear();
+		#endif
 
 		// Test
 		glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);

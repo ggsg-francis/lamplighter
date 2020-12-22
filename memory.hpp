@@ -148,23 +148,6 @@ namespace mem
 		Type& operator[](lui32 index) { return buffer[index]; }
 	};
 
-	typedef struct LtrID {
-	private:
-		lui64 guid;
-	public:
-		LtrID(lui32 _index, lui32 _instance) :
-			guid{ (lui64)_index | ((lui64)_instance << (lui64)32u) } {};
-		lui32 Index() {
-			return (lui32)(guid & (lui64)0b0000000000000000000000000000000011111111111111111111111111111111u);
-		};
-		lui32 Instance() {
-			return (lui32)((guid & (lui64)0b1111111111111111111111111111111100000000000000000000000000000000u) >> 32u);
-		};
-		lui64 GUID() {
-			return guid;
-		};
-	} LtrID;
-
 	// Fixed size object ID buffer (except this one holds its own data)
 	// TODO: fast iteration
 	template <typename DataType, typename Type_Signifier, Type_Signifier type_null, lui32 SIZE> struct ObjBuf
@@ -172,53 +155,56 @@ namespace mem
 	private:
 		DataType data[SIZE];
 		Type_Signifier type[SIZE];
-		//lui32 instance[SIZE];
+		lui32 instance[SIZE];
 		lui32 size = 0u;
 	public:
-		ObjBuf() {
-			for (int i = 0; i < SIZE; ++i) {
+		void Clear() {
+			for (lui32 i = 0; i < SIZE; i++) { // For every space in the buffer
 				type[i] = type_null;
+				instance[i] = 0u;
 			}
 		}
-	public:
-		bool Used(int index) {
+		ObjBuf() { Clear(); }
+		bool AnyHere(lui32 index) {
 			return type[index] != type_null;
 		}
-		// Assign new object this space on the buffer
-		lid Add(Type_Signifier _type) {
-			for (lui32 i = 0; i < SIZE; i++) { // For every space in the buffer
-				if (Used(i)) continue;
-				type[i] = _type;
-				if (i >= size) size = i + 1u; // If we hit new ground expand the end index
-				return i; // End the loop
-			}
-			return BUF_NULL;
+		bool Exists(LtrID id) {
+			if (id.Index() > SIZE) return false;
+			LtrID _id(id.Index(), instance[id.Index()]);
+			return id.GUID() == _id.GUID() && type[id.Index() != type_null];
 		}
-		void AddForceID(Type_Signifier _type, lui32 index) {
-			if (Used(index)) {
+		// Assign new object this space on the buffer
+		LtrID Add(Type_Signifier _type) {
+			for (lui32 i = 0; i < SIZE; i++) { // For every space in the buffer
+				if (AnyHere(i)) continue;
+				type[i] = _type;
+				++instance[i];
+				if (i >= size) size = i + 1u; // If we hit new ground expand the end index
+				return LtrID(i, instance[i]); // End the loop
+			}
+			return ID2_NULL;
+		}
+		void AddForceID(Type_Signifier _type, LtrID id) {
+			if (AnyHere(id.Index())) {
 				printf("Tried to overwrite buffer object! Bastard!\n");
 				return;
 			}
-			type[index] = _type;
-			if (index >= size) size = index + 1u;
+			type[id.Index()] = _type;
+			instance[id.Index()] = id.Instance();
+			if (id.Index() >= size) size = id.Index() + 1u;
 		}
 		// Clear this space on the buffer
 		void Remove(lui32 index) {
 			type[index] = type_null;
 			if (index == size - 1u) {
 				--size; // Go back one step
-				while (size > 0u && !Used(size - 1u)) --size; // Continue rolling back until we reach the next last full space
+				while (size > 0u && !AnyHere(size - 1u)) --size; // Continue rolling back until we reach the next last full space
 			}
 		}
-		void Clear() {
-			for (lui32 i = 0; i < SIZE; i++) { // For every space in the buffer
-				type[i] = type_null;
-			}
-		}
-		DataType& Data(int index) {
+		DataType& Data(lui32 index) {
 			return data[index];
 		}
-		Type_Signifier Type(int index) {
+		Type_Signifier Type(lui32 index) {
 			return type[index];
 		}
 		Type_Signifier* TypeRW() {
@@ -229,6 +215,9 @@ namespace mem
 		}
 		void SetSize(lui32 sz) {
 			size = sz;
+		}
+		LtrID GetID(lui32 index) {
+			return LtrID(index, instance[index]);
 		}
 	};
 
@@ -247,13 +236,13 @@ namespace mem
 			// For all assigned spaces
 			for (int i = 0; i < eptrs.Size(); ++i) {
 				// Skip self or unused
-				if (!eptrs.Used(i)) continue;
+				if (!eptrs.AnyHere(i)) continue;
 				lui32 this_end = eptrs.Data(i).pos + eptrs.Data(i).size;
 				lui32 nearest_start = memory_size - 1;
 				// For all other spaces
 				for (int j = 0; j <= eptrs.Size(); ++j) {
 					// Skip self or comparing same or unused
-					if (j == i || !eptrs.Used(j)) continue;
+					if (j == i || !eptrs.AnyHere(j)) continue;
 					lui32 next_start = eptrs.Data(j).pos;
 					if (next_start < nearest_start && next_start >= this_end)
 						nearest_start = next_start;
@@ -263,7 +252,7 @@ namespace mem
 			// else return the first element
 			if (size >= memory_size) {
 				printf("Tried to add an object bigger than the lump itself, what??\n");
-				return ID_NULL; // not enough room
+				return array_size + 1; // not enough room
 			}
 			return 0;
 		}
@@ -271,26 +260,29 @@ namespace mem
 		Lump() {
 			memset(&buf[0], 0, memory_size);
 		}
-		lui32 AddEntForceID(lui32 size, Type_Signifier type, lui32 id) {
+		LtrID AddEntForceID(lui32 size, Type_Signifier type, LtrID id) {
 			lui32 pos = AllocateSpace(size);
 			eptrs.AddForceID(type, id);
-			eptrs.Data(id).pos = pos;
-			eptrs.Data(id).size = size;
+			eptrs.Data(id.Index()).pos = pos;
+			eptrs.Data(id.Index()).size = size;
 			return id;
 		}
-		lui32 AddEnt(lui32 size, Type_Signifier type) {
+		LtrID AddEnt(lui32 size, Type_Signifier type) {
 			lui32 pos = AllocateSpace(size);
-			lui32 index = eptrs.Add(type);
-			eptrs.Data(index).pos = pos;
-			eptrs.Data(index).size = size;
-			return index;
+			LtrID id = eptrs.Add(type);
+			// Check if we successfully added
+			if (id.GUID() != ID2_NULL.GUID()) {
+				eptrs.Data(id.Index()).pos = pos;
+				eptrs.Data(id.Index()).size = size;
+			}
+			return id;
 		}
 		void RmvEnt(lui32 index) {
 			memset(&buf[eptrs.Data(index).pos], 0, eptrs.Data(index).size);
 			eptrs.Remove(index);
 		}
 		void Clear() {
-			for (int i = 0; i < array_size; ++i) {
+			for (lui32 i = 0; i < array_size; ++i) {
 				eptrs.Data(i).pos = 0;
 				eptrs.Data(i).size = 0;
 			}
@@ -303,49 +295,76 @@ namespace mem
 		Type_Signifier GetType(lui32 index) {
 			return eptrs.Type(index);
 		}
-		bool EntExists(lui32 index) {
-			return eptrs.Used(index);
+		bool AnyEntHere(lui32 index) {
+			return eptrs.AnyHere(index);
+		}
+		bool EntExists(LtrID id) {
+			return eptrs.Exists(id);
 		}
 		lui32 GetSize() {
 			return eptrs.Size();
 		}
+		LtrID GetID(lui32 index) {
+			return eptrs.GetID(index);
+		}
 	};
-	
+
 	// Fixed size object ID buffer, optimized for objects with short life cycles
 	struct objbuf_caterpillar
 	{
 		bool used[BUF_SIZE]{ false };
-		lid index_first = 0u;
-		lid index_last = 0u;
-		lid add(); // Assign new object this space on the buffer
-		void remove(lid ID); // Clear this space on the buffer
+		ID16 index_first = 0u;
+		ID16 index_last = 0u;
+		ID16 add(); // Assign new object this space on the buffer
+		void remove(ID16 ID); // Clear this space on the buffer
 	};
 
 	#define IDBUF_SIZE 16u
-	// Automatic unfixed size object ID buffer
+
 	struct idbuf
 	{
 	private:
-		lid ptr_id[IDBUF_SIZE]{
+		ID16 ptr_id[IDBUF_SIZE]{
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL,
 			ID_NULL, ID_NULL, ID_NULL, ID_NULL };
-			//ID_NULL, ID_NULL, ID_NULL, ID_NULL,
-			//ID_NULL, ID_NULL, ID_NULL, ID_NULL,
-			//ID_NULL, ID_NULL, ID_NULL, ID_NULL,
-			//ID_NULL, ID_NULL, ID_NULL, ID_NULL };
-		bool ptr_used[IDBUF_SIZE]{ false };
+		bool ptr_used[IDBUF_SIZE]{
+			false, false, false, false,
+			false, false, false, false,
+			false, false, false, false,
+			false, false, false, false };
 		lui32 id_end = 0u;
 		lui32 size = 0u;
 	public:
-		idbuf(); // Constructor
-		~idbuf(); // Destructor
-		void Add(lid ID);
-		void Remove(lid ID);
+		void Add(ID16 ID);
+		void Remove(ID16 ID);
 		void Clear();
 		lui32 Size();
-		lid operator[] (lui32 x);
+		ID16 operator[] (lui32 x);
+	};
+
+	struct id2buf
+	{
+	private:
+		LtrID ptr_id[IDBUF_SIZE]{
+			ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL,
+			ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL,
+			ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL,
+			ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL };
+		bool ptr_used[IDBUF_SIZE]{
+			false, false, false, false,
+			false, false, false, false,
+			false, false, false, false,
+			false, false, false, false };
+		lui32 id_end = 0u;
+		lui32 size = 0u;
+	public:
+		void Add(LtrID ID);
+		void Remove(LtrID ID);
+		void Clear();
+		lui32 Size();
+		LtrID operator[] (lui32 x);
 	};
 }
 

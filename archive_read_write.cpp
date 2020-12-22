@@ -17,10 +17,10 @@ namespace acv
 
 namespace serializer
 {
-	lid GetAssetIDFromHandle(char* handle, AssetType type)
+	ID16 GetAssetIDFromHandle(char* handle, AssetType type)
 	{
-		lid retid = ID_NULL;
-		for (lid i = 0; i < acv::assetCount; ++i)
+		ID16 retid = ID_NULL;
+		for (ID16 i = 0; i < acv::assetCount; ++i)
 		{
 			if (memcmp(handle, acv::assets[i].handle, 8u) == 0)
 			{
@@ -31,10 +31,10 @@ namespace serializer
 		return retid; // Return ID of new filename
 	}
 
-	lid GetSpellIDFromHandle(char* handle)
+	ID16 GetSpellIDFromHandle(char* handle)
 	{
-		lid retid = ID_NULL;
-		for (lid i = 0; i < acv::spell_index; ++i)
+		ID16 retid = ID_NULL;
+		for (ID16 i = 0; i < acv::spell_index; ++i)
 		{
 			if (memcmp(handle, acv::spells[i].handle, 8u) == 0)
 			{
@@ -45,10 +45,10 @@ namespace serializer
 		return retid; // Return ID of new filename
 	}
 
-	lid GetProjIDFromHandle(char* handle)
+	ID16 GetProjIDFromHandle(char* handle)
 	{
-		lid retid = ID_NULL;
-		for (lid i = 0; i < acv::projectiles_index; ++i)
+		ID16 retid = ID_NULL;
+		for (ID16 i = 0; i < acv::projectiles_index; ++i)
 		{
 			if (memcmp(handle, acv::projectiles[i].handle, 8u) == 0)
 			{
@@ -59,10 +59,10 @@ namespace serializer
 		return retid; // Return ID of new filename
 	}
 
-	lid GetItemIDFromHandle(char* handle)
+	ID16 GetItemIDFromHandle(char* handle)
 	{
-		lid retid = ID_NULL;
-		for (lid i = 0; i < acv::projectiles_index; ++i)
+		ID16 retid = ID_NULL;
+		for (ID16 i = 0; i < acv::projectiles_index; ++i)
 		{
 			if (memcmp(handle, acv::projectiles[i].handle, 8u) == 0)
 			{
@@ -247,6 +247,9 @@ namespace serializer
 					else if (strcmp(elem, "mshb") == 0) { // Mesh Blend
 						type = ASSET_MESHBLEND_FILE;
 					}
+					else if (strcmp(elem, "mset") == 0) { // Mesh Set
+						type = ASSET_MESHSET_FILE;
+					}
 					else if (strcmp(elem, "mshd") == 0) { // Mesh Deform
 						type = ASSET_MESHDEFORM_FILE;
 					}
@@ -320,26 +323,27 @@ namespace serializer
 
 					acv::assets[index].file_pos = ftell(fileARCHIVE);
 
-					if (type == ASSET_TEXTURE_FILE)
-					{
+					if (type == ASSET_TEXTURE_FILE) {
 						std::cout << "CONV TEXTURE         [" << cdest << "] ";
 						graphics::ConvertTex(csrca, fileARCHIVE, t_filter_mode, t_edge_mode); // Create source file
 						acv::assets[index].type = ASSET_TEXTURE_FILE;
 					}
-					else if (type == ASSET_MESH_FILE)
-					{
+					else if (type == ASSET_MESH_FILE) {
 						std::cout << "CONV MESH            [" << cdest << "] ";
 						graphics::ConvertMesh(csrca, fileARCHIVE); // Create source file
 						acv::assets[index].type = ASSET_MESH_FILE;
 					}
-					else if (type == ASSET_MESHBLEND_FILE)
-					{
+					else if (type == ASSET_MESHBLEND_FILE) {
 						std::cout << "CONV MESHBLEND       [" << cdest << "] ";
 						graphics::ConvertMB(csrca, csrcb, fileARCHIVE); // Create source file
 						acv::assets[index].type = ASSET_MESHBLEND_FILE;
 					}
-					else if (type == ASSET_MESHDEFORM_FILE)
-					{
+					else if (type == ASSET_MESHSET_FILE) {
+						std::cout << "CONV MESH SET        [" << cdest << "] ";
+						graphics::ConvertMeshSet(csrca, fileARCHIVE); // Create source file
+						acv::assets[index].type = ASSET_MESHSET_FILE;
+					}
+					else if (type == ASSET_MESHDEFORM_FILE) {
 						std::cout << "CONV MESHDEFORM      [" << cdest << "] ";
 						if (acv::assets[index].handle[0] == 'L' && acv::assets[index].handle[1] == 'e' && acv::assets[index].handle[2] == 'g')
 							graphics::ConvertMD(csrca, fileARCHIVE, graphics::eLEG); // Create source file
@@ -436,28 +440,28 @@ namespace serializer
 		}
 		// Texture handle
 		else if (ELEMEQUALS("H_TX")) {
-			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
-			*pOFFSET += sizeof(lid);
+			*(ID16*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_TEXTURE_FILE);
+			*pOFFSET += sizeof(ID16);
 		}
 		// Mesh handle
 		else if (ELEMEQUALS("H_MH")) {
-			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
-			*pOFFSET += sizeof(lid);
+			*(ID16*)(((char*)pTARGET) + *pOFFSET) = GetAssetIDFromHandle(value, ASSET_MESH_FILE);
+			*pOFFSET += sizeof(ID16);
 		}
 		// Spell handle
 		else if (ELEMEQUALS("H_SP")) {
-			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetSpellIDFromHandle(value);
-			*pOFFSET += sizeof(lid);
+			*(ID16*)(((char*)pTARGET) + *pOFFSET) = GetSpellIDFromHandle(value);
+			*pOFFSET += sizeof(ID16);
 		}
 		// Projectile handle
 		else if (ELEMEQUALS("H_PJ")) {
-			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetProjIDFromHandle(value);
-			*pOFFSET += sizeof(lid);
+			*(ID16*)(((char*)pTARGET) + *pOFFSET) = GetProjIDFromHandle(value);
+			*pOFFSET += sizeof(ID16);
 		}
 		// Item handle
 		else if (ELEMEQUALS("H_IT")) {
-			*(lid*)(((char*)pTARGET) + *pOFFSET) = GetItemIDFromHandle(value);
-			*pOFFSET += sizeof(lid);
+			*(ID16*)(((char*)pTARGET) + *pOFFSET) = GetItemIDFromHandle(value);
+			*pOFFSET += sizeof(ID16);
 		}
 		// Boolean
 		else if (ELEMEQUALS("BOO8")) {

@@ -4,13 +4,6 @@
 #include "memory.hpp"
 #include "maths.hpp"
 
-typedef lui32 btcoord;
-//duplicate struct (of what?)
-struct CellCoord
-{
-	btcoord x, y;
-	CellCoord(btcoord _x, btcoord _y) : x{ _x }, y{ _y } {};
-};
 // Enumerator representing the intended function of the 4 cell coordinates used
 enum eCell : lui32
 {
@@ -70,7 +63,7 @@ namespace env
 		// Slope for slide calculations
 		m::Vector2 slope;
 		// indices of the three neighboring triangles
-		lid neighbors[3];
+		ID16 neighbors[3];
 		// Which island do I belong to
 		lui16 group;
 		// How many neighbors do I have (1-3)
@@ -202,7 +195,7 @@ namespace env
 		lui8 terrain_height_nw[WORLD_SIZE][WORLD_SIZE];
 		lui8 terrain_height_se[WORLD_SIZE][WORLD_SIZE];
 		lui8 terrain_height_sw[WORLD_SIZE][WORLD_SIZE];
-		lid spawn_id[WORLD_SIZE][WORLD_SIZE];
+		ID16 spawn_id[WORLD_SIZE][WORLD_SIZE];
 	};
 	extern EnvNode eCells;
 	#endif

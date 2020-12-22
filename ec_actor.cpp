@@ -20,7 +20,8 @@
 #define BODYLEN acv::actor_templates[0].leng_body
 
 //#define hip_width 0.125f
-#define hip_width acv::actor_templates[0].jpos_arm_rt
+#define shoulder_width acv::actor_templates[0].jpos_arm_rt
+#define hip_width acv::actor_templates[0].jpos_leg_rt
 
 #define velocityStepMult (8.f * LEGLEN(chr->actorBase,0)) // How far to place our foot ahead when walking
 
@@ -170,58 +171,56 @@ void ActorOnHitGround(ECActor* chr)
 	else if (chr->foot_state == ECActor::eR_DOWN) chr->foot_state = ECActor::eL_DOWN;
 }
 
-void ActorTryHoldHand(lid id_self, lid id)
+void ActorTryHoldHand(LtrID id_self, LtrID id_other)
 {
-	ECActor* self = (ECActor*)GetEntityPtr(id_self);
-	ECActor* actr = (ECActor*)GetEntityPtr(id);
+	ECActor* self = ACTOR(id_self);
+	ECActor* actr = ACTOR(id_other);
 
 	lui32 id1 = self->inventory.GetFirstEmptySpace();
 	lui32 id2 = actr->inventory.GetFirstEmptySpace();
 	if (id1 != ID_NULL && id2 != ID_NULL) {
 		self->inv_active_slot = id1;
 		actr->inv_active_slot = id2;
-		if (self->aniHandHoldTarget == id)
-			self->aniHandHoldTarget = ID_NULL;
+		if (IDCOMPARE(self->aniHandHoldTarget, id_other))
+			self->aniHandHoldTarget = ID2_NULL;
 		else
-			self->aniHandHoldTarget = id;
-		if (actr->aniHandHoldTarget == id_self)
-			actr->aniHandHoldTarget = ID_NULL;
+			self->aniHandHoldTarget = id_other;
+		if (IDCOMPARE(actr->aniHandHoldTarget, id_self))
+			actr->aniHandHoldTarget = ID2_NULL;
 		else
 			actr->aniHandHoldTarget = id_self;
 	}
 }
 
-void ActorTakeItem(lid id_self, lid id)
+void ActorTakeItem(LtrID id_self, LtrID id_item)
 {
-	ECActor* self = (ECActor*)GetEntityPtr(id_self);
-	ECSingleItem* item = (ECSingleItem*)GetEntityPtr(id);
+	ECActor* self = ACTOR(id_self);
+	ECSingleItem* item = ITEM(id_item);
 	HeldItem* item_held = GETITEMINST(item->item_instance);
 	lui32 slot_added = self->inventory.TransferItemRecv(item->item_instance);
-	core::DestroyEntity(id);
+	core::DestroyEntity(id_item);
 	if (slot_added == self->inv_active_slot)
 		ItemOnEquip(self->inventory.items[self->inv_active_slot], self);
-	if (core::players[0] == id_self)
-	{
+	if (IDCOMPARE(core::players[0], id_self)) {
 		char string[64] = "Picked up ";
 		strcat(string, (char*)(acv::ItemRecord*)acv::items[item_held->id_item_template]->name);
 		core::GUISetMessag(0, string);
 	}
-	else if (core::players[1] == id_self)
-	{
+	else if (IDCOMPARE(core::players[1], id_self)) {
 		char string[64] = "Picked up ";
 		strcat(string, (char*)(acv::ItemRecord*)acv::items[item_held->id_item_template]->name);
 		core::GUISetMessag(1, string);
 	}
 }
 
-void ActorDropItem(lid id_self, lid slot)
+void ActorDropItem(LtrID id_self, ID16 slot)
 {
-	ECActor* self = (ECActor*)GetEntityPtr(id_self);
+	ECActor* self = ACTOR(id_self);
 	if (slot < self->inventory.items.Size() && self->inventory.items.Used(slot))
 	{
 		m::Vector2 throwDir = m::AngToVec2(self->viewYaw.Rad());
-		lid item_entity = core::SpawnEntityItem(self->inventory.items[slot],
-			self->t.position + (throwDir * (self->radius + acv::items[((HeldItem*)GetItemInstance(self->inventory.items[slot]))->id_item_template]->f_radius)),
+		LtrID item_entity = core::SpawnEntityItem(self->inventory.items[slot],
+			self->t.position + (throwDir * (self->radius + acv::items[((HeldItem*)GetItemInstance(self->inventory.items[slot].Index()))->id_item_template]->f_radius)),
 			self->t.altitude, self->viewYaw.Deg());
 		ENTITY(item_entity)->velocity = throwDir * 0.05f + self->velocity;
 		self->inventory.TransferItemSendIndex(slot);
@@ -229,9 +228,9 @@ void ActorDropItem(lid id_self, lid slot)
 	}
 }
 
-void ActorDropAllItems(lid id_self)
+void ActorDropAllItems(LtrID id_self)
 {
-	ECActor* self = (ECActor*)GetEntityPtr(id_self);
+	ECActor* self = ACTOR(id_self);
 	for (lui32 slot = 0u; slot < INV_SIZE; ++slot)
 	{
 		if (slot < self->inventory.items.Size() && self->inventory.items.Used(slot))
@@ -247,7 +246,7 @@ void ActorDropAllItems(lid id_self)
 	}
 }
 
-void ActorSetEquipSlot(lid id_self, lui32 index)
+void ActorSetEquipSlot(ID16 id_self, lui32 index)
 {
 	ECActor* self = (ECActor*)GetEntityPtr(id_self);
 	if (index < self->inventory.items.Size())
@@ -258,9 +257,9 @@ void ActorSetEquipSlot(lid id_self, lui32 index)
 	}
 }
 
-void ActorIncrEquipSlot(lid id_self)
+void ActorIncrEquipSlot(LtrID id_self)
 {
-	ECActor* self = (ECActor*)GetEntityPtr(id_self);
+	ECActor* self = ACTOR(id_self);
 	if (self->inv_active_slot < self->inventory.items.Size() - 1u)
 	{
 		++self->inv_active_slot;
@@ -269,9 +268,9 @@ void ActorIncrEquipSlot(lid id_self)
 	}
 }
 
-void ActorDecrEquipSlot(lid id_self)
+void ActorDecrEquipSlot(LtrID id_self)
 {
-	ECActor* self = (ECActor*)GetEntityPtr(id_self);
+	ECActor* self = ACTOR(id_self);
 	if (self->inv_active_slot > 0u)
 	{
 		--self->inv_active_slot;
@@ -306,7 +305,7 @@ void Actor_ClampLegs(ECActor* chr)
 		chr->fpCurrentR = jointPosR + m::Normalize(chr->fpCurrentR - jointPosR) * LEGLEN(chr->actorBase, 0);
 }
 
-void ActorTick(lid id, void* ent, lf32 dt)
+void ActorTick(LtrID id, void* ent, lf32 dt)
 {
 	ECActor* chr = (ECActor*)ent;
 
@@ -316,7 +315,7 @@ void ActorTick(lid id, void* ent, lf32 dt)
 	chr->input.move = m::Normalize(chr->input.move);
 
 	// modify input to keep handholding characters together
-	if (chr->aniHandHoldTarget != ID_NULL) {
+	if (GetEntityExists(chr->aniHandHoldTarget)) {
 		ECActor* actor = ACTOR(chr->aniHandHoldTarget);
 		m::Vector2 destpos = actor->t.position;
 		if (m::Length(destpos - chr->t.position) > 0.85f) {
@@ -335,15 +334,14 @@ void ActorTick(lid id, void* ent, lf32 dt)
 	else chr->aniSlideResponse = m::Lerp(chr->aniSlideResponse, slide, 0.3f);
 
 	// hold hands check if our target is bullshit (gone, or too far away, or has started holding an item
-	if (chr->aniHandHoldTarget != ID_NULL)
-		if (!GetEntityExists(chr->aniHandHoldTarget) ||
-			m::Length(ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position) > 1.4f ||
-			ACTOR(chr->aniHandHoldTarget)->inventory.items.Used(ACTOR(chr->aniHandHoldTarget)->inv_active_slot) ||
-			chr->inventory.items.Used(chr->inv_active_slot)) // or we started holding a thing
-			chr->aniHandHoldTarget = ID_NULL;
+	if (!GetEntityExists(chr->aniHandHoldTarget) ||
+		m::Length(ACTOR(chr->aniHandHoldTarget)->t.position - chr->t.position) > 1.4f ||
+		ACTOR(chr->aniHandHoldTarget)->inventory.items.Used(ACTOR(chr->aniHandHoldTarget)->inv_active_slot) ||
+		chr->inventory.items.Used(chr->inv_active_slot)) // or we started holding a thing
+		chr->aniHandHoldTarget = ID2_NULL;
 	// or if our target is ourself somehow
-	if (chr->aniHandHoldTarget == id)
-		chr->aniHandHoldTarget = ID_NULL;
+	if (IDCOMPARE(chr->aniHandHoldTarget, id))
+		chr->aniHandHoldTarget = ID2_NULL;
 
 	bool canJump = true;
 	#if DEF_GRID
@@ -519,24 +517,52 @@ void ActorTick(lid id, void* ent, lf32 dt)
 	animFootL.y *= chr->aniStandHeight - FOOT_H;
 	animFootR.y *= chr->aniStandHeight - FOOT_H;
 	// Apply relative positions
-	chr->fpCurrentL = graphics::MatrixGetPosition(rootMatrix_legs) +
+	chr->fpCurrentL_targ = graphics::MatrixGetPosition(rootMatrix_legs) +
 		graphics::MatrixGetRight(rootMatrix_legs) * animFootL.x +
 		graphics::MatrixGetUp(rootMatrix_legs) * animFootL.y +
 		graphics::MatrixGetForward(rootMatrix_vel) * animFootL.z;
-	chr->fpCurrentR = graphics::MatrixGetPosition(rootMatrix_legs) +
+	chr->fpCurrentR_targ = graphics::MatrixGetPosition(rootMatrix_legs) +
 		graphics::MatrixGetRight(rootMatrix_legs) * animFootR.x +
 		graphics::MatrixGetUp(rootMatrix_legs) * animFootR.y +
 		graphics::MatrixGetForward(rootMatrix_vel) * animFootR.z;
 	// Raise feet above ground height
-	lf32 hl = chr->t.altitude - Actor_FindGroundHeight(chr->fpCurrentL) + 0.075f;
-	lf32 hr = chr->t.altitude - Actor_FindGroundHeight(chr->fpCurrentR) + 0.075f;
-	if (chr->fpCurrentL.y < hl) chr->fpCurrentL.y = hl;
-	if (chr->fpCurrentR.y < hr) chr->fpCurrentR.y = hr;
+	lf32 hl = chr->t.altitude - Actor_FindGroundHeight(chr->fpCurrentL_targ) + 0.075f;
+	lf32 hr = chr->t.altitude - Actor_FindGroundHeight(chr->fpCurrentR_targ) + 0.075f;
+	if (chr->fpCurrentL_targ.y < hl) chr->fpCurrentL_targ.y = hl;
+	if (chr->fpCurrentR_targ.y < hr) chr->fpCurrentR_targ.y = hr;
+
+	{
+		const lf32 mass = 2.f;
+		const lf32 spring = 8.f;
+		const lf32 damping = 5.f;
+
+		m::SpringDamper(chr->fpCurrentL.x, chr->fpCurrentL_vel.x, chr->fpCurrentL_targ.x, mass, spring, damping);
+		m::SpringDamper(chr->fpCurrentL.y, chr->fpCurrentL_vel.y, chr->fpCurrentL_targ.y, mass, spring, damping);
+		m::SpringDamper(chr->fpCurrentL.z, chr->fpCurrentL_vel.z, chr->fpCurrentL_targ.z, mass, spring, damping);
+		m::SpringDamper(chr->fpCurrentR.x, chr->fpCurrentR_vel.x, chr->fpCurrentR_targ.x, mass, spring, damping);
+		m::SpringDamper(chr->fpCurrentR.y, chr->fpCurrentR_vel.y, chr->fpCurrentR_targ.y, mass, spring, damping);
+		m::SpringDamper(chr->fpCurrentR.z, chr->fpCurrentR_vel.z, chr->fpCurrentR_targ.z, mass, spring, damping);
+	}
+
 	// Clamp positions so they never exceed the length of a leg in distance
 	Actor_ClampLegs(chr);
 
 	// Apply the animation
-	chr->aniStandHeight = LEGLEN(chr->actorBase, 0) * animBody.x;
+	chr->aniStandHeight_targ = LEGLEN(chr->actorBase, 0) * animBody.x;
+	chr->aniHeadHeight_targ = - (chr->aniSlideResponse * 0.25f) + BODYLEN * animBody.y;
+
+	{ // waist
+		const lf32 mass = 1.5f;
+		const lf32 spring = 4.f;
+		const lf32 damping = 3.f;
+		m::SpringDamper(chr->aniStandHeight, chr->aniStandHeight_vel, chr->aniStandHeight_targ, mass, spring, damping);
+	}
+	{ // head
+		const lf32 mass = 1.5f;
+		const lf32 spring = 5.f;
+		const lf32 damping = 2.5f;
+		m::SpringDamper(chr->aniHeadHeight, chr->aniHeadHeight_vel, chr->aniHeadHeight_targ, mass, spring, damping);
+	}
 
 	if (chr->activeFlags.get(ECCommon::eALIVE)) {
 		// Reset transforms
@@ -544,8 +570,9 @@ void ActorTick(lid id, void* ent, lf32 dt)
 		chr->t_head = Transform3D();
 
 		// Set head transform
-		chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.altitude
-			- (chr->aniSlideResponse * 0.25f) + BODYLEN * animBody.y, chr->t.position.y));
+		/*chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.altitude
+			- (chr->aniSlideResponse * 0.25f) + BODYLEN * animBody.y, chr->t.position.y));*/
+		chr->t_head.SetPosition(m::Vector3(chr->t.position.x, chr->t.altitude + chr->aniHeadHeight, chr->t.position.y));
 
 		chr->t_head.Rotate(chr->viewYaw.Rad(), m::Vector3(0, 1, 0));
 		chr->t_head.Rotate(chr->viewPitch.Rad(), m::Vector3(1, 0, 0));
@@ -572,7 +599,7 @@ void ActorTick(lid id, void* ent, lf32 dt)
 		// Let the inventory item animate our hands
 		if (chr->inventory.items.Used(chr->inv_active_slot)) {
 			// Get held item
-			HeldItem* heldItem = ((HeldItem*)GetItemInstance(chr->inventory.items[chr->inv_active_slot]));
+			HeldItem* heldItem = ((HeldItem*)GetItemInstance(chr->inventory.items[chr->inv_active_slot].Index()));
 			// Get hand positions
 			chr->handPosR = ItemRHPos(chr->inventory.items[chr->inv_active_slot]);
 			chr->handPosL = ItemLHPos(chr->inventory.items[chr->inv_active_slot]);
@@ -611,13 +638,27 @@ void ActorTick(lid id, void* ent, lf32 dt)
 					chr->ap_HandPosR.Tick(dt, &frames_handtest_r_crouch, &v3r) :
 					chr->ap_HandPosR.Tick(dt, &frames_handtest_r, &v3r);
 			}
-			chr->handPosL = graphics::MatrixGetPosition(rootMatrix_arms) +
+			chr->handPosL_targ = graphics::MatrixGetPosition(rootMatrix_arms) +
 				graphics::MatrixOrientVector(rootMatrix_arms, v3l);
-			chr->handPosR = graphics::MatrixGetPosition(rootMatrix_arms) +
+			chr->handPosR_targ = graphics::MatrixGetPosition(rootMatrix_arms) +
 				graphics::MatrixOrientVector(rootMatrix_arms, v3r);
 
+			{
+				const lf32 mass = 2.f;
+				const lf32 spring = 6.f;
+				const lf32 damping = 5.f;
+
+				m::SpringDamper(chr->handPosL.x, chr->handPosL_vel.x, chr->handPosL_targ.x, mass, spring, damping);
+				m::SpringDamper(chr->handPosL.y, chr->handPosL_vel.y, chr->handPosL_targ.y, mass, spring, damping);
+				m::SpringDamper(chr->handPosL.z, chr->handPosL_vel.z, chr->handPosL_targ.z, mass, spring, damping);
+
+				m::SpringDamper(chr->handPosR.x, chr->handPosR_vel.x, chr->handPosR_targ.x, mass, spring, damping);
+				m::SpringDamper(chr->handPosR.y, chr->handPosR_vel.y, chr->handPosR_targ.y, mass, spring, damping);
+				m::SpringDamper(chr->handPosR.z, chr->handPosR_vel.z, chr->handPosR_targ.z, mass, spring, damping);
+			}
+
 			// hold hands override
-			if (chr->aniHandHoldTarget != ID_NULL) {
+			if (GetEntityExists(chr->aniHandHoldTarget)) {
 				if (m::Dot(chr->t.position - ACTOR(chr->aniHandHoldTarget)->t.position, m::AngToVec2(chr->t.yaw.Rad() - glm::degrees(90.f))) > 0.f)
 					chr->handPosL = (ACTOR(chr->aniHandHoldTarget)->t_body.GetPosition() + chr->t_body.GetPosition()) * 0.5f;
 				else
@@ -670,7 +711,7 @@ void MatrixIK(lf32 iklen, m::Vector3 start, m::Vector3 target, m::Vector3 elbowd
 	}
 }
 
-void ActorDraw(lid id, void* ent)
+void ActorDraw(LtrID id, void* ent)
 {
 	ECActor* chr = (ECActor*)ent;
 
@@ -685,6 +726,9 @@ void ActorDraw(lid id, void* ent)
 		//graphics::MatrixTransform(rootMatrix, m::Vector3(chr->t.position.x, chr->t.altitude, chr->t.position.y), chr->viewYaw.Rad());
 		graphics::MatrixTransform(rootMatrix, m::Vector3(chr->t.position.x, chr->t.altitude, chr->t.position.y), angtest.Rad());
 	}
+
+	//DrawMesh(acv::GetM(acv::m_default), acv::GetT(acv::t_default), SS_NORMAL, rootMatrix);
+	DrawMeshSet(acv::GetMS(acv::ms_default), tickCount / 2, acv::GetT(acv::t_default), SS_NORMAL, rootMatrix);
 
 	graphics::Matrix4x4 matLegHipR, matLegUpR, matLegLoR, matLegFootR;
 	graphics::Matrix4x4 matLegHipL, matLegUpL, matLegLoL, matLegFootL;
@@ -720,16 +764,13 @@ void ActorDraw(lid id, void* ent)
 		chr->t_body.GetPosition() + (vecup * lenUp),
 		m::Normalize(vecfw * len + vecup * lenUp),
 		vecup_upper * -1.f);
-	DrawMeshDeform(id,
-		acv::GetMD(acv::actor_templates[chr->actorBase].m_body),
-		acv::GetT(acv::actor_templates[chr->actorBase].t_body), SS_NORMAL, 2u,
+	DrawMeshDeform(acv::GetMD(acv::actor_templates[chr->actorBase].m_body),
+		acv::GetT(acv::actor_templates[chr->actorBase].t_body), SS_CHARA, 2u,
 		matBodyLo, matBodyUp, graphics::Matrix4x4(), graphics::Matrix4x4());
 
 	//-------------------------------- CALCULATE ARMS
 
 	m::Vector3 chestOrigin = graphics::MatrixGetPosition(matBodyUp) - graphics::MatrixGetForward(matBodyUp) * (BODYLEN - 0.1f);
-
-	lf32 shoulder_width = 0.12f;
 
 	m::Vector3 jointPosR = chestOrigin + graphics::MatrixGetRight(matBodyUp) * shoulder_width;
 	m::Vector3 jointPosL = chestOrigin + graphics::MatrixGetRight(matBodyUp) * -shoulder_width;
@@ -742,10 +783,9 @@ void ActorDraw(lid id, void* ent)
 
 	if (chr->inventory.items.Used(chr->inv_active_slot)) {
 		// Get held item
-		HeldItem* heldItem = ((HeldItem*)GetItemInstance(chr->inventory.items[chr->inv_active_slot]));
+		HeldItem* heldItem = ((HeldItem*)GetItemInstance(chr->inventory.items[chr->inv_active_slot].Index()));
 		// Draw held item
-		ItemDraw(chr->inventory.items[chr->inv_active_slot],
-			GETITEMINST(chr->inventory.items[chr->inv_active_slot])->id_item_template);
+		ItemDraw(chr->inventory.items[chr->inv_active_slot]);
 	}
 
 	//-------------------------------- DRAW ARMS
@@ -755,14 +795,18 @@ void ActorDraw(lid id, void* ent)
 		&matLegUpR, &matLegLoR, &matLegFootR, true, true, HAND_LEN);
 	// Draw arm
 	graphics::SetFrontFaceInverse();
-	DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_NORMAL, 4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
+	DrawMeshDeform(acv::GetMD(acv::actor_templates[chr->actorBase].m_arm),
+		acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA,
+		4u, matBodyUp, matLegUpR, matLegLoR, matLegFootR);
 	graphics::SetFrontFace();
 
 	// Arm left
 	MatrixIK(ARMLEN(chr->actorBase, 0), jointPosL, chr->handPosL, elbowDirL,
 		&matLegUpL, &matLegLoL, &matLegFootL, true, false, HAND_LEN);
 	// Draw arm
-	DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_arm), acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_NORMAL, 4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
+	DrawMeshDeform(acv::GetMD(acv::actor_templates[chr->actorBase].m_arm),
+		acv::GetT(acv::actor_templates[chr->actorBase].t_arm), SS_CHARA,
+		4u, matBodyUp, matLegUpL, matLegLoL, matLegFootL);
 
 	//-------------------------------- DRAW LEGS
 
@@ -791,7 +835,9 @@ void ActorDraw(lid id, void* ent)
 		graphics::MatrixTransformXFlip(matLegFootR, chr->fpCurrentR + m::Vector3(0.f, LEGLEN(chr->actorBase, 0), 0.f), m::Vector3(0.f, -1.f, 0.f), vecup_inv);
 		// Draw leg
 		graphics::SetFrontFaceInverse();
-		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_leg), acv::GetT(acv::actor_templates[chr->actorBase].t_leg), SS_NORMAL, 4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
+		DrawMeshDeform(acv::GetMD(acv::actor_templates[chr->actorBase].m_leg),
+			acv::GetT(acv::actor_templates[chr->actorBase].t_leg), SS_CHARA,
+			4u, matLegHipR, matLegUpR, matLegLoR, matLegFootR);
 		graphics::SetFrontFace();
 		// transform legR for cloak
 		//graphics::MatrixTransformForwardUp(matLegUpR, chr->t_body.GetPosition(), chr->fpCurrentR - chr->t_body.GetPosition(), chr->t_body.GetForward());
@@ -809,7 +855,9 @@ void ActorDraw(lid id, void* ent)
 		graphics::MatrixTransform(matLegLoL, jointPosL - vecup * lenUp, m::Normalize(vecfw * len + vecup * lenUp), vecup_inv);
 		graphics::MatrixTransform(matLegFootL, chr->fpCurrentL + m::Vector3(0.f, LEGLEN(chr->actorBase, 0), 0.f), m::Vector3(0.f, -1.f, 0.f), vecup_inv);
 		// Draw leg
-		DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_leg), acv::GetT(acv::actor_templates[chr->actorBase].t_leg), SS_NORMAL, 4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
+		DrawMeshDeform(acv::GetMD(acv::actor_templates[chr->actorBase].m_leg),
+			acv::GetT(acv::actor_templates[chr->actorBase].t_leg), SS_CHARA,
+			4u, matLegHipL, matLegUpL, matLegLoL, matLegFootL);
 		// transform legL for cloak
 		//graphics::MatrixTransformForwardUp(matLegUpL, chr->t_body.GetPosition(), chr->fpCurrentL - chr->t_body.GetPosition(), chr->t_body.GetForward());
 
@@ -823,22 +871,23 @@ void ActorDraw(lid id, void* ent)
 	t2.TranslateLocal(m::Vector3(0.f, 0.7f, 0.f));
 	//DrawMeshDeform(chr->id, acv::GetMD(acv::md_char_head), acv::GetT(chr->t_skin), SS_CHARA, 4u,
 	//	t2.getMatrix(), t_head.getMatrix(), t_head.getMatrix(), t_head.getMatrix());
-	DrawMeshDeform(id, acv::GetMD(acv::actor_templates[chr->actorBase].m_head), acv::GetT(acv::actor_templates[chr->actorBase].t_head), SS_CHARA, 4u,
-		t2.getMatrix(), chr->t_head.getMatrix(), chr->t_head.getMatrix(), chr->t_head.getMatrix());
+	DrawMeshDeform(acv::GetMD(acv::actor_templates[chr->actorBase].m_head),
+		acv::GetT(acv::actor_templates[chr->actorBase].t_head), SS_CHARA,
+		4u, t2.getMatrix(), chr->t_head.getMatrix(), chr->t_head.getMatrix(), chr->t_head.getMatrix());
 
 	//-------------------------------- DRAW DEBUG PATHING
 
 	#if !DEF_GRID
 	// debug draw path
-	if (chr->ai_pathing) {
-		for (int i = 0; i < chr->ai_path.len; ++i) {
-			//CellSpace cs;
-			//core::GetCellSpaceInfo();
-			//env::GetHeight();
-			graphics::Matrix4x4 mattt;
-			graphics::MatrixTransform(mattt, m::Vector3(chr->ai_path.pos_x[chr->ai_path_current_index], chr->t.altitude, chr->ai_path.pos_y[chr->ai_path_current_index]));
-			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_debug_bb), SS_NORMAL, mattt);
-		}
-	}
+	//if (chr->ai_pathing) {
+	//	for (int i = 0; i < chr->ai_path.len; ++i) {
+	//		//CellSpace cs;
+	//		//core::GetCellSpaceInfo();
+	//		//env::GetHeight();
+	//		graphics::Matrix4x4 mattt;
+	//		graphics::MatrixTransform(mattt, m::Vector3(chr->ai_path.pos_x[chr->ai_path_current_index], chr->t.altitude, chr->ai_path.pos_y[chr->ai_path_current_index]));
+	//		DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_debug_bb), SS_NORMAL, mattt);
+	//	}
+	//}
 	#endif
 }

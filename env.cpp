@@ -30,7 +30,7 @@ namespace env
 
 	graphics::CompositeMesh wldMeshes[NUM_COMPOSITES];
 	graphics::TerrainMesh wldMeshTerrain;
-	lid wldTxtr[NUM_COMPOSITES];
+	ID16 wldTxtr[NUM_COMPOSITES];
 	lui32 wldNumTextures = 0u;
 	#endif
 
@@ -751,7 +751,7 @@ namespace env
 		}
 	}
 
-	lid GetTriAtPos(lf32 x, lf32 y)
+	ID16 GetTriAtPos(lf32 x, lf32 y)
 	{
 		WCoord coords;
 		coords.x = (lui16)roundf(x);
@@ -1149,7 +1149,7 @@ namespace env
 		#if DEF_GRID
 		for (lui32 i = 0u; i < wldNumTextures; ++i)
 		{
-			DrawCompositeMesh(ID_NULL, wldMeshes[i], acv::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
+			DrawCompositeMesh(wldMeshes[i], acv::GetT(wldTxtr[i]), SS_NORMAL, graphics::Matrix4x4());
 		}
 		#endif
 		//graphics::SetFrontFaceInverse();
@@ -1165,10 +1165,10 @@ namespace env
 	void DrawTerrain()
 	{
 		#if !DEF_GRID
-		DrawMesh(ID_NULL, acv::GetM(acv::m_world), acv::GetT(acv::t_terrain_01), SS_NORMAL, graphics::Matrix4x4());
-		//DrawMesh(ID_NULL, acv::GetM(acv::m_world_phys), acv::GetT(acv::t_terrain_01), SS_NORMAL, graphics::Matrix4x4());
+		DrawMesh(acv::GetM(acv::m_world), acv::GetT(acv::t_terrain_01), SS_NORMAL, graphics::Matrix4x4());
+		//DrawMesh(acv::GetM(acv::m_world_phys), acv::GetT(acv::t_terrain_01), SS_NORMAL, graphics::Matrix4x4());
 		#else
-		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
+		DrawTerrainMesh(wldMeshTerrain,
 			acv::GetT(acv::t_terrain_01), acv::GetT(acv::t_terrain_02),
 			acv::GetT(acv::t_terrain_03), acv::GetT(acv::t_terrain_04),
 			acv::GetT(acv::t_terrain_05), acv::GetT(acv::t_terrain_06),
@@ -1179,7 +1179,7 @@ namespace env
 	void DrawDebugGizmos(CellSpace* cs)
 	{
 		#if !DEF_GRID
-		lid tri_id = GetTriAtPos(cs->c[eCELL_I].x + cs->offsetx, cs->c[eCELL_I].y + cs->offsety);
+		ID16 tri_id = GetTriAtPos(cs->c[eCELL_I].x + cs->offsetx, cs->c[eCELL_I].y + cs->offsety);
 		if (tri_id != ID_NULL) {
 			EnvTri* tri = &emesh.tris[GetTriAtPos(cs->c[eCELL_I].x + cs->offsetx, cs->c[eCELL_I].y + cs->offsety)];
 			EnvVert* va = &emesh.points[tri->verts[0]];
@@ -1189,30 +1189,30 @@ namespace env
 			graphics::Matrix4x4 matr;
 			// draw vertices
 			graphics::MatrixTransform(matr, m::Vector3(va->pos.x, va->h, va->pos.y));
-			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+			DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
 			graphics::MatrixTransform(matr, m::Vector3(vb->pos.x, vb->h, vb->pos.y));
-			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+			DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
 			graphics::MatrixTransform(matr, m::Vector3(vc->pos.x, vc->h, vc->pos.y));
-			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+			DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
 			// draw vertex offsets
 			graphics::MatrixTransform(matr, m::Vector3(va->pos.x + va->nor.x * 0.5f, va->h, va->pos.y + va->nor.y * 0.5f));
-			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
+			DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
 			graphics::MatrixTransform(matr, m::Vector3(vb->pos.x + vb->nor.x * 0.5f, vb->h, vb->pos.y + vb->nor.y * 0.5f));
-			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
+			DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
 			graphics::MatrixTransform(matr, m::Vector3(vc->pos.x + vc->nor.x * 0.5f, vc->h, vc->pos.y + vc->nor.y * 0.5f));
-			DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
+			DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_red), SS_NORMAL, matr);
 			// draw edges
 			if (tri->open_edge_ab) {
 				graphics::MatrixTransform(matr, m::Vector3((va->pos.x + vb->pos.x) / 2.f, (va->h + vb->h) / 2.f, (va->pos.y + vb->pos.y) / 2.f));
-				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+				DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
 			}
 			if (tri->open_edge_bc) {
 				graphics::MatrixTransform(matr, m::Vector3((vb->pos.x + vc->pos.x) / 2.f, (vb->h + vc->h) / 2.f, (vb->pos.y + vc->pos.y) / 2.f));
-				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+				DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
 			}
 			if (tri->open_edge_ca) {
 				graphics::MatrixTransform(matr, m::Vector3((vc->pos.x + va->pos.x) / 2.f, (vc->h + va->h) / 2.f, (vc->pos.y + va->pos.y) / 2.f));
-				DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
+				DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_col_black), SS_NORMAL, matr);
 			}
 		}
 		#endif
@@ -1220,15 +1220,15 @@ namespace env
 	void DrawTerrainDebug()
 	{
 		#if !DEF_GRID
-		DrawMesh(ID_NULL, acv::GetM(acv::m_world), acv::GetT(acv::t_terrain_01), SS_NORMAL, graphics::Matrix4x4());
+		DrawMesh(acv::GetM(acv::m_world), acv::GetT(acv::t_terrain_01), SS_NORMAL, graphics::Matrix4x4());
 		graphics::SetRenderWire();
 		glLineWidth(2.f);
-		DrawMesh(ID_NULL, acv::GetM(acv::m_world_phys), acv::GetT(acv::t_col_red), SS_NORMAL, graphics::Matrix4x4());
+		DrawMesh(acv::GetM(acv::m_world_phys), acv::GetT(acv::t_col_red), SS_NORMAL, graphics::Matrix4x4());
 		graphics::SetRenderSolid();
 		glLineWidth(1.f);
 		#else
 		graphics::Matrix4x4 matr;
-		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
+		DrawTerrainMesh(wldMeshTerrain,
 			acv::GetT(acv::t_terrain_01), acv::GetT(acv::t_terrain_02),
 			acv::GetT(acv::t_terrain_03), acv::GetT(acv::t_terrain_04),
 			acv::GetT(acv::t_terrain_05), acv::GetT(acv::t_terrain_06),
@@ -1236,7 +1236,7 @@ namespace env
 			matr);
 		graphics::MatrixTransform(matr, m::Vector3(0.f, 0.01f, 0.f));
 		graphics::SetRenderWire();
-		DrawTerrainMesh(ID_NULL, wldMeshTerrain,
+		DrawTerrainMesh(wldMeshTerrain,
 			acv::GetT(acv::t_col_black), acv::GetT(acv::t_col_black),
 			acv::GetT(acv::t_col_black), acv::GetT(acv::t_col_black),
 			acv::GetT(acv::t_col_black), acv::GetT(acv::t_col_black),
@@ -1548,8 +1548,8 @@ bool path::PathFind(Path* path, lf32 x, lf32 y, lf32 xDest, lf32 yDest)
 	}
 
 	// todo: use height to find the right floor triangles
-	lid tri_start = env::GetTriAtPos(x, y);
-	lid tri_dest = env::GetTriAtPos(xDest, yDest);
+	ID16 tri_start = env::GetTriAtPos(x, y);
+	ID16 tri_dest = env::GetTriAtPos(xDest, yDest);
 	if (tri_start != ID_NULL && tri_dest != ID_NULL)
 	{
 		pathNodeTest node_start;

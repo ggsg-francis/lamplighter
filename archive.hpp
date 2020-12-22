@@ -25,7 +25,8 @@
 #define DEFAULT_TEXTURE 0u
 #define DEFAULT_MESH 1u
 #define DEFAULT_MESHBLEND 2u
-#define DEFAULT_MESHDEFORM 3u
+#define DEFAULT_MESHSET 3u
+#define DEFAULT_MESHDEFORM 4u
 
 typedef lui16 assetID;
 
@@ -40,6 +41,7 @@ namespace acv
 		t_default,
 		m_default,
 		mb_default,
+		ms_default,
 		md_default,
 		m_debug_bb,
 		t_debug_bb,
@@ -95,12 +97,13 @@ namespace acv
 		AssetType type = ASSET_NONE;
 		bool loaded = false;
 		lui64 tickLastAccessed = 0u;
-		lui32 asset = ID_NULL;
+		LtrID asset = ID2_NULL;
 	};
 
 	graphics::Texture& GetT(lui32 index);
 	graphics::Mesh& GetM(lui32 index);
 	graphics::MeshBlend& GetMB(lui32 index);
+	graphics::MeshSet& GetMS(lui32 index);
 	graphics::MeshDeform& GetMD(lui32 index);
 
 	bool IsTexture(lui32 index);
@@ -157,8 +160,8 @@ namespace acv
 			eNONE6 = 0b01000000,
 			eNONE7 = 0b10000000,
 		};
-		lid idMesh = ID_NULL;
-		lid idTxtr = ID_NULL;
+		ID16 idMesh = ID_NULL;
+		ID16 idTxtr = ID_NULL;
 		EnvPropFloorMat floorType;
 		EnvPropPhysShape physShape;
 		//mem::bv<lui8, EnvPropFlags> flags;
@@ -179,7 +182,7 @@ namespace acv
 		lui16 target_effect_type;
 		lf32 target_effect_duration;
 		lui32 target_effect_magnitude;
-		lid icon;
+		ID16 icon;
 		lui16 filler2;
 	} Spell;
 
@@ -188,15 +191,15 @@ namespace acv
 		lui32 damage;
 		bool saveOnHit;
 		lui8 ammunition_type;
-		lid mesh;
-		lid texture;
+		ID16 mesh;
+		ID16 texture;
 	} ProjectileTemplate;
 
 	#define ENTITY_MAX_LIMB_NUM 4
 	typedef struct ActorRecord {
 		char handle[8];
-		lid m_head, m_body, m_arm, m_leg;
-		lid t_head, t_body, t_arm, t_leg;
+		ID16 m_head, m_body, m_arm, m_leg;
+		ID16 t_head, t_body, t_arm, t_leg;
 		lf32 jpos_arm_fw, jpos_arm_rt, jpos_arm_up, leng_arm;
 		lf32 jpos_leg_fw, jpos_leg_rt, jpos_leg_up, leng_leg;
 		lf32 leng_body;
@@ -211,21 +214,21 @@ namespace acv
 		};
 		char handle[8];
 		li8 name[64];
-		lid id_icon = 0u;
+		ID16 id_icon = 0u;
 		lui16 bv_base = 0u;
 		lf32 f_weight = 0.f;
 		lui32 f_value_base = 0u;
 		lf32 f_radius = 0.f;
 		lf32 f_model_height = 0.f;
-		lid id_mesh = 0u;
-		lid id_mesh_lod = 0u;
-		lid id_tex = 0u;
+		ID16 id_mesh = 0u;
+		ID16 id_mesh_lod = 0u;
+		ID16 id_tex = 0u;
 		li16 FILLER2 = 0u;
 	};
 	struct ItemRecordEqp : public ItemRecord {
-		lid id_mesh_head; lid id_texture_head;
-		lid id_mesh_arms; lid id_texture_arms;
-		lid id_mesh_legs; lid id_texture_legs;
+		ID16 id_mesh_head; ID16 id_texture_head;
+		ID16 id_mesh_arms; ID16 id_texture_arms;
+		ID16 id_mesh_legs; ID16 id_texture_legs;
 		float block_pierce; float block_slice; float block_slam;
 	};
 	struct ItemRecordMel : public ItemRecord {
@@ -240,8 +243,8 @@ namespace acv
 	};
 	struct ItemRecordCon : public ItemRecord {
 		lui32 use_count;
-		lid id_effect;
-		lid id_projectile;
+		ID16 id_effect;
+		ID16 id_projectile;
 	};
 
 	struct ActivatorRecord {

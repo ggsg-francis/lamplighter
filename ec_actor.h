@@ -48,28 +48,39 @@ struct ECActor : public ECCommon
 
 	Transform3D t_body, t_head;
 	m::Vector3 fpCurrentL, fpCurrentR;
+	m::Vector3 fpCurrentL_vel, fpCurrentR_vel;
+	m::Vector3 fpCurrentL_targ, fpCurrentR_targ;
 	AnimPlayerVec3 ap_fpCurrentL, ap_fpCurrentR;
 	
 	lf32 aniStandHeight;
+	lf32 aniStandHeight_vel;
+	lf32 aniStandHeight_targ;
+	lf32 aniHeadHeight;
+	lf32 aniHeadHeight_vel;
+	lf32 aniHeadHeight_targ;
 	AnimPlayerVec3 ap_StandHeight;
 	
 	lf32 aniSlideResponse = 0.f;
 
 	m::Vector3 handPosR;
+	m::Vector3 handPosR_vel;
+	m::Vector3 handPosR_targ;
 	AnimPlayerVec3 ap_HandPosR;
 	m::Vector3 handPosL;
+	m::Vector3 handPosL_vel;
+	m::Vector3 handPosL_targ; 
 	AnimPlayerVec3 ap_HandPosL;
 
 	path::Path ai_path;
 	lui64 ai_timer = 0u;
 
-	lid ai_target_ent = BUF_NULL;
-	lid ai_ally_ent = BUF_NULL;
-	lid aniHandHoldTarget = ID_NULL;
+	LtrID ai_target_ent = ID2_NULL;
+	LtrID ai_ally_ent = ID2_NULL;
+	LtrID aniHandHoldTarget = ID2_NULL;
 	// Attack target - attacking target only
-	lid atk_target = BUF_NULL;
+	LtrID atk_target = ID2_NULL;
 	// View target (used to pick up items and stuff)
-	lid viewtarget = ID_NULL;
+	LtrID viewtarget = ID2_NULL;
 
 	MaxedStat stamina;
 
@@ -116,12 +127,12 @@ struct ECActor : public ECCommon
 };
 
 void ActorOnHitGround(ECActor* chr);
-void ActorTryHoldHand(lid id_self, lid id);
-void ActorTakeItem(lid id_self, lid id);
-void ActorDropItem(lid id_self, lid slot);
-void ActorDropAllItems(lid id_self);
-void ActorSetEquipSlot(lid id_self, lui32 slot);
-void ActorIncrEquipSlot(lid id_self);
-void ActorDecrEquipSlot(lid id_self);
-void ActorTick(lid id, void* ent, lf32 dt);
-void ActorDraw(lid id, void* ent);
+void ActorTryHoldHand(LtrID id_self, LtrID id_other);
+void ActorTakeItem(LtrID id_self, LtrID id_item);
+void ActorDropItem(LtrID id_self, ID16 slot);
+void ActorDropAllItems(LtrID id_self);
+void ActorSetEquipSlot(LtrID id_self, lui32 slot);
+void ActorIncrEquipSlot(LtrID id_self);
+void ActorDecrEquipSlot(LtrID id_self);
+void ActorTick(LtrID id, void* ent, lf32 dt);
+void ActorDraw(LtrID id, void* ent);

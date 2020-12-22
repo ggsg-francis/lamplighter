@@ -15,7 +15,13 @@ namespace core
 	//--------------------------- GLOBAL VARIABLES
 
 	lui32 activePlayer = 0u;
-	lid players[NUM_PLAYERS];
+	#if NUM_PLAYERS == 2
+	LtrID players[NUM_PLAYERS]{ ID2_NULL, ID2_NULL };
+	#elif NUM_PLAYERS == 4
+	LtrID players[NUM_PLAYERS]{ ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL };
+	#elif NUM_PLAYERS == 8
+	LtrID players[NUM_PLAYERS]{ ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL, ID2_NULL };
+	#endif
 	m::Vector3 camViewTarget[NUM_PLAYERS];
 	m::Vector3 camViewPosition[NUM_PLAYERS];
 
@@ -29,7 +35,7 @@ namespace core
 		m::Angle cam_yaw = m::Angle(0.f);
 		// Environment edit properties
 		lui32 flags_copy;
-		lid prop_copy;
+		ID16 prop_copy;
 		#if DEF_GRID
 		env::NodePropDirection prop_dir_copy;
 		#endif
@@ -66,37 +72,29 @@ namespace core
 
 	struct ReferenceCell
 	{
-		mem::idbuf ref_ents; // Entity references
+		mem::id2buf ref_ents; // Entity references
 	};
 	ReferenceCell refCells[WORLD_SIZE][WORLD_SIZE];
 
-	int CellEntityCount(int x, int y)
-	{
+	void AddEntityCell(btcoord x, btcoord y, LtrID e) {
+		refCells[x][y].ref_ents.Add(e);
+	}
+	void RemoveEntityCell(btcoord x, btcoord y, LtrID e) {
+		refCells[x][y].ref_ents.Remove(e);
+	}
+	int CellEntityCount(btcoord x, btcoord y) {
 		return core::refCells[x][y].ref_ents.Size();
 	}
-	lid CellEntity(int x, int y, int e)
-	{
+	LtrID CellEntity(btcoord x, btcoord y, lui32 e) {
 		return core::refCells[x][y].ref_ents[e];
 	}
 
 	//--------------------------- FUNCTION DECLARATIONS
 
-	lid GetClosestPlayer(lid id);
-	lid GetClosestEntity(lid id, lf32 dist);
-	lid GetClosestEntityAlleg(lid index, lf32 dist, fac::facalleg allegiance);
-
 	void ProjectileTick(lf32 dt);
 	void ProjectileDraw();
 	void ProjectileHitCheck();
-	void RemoveAllReferences(lid id);
 }
-
-
-
-
-
-
-
 
 
 
@@ -316,10 +314,10 @@ char* TemplateFamilyNames[]{ // start at line 300
 	"Ashcoarm",
 	"Two-Eyes",
 	"Scumbottom",
+	"DeGroot",
 };
 // count the above
-#define TEMP_NAME_FAMILY_COUNT (316u - 300u)
-
+#define TEMP_NAME_FAMILY_COUNT (317u - 300u)
 
 
 

@@ -14,11 +14,7 @@ bool saveNextFrame = false;
 
 namespace core
 {
-	lui16 GetHP(lid id) {
-		return ENTITY(id)->damagestate;
-	}
-
-	void SetViewFocus(lid index) {
+	void SetViewFocus(ID16 index) {
 		activePlayer = index;
 		graphics::SetMatView(&camViewTarget[activePlayer], &camViewPosition[activePlayer], nullptr);
 	}
@@ -198,9 +194,9 @@ namespace core
 	void RegenCellRefs()
 	{
 		for (int i = 0; i < GetEntityArraySize(); i++) {
-			if (!GetEntityExists(i)) continue;
+			if (!AnyEntityHere(i)) continue;
 			ECCommon* ent = (ECCommon*)GetEntityPtr(i);
-			AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, i);
+			AddEntityCell(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y, GetEntityID(i));
 		}
 	}
 
@@ -230,21 +226,21 @@ namespace core
 
 		// temporary destroy dead entities
 		for (int i = 0; i < GetEntityArraySize(); i++) {
-			if (!GetEntityExists(i)) continue;
-			if (ENTITY(i)->activeFlags.get(ECCommon::eALIVE)
-				|| ENTITY(i)->activeFlags.get(ECCommon::eDIED_REPORT))
+			if (!AnyEntityHere(i)) continue;
+			if (GetEntity<ECCommon>(i)->activeFlags.get(ECCommon::eALIVE)
+				|| GetEntity<ECCommon>(i)->activeFlags.get(ECCommon::eDIED_REPORT))
 				continue;
 			//index::DestroyEntity(i);
-			ENTITY(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_ENT);
-			ENTITY(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_PRJ);
-			ENTITY(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_MAG);
+			GetEntity<ECCommon>(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_ENT);
+			GetEntity<ECCommon>(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_PRJ);
+			GetEntity<ECCommon>(i)->physicsFlags.unset(ECCommon::PhysicsFlags::eCOLLIDE_MAG);
 		}
 
 		//-------------------------------- ITERATE THROUGH ENTITIES
 
-		for (lid i = 0; i < GetEntityArraySize(); i++) { // For every entity
-			if (!GetEntityExists(i)) continue;
-			ENTITY(i)->TickEffects(dt);
+		for (ID16 i = 0; i < GetEntityArraySize(); i++) { // For every entity
+			if (!AnyEntityHere(i)) continue;
+			GetEntity<ECCommon>(i)->TickEffects(dt);
 			EntityTick(i, dt);
 		}
 
@@ -375,17 +371,17 @@ namespace core
 		}
 		else {
 			#if DEF_NMP
-			camViewPosition[network::nid] = ACTOR(network::nid)->t_head.GetPosition() +
-				m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(network::nid)->t_head.GetRotation());
-			camViewTarget[network::nid] = camViewPosition[network::nid] + ACTOR(network::nid)->t_head.GetForward();
+			camViewPosition[network::nid] = ACTOR(players[network::nid])->t_head.GetPosition() +
+				m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(players[network::nid])->t_head.GetRotation());
+			camViewTarget[network::nid] = camViewPosition[network::nid] + ACTOR(players[network::nid])->t_head.GetForward();
 			#else
-			camViewPosition[0] = ACTOR(0)->t_head.GetPosition() +
-				m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(0)->t_head.GetRotation());
-			camViewTarget[0] = camViewPosition[0] + ACTOR(0)->t_head.GetForward();
+			camViewPosition[0] = ACTOR(players[0])->t_head.GetPosition() +
+				m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(players[0])->t_head.GetRotation());
+			camViewTarget[0] = camViewPosition[0] + ACTOR(players[0])->t_head.GetForward();
 			if (config.bSplitScreen) {
-				camViewPosition[1] = ACTOR(1)->t_head.GetPosition() +
-					m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(1)->t_head.GetRotation());
-				camViewTarget[1] = camViewPosition[1] + ACTOR(1)->t_head.GetForward();
+				camViewPosition[1] = ACTOR(players[1])->t_head.GetPosition() +
+					m::RotateVector(m::Vector3(0.f, 0.18f, 0.2f), ACTOR(players[1])->t_head.GetRotation());
+				camViewTarget[1] = camViewPosition[1] + ACTOR(players[1])->t_head.GetForward();
 			}
 			#endif
 		}
@@ -727,7 +723,7 @@ namespace core
 			graphics::MatrixTransform(matrix, m::Vector3(editor_cursor_x,
 				env::eCells.terrain_height[editor_cursor_x][editor_cursor_y] /
 				TERRAIN_HEIGHT_DIVISION, editor_cursor_y));
-			DrawMesh(ID_NULL, acv::GetM(acv::m_debugcell), acv::GetT(acv::t_gui_bar_red), SS_NORMAL, matrix);
+			DrawMesh(acv::GetM(acv::m_debugcell), acv::GetT(acv::t_gui_bar_red), SS_NORMAL, matrix);
 			#endif
 
 			#if DEF_GRID
@@ -753,12 +749,12 @@ namespace core
 					//if (env::Get(x, y, env::eflag::EF_IMPASSABLE)) {
 						graphics::MatrixTransform(matrix, m::Vector3(
 							x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
-						DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_debug_bb), SS_NORMAL, matrix);
+						DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_debug_bb), SS_NORMAL, matrix);
 					}
 					if (env::Get(x, y, env::eflag::EF_LIGHTSRC)) {
 						graphics::MatrixTransform(matrix, m::Vector3(
 							x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
-						DrawMesh(ID_NULL, acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_default), SS_NORMAL, matrix);
+						DrawMesh(acv::GetM(acv::m_debug_bb), acv::GetT(acv::t_default), SS_NORMAL, matrix);
 					}
 
 					graphics::SetRenderSolid();
@@ -766,18 +762,18 @@ namespace core
 					if (env::Get(x, y, env::eflag::EF_SPAWN_TEST)) {
 						graphics::MatrixTransform(matrix, m::Vector3(
 							x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
-						DrawMesh(ID_NULL, acv::GetM(acv::m_debug_monkey), acv::GetT(acv::t_default), SS_NORMAL, matrix);
+						DrawMesh(acv::GetM(acv::m_debug_monkey), acv::GetT(acv::t_default), SS_NORMAL, matrix);
 						for (int i = 0; i < env::eCells.spawn_id[x][y]; ++i) {
 							graphics::MatrixTransform(matrix, m::Vector3(
 								x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f + 0.125f + (i * 0.125f), y));
-							DrawMesh(ID_NULL, acv::GetM(acv::m_debug_monkey),
+							DrawMesh(acv::GetM(acv::m_debug_monkey),
 								acv::GetT(acv::t_col_red), SS_NORMAL, matrix);
 						}
 					}
 					if (env::Get(x, y, env::eflag::EF_SPAWN_ITEM_TEST)) {
 						graphics::MatrixTransform(matrix, m::Vector3(
 							x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION + 0.5f, y));
-						DrawMesh(ID_NULL, acv::GetM(acv::items[env::eCells.spawn_id[x][y]]->id_mesh),
+						DrawMesh(acv::GetM(acv::items[env::eCells.spawn_id[x][y]]->id_mesh),
 							acv::GetT(acv::items[env::eCells.spawn_id[x][y]]->id_tex), SS_NORMAL, matrix);
 					}
 
@@ -787,8 +783,7 @@ namespace core
 						graphics::MatrixTransform(matrix,
 							m::Vector3(x, env::eCells.terrain_height[x][y] / TERRAIN_HEIGHT_DIVISION, y),
 							glm::radians(rotation_by_enum[env::eCells.prop_dir[x][y]]));
-						DrawMesh(ID_NULL,
-							acv::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
+						DrawMesh(acv::GetM(acv::props[env::eCells.prop[x][y]].idMesh),
 							acv::GetT(acv::props[env::eCells.prop[x][y]].idTxtr),
 							SS_NORMAL, matrix);
 					}
@@ -813,11 +808,11 @@ namespace core
 			//env::DrawDebugGizmos(cs);
 			#endif
 
-			for (lid i = 0; i < GetEntityArraySize(); i++) { // For every entity
+			for (ID16 i = 0; i < GetEntityArraySize(); i++) { // For every entity
 				// Early exit if the entity isnt even real
-				if (!GetEntityExists(i)) continue;
+				if (!AnyEntityHere(i)) continue;
 				// For distance culling
-				m::Vector3 diff = m::Vector3(ENTITY(i)->t.position.x, ENTITY(i)->t.altitude, ENTITY(i)->t.position.y)
+				m::Vector3 diff = m::Vector3(GetEntity<ECCommon>(i)->t.position.x, GetEntity<ECCommon>(i)->t.altitude, GetEntity<ECCommon>(i)->t.position.y)
 					- camViewPosition[activePlayer];
 				// Dot against the camera direction, for not drawing behind us
 				// Not as good as frustum culling, but I'll live
@@ -870,14 +865,14 @@ namespace core
 	}
 
 	// move somewhere else
-	void SoulTransferTemp(lid player, lid from, lid to) {
+	void SoulTransferTemp(lui32 player, LtrID from, LtrID to) {
 		// if we are allied
 		if (fac::GetAllegiance(ENTITY(from)->faction, ENTITY(to)->faction) == fac::allied) {
 			// SOUL TRANSFER
-			if (players[0] != players[1]) { // If both player's arent using the same entity
+			if (!IDCOMPARE(players[0], players[1])) { // If both player's arent using the same entity
 				ACTOR(players[player])->aiControlled = true; // Let the AI take over
-				ACTOR(players[player])->ai_target_ent = ID_NULL; // Let the AI take over
-				ACTOR(players[player])->ai_ally_ent = ID_NULL; // Let the AI take over
+				ACTOR(players[player])->ai_target_ent = ID2_NULL; // Let the AI take over
+				ACTOR(players[player])->ai_ally_ent = ID2_NULL; // Let the AI take over
 			}
 			players[player] = to; // Set player to control player's view target
 			ACTOR(players[player])->aiControlled = false;
@@ -888,17 +883,17 @@ namespace core
 	{
 		// Not the most elegant of functions
 		#ifdef DEF_NMP
-		for (lid i = 0u; i < config.iNumNWPlayers; ++i) {
+		for (ID16 i = 0u; i < config.iNumNWPlayers; ++i) {
 			if (input::GetHit(i, input::key::INV_CYCLE_L))
 				ActorDecrEquipSlot(players[i]);
 			if (input::GetHit(i, input::key::INV_CYCLE_R))
 				ActorIncrEquipSlot(players[i]);
 			if (input::GetHit(i, input::key::ACTIVATE)) { // Pick up items
-				lid viewtarget = GetEntity<ECActor>(players[i])->viewtarget;
-				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
+				LtrID viewtarget = ACTOR(players[i])->viewtarget;
+				if (GetEntityExists(viewtarget) && GetEntityType(viewtarget.Index()) == ENTITY_TYPE_RESTING_ITEM) {
 					ActorTakeItem(players[i], viewtarget);
 				}
-				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR) {
+				else if (GetEntityExists(viewtarget) && GetEntityType(viewtarget.Index()) == ENTITY_TYPE_ACTOR) {
 					// hold hand
 					ActorTryHoldHand(players[i], viewtarget);
 					// soultransfer
@@ -915,11 +910,11 @@ namespace core
 			if (input::GetHit(input::key::INV_CYCLE_R))
 				ActorIncrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::ACTIVATE)) { // Pick up items
-				lid viewtarget = ACTOR(players[activePlayer])->viewtarget;
-				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
+				LtrID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+				if (GetEntityExists(viewtarget) && GetEntityType(viewtarget.Index()) == ENTITY_TYPE_RESTING_ITEM) {
 					ActorTakeItem(players[activePlayer], viewtarget);
 				}
-				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR) {
+				else if (GetEntityExists(viewtarget) && GetEntityType(viewtarget.Index()) == ENTITY_TYPE_ACTOR) {
 					// hold hand
 					ActorTryHoldHand(players[activePlayer], viewtarget);
 					// soultransfer
@@ -935,11 +930,11 @@ namespace core
 			if (input::GetHit(input::key::C_INV_CYCLE_R))
 				ActorIncrEquipSlot(players[activePlayer]);
 			if (input::GetHit(input::key::C_ACTIVATE)) { // Pick up items
-				lid viewtarget = ACTOR(players[activePlayer])->viewtarget;
-				if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM) {
+				LtrID viewtarget = ACTOR(players[activePlayer])->viewtarget;
+				if (GetEntityExists(viewtarget) && GetEntityType(viewtarget.Index()) == ENTITY_TYPE_RESTING_ITEM) {
 					ActorTakeItem(players[activePlayer], viewtarget);
 				}
-				else if (viewtarget != ID_NULL && GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR) {
+				else if (GetEntityExists(viewtarget) && GetEntityType(viewtarget.Index()) == ENTITY_TYPE_ACTOR) {
 					// hold hand
 					ActorTryHoldHand(players[activePlayer], viewtarget);
 					// soultransfer
@@ -1002,7 +997,7 @@ namespace core
 				xoffs + 24, xoffs + 2048, yoffs - 8);
 			text.Draw(&acv::GetT(acv::t_gui_font));
 			// draw item count
-			if (GetItemInstanceType(inv->items[active_slot]) == ITEM_TYPE_CONS) {
+			if (GetItemInstanceType(inv->items[active_slot].Index()) == ITEM_TYPE_CONS) {
 				char textbuffer[8];
 				_itoa(GETITEMINST(inv->items[active_slot])->uses, textbuffer, 10);
 				text.ReGen(textbuffer, xoffs, xoffs + 512, yoffs, graphics::eTEXTALIGN_MID);
@@ -1067,10 +1062,14 @@ namespace core
 		{
 			ECCommon* player = ENTITY(players[activePlayer]);
 			// hp
-			lf32 hp = (lf32)core::GetHP(players[activePlayer]) / 1000.f;
+			lf32 hp = (lf32)ENTITY(players[activePlayer])->damagestate / 1000.f;
+			lf32 hp2 = (lf32)gui.guiPlayerHP[activePlayer] / 1000.f;
 			lf32 hpscale = 128.f;
 			graphics::DrawGUITexture(&acv::GetT(acv::t_col_black),
 				p1_x_start + (hpscale * 0.5f), p1_y_start + 8, (int)hpscale, 16);
+			graphics::DrawGUITexture(&acv::GetT(acv::t_gui_bar_yellow),
+				p1_x_start + roundf(hp2 * (hpscale * 0.5f)), p1_y_start + 8,
+				(int)ceilf(hp2 * hpscale), 16);
 			graphics::DrawGUITexture(&acv::GetT(acv::t_gui_bar_red),
 				p1_x_start + roundf(hp * (hpscale * 0.5f)), p1_y_start + 8,
 				(int)ceilf(hp * hpscale), 16);
@@ -1088,9 +1087,9 @@ namespace core
 		}
 
 		// enemy hp
-		lid viewtarget = ACTOR(players[activePlayer])->viewtarget;
+		LtrID viewtarget = ACTOR(players[activePlayer])->viewtarget;
 		// If not null or player and exists
-		if (viewtarget != ID_NULL && viewtarget != core::players[activePlayer] && GetEntityExists(viewtarget)) {
+		if (GetEntityExists(viewtarget) && !IDCOMPARE(viewtarget, core::players[activePlayer])) {
 			ECCommon* entity = ENTITY(viewtarget);
 
 			//* GET TARGET SCREENSPACE POS
@@ -1123,11 +1122,11 @@ namespace core
 					textboxY = -(li32)graphics::FrameSizeY() / 2 + 24;
 
 				// Draw its name
-				gui.text_temp.ReGen(EntityName(viewtarget), textboxX, textboxX + 128, textboxY);
+				gui.text_temp.ReGen(EntityName(viewtarget.Index()), textboxX, textboxX + 128, textboxY);
 				gui.guibox.ReGen(textboxX, textboxX + gui.text_temp.sizex, textboxY - gui.text_temp.sizey, textboxY, 4, 10);
 				// draw our enemy's health
-				if (ACTOR(players[activePlayer])->atk_target != ID_NULL) {
-					lf32 hp = (lf32)core::GetHP(ACTOR(players[activePlayer])->atk_target) / 1000.f;
+				if (GetEntityExists(ACTOR(players[activePlayer])->atk_target)) {
+					lf32 hp = (lf32)ACTOR(ACTOR(players[activePlayer])->atk_target)->damagestate / 1000.f;
 					lf32 hpscale = 128.f;
 					graphics::DrawGUITexture(&acv::GetT(acv::t_col_black),
 						p1_x_start + (hpscale * 0.5f), p1_y_start + 24, (int)hpscale, 16);
@@ -1139,9 +1138,9 @@ namespace core
 				gui.guibox.Draw(&acv::GetT(acv::t_gui_box), 0.75f);
 				gui.text_temp.Draw(&acv::GetT(acv::t_gui_font), 1.f);
 				// draw the pick-up icon
-				if (GetEntityType(viewtarget) == ENTITY_TYPE_RESTING_ITEM)
+				if (GetEntityType(viewtarget.Index()) == ENTITY_TYPE_RESTING_ITEM)
 					graphics::DrawGUITexture(&acv::GetT(acv::t_gui_icon_pick_up), target_x_start, target_y_start, 24, 24);
-				else if (GetEntityType(viewtarget) == ENTITY_TYPE_ACTOR)
+				else if (GetEntityType(viewtarget.Index()) == ENTITY_TYPE_ACTOR)
 					graphics::DrawGUITexture(&acv::GetT(acv::t_gui_icon_hold_hand), target_x_start, target_y_start, 24, 24);
 			}
 		}
@@ -1186,7 +1185,7 @@ namespace core
 		#endif
 	}
 
-	void SetPlayerInput(lid playerIndex, m::Vector2 input, lf32 rot_x, lf32 rot_y,
+	void SetPlayerInput(ID16 playerIndex, m::Vector2 input, lf32 rot_x, lf32 rot_y,
 		bool use, bool use_hit, bool use_alt,
 		bool run, bool aim, bool ACTION_A, bool ACTION_B, bool ACTION_C,
 		bool crouch, bool jump) {
@@ -1219,23 +1218,13 @@ namespace core
 		#endif
 	}
 
-	void AddEntityCell(lui32 x, lui32 y, lid e)
-	{
-		refCells[x][y].ref_ents.Add(e);
-	}
-
-	void RemoveEntityCell(lui32 x, lui32 y, lid e)
-	{
-		refCells[x][y].ref_ents.Remove(e);
-	}
-
 	//________________________________________________________________________________________________________________________________
 	// SPAWN FUNCTIONS ---------------------------------------------------------------------------------------------------------------
 
-	lid SpawnEntity(lui8 type, m::Vector2 pos, float dir)
+	LtrID SpawnEntity(lui8 type, m::Vector2 pos, float dir)
 	{
-		lid id = IndexSpawnEntity(ENTITY_TYPE_ACTOR);
-		if (id != ID_NULL) {
+		LtrID id = IndexSpawnEntity(ENTITY_TYPE_ACTOR);
+		if (IDCHECK(id)) {
 			PrefabEntity[type](id, pos, dir);
 		}
 		else {
@@ -1243,62 +1232,62 @@ namespace core
 		}
 		return id;
 	}
-	lid SpawnNewEntityItem(lid item_template, m::Vector2 pos, lf32 dir)
+	LtrID SpawnNewEntityItem(ID16 item_template, m::Vector2 pos, lf32 dir)
 	{
-		lid id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
-		PrefabCommon(id, pos, dir);
-		ENTITY(id)->faction = fac::faction::none;
-		ENTITY(id)->physicsFlags.set(ECCommon::ePREFAB_ITEM);
-		ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
-		ITEM(id)->item_instance = SpawnItem(item_template);
-		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemInstance(ITEM(id)->item_instance))->id_item_template]->f_radius;
-		ENTITY(id)->height = 0.5f;
+		LtrID id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
+		if (IDCHECK(id)) {
+			PrefabCommon(id, pos, dir);
+			ENTITY(id)->faction = fac::faction::none;
+			ENTITY(id)->physicsFlags.set(ECCommon::ePREFAB_ITEM);
+			ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
+			ITEM(id)->item_instance = SpawnItem(item_template);
+			ENTITY(id)->radius = acv::items[((HeldItem*)GetItemInstance(ITEM(id)->item_instance.Index()))->id_item_template]->f_radius;
+			ENTITY(id)->height = 0.5f;
+		}
 		return id;
 	}
-	lid SpawnEntityItem(lid itemid, m::Vector2 pos, lf32 height, lf32 dir)
+	LtrID SpawnEntityItem(LtrID itemid, m::Vector2 pos, lf32 height, lf32 dir)
 	{
-		lid id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
-
-		//spawn_setup_t(id, pos, dir);
-
-		ENTITY(id)->t.position = pos;
-		ENTITY(id)->velocity = 0.f;
-		ENTITY(id)->altitude_velocity = 0.f;
-		ENTITY(id)->t.yaw.Set(dir);
-		GetCellSpaceInfo(ENTITY(id)->t.position, ENTITY(id)->t.csi);
-		//env::GetHeight(ENTITY(id)->t.height, ENTITY(id)->t.csi);
-		//ENTITY(id)->t.height += 1.f; // temp
-		ENTITY(id)->t.altitude = height;
-		AddEntityCell(ENTITY(id)->t.csi.c[eCELL_I].x, ENTITY(id)->t.csi.c[eCELL_I].y, id);
-		ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
-		ENTITY(id)->damagestate = STATE_DAMAGE_MAX;
-		ENTITY(id)->faction = fac::faction::none;
-		ENTITY(id)->physicsFlags.set(ECCommon::ePREFAB_ITEM);
-		ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
-		ITEM(id)->item_instance = itemid;
-		ENTITY(id)->radius = acv::items[((HeldItem*)GetItemInstance(itemid))->id_item_template]->f_radius;
-		ENTITY(id)->height = 0.5f;
+		LtrID id = IndexSpawnEntity(ENTITY_TYPE_RESTING_ITEM);
+		if (IDCHECK(id)) {
+			//spawn_setup_t(id, pos, dir);
+			ENTITY(id)->t.position = pos;
+			ENTITY(id)->velocity = 0.f;
+			ENTITY(id)->altitude_velocity = 0.f;
+			ENTITY(id)->t.yaw.Set(dir);
+			GetCellSpaceInfo(ENTITY(id)->t.position, ENTITY(id)->t.csi);
+			//env::GetHeight(ENTITY(id)->t.height, ENTITY(id)->t.csi);
+			//ENTITY(id)->t.height += 1.f; // temp
+			ENTITY(id)->t.altitude = height;
+			AddEntityCell(ENTITY(id)->t.csi.c[eCELL_I].x, ENTITY(id)->t.csi.c[eCELL_I].y, id);
+			ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
+			ENTITY(id)->damagestate = STATE_DAMAGE_MAX;
+			ENTITY(id)->faction = fac::faction::none;
+			ENTITY(id)->physicsFlags.set(ECCommon::ePREFAB_ITEM);
+			ENTITY(id)->activeFlags.set(ECCommon::eALIVE);
+			ITEM(id)->item_instance = itemid;
+			ENTITY(id)->radius = acv::items[((HeldItem*)GetItemInstance(itemid.Index()))->id_item_template]->f_radius;
+			ENTITY(id)->height = 0.5f;
+		}
 		return id;
 	}
-	void DestroyEntity(lid id)
+	void DestroyEntity(LtrID id)
 	{
-		RemoveAllReferences(id);
-		// A special case has to be made for items, which contain their own instance
-		// which must also be destroyed
-		//if (block_entity_data[id].type == ENTITY_TYPE_RESTING_ITEM)
-			//DestroyItem(ITEM(id)->item_instance);
-		IndexDeleteEntity(id);
-		std::cout << "Destroyed entity " << id << std::endl;
+		if (GetEntityExists(id)) {
+			// TODO: add ondelete function for entity
+			IndexDeleteEntity(id.Index());
+			printf( "Destroyed entity %i\n", id);
+		}
 	}
 
-	lid SpawnItem(lid item_template)
+	LtrID SpawnItem(ID16 item_template)
 	{
-		lid id = InitItemInstance(acv::item_types[item_template]);
-		if (id != BUF_NULL)
+		LtrID id = InitItemInstance(acv::item_types[item_template]);
+		if (IDCHECK(id))
 		{
 			GETITEMINST(id)->id_item_template = item_template;
 			ItemInit(id);
-			std::cout << "Created item " << id << std::endl;
+			std::cout << "Created item " << id.GUID() << std::endl;
 		}
 		else
 		{
@@ -1306,13 +1295,13 @@ namespace core
 		}
 		return id;
 	}
-	void DestroyItem(lid id)
+	void DestroyItem(LtrID id)
 	{
-		FreeItemInstance(id);
-		std::cout << "Destroyed item " << id << std::endl;
+		FreeItemInstance(id.GUID());
+		std::cout << "Destroyed item " << id.GUID() << std::endl;
 	}
 
-	void SpawnProjectile(fac::faction faction, lid type, m::Vector2 pos, lf32 height,
+	void SpawnProjectile(fac::faction faction, ID16 type, m::Vector2 pos, lf32 height,
 		float yaw, float pitch)
 	{
 		PrjID id = IndexSpawnProjectile();
@@ -1345,7 +1334,7 @@ namespace core
 			printf("Projectile Save\n");
 		}
 	}
-	void SpawnProjectileSpread(fac::faction faction, lid type, m::Vector2 pos, lf32 height,
+	void SpawnProjectileSpread(fac::faction faction, ID16 type, m::Vector2 pos, lf32 height,
 		float yaw, float pitch, float spread)
 	{
 		yaw += glm::radians(m::Random(spread * -0.5f, spread * 0.5f)); // Add horizontal spread
@@ -1354,23 +1343,15 @@ namespace core
 		SpawnProjectile(faction, type, pos, height, yaw, pitch);
 	}
 
-	void DestroyProjectile(lid id)
+	void DestroyProjectile(ID16 id)
 	{
 		IndexDestroyProjectileC(MakePrjID(id));
 	}
 
 	//________________________________________________________________________________________________________________________________
-	// SOMETHING ---------------------------------------------------------------------------------------------------------------------
-
-	void ActorCastProj(lid i)
-	{
-		SpawnProjectileSpread(ENTITY(i)->faction, 0, ENTITY(i)->t.position + (m::AngToVec2(ENTITY(i)->t.yaw.Rad()) * 0.55f), ENTITY(i)->t.altitude, ACTOR(i)->viewYaw.Rad(), ACTOR(i)->viewPitch.Rad(), 1.f);
-	}
-
-	//________________________________________________________________________________________________________________________________
 	// PROJECTILES -------------------------------------------------------------------------------------------------------------------
 
-	bool ProjectileCollideEnv(lid index)
+	bool ProjectileCollideEnv(ID16 index)
 	{
 		Projectile* proj = GetProj(MakePrjID(index));
 
@@ -1464,7 +1445,7 @@ namespace core
 
 				// Draw projectile mesh
 				//DrawMesh(ID_NULL, acv::GetM(acv::m_proj), acv::GetT(acv::t_proj), SS_NORMAL, model);
-				DrawMesh(ID_NULL, acv::GetM(acv::projectiles[proj[index].type].mesh),
+				DrawMesh(acv::GetM(acv::projectiles[proj[index].type].mesh),
 					acv::GetT(acv::projectiles[proj[index].type].texture), SS_NORMAL, model);
 			}
 			if (stop)
@@ -1520,21 +1501,21 @@ namespace core
 					///*
 					for (int i = 0; i < GetEntityArraySize(); i++)
 					{
-						if (GetEntityExists(i) && ENTITY(i)->physicsFlags.get(ECCommon::eCOLLIDE_PRJ))
+						if (AnyEntityHere(i) && GetEntity<ECCommon>(i)->physicsFlags.get(ECCommon::eCOLLIDE_PRJ))
 						{
-							if (fac::GetAllegiance(ENTITY(i)->faction, (fac::faction)proj[index].faction) != fac::allied)
+							if (fac::GetAllegiance(GetEntity<ECCommon>(i)->faction, (fac::faction)proj[index].faction) != fac::allied)
 							{
 								//check height difference
-								if (proj[index].t.position_h > ENTITY(i)->t.altitude && proj[index].t.position_h < ENTITY(i)->t.altitude + ENTITY(i)->height)
+								if (proj[index].t.position_h > GetEntity<ECCommon>(i)->t.altitude && proj[index].t.position_h < GetEntity<ECCommon>(i)->t.altitude + GetEntity<ECCommon>(i)->height)
 								{
 									//get difference between positions
-									m::Vector2 vec = m::Vector2(proj[index].t.position_x, proj[index].t.position_y) - ENTITY(i)->t.position;
+									m::Vector2 vec = m::Vector2(proj[index].t.position_x, proj[index].t.position_y) - GetEntity<ECCommon>(i)->t.position;
 									//get distance
 									float dist = m::Length(vec);
 									if (dist < 0.5f)
 									{
 										// TODO: pass angle to damage fn
-										ENTITY(i)->Damage(acv::projectiles[proj[index].type].damage, glm::degrees(m::Vec2ToAng(vec)));
+										GetEntity<ECCommon>(i)->Damage(acv::projectiles[proj[index].type].damage, glm::degrees(m::Vec2ToAng(vec)));
 										DestroyProjectile(index); // Destroy the projectile
 									}
 								}

@@ -19,6 +19,7 @@ namespace graphics
 	#define FILE_VERSION_TEX 0x0u
 	#define FILE_VERSION_M 0x0u
 	#define FILE_VERSION_MB 0x0u
+	#define FILE_VERSION_MS 0x0u
 	#define FILE_VERSION_MD 0x0u
 	#define FILE_VERSION_MDB 0x0u
 
@@ -138,9 +139,6 @@ namespace graphics
 		// data to fill
 		std::vector<Vert_ALL> vertices;
 		std::vector<unsigned int> indices;
-
-		int i1 = mesh->mNumVertices;
-		int i2 = mesh->mNumFaces;
 
 		// Walk through each of the mesh's vertices
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -370,8 +368,7 @@ namespace graphics
 		std::vector<lui32> ices; // Indices
 
 		// For each vertex
-		for (int i = 0; i < a.vertices.size(); i++)
-		{
+		for (int i = 0; i < a.vertices.size(); i++) {
 			vces.push_back(Vertex());
 			vces[i].pos = a.vertices[i].pos;
 			vces[i].nor = a.vertices[i].nor;
@@ -379,16 +376,11 @@ namespace graphics
 			vces[i].col = a.vertices[i].col;
 		}
 		// For each index
-		for (int i = 0; i < a.indices.size(); i++)
-		{
+		for (int i = 0; i < a.indices.size(); i++) {
 			ices.push_back(a.indices[i]);
 		}
-		// Copy indices straight from mesh A, as they should be identical in each mesh
-		//ices = a.indices;
-
-		if (vces.size() == ices.size()) {
+		if (vces.size() == ices.size())
 			printf("\nWARNING: Mesh has three vertices per triangle - none are shared!\n");
-		}
 
 		// Write version
 		version_t v = FILE_VERSION_MB;
@@ -446,6 +438,79 @@ namespace graphics
 		else
 		{
 			std::cout << "Could not generate Model Blend, number of vertices not consistent!" << std::endl;
+		}
+	}
+	void ConvertMeshSet(char* folder_src, void* file_write)
+	{
+		FILE* out = (FILE*)file_write;
+
+		// Write version
+		version_t v = FILE_VERSION_MS;
+		fwrite(&v, sizeof(version_t), 1, out);
+
+		lui32 index = 0u;
+		while (true) {
+			// Generate filename
+			char name[128];
+			snprintf(name, 128, "%s/f%i.obj", folder_src, index);
+			FILE* ftest = fopen(name, "rb");
+			if (ftest) {
+				fclose(ftest);
+				// Write that there is a mesh here
+				lui8 temp = 1u;
+				fwrite(&temp, 1, 1, out);
+				// Load model
+				Model ma = Model(name);
+				Mesh a = ma.meshes[0];
+				
+				std::vector<Vertex> vces; // Vertices
+				std::vector<lui32> ices; // Indices
+
+				// For each vertex
+				for (int i = 0; i < a.vertices.size(); i++) {
+					vces.push_back(Vertex());
+					vces[i].pos = a.vertices[i].pos;
+					vces[i].nor = a.vertices[i].nor;
+					vces[i].uvc = a.vertices[i].uvc;
+					vces[i].col = a.vertices[i].col;
+				}
+				// For each index
+				for (int i = 0; i < a.indices.size(); i++) {
+					ices.push_back(a.indices[i]);
+				}
+				if (vces.size() == ices.size())
+					printf("\nWARNING: Mesh has three vertices per triangle - none are shared!\n");
+
+				// Write these once only
+				if (index == 0u) {
+					// Write vertex/index counts
+					lui32 isize = a.indices.size();
+					lui32 vsize = a.vertices.size();
+					fwrite(&isize, 4, 1, out);
+					fwrite(&vsize, 4, 1, out);
+					// Write indices and single use vertex values
+					for (int i = 0; i < isize; i++) {
+						fwrite(&ices[i], 4, 1, out);
+					}
+					for (int i = 0; i < vsize; i++) {
+						fwrite(&vces[i].uvc, sizeof(vec2), 1, out);
+						fwrite(&vces[i].col, sizeof(vec4), 1, out); // Colour is useless, OBJ meshes won't have them anyway
+					}
+				}
+				// Write every time
+				for (int i = 0; i < a.vertices.size(); i++) {
+					fwrite(&vces[i].pos, sizeof(vec3), 1, out);
+					fwrite(&vces[i].nor, sizeof(vec3), 1, out);
+				}
+
+				++index;
+			}
+			else {
+				// Write that there isn't a mesh here
+				lui8 temp = 0u;
+				fwrite(&temp, 1, 1, out);
+				break;
+			}
 		}
 	}
 	void ConvertMD(char* sfn, void* OUT, MDHandleType type)

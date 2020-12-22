@@ -21,7 +21,7 @@ void NPCFocusEnemy(ECActor* actor)
 
 	lf32 attack_dist = 1.5f;
 	// if its a ranged weapon, set the attack range higher
-	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN) {
+	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot].Index()) == ITEM_TYPE_WPN_MATCHGUN) {
 		attack_dist = 30.f;
 	}
 
@@ -59,7 +59,7 @@ void NPCFocusEnemy(ECActor* actor)
 		//float offset = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg() + 90.f)), ENTITY(actor->target_ent)->t.position - actor->t.position);
 		//float forwards = m::Dot(m::AngToVec2(glm::radians(actor->viewYaw.Deg())), ENTITY(actor->target_ent)->t.position - actor->t.position);
 
-		if (actor->ai_ally_ent != BUF_NULL)
+		if (GetEntityExists(actor->ai_ally_ent))
 		{
 			m::Vector2 AllyVector = ENTITY(actor->ai_ally_ent)->t.position - actor->t.position;
 			float distance_to_ally = m::Length(AllyVector);
@@ -120,7 +120,7 @@ void NPCFollowAlly(ECActor* actor)
 				actor->ai_path_current_index = actor->ai_path.len - 1;
 			}
 			// if we can't reach our target, just forget it
-			else actor->ai_ally_ent = ID_NULL;
+			else actor->ai_ally_ent = ID2_NULL;
 		}
 	}
 	else { // follow path
@@ -174,7 +174,7 @@ void NPCIdle(ECActor* actor)
 	actor->input.bits.unset(IN_USE);
 }
 
-void NPCTick(lid id)
+void NPCTick(LtrID id)
 {
 	ai_vp_target = 0.f;
 	ai_vy_target = 0.f;
@@ -186,54 +186,61 @@ void NPCTick(lid id)
 
 	actor->input.bits.unset(IN_RUN);
 
-	// update targ:
+	// line of sight check to target has to be done every frame, if it exists
 	// If is null OR deleted OR dead OR no LOS
-	if (actor->ai_target_ent != BUF_NULL &&
-		(!GetEntityExists(actor->ai_target_ent) || // gone
+	if (!GetEntityExists(actor->ai_target_ent) || // gone
 		!ENTITY(actor->ai_target_ent)->activeFlags.get(ECCommon::eALIVE) || // dead
-		!core::LOSCheck(id, actor->ai_target_ent))) { // cant see
-		actor->ai_target_ent = BUF_NULL;
+		!core::LOSCheck(id, actor->ai_target_ent)) { // cant see
+		actor->ai_target_ent = ID2_NULL;
 	}
 
-	if (actor->ai_target_ent == BUF_NULL) {
-		// Check if it's time to try and find a new enemy
-		if (actor->ai_timer <= tickCount) {
-			actor->ai_target_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
-			actor->atk_target = actor->ai_target_ent;
-			if (actor->ai_target_ent != BUF_NULL) // if we do find an enemy
-				aud::PlaySnd3D(aud::FILE_TAUNT, m::Vector3(actor->t_head.GetPosition()));
-			actor->ai_timer = tickCount + (lui64)m::Random(50, 250);
-		}
-		// Otherwise just set as null and we can retry later
-		else {
-			actor->ai_target_ent = BUF_NULL;
-			actor->atk_target = actor->ai_target_ent;
-		}
-	}
-	// update ally:
-	// If is null OR deleted OR dead
-	// dont forget about ally when they go out of sightline
-	if (actor->ai_ally_ent == BUF_NULL
-		|| !GetEntityExists(actor->ai_ally_ent)
-		|| !ENTITY(actor->ai_ally_ent)->activeFlags.get(ECCommon::eALIVE)) {
-		if (actor->ai_timer <= tickCount) {
-			actor->ai_ally_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
-			actor->ai_timer = tickCount + (lui64)m::Random(100, 500);
-		}
-		else {
-			actor->ai_ally_ent = BUF_NULL;
+	// Random whether to search for an ally or enemy this turn
+	bool btest = m::Random(0.f, 1.f) > 0.75f; // Favour looking for enemies by 3/4
+
+	if (btest) {
+		// update ally:
+		// If is null OR deleted OR dead
+		// dont forget about ally when they go out of sightline
+		if (!GetEntityExists(actor->ai_ally_ent) ||
+			!ENTITY(actor->ai_ally_ent)->activeFlags.get(ECCommon::eALIVE)) {
+			if (actor->ai_timer <= tickCount) {
+				actor->ai_ally_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::allied); // Find the closest ally
+				actor->ai_timer = tickCount + (lui64)m::Random(50, 100);
+			}
+			else {
+				actor->ai_ally_ent = ID2_NULL;
+			}
 		}
 	}
+	else {
+		// if no target
+		if (!GetEntityExists(actor->ai_target_ent)) {
+			// Check if it's time to try and find a new enemy
+			if (actor->ai_timer <= tickCount) {
+				actor->ai_target_ent = core::GetClosestEntityAllegLOS(id, 100.f, fac::enemy); // Find the closest enemy
+				actor->atk_target = actor->ai_target_ent;
+				if (GetEntityExists(actor->ai_target_ent)) // if we do find an enemy
+					aud::PlaySnd3D(aud::FILE_TAUNT, m::Vector3(actor->t_head.GetPosition()));
+				actor->ai_timer = tickCount + (lui64)m::Random(50, 100);
+			}
+			// Otherwise just set as null and we can retry later
+			else {
+				actor->ai_target_ent = ID2_NULL;
+				actor->atk_target = actor->ai_target_ent;
+			}
+		}
+	}
+	
 
 	// bad and temporary :P
 	// makes npc only point its gun if its looking at an enemy
-	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot]) == ITEM_TYPE_WPN_MATCHGUN) {
-		actor->input.bits.setto(IN_ACTN_B, actor->ai_target_ent == BUF_NULL);
-		actor->input.bits.setto(IN_ACTN_A, actor->ai_target_ent != BUF_NULL);
+	if (GetItemInstanceType(actor->inventory.items[actor->inv_active_slot].Index()) == ITEM_TYPE_WPN_MATCHGUN) {
+		actor->input.bits.setto(IN_ACTN_B, IDCOMPARE(actor->ai_target_ent, ID2_NULL));
+		actor->input.bits.setto(IN_ACTN_A, !IDCOMPARE(actor->ai_target_ent, ID2_NULL));
 	}
 
-	if (actor->ai_target_ent == BUF_NULL) {
-		if (actor->ai_ally_ent == BUF_NULL
+	if (!GetEntityExists(actor->ai_target_ent)) {
+		if (!GetEntityExists(actor->ai_ally_ent)
 			|| actor->faction != fac::player) // temp: just dont follow each other if we're not on the player side
 			NPCIdle(actor);
 		else // if we have an ally, follow it

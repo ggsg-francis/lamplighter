@@ -19,7 +19,6 @@
   <ItemGroup>
     <ClInclude Include="global.h" />
     <ClInclude Include="tga_reader.h" />
-    <ClInclude Include="global-archiver.h" />
     <ClInclude Include="archive.hpp" />
     <ClInclude Include="archive_read_write.h" />
     <ClInclude Include="archiver_graphics_convert.h" />

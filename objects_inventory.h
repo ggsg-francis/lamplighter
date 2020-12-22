@@ -7,19 +7,19 @@
 class Inventory
 {
 public:
-	mem::Buffer64<lid> items;
+	mem::Buffer64<LtrID> items;
 public:
-	void AddNew(lid item_template);
+	void AddNew(ID16 item_template);
 	void DestroyIndex(lui32 index);
-	void DestroyID(lid item_id);
-	void Destroy(lid item_template);
-	lui32 TransferItemRecv(lid item_id);
+	void DestroyID(LtrID item_id);
+	void Destroy(ID16 item_template);
+	lui32 TransferItemRecv(LtrID item_id);
 	void TransferItemSendIndex(lui32 index);
-	void TransferItemSend(lid item_id);
+	void TransferItemSend(LtrID item_id);
 	//lid GetItemOfType(ItemType TYPE);
-	lid GetItemOfTemplate(lid item_template);
-	lui32 CountItemsOfTemplate(lid item_template);
-	lid GetItemOfAmmunitionType(lui8 ammo_type);
+	LtrID GetItemOfTemplate(ID16 item_template);
+	lui32 CountItemsOfTemplate(ID16 item_template);
+	LtrID GetItemOfAmmunitionType(lui8 ammo_type);
 	lui32 GetFirstEmptySpace();
 };
 

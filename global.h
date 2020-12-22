@@ -15,7 +15,7 @@
 #endif
 // Release version
 #define VERSION_MAJOR 23u // Major version should be incremented any time save compatibility is broken
-#define VERSION_MINOR 1 // Minor version should be incremented for every new release
+#define VERSION_MINOR 3 // Minor version should be incremented for every new release
 // This version number basically says which game this is
 #define VERSION_PROJECT (\
 DEF_PROJECT |\
@@ -38,6 +38,9 @@ DEF_PROJECT |\
 #define NUM_PLAYERS 4 // danger zone
 #else
 #define NUM_PLAYERS 2 // always 2 (co-op splitscreen)
+#endif
+#if NUM_PLAYERS != 2 && NUM_PLAYERS != 4 && NUM_PLAYERS != 8 
+#error PLAYER COUNT NOT OKAY (global.h)
 #endif
 
 // Any debug only defines
@@ -62,12 +65,9 @@ DEF_PROJECT |\
 #define WORLD_SIZE_MAXINT_OLD 2047
 #define WORLD_SIZE_SQUARED (WORLD_SIZE * WORLD_SIZE)
 
-#if DEF_PROJECT == PROJECT_EX
 //#define SCREEN_UPSCALE_THRESHOLD 1024u
 #define SCREEN_UPSCALE_THRESHOLD 1664u
-#elif DEF_PROJECT == PROJECT_BC
-#define SCREEN_UPSCALE_THRESHOLD 640u
-#endif
+
 #define SCREEN_POSTPROCESS_DOWNSAMPLE_DIVISION 4
 
 #define MD_MATRIX_COUNT 4u
@@ -81,7 +81,6 @@ DEF_PROJECT |\
 // Buffer / ID definitions
 #define BUF_SIZE 512
 // TODO: Merge BUF_NULL and ID_NULL
-#define BUF_NULL 0b1111111111111111
 #define ID_NULL 0b1111111111111111
 
 #define UI32_NULL 0b11111111111111111111111111111111
@@ -122,85 +121,103 @@ DEF_PROJECT |\
 #define PACKED_STRUCT(name) struct __attribute__((packed)) name
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-	#endif
-
-	#ifdef __GNUC__
-	// Signed integers
-	typedef signed char li8;
-	typedef signed short int li16;
-	typedef signed int li32;
-	typedef signed long long int li64;
-	// Unsigned integers
-	typedef unsigned char lui8;
-	typedef unsigned short int lui16;
-	typedef unsigned int lui32;
-	typedef unsigned long long lui64;
-	// Floating points
-	typedef float lf32;
-	typedef double lf64;
-	typedef long double lf96;
-	// For specific uses
-	typedef unsigned short int lid;
-	#elif defined _MSC_VER
-	// Signed integers
-	typedef signed __int8 li8;
-	typedef signed __int16 li16;
-	typedef signed __int32 li32;
-	typedef signed __int64 li64;
-	// Unsigned integers
-	typedef unsigned __int8 lui8;
-	typedef unsigned __int16 lui16;
-	typedef unsigned __int32 lui32;
-	typedef unsigned __int64 lui64;
-	// Floating points
-	typedef float lf32;
-	typedef double lf64;
-	// For specific uses
-	typedef lui16 lid;
-	#else
-	#error Using different c++ compiler than written for, please review! (global.h)
-	#endif
-
-	typedef struct WCoord {
-		lui16 x;
-		lui16 y;
-	} WCoord;
-
-	// TODO: these should probably go to their respective places too
-
-	typedef lui8 ItemType;
-	#define ITEM_TYPE_MISC 0u
-	#define ITEM_TYPE_EQUIP 1u
-	#define ITEM_TYPE_WPN_MELEE 2u
-	#define ITEM_TYPE_WPN_MATCHGUN 3u
-	#define ITEM_TYPE_WPN_MAGIC 4u
-	#define ITEM_TYPE_CONS 5u
-	#define ITEM_TYPE_COUNT 6u
-
-	typedef lui8 ActivatorType;
-	#define ACTIVATOR_TYPE_JUNK 0u
-	#define ACTIVATOR_TYPE_COUNT 1u
-
-	typedef lui8 AssetType;
-	#define ASSET_NONE 0u
-	#define ASSET_TEXTURE_FILE 1u
-	#define ASSET_MESH_FILE 2u
-	#define ASSET_MESHBLEND_FILE 3u
-	#define ASSET_MESHDEFORM_FILE 4u
-	#define ASSET_SOUNDWAV_FILE 5u
-
-	#include <float.h>
-	inline void SetFP() {
-		lui32 current_word = 0;
-		//_controlfp_s(&current_word, _DN_SAVE, _MCW_DN); // Set denormal (don't know what this does)
-		//_controlfp_s(&current_word, _PC_24, _MCW_PC); // Set precision control (can't do on x64)
-		_controlfp_s(&current_word, _RC_NEAR, _MCW_RC); // Set rounding control
-	}
-
-	#ifdef __cplusplus
-}
+#ifdef __GNUC__
+// Signed integers
+typedef signed char li8;
+typedef signed short int li16;
+typedef signed int li32;
+typedef signed long long int li64;
+// Unsigned integers
+typedef unsigned char lui8;
+typedef unsigned short int lui16;
+typedef unsigned int lui32;
+typedef unsigned long long lui64;
+// Floating points
+typedef float lf32;
+typedef double lf64;
+typedef long double lf96;
+// For specific uses
+typedef unsigned short int lid;
+#elif defined _MSC_VER
+// Signed integers
+typedef signed __int8 li8;
+typedef signed __int16 li16;
+typedef signed __int32 li32;
+typedef signed __int64 li64;
+// Unsigned integers
+typedef unsigned __int8 lui8;
+typedef unsigned __int16 lui16;
+typedef unsigned __int32 lui32;
+typedef unsigned __int64 lui64;
+// Floating points
+typedef float lf32;
+typedef double lf64;
+// For specific uses
+typedef lui16 ID16;
+#else
+#error Using different c++ compiler than written for, please review! (global.h)
 #endif
+
+typedef struct WCoord {
+	lui16 x;
+	lui16 y;
+} WCoord;
+
+typedef lui32 btcoord;
+//duplicate struct
+struct CellCoord {
+	btcoord x, y;
+	CellCoord(btcoord _x, btcoord _y) : x{ _x }, y{ _y } {};
+};
+
+// TODO: these should probably go to their respective places too
+
+typedef lui8 ItemType;
+#define ITEM_TYPE_MISC 0u
+#define ITEM_TYPE_EQUIP 1u
+#define ITEM_TYPE_WPN_MELEE 2u
+#define ITEM_TYPE_WPN_MATCHGUN 3u
+#define ITEM_TYPE_WPN_MAGIC 4u
+#define ITEM_TYPE_CONS 5u
+#define ITEM_TYPE_COUNT 6u
+
+typedef lui8 ActivatorType;
+#define ACTIVATOR_TYPE_JUNK 0u
+#define ACTIVATOR_TYPE_COUNT 1u
+
+typedef lui8 AssetType;
+#define ASSET_NONE 0u
+#define ASSET_TEXTURE_FILE 1u
+#define ASSET_MESH_FILE 2u
+#define ASSET_MESHBLEND_FILE 3u
+#define ASSET_MESHSET_FILE 6u // ultimately should replace meshblend
+#define ASSET_MESHDEFORM_FILE 4u
+#define ASSET_SOUNDWAV_FILE 5u
+
+#include <float.h>
+inline void SetFP() {
+	lui32 current_word = 0;
+	//_controlfp_s(&current_word, _DN_SAVE, _MCW_DN); // Set denormal (don't know what this does)
+	//_controlfp_s(&current_word, _PC_24, _MCW_PC); // Set precision control (can't do on x64)
+	_controlfp_s(&current_word, _RC_NEAR, _MCW_RC); // Set rounding control
+}
+
+typedef struct LtrID {
+private:
+	lui64 guid;
+public:
+	LtrID(lui32 _index, lui32 _instance) :
+		guid{ (lui64)_index | ((lui64)_instance << (lui64)32u) } {};
+	lui32 Index() {
+		return (lui32)(guid & (lui64)0b0000000000000000000000000000000011111111111111111111111111111111u);
+	};
+	lui32 Instance() {
+		return (lui32)((guid & (lui64)0b1111111111111111111111111111111100000000000000000000000000000000u) >> 32u);
+	};
+	lui64 GUID() {
+		return guid;
+	};
+} LtrID;
+#define ID2_NULL LtrID(0b11111111111111111111111111111111, 0u)
 
 #endif

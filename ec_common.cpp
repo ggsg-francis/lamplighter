@@ -125,7 +125,7 @@ void ECCommon::Damage(lui32 amount, lf32 angle)
 	}
 	// TODO: include AI 'notify attack' function call here
 }
-void ECCommon::AddEffect(lid caster, StatusEffectType type, lf32 duration, lui32 magnitude, lid icon)
+void ECCommon::AddEffect(LtrID caster, StatusEffectType type, lf32 duration, lui32 magnitude, ID16 icon)
 {
 	StatusEffect effect;
 	effect.effect_caster_id = caster;
@@ -139,19 +139,19 @@ void ECCommon::AddEffect(lid caster, StatusEffectType type, lf32 duration, lui32
 
 	// TODO: include AI 'notify attack' function call here
 }
-void ECCommon::AddSpell(lid caster, lid spell)
+void ECCommon::AddSpell(LtrID caster, ID16 spell)
 {
 	AddEffect(caster, (StatusEffectType)acv::spells[spell].target_effect_type,
 		acv::spells[spell].target_effect_duration,
 		acv::spells[spell].target_effect_magnitude,
 		acv::spells[spell].icon);
 	// TODO: this only works in the case of cast on self, should deal with this properly but dont know how best to yet
-	if (core::players[0] == caster) {
+	if (IDCOMPARE(core::players[0], caster)) {
 		char string[64] = "Got Effect: ";
 		strcat(string, (char*)acv::spells[spell].name);
 		core::GUISetMessag(0, string);
 	}
-	else if (core::players[1] == caster) {
+	else if (IDCOMPARE(core::players[1], caster)) {
 		char string[64] = "Got Effect: ";
 		strcat(string, (char*)acv::spells[spell].name);
 		core::GUISetMessag(1, string);
@@ -186,10 +186,52 @@ void ECCommon::TickEffects(lf32 dt)
 
 #define ACTOR_NO_COLLIDE_HEIGHT 0.0625f
 
+// toggle WIP continuous collision
+#define DEF_CCD 0
+
 #if !DEF_GRID
 // TODO: same treatment to slidevelocity as regular velocity
 void Entity_PhysLineDeintersect(ECCommon* entity, env::EnvLineSeg* seg, lf32 radius)
 {
+	#if DEF_CCD
+	c2Circle circle;
+	circle.p = c2V(entity->t.position.x, entity->t.position.y);
+	circle.r = entity->radius * 0.5f;
+	c2Capsule capsule;
+	capsule.a = c2V(seg->pos_a.x, seg->pos_a.y);
+	capsule.b = c2V(seg->pos_b.x, seg->pos_b.y);
+	capsule.r = circle.r;
+
+	c2x tform1 = c2xIdentity();
+	c2v vel1 = c2V(entity->velocity.x, entity->velocity.y);
+	c2v vel2 = c2V(0.f, 0.f);
+
+	li32 out_iterations;
+
+	lf32 toi = c2TOI(&circle, C2_TYPE_CIRCLE, &tform1, vel1, &capsule, C2_TYPE_CAPSULE, &tform1, vel2, 0, &out_iterations);
+
+	if (toi == 0.f) {
+		lf32 vellen = m::Length(entity->velocity);
+		m::Vector2 lineDir = m::Normalize(seg->pos_a - seg->pos_b);
+		lf32 slideDir = m::Dot(entity->velocity, lineDir);
+		entity->velocity = lineDir * (lf32)(slideDir > 0.f) * vellen;
+	}
+	else if (toi < 1.f) {
+		printf("CCD into wall\n");
+
+		lf32 vellen = m::Length(entity->velocity);
+
+		entity->velocity *= toi;
+
+		m::Vector2 lineDir = m::Normalize(seg->pos_a - seg->pos_b);
+
+		lf32 slideDir = m::Dot(entity->velocity, lineDir);
+
+		entity->velocity += (lineDir * (lf32)(slideDir > 0.f)) * (vellen * (1.f - toi));
+	}
+
+	#else
+
 	hit_info hit;
 	m::Vector2 offsettemp(0.f, 0.f);
 	// Get the offset between us and the line
@@ -279,9 +321,11 @@ void Entity_PhysLineDeintersect(ECCommon* entity, env::EnvLineSeg* seg, lf32 rad
 		}
 		//entity->Collide(hit);
 	}
+
+	#endif
 }
 #endif
-void Entity_Collision(lid id, ECCommon* ent, CellSpace& csi)
+void Entity_Collision(LtrID id, ECCommon* ent, CellSpace& csi)
 {
 	lf32 offsetx, offsety;
 	bool overlapN, overlapS, overlapE, overlapW;
@@ -322,14 +366,14 @@ void Entity_Collision(lid id, ECCommon* ent, CellSpace& csi)
 			for (btcoord y = csi.c[eCELL_I].y - 1u; y < csi.c[eCELL_I].y + 1u; ++y) {
 				// De-intersect against other entities
 				for (int e = 0; e < core::CellEntityCount(x, y); e++) {
-					if (core::CellEntity(x, y, e) != ID_NULL) {
+					if (IDCHECK(core::CellEntity(x, y, e))) {
 						if (GetEntityExists(core::CellEntity(x, y, e)) && ENTITY(core::CellEntity(x, y, e))->physicsFlags.get(ECCommon::eCOLLIDE_ENT)) {
 							m::Vector2 vec = ent->t.position - ENTITY(core::CellEntity(x, y, e))->t.position;
 							float dist = m::Length(vec);
 							lf32 combined_radius = ent->radius + ENTITY(core::CellEntity(x, y, e))->radius;
 							if (dist < combined_radius && dist > 0.f) {
 								// TEMP! if same type
-								if (GetEntityType(id) == GetEntityType(core::CellEntity(x, y, e))) {
+								if (GetEntityType(id.Index()) == GetEntityType(core::CellEntity(x, y, e).Index())) {
 									ent->t.position += m::Normalize(vec) * (combined_radius - dist) * 0.5f;
 									ENTITY(core::CellEntity(x, y, e))->t.position -= m::Normalize(vec) * (combined_radius - dist) * 0.5f;
 								}
@@ -487,7 +531,7 @@ void Entity_Collision(lid id, ECCommon* ent, CellSpace& csi)
 
 #undef ACTOR_NO_COLLIDE_HEIGHT
 
-bool RayEntity(lid ent, lf32 stand_height)
+bool RayEntity(LtrID ent, lf32 stand_height)
 {
 	ECCommon* entity = ENTITY(ent);
 
@@ -501,7 +545,7 @@ bool RayEntity(lid ent, lf32 stand_height)
 		return true;
 	return false;
 }
-void Entity_CheckGrounded(lid id, ECCommon* ent)
+void Entity_CheckGrounded(LtrID id, ECCommon* ent)
 {
 	lf32 th;
 	#if DEF_GRID
@@ -513,7 +557,7 @@ void Entity_CheckGrounded(lid id, ECCommon* ent)
 	if (ent->t.altitude + ent->altitude_velocity >= th + 1.f) {
 		ent->activeFlags.unset(ECCommon::eGROUNDED);
 		ent->slideVelocity *= 0.f;
-		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
+		if (GetEntityType(id.Index()) == ENTITY_TYPE_ACTOR)
 			((ECActor*)ent)->jump_state = ECActor::eJUMP_JUMP;
 	}
 	else if (ent->altitude_velocity > 0.f) {
@@ -521,19 +565,19 @@ void Entity_CheckGrounded(lid id, ECCommon* ent)
 		ent->slideVelocity *= 0.f;
 	}
 	else if (!ent->activeFlags.get(ECCommon::eGROUNDED)) {
-		if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
+		if (GetEntityType(id.Index()) == ENTITY_TYPE_ACTOR)
 			ent->activeFlags.setto(ECCommon::eGROUNDED, RayEntity(id, ((ECActor*)ent)->aniStandHeight));
 		else
 			ent->activeFlags.setto(ECCommon::eGROUNDED, RayEntity(id, 0.f));
 		if (ent->activeFlags.get(ECCommon::eGROUNDED)) {
 			ent->slideVelocity = ent->velocity;
-			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
+			if (GetEntityType(id.Index()) == ENTITY_TYPE_ACTOR) {
 				ActorOnHitGround((ECActor*)ent);
 			}
 		}
 	}
 }
-void Entity_PhysicsTick(ECCommon* ent, lid id, lf32 dt)
+void Entity_PhysicsTick(ECCommon* ent, LtrID id, lf32 dt)
 {
 	// Regenerate csi
 
@@ -609,7 +653,7 @@ void Entity_PhysicsTick(ECCommon* ent, lid id, lf32 dt)
 		break;
 		case acv::PropRecord::FLOOR_ICE: // same as normal ground but dont slow slide
 		{
-			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
+			if (GetEntityType(id.Index()) == ENTITY_TYPE_ACTOR) {
 				if (ent->t.altitude < ground_height + ((ECActor*)ent)->aniStandHeight * 0.25f)
 					ent->t.altitude = ground_height + ((ECActor*)ent)->aniStandHeight * 0.25f;
 				else
@@ -682,12 +726,12 @@ void Entity_PhysicsTick(ECCommon* ent, lid id, lf32 dt)
 		case acv::PropRecord::FLOOR_ACID:
 			if (ent->activeFlags.get(ECCommon::eALIVE)) {
 				ent->Damage(1000u, 0.f);
-				if (id == core::players[0]) {
+				if (IDCOMPARE(id, core::players[0])) {
 					char string[64] = "The acid desintegrated your save file";
 					remove("save/save.bin");
 					core::GUISetMessag(0, string);
 				}
-				else if (id == core::players[1]) {
+				else if (IDCOMPARE(id, core::players[1])) {
 					char string[64] = "The acid desintegrated your save file";
 					remove("save/save.bin");
 					core::GUISetMessag(1, string);
@@ -697,7 +741,7 @@ void Entity_PhysicsTick(ECCommon* ent, lid id, lf32 dt)
 		defaul:
 		default:
 		{
-			if (GetEntityType(id) == ENTITY_TYPE_ACTOR) {
+			if (GetEntityType(id.Index()) == ENTITY_TYPE_ACTOR) {
 				ent->t.altitude = ground_height + ((ECActor*)ent)->aniStandHeight;
 				// this will work, but we need to address the sprint-jump problem
 				//if (ent->t.height < ground_height + ((ECActor*)ent)->aniStandHeight * 0.4f)
@@ -732,7 +776,7 @@ void Entity_PhysicsTick(ECCommon* ent, lid id, lf32 dt)
 
 			lf32 slide_reduce = 0.18f * dt; // Slide reduction per second multiplied by frame length
 
-			if (GetEntityType(id) == ENTITY_TYPE_ACTOR)
+			if (GetEntityType(id.Index()) == ENTITY_TYPE_ACTOR)
 				if (((ECActor*)ent)->aniCrouch)
 					slide_reduce *= 0.25f; // Slide longer if crouching
 
@@ -758,11 +802,19 @@ void Entity_PhysicsTick(ECCommon* ent, lid id, lf32 dt)
 		ent->t.position += ent->slideVelocity;
 	}
 
+	#if DEF_CCD // Swap collision/velocity apply order
+	// Perform collision
+	Entity_Collision(id, ent, ent->t.csi);
 	// Apply velocity
 	ent->t.position += ent->velocity;
 	ent->t.altitude += ent->altitude_velocity;
-
+	#else
+	// Apply velocity
+	ent->t.position += ent->velocity;
+	ent->t.altitude += ent->altitude_velocity;
+	// Perform collision
 	Entity_Collision(id, ent, ent->t.csi);
+	#endif
 
 	// duplicate of start of function
 	core::GetCellSpaceInfo(ent->t.position, ent->t.csi);

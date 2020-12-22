@@ -14,6 +14,8 @@ in vec4 Col;
 in vec4 LightSpacePos;
 in vec3 LC; // Light Colour
 
+in float ndl;
+
 uniform uint id; // identity
 uniform bool idn; // id null
 uniform vec3 pcam;
@@ -30,19 +32,18 @@ uniform vec3 vsun = normalize(vec3(-1, 1, -1));
 uniform vec3 cFog = vec3(0.1, 0.1, 0.1);
 uniform float fFogDens = 0.f;
 
-uniform bool lit = true;
+uniform vec3 cSun;
+uniform vec3 cAmb;
+uniform vec3 cLit;
 
-// lower value = more blending
-// Standard
-//const float shadowDepthBlend = 2048.f;
-// smooth
-const float shadowDepthBlend = 512.f;
+uniform bool lit = true;
 )"
 
 #define SHADER_VAR_FRAG_3D_CHARA R"(
 uniform vec3 c_a = vec3(112. / 256., 103. / 256., 85.  / 256.);
 uniform vec3 c_b = vec3(178. / 256., 107. / 256., 22.  / 256.);
 uniform vec3 c_c = vec3(152. / 256., 144. / 256., 127. / 256.);
+
 )"
 
 #define SSRC_VAR_FRAG_3D_MEAT R"(
@@ -72,12 +73,6 @@ uniform vec3 vsun = normalize(vec3(-1, 1, -1));
 uniform bool lit = true;
 
 const float scalar = 100.f;
-
-// lower value = more blending
-// Standard
-//const float shadowDepthBlend = 2048.f;
-// smooth
-const float shadowDepthBlend = 512.f;
 
 const int indexMat4x4PSX[16] = int[]
 (
@@ -123,12 +118,6 @@ uniform vec3 cFog = vec3(0.1, 0.1, 0.1);
 uniform float fFogDens = 0.f;
 
 uniform bool lit = true;
-
-// lower value = more blending
-// Standard
-//const float shadowDepthBlend = 2048.f;
-// smooth
-const float shadowDepthBlend = 512.f;
 )"
 
 
@@ -176,6 +165,8 @@ float dither(float color, float index_value) {
 )"
 
 #define SSRC_FNC_SHADOW R"(
+// lower value = more blending
+const float shadowDepthBlend = 2048.f;
 float GetShadowBilinear(vec3 projCoords, ivec2 tsize, vec2 texelSize) {
 	vec2 nearestpoint = (round(projCoords.xy * tsize.x) - 0.5) / tsize.x; // also seems to work, for some reason
 	vec2 offset = (projCoords.xy - nearestpoint) / texelSize.x; // known to work
@@ -256,7 +247,6 @@ void main() {
 }
 )"
 
-#if DEF_PROJECT == PROJECT_EX
 #define SHADER_FRAG_FRAMEBUFFER R"(
 #version 330 core
 
@@ -306,25 +296,29 @@ void main() {
 	float ofsx = 0.5f / wx;
 	float ofsy = 0.5f / wy;
 	
-	sampleTex[0] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, ofsy)));
-	sampleTex[1] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f,  ofsy)));
-	sampleTex[2] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx,  ofsy)));
-	sampleTex[3] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, 0.0f)));
-	sampleTex[4] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f,  0.0f)));
-	sampleTex[5] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx,  0.0f)));
-	sampleTex[6] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx,-ofsy)));
-	sampleTex[7] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f, -ofsy)));
-	sampleTex[8] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx, -ofsy)));
-	
-
+	//sampleTex[0] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, ofsy)));
+	//sampleTex[1] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f,  ofsy)));
+	//sampleTex[2] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx,  ofsy)));
+	//sampleTex[3] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx, 0.0f)));
+	//sampleTex[4] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f,  0.0f)));
+	//sampleTex[5] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx,  0.0f)));
+	//sampleTex[6] = vec3(texture(uf_txtr, TexCoords.st + vec2(-ofsx,-ofsy)));
+	//sampleTex[7] = vec3(texture(uf_txtr, TexCoords.st + vec2(0.0f, -ofsy)));
+	//sampleTex[8] = vec3(texture(uf_txtr, TexCoords.st + vec2(ofsx, -ofsy)));
+	//
+	//
 	vec3 col = vec3(0.0);
-	for(int i = 0; i < 9; i++)
-		col += sampleTex[i] / 9.f;
+	//for(int i = 0; i < 9; i++)
+	//	col += sampleTex[i] / 9.f;
 	
 	//col = clamp((col), 0, 1);	
 	
+	//unused
 	//col += clamp((Bloom() - 0.1f) * 0.75f, 0.f, 128.f);
-	col += clamp((Bloom() - 0.1f) * 1.5f, 0.f, 128.f);
+	
+	//col += clamp((Bloom() - 0.1f) * 1.5f, 0.f, 128.f);
+
+	col = vec3(texture(uf_txtr, TexCoords.st));
 
 	FragColor.rgb = col;
 	FragColor.a = 1.f;
@@ -352,9 +346,8 @@ void main() {
 	//FragColor *= 1.2f;
 }
 )"
-#elif DEF_PROJECT == PROJECT_BC
 // Colour distorted framebuffer
-#define SHADER_FRAG_FRAMEBUFFER R"(
+#define SHADER_FRAG_FRAMEBUFFER_EFFECT R"(
 #version 330 core
 out vec4 FragColor;
   
@@ -546,7 +539,6 @@ void main() {
 	//FragColor = vec4(0.5f);
 }
 )"
-#endif
 
 #define SHADER_FRAG_FRAMEBUFFER_DEPTH_BUFFER R"(
 #version 330 core
@@ -877,6 +869,8 @@ out vec4 Col;
 out vec4 LightSpacePos;
 out vec3 LC; // Light Colour
 
+out float ndl;
+
 uniform mat4 matm;
 uniform mat4 matv;
 uniform mat4 matp;
@@ -895,7 +889,6 @@ uniform vec3 cSun;
 uniform vec3 cAmb;
 uniform vec3 cFog;
 uniform vec3 cLit;
-uniform vec3 edgcol;
 
 uniform bool lit = true;
 
@@ -928,13 +921,14 @@ void main()
 		// edge light
 		vec3 vd = Pos - pcam;
 		vec3 halfwayDir = normalize(vsun - normalize(-vd));
-		float edge_light = pow(max(dot(normalize(Normal), halfwayDir), 0.0), 2.0);
-	
+
+		ndl = dot(Normal, vsun);
+
 		LC =  (cAmb * ndotl_amb) // Ambient light
-			+ (cSun * (ndotl + edge_light)) // Sunlight (and rim light)
+			+ (cSun * ndotl) // Sunlight (and rim light)
 			+ vec3(Col.g); // Emissive vertices
 		
-		edge_light = clamp(dot(Normal, normalize(vd)) * 0.5f + 0.5f, 0, 1);
+		float edge_light = clamp(dot(Normal, normalize(vd)) * 0.5f + 0.5f, 0, 1);
 		halfwayDir = normalize(vsun - normalize(vd));
 		float spec_light = pow(max(dot(normalize(Normal), halfwayDir), 0.0), 6.0) * 4.0;
 		
@@ -968,6 +962,8 @@ out vec4 Col;
 out vec4 LightSpacePos;
 out vec3 LC; // Light Colour
 
+out float ndl;
+
 uniform float blendState = 0.5f;
 
 uniform mat4 matm;
@@ -988,7 +984,6 @@ uniform vec3 cSun;
 uniform vec3 cAmb;
 uniform vec3 cFog;
 uniform vec3 cLit;
-uniform vec3 edgcol;
 
 uniform bool lit = true;
 
@@ -1024,13 +1019,14 @@ void main()
 		// edge light
 		vec3 vd = Pos - pcam;
 		vec3 halfwayDir = normalize(vsun - normalize(-vd));
-		float edge_light = pow(max(dot(normalize(Normal), halfwayDir), 0.0), 2.0);
 	
+		ndl = dot(Normal, vsun);
+
 		LC =  (cAmb * ndotl_amb) // Ambient light
-			+ (cSun * (ndotl + edge_light)) // Sunlight (and rim light)
+			+ (cSun * ndotl) // Sunlight (and rim light)
 			+ vec3(Col.g); // Emissive vertices
 			
-		edge_light = clamp(dot(Normal, normalize(vd)) * 0.5f + 0.5f, 0, 1);
+		float edge_light = clamp(dot(Normal, normalize(vd)) * 0.5f + 0.5f, 0, 1);
 		vec3 spec_light = vec3(pow(max(dot(normalize(Normal), normalize(vd)), 0.0), 6.0));
 		
 		// Mix between diffuse and metallic
@@ -1061,6 +1057,8 @@ out vec4 Col;
 out vec4 LightSpacePos;
 out vec3 LC; // Light Colour
 
+out float ndl;
+
 uniform uint mc = 1u; // Matrix count
 uniform mat4 matma;
 uniform mat4 matmb;
@@ -1086,7 +1084,6 @@ uniform vec3 cSun;
 uniform vec3 cAmb;
 uniform vec3 cFog;
 uniform vec3 cLit;
-uniform vec3 edgcol;
 
 uniform bool lit = true;
 
@@ -1165,13 +1162,14 @@ void main()
 		// edge light
 		vec3 vd = Pos - pcam;
 		vec3 halfwayDir = normalize(vsun - normalize(-vd));
-		float edge_light = pow(max(dot(normalize(Normal), halfwayDir), 0.0), 2.0);
 	
+		ndl = dot(Normal, vsun);
+
 		LC =  (cAmb * ndotl_amb) // Ambient light
-			+ (cSun * (ndotl + edge_light)) // Sunlight (and rim light)
+			+ (cSun * ndotl) // Sunlight (and rim light)
 			+ vec3(Col.g); // Emissive vertices
 			
-		edge_light = clamp(dot(Normal, normalize(vd)) * 0.5f + 0.5f, 0, 1);
+		float edge_light = clamp(dot(Normal, normalize(vd)) * 0.5f + 0.5f, 0, 1);
 		vec3 spec_light = vec3(pow(max(dot(normalize(Normal), normalize(vd)), 0.0), 6.0));
 		
 		// Mix between diffuse and metallic
@@ -1251,23 +1249,11 @@ void main()
 	float ndotl = clamp(dot(Normal, vsun) * Col.r, 0, 1);
 	float ndotl_amb = clamp(dot(Normal, vec3(0, 1, 0)) * 0.5f + 0.75f, 0, 1);
 
-	if (lit)
-	{
-		// WIP
-		// edge light
-		vec3 vd = Pos - pcam;
-		vec3 halfwayDir = normalize(vsun - normalize(-vd));
-		vec3 edge_light = edgcol * pow(max(dot(normalize(Normal), halfwayDir), 0.0), 2.0);
-
-		float xoffs = -Pos.z + 0.5f - round(-Pos.z + 0.5f);
-		float yoffs = -Pos.x + 0.5f - round(-Pos.x + 0.5f);
-
+	if (lit) {
 		LC = (cAmb * ndotl_amb) // Ambient light
-			//+ (cSun * ndotl + edge_light) // Sunlight (and rim light)
 			+ (cSun * ndotl); // Sunlight
 	}
-	else
-	{
+	else {
 		//LC *= ndotl * 2.f; Moon shading
 		LC = vec3(1.5f);
 	}
@@ -1306,6 +1292,11 @@ void main() {
 	float fog_mix = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start), 0.f, 1.f);
 	float fog_mix_half = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start) * 0.5f, 0.f, 1.f);
 	FragColor.rgb = mix(FragColor.rgb, cFog, mix(fog_mix, fog_mix_half, Col.g));
+
+
+	FragColor.rgb = cSun * (clamp(ndl * shadow, 0.f, 1.f));
+	FragColor.rgb += cAmb * (1 - (clamp(ndl * shadow, 0.f, 1.f)));
+	FragColor.rgb *= texture(texture_diffuse1, TexCoords).rgb;
 }
 )"
 
@@ -1372,6 +1363,15 @@ void main() {
 	FragColor.rgb = mix(FragColor.rgb, cFog, mix(fog_mix, fog_mix_half, Col.g));
 
 	FragColor.a = txtr.a;
+
+	// toon
+	FragColor.rgb = cSun * (ceil(ndl * shadow));
+	FragColor.rgb += cAmb * (1 - (ceil(ndl * shadow)));
+	// half-toon
+	//FragColor.rgb = cSun * (clamp((ndl * 2.f) * shadow, 0.f, 1.f));
+	//FragColor.rgb += cAmb * (1 - (clamp((ndl * 2.f) * shadow, 0.f, 1.f)));
+
+	FragColor.rgb *= c_a * txtr.r + c_b * txtr.g + c_c * txtr.b;
 }
 )"
 

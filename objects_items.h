@@ -16,26 +16,26 @@
 struct ECActor;
 
 // Initialize this item instance
-void ItemInit(lid item);
+void ItemInit(LtrID item);
 // Tick this item instance
-void ItemTick(lid item, lf32 DT, lid OWNER_ID, ECActor* OWNER);
+void ItemTick(LtrID item, lf32 DT, LtrID OWNER_ID, ECActor* OWNER);
 // Render graphics of this item instance
-void ItemDraw(lid item, lid ITEMID);
+void ItemDraw(LtrID item);
 // Tell this item instance that it's just been equipped
-void ItemOnEquip(lid item, ECActor* b);
+void ItemOnEquip(LtrID item, ECActor* b);
 // Get left hand position
-m::Vector3 ItemLHPos(lid item);
+m::Vector3 ItemLHPos(LtrID item);
 // Get right hand position
-m::Vector3 ItemRHPos(lid item);
-bool ItemBlockTurn(lid item);
-bool ItemBlockMove(lid item);
+m::Vector3 ItemRHPos(LtrID item);
+bool ItemBlockTurn(LtrID item);
+bool ItemBlockMove(LtrID item);
 
 // Base item instance
 struct HeldItem
 {
 	//-------------------------------- HELD ITEM
 
-	lid id_item_template = ID_NULL;
+	ID16 id_item_template = ID_NULL;
 	Transform3D t_item;
 
 	//-------------------------------- SHARED THINGS
@@ -77,7 +77,7 @@ struct HeldItem
 	lf32 ang_aim_offset_temp = 0.f;
 	lf32 ang_aim_pitch = 0.f;
 	lui64 fire_time = 0u;
-	lid id_ammoInstance = ID_NULL;
+	LtrID id_ammoInstance = ID2_NULL;
 
 	//-------------------------------- HELD ITEM MAGIC
 

@@ -7,29 +7,7 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// GENERAL FUNCTIONS -------------------------------------------------------------------------------------------------------------
 
-	void RemoveAllReferences(lid index)
-	{
-		// Remove us from the cell we're on
-		refCells[ENTITY(index)->t.csi.c[eCELL_I].x][ENTITY(index)->t.csi.c[eCELL_I].y].ref_ents.Remove(index);
-		// Remove all references to us by other entities
-		for (int i = 0; i < GetEntityArraySize(); i++)
-		{
-			if (GetEntityExists(i) && i != index) // If entity exists and is not me
-			{
-				if (GetEntityType(i) == ENTITY_TYPE_ACTOR) // and is actor
-				{
-					if (ACTOR(i)->atk_target == index)
-						ACTOR(i)->atk_target = BUF_NULL;
-					if (ACTOR(i)->ai_target_ent == index)
-						ACTOR(i)->ai_target_ent = BUF_NULL;
-					if (ACTOR(i)->ai_ally_ent == index)
-						ACTOR(i)->ai_ally_ent = BUF_NULL;
-				}
-			}
-		}
-	}
-
-	bool LOSCheck(lid enta, lid entb) {
+	bool LOSCheck(LtrID enta, LtrID entb) {
 		ECCommon* entity_a = ENTITY(enta);
 		ECCommon* entity_b = ENTITY(entb);
 		#if DEF_GRID
@@ -45,7 +23,7 @@ namespace core
 		#endif
 	}
 
-	lid GetClosestPlayer(lid index)
+	LtrID GetClosestPlayer(LtrID index)
 	{
 		lf32 check_distance_0 = m::Length(ENTITY(players[0])->t.position - ENTITY(index)->t.position);
 		lf32 check_distance_1 = m::Length(ENTITY(players[1])->t.position - ENTITY(index)->t.position);
@@ -55,19 +33,19 @@ namespace core
 			return players[0];
 	}
 
-	lid GetClosestEntity(lid index, lf32 dist)
+	LtrID GetClosestEntity(LtrID index, lf32 dist)
 	{
-		lid current_closest = BUF_NULL;
+		LtrID current_closest = ID2_NULL;
 		lf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i < GetEntityArraySize(); i++)
 		{
 			// If used, not me, and is alive
-			if (GetEntityExists(i) && i != index && ENTITY(i)->activeFlags.get(ECCommon::eALIVE))
+			if (AnyEntityHere(i) && i != index.Index() && GetEntity<ECCommon>(i)->activeFlags.get(ECCommon::eALIVE))
 			{
-				lf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
+				lf32 check_distance = m::Length(GetEntity<ECCommon>(i)->t.position - ENTITY(index)->t.position);
 				if (check_distance < closest_distance)
 				{
-					current_closest = i;
+					current_closest = GetEntityID(i);
 					closest_distance = check_distance;
 				}
 			}
@@ -76,19 +54,19 @@ namespace core
 	}
 
 	// TODO: ANGLE IS ALREADY CALCULATED HERE, SO REUSE IT FOR THE PROJECTILE CODE INSTEAD OF REGENNING
-	lid GetViewTargetEntity(lid index, lf32 dist, fac::facalleg allegiance)
+	LtrID GetViewTargetEntity(LtrID index, lf32 dist, fac::facalleg allegiance)
 	{
-		lid current_closest = BUF_NULL;
+		LtrID current_closest = ID2_NULL;
 		lf32 closest_angle = 15.f;
 		for (int index_other = 0; index_other < GetEntityArraySize(); index_other++) {
 			// If used, not me, and is alive
-			if (GetEntityExists(index_other) && index_other != index &&
-				ENTITY(index_other)->activeFlags.get(ECCommon::eALIVE) &&
-				fac::GetAllegiance(ENTITY(index)->faction, ENTITY(index_other)->faction) == allegiance) {
-				lf32 check_distance = m::Length(ENTITY(index_other)->t.position - ENTITY(index)->t.position);
+			if (AnyEntityHere(index_other) && index_other != index.Index() &&
+				GetEntity<ECCommon>(index_other)->activeFlags.get(ECCommon::eALIVE) &&
+				fac::GetAllegiance(ENTITY(index)->faction, GetEntity<ECCommon>(index_other)->faction) == allegiance) {
+				lf32 check_distance = m::Length(GetEntity<ECCommon>(index_other)->t.position - ENTITY(index)->t.position);
 				if (check_distance < dist) {
 					ECCommon* ent = ENTITY(index);
-					ECCommon* ent_other = ENTITY(index_other);
+					ECCommon* ent_other = GetEntity<ECCommon>(index_other);
 					// LINE TRACE
 					#if DEF_GRID
 					if (env::LineTraceBh(ent->t.csi.c[eCELL_I].x, ent->t.csi.c[eCELL_I].y,
@@ -96,12 +74,12 @@ namespace core
 						ent->t.altitude, ent_other->t.altitude))
 						#endif
 					{
-						m::Vector2 targetoffset = m::Normalize(ENTITY(index_other)->t.position - (ENTITY(index)->t.position));
+						m::Vector2 targetoffset = m::Normalize(GetEntity<ECCommon>(index_other)->t.position - (ENTITY(index)->t.position));
 						m::Angle angle_yaw(glm::degrees(m::Vec2ToAng(targetoffset)));
 						lf32 angdif = abs(m::AngDif(angle_yaw.Deg(), ACTOR(index)->viewYaw.Deg()));
 						if (abs(angdif) < closest_angle) {
 							closest_angle = angdif;
-							current_closest = index_other;
+							current_closest = GetEntityID(index_other);
 						}
 					}
 				}
@@ -110,22 +88,22 @@ namespace core
 		return current_closest;
 	}
 
-	lid GetClosestEntityAlleg(lid index, lf32 dist, fac::facalleg allegiance)
+	LtrID GetClosestEntityAlleg(LtrID index, lf32 dist, fac::facalleg allegiance)
 	{
-		lid current_closest = BUF_NULL;
+		LtrID current_closest = ID2_NULL;
 		lf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i < GetEntityArraySize(); i++)
 		{
 			// If used, not me, and is alive
-			if (GetEntityExists(i) && i != index && ENTITY(i)->activeFlags.get(ECCommon::eALIVE))
+			if (AnyEntityHere(i) && i != index.Index() && GetEntity<ECCommon>(i)->activeFlags.get(ECCommon::eALIVE))
 			{
 				// do I like THEM
-				if (fac::GetAllegiance(ENTITY(index)->faction, ENTITY(i)->faction) == allegiance)
+				if (fac::GetAllegiance(ENTITY(index)->faction, GetEntity<ECCommon>(i)->faction) == allegiance)
 				{
-					lf32 check_distance = m::Length(ENTITY(i)->t.position - ENTITY(index)->t.position);
+					lf32 check_distance = m::Length(GetEntity<ECCommon>(i)->t.position - ENTITY(index)->t.position);
 					if (check_distance < closest_distance)
 					{
-						current_closest = i;
+						current_closest = GetEntityID(i);
 						closest_distance = check_distance;
 					}
 				}
@@ -134,16 +112,16 @@ namespace core
 		return current_closest;
 	}
 
-	lid GetClosestEntityAllegLOS(lid index, lf32 dist, fac::facalleg allegiance)
+	LtrID GetClosestEntityAllegLOS(LtrID index, lf32 dist, fac::facalleg allegiance)
 	{
 		ECCommon* entity_index = ENTITY(index);
-		lid current_closest = BUF_NULL;
+		LtrID current_closest = ID2_NULL;
 		lf32 closest_distance = dist; // Effectively sets a max return range
 		for (int i = 0; i < GetEntityArraySize(); i++)
 		{
-			ECCommon* entity = ENTITY(i);
+			ECCommon* entity = GetEntity<ECCommon>(i);
 			// If used, not me, and is alive
-			if (GetEntityExists(i) && i != index && entity->activeFlags.get(ECCommon::eALIVE))
+			if (AnyEntityHere(i) && i != index.Index() && entity->activeFlags.get(ECCommon::eALIVE))
 			{
 				// do I like THEM
 				if (fac::GetAllegiance(entity_index->faction, entity->faction) == allegiance)
@@ -164,7 +142,7 @@ namespace core
 							entity_index->t.altitude, entity->t.altitude))
 						#endif
 						{
-							current_closest = i;
+							current_closest = GetEntityID(i);
 							closest_distance = check_distance;
 						}
 					}
@@ -174,9 +152,9 @@ namespace core
 		return current_closest;
 	}
 
-	lid GetEntityViewTarget(lid index)
+	LtrID GetEntityViewTarget(LtrID index)
 	{
-		lid id = BUF_NULL;
+		LtrID id = ID2_NULL;
 		lf32 closestDist = 2.f;
 		lf32 closest_angle = 20.f;
 		ECCommon* entity_index = ENTITY(index);
@@ -186,8 +164,8 @@ namespace core
 				// Iterate through every entity space in this cell
 				for (int e = 0; e <= refCells[x][y].ref_ents.Size(); e++) {
 					// Skip if null, self or does not exist, or is dead
-					if (refCells[x][y].ref_ents[e] == ID_NULL ||
-						refCells[x][y].ref_ents[e] == index ||
+					if (IDCOMPARE(refCells[x][y].ref_ents[e], ID2_NULL) ||
+						IDCOMPARE(refCells[x][y].ref_ents[e], index) ||
 						!GetEntityExists(refCells[x][y].ref_ents[e]) ||
 						!ENTITY(refCells[x][y].ref_ents[e])->activeFlags.get(ECCommon::eALIVE))
 						continue;
@@ -212,9 +190,9 @@ namespace core
 	//________________________________________________________________________________________________________________________________
 	// PREFABS -----------------------------------------------------------------------------------------------------------------------
 
-	inline void PrefabCommon(lid index, m::Vector2 pos, lf32 dir)
+	inline void PrefabCommon(LtrID index, m::Vector2 pos, lf32 dir)
 	{
-		ECCommon* eptr = GetEntity<ECCommon>(index);
+		ECCommon* eptr = GetEntity<ECCommon>(index.Index());
 		eptr->t.position = pos;
 		eptr->velocity = 0.f;
 		eptr->altitude_velocity = 0.f;
@@ -233,13 +211,13 @@ namespace core
 		eptr->physicsFlags.set(ECCommon::ePREFAB_FULLSOLID);
 		eptr->activeFlags.set(ECCommon::eALIVE);
 
-		if (GetEntityType(index) == ENTITY_TYPE_ACTOR) {
+		if (GetEntityType(index.Index()) == ENTITY_TYPE_ACTOR) {
 			ECActor* aptr = (ECActor*)eptr;
 			
 			aptr->foot_state = ECActor::FootState::eL_DOWN;
-			aptr->atk_target = BUF_NULL;
-			aptr->ai_target_ent = BUF_NULL;
-			aptr->ai_ally_ent = BUF_NULL;
+			aptr->atk_target = ID2_NULL;
+			aptr->ai_target_ent = ID2_NULL;
+			aptr->ai_ally_ent = ID2_NULL;
 			aptr->ai_timer = 0u;
 
 			const m::Vector3 colEyes[]{
@@ -296,7 +274,7 @@ namespace core
 			return c + ('A' - 'a');
 		return c;
 	}
-	void NameEntity(lid id)
+	void NameEntity(LtrID id)
 	{
 		char name1[32];
 		char name2[32];
@@ -351,7 +329,7 @@ namespace core
 		};
 	}
 
-	void PrefabPlayer(lid id, m::Vector2 pos, lf32 dir) {
+	void PrefabPlayer(LtrID id, m::Vector2 pos, lf32 dir) {
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
@@ -364,7 +342,7 @@ namespace core
 		ACTOR(id)->actorBase = 0u;
 	}
 
-	void PrefabPlayerAlly(lid id, m::Vector2 pos, lf32 dir) {
+	void PrefabPlayerAlly(LtrID id, m::Vector2 pos, lf32 dir) {
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::player;
@@ -374,7 +352,7 @@ namespace core
 		ACTOR(id)->actorBase = 0u;
 	}
 
-	void PrefabHunter(lid id, m::Vector2 pos, lf32 dir) {
+	void PrefabHunter(LtrID id, m::Vector2 pos, lf32 dir) {
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::playerhunter;
@@ -386,7 +364,7 @@ namespace core
 		ACTOR(id)->actorBase = 1u;
 	}
 
-	void PrefabZombie(lid id, m::Vector2 pos, lf32 dir) {
+	void PrefabZombie(LtrID id, m::Vector2 pos, lf32 dir) {
 		PrefabCommon(id, pos, dir);
 		NameEntity(id);
 		ENTITY(id)->faction = fac::faction::undead;
@@ -397,7 +375,7 @@ namespace core
 		ACTOR(id)->actorBase = 2u;
 	}
 
-	void(*PrefabEntity[prefab::prefab_count])(lid, m::Vector2, lf32) = { PrefabPlayer, PrefabPlayerAlly, PrefabHunter, PrefabZombie };
+	void(*PrefabEntity[prefab::prefab_count])(LtrID, m::Vector2, lf32) = { PrefabPlayer, PrefabPlayerAlly, PrefabHunter, PrefabZombie };
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//--------------------------- CELL STUFF -----------------------------------------------------------------------------------------

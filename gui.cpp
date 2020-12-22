@@ -12,22 +12,22 @@ struct Button {
 	// Position
 	li32 xs, xe, ys, ye;
 	// Directional neighbors
-	lid nbUp = ID_NULL;
-	lid nbDn = ID_NULL;
-	lid nbLt = ID_NULL;
-	lid nbRt = ID_NULL;
+	ID16 nbUp = ID_NULL;
+	ID16 nbDn = ID_NULL;
+	ID16 nbLt = ID_NULL;
+	ID16 nbRt = ID_NULL;
 	// Callback function to use when the button is activated
 	void(*callback)(void*) = nullptr;
 	void* callbackData = nullptr;
 	graphics::GUIBox box;
 	graphics::GUIText text;
-	lid boxTxtr;
-	lid textTxtr;
+	ID16 boxTxtr;
+	ID16 textTxtr;
 };
 mem::Buffer32<Button> buttons;
-lid buttonSelected = 0;
+ID16 buttonSelected = 0;
 
-lid GUIAddButton(void(*callback)(void*), void* callbackData, char* string, lid texture, li32 xstart, li32 xend, li32 ystart, li32 yend) {
+ID16 GUIAddButton(void(*callback)(void*), void* callbackData, char* string, ID16 texture, li32 xstart, li32 xend, li32 ystart, li32 yend) {
 	Button button;
 	button.box.Init();
 	button.box.ReGen(xstart, xend, ystart, yend, 4, 2);
@@ -47,7 +47,7 @@ void GetCenter(Button* b, li32* out_x, li32* out_y) {
 	*out_x = (b->xs + b->xe) / 2;
 	*out_y = (b->ys + b->ye) / 2;
 }
-void NbTest(lui32 i, lui32 j, lf32 distO, li32 x, li32 y, lid* nb) {
+void NbTest(lui32 i, lui32 j, lf32 distO, li32 x, li32 y, ID16* nb) {
 	// If neighbor already seen
 	if (*nb != ID_NULL) {
 		// Get existing neighbor's center

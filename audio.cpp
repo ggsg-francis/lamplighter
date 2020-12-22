@@ -23,6 +23,8 @@
 #include "3rdparty\miniaudio.h"
 #endif
 
+#define DEF_SOUNDTRACK 0
+
 namespace aud
 {
 	#ifdef DEF_USE_CS
@@ -49,7 +51,7 @@ namespace aud
 	cs_play_sound_def_t def[FILE_COUNT];
 	cs_playing_sound_t* sound[FILE_COUNT];
 
-	#if DEF_PROJECT == PROJECT_BC
+	#if DEF_SOUNDTRACK
 	bool tpptemp = false;
 	#endif
 
@@ -73,7 +75,7 @@ namespace aud
 				def[i] = cs_make_def(&loaded[i]);
 			}
 
-			#if DEF_PROJECT == PROJECT_BC
+			#if DEF_SOUNDTRACK
 			tpptemp = config.b3PP;
 			sound[FILE_MUS_01] = cs_play_sound(ctx, def[FILE_MUS_01]);
 			if (sound[FILE_MUS_01]) {
@@ -87,7 +89,7 @@ namespace aud
 
 	void Update(lf64 dt)
 	{
-		#if DEF_PROJECT == PROJECT_BC
+		#if DEF_SOUNDTRACK
 		if (config.b3PP != tpptemp) {
 			tpptemp = config.b3PP;
 			if (tpptemp) {

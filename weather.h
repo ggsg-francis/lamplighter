@@ -11,11 +11,11 @@ namespace weather
 	{
 		//templates
 		//glm::vec3 col_clear_sun = glm::vec3(1.6f, 1.55f, 1.45f);
-		glm::vec3 col_clear_sun = glm::vec3(1.f, 1.f, 1.f);
-		glm::vec3 col_clear_amb = glm::vec3(0.64f, 0.9f, 0.96f);
-		glm::vec3 col_clear_fog = glm::vec3(0.7f, 0.73f, 0.77f);
+		glm::vec3 col_clear_sun = glm::vec3(1.6f, 1.55f, 1.5f);
+		glm::vec3 col_clear_amb = glm::vec3(0.64f * 0.5f, 0.9f * 0.5f, 0.96f * 0.5f);
+		glm::vec3 col_clear_fog = glm::vec3(0.55f, 0.58f, 0.77f);
 
-		glm::vec3 col_foggy_sun = glm::vec3(0.56f * 0.5f, 0.58f * 0.5f, 0.6f * 0.5f);
+		glm::vec3 col_foggy_sun = glm::vec3(0.2f, 0.25f, 0.275f);
 		glm::vec3 col_foggy_amb = glm::vec3(0.2f, 0.25f, 0.275f);
 		glm::vec3 col_foggy_fog = glm::vec3(0.35f * 0.75f, 0.37f * 0.75f, 0.4f * 0.75f);
 

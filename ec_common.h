@@ -122,12 +122,11 @@ enum StatusEffectType : lui16 {
 };
 
 typedef struct StatusEffect {
-	lid effect_caster_id;
-	lui16 effect_type;
+	LtrID effect_caster_id = ID2_NULL;
 	lf32 effect_duration;
 	lui32 effect_magnitude;
-	lid effect_icon;
-	lui16 reserved;
+	lui16 effect_type;
+	ID16 effect_icon;
 } StatusEffect;
 
 // Base entity class
@@ -172,8 +171,8 @@ struct ECCommon
 	}
 
 	void Damage(lui32 AMOUNT, lf32 ANGLE);
-	void AddEffect(lid CASTER, StatusEffectType TYPE, lf32 DURATION, lui32 MAGNITUDE, lid icon);
-	void AddSpell(lid CASTER, lid SPELL);
+	void AddEffect(LtrID CASTER, StatusEffectType TYPE, lf32 DURATION, lui32 MAGNITUDE, ID16 icon);
+	void AddSpell(LtrID CASTER, ID16 SPELL);
 	void TickEffects(lf32 DELTA_TIME);
 
 	lf32 radius = 0.5f; // Radius of the entity (no larger than .5)
@@ -196,6 +195,6 @@ struct hit_info {
 };
 
 // Handle this entitiy's position, receives desired motion
-void Entity_PhysicsTick(ECCommon* ENTITY, lid ID, lf32 DELTA_TIME);
+void Entity_PhysicsTick(ECCommon* ENTITY, LtrID ID, lf32 DELTA_TIME);
 
 char* EntityName(void* ent);

@@ -112,19 +112,12 @@ namespace graphics
 	// TODO: MOVE TO MATHS!!!
 	struct Matrix4x4
 	{
-		//FRow4 v[4]{ FRow4(1.f, 0.f, 0.f, 0.f), FRow4(0.f, 1.f, 0.f, 0.f), FRow4(0.f, 0.f, 1.f, 0.f), FRow4(0.f, 0.f, 0.f, 1.f) };
+		#if DEF_SWR
+		FRow4 v[4]{ FRow4(1.f, 0.f, 0.f, 0.f), FRow4(0.f, 1.f, 0.f, 0.f), FRow4(0.f, 0.f, 1.f, 0.f), FRow4(0.f, 0.f, 0.f, 1.f) };
+		#else
 		// Initialize with mirrored Z axis
 		FRow4 v[4]{ FRow4(1.f, 0.f, 0.f, 0.f), FRow4(0.f, 1.f, 0.f, 0.f), FRow4(-0.f, -0.f, -1.f, -0.f), FRow4(0.f, 0.f, 0.f, 1.f) };
-		void Initialize(bool FLIP = true)
-		{
-			v[0] = FRow4(1.f, 0.f, 0.f, 0.f);
-			v[1] = FRow4(0.f, 1.f, 0.f, 0.f);
-			if (FLIP)
-				v[2] = FRow4(-0.f, -0.f, -1.f, -0.f);
-			else
-				v[2] = FRow4(0.f, 0.f, 1.f, 0.f);
-			v[3] = FRow4(0.f, 0.f, 0.f, 1.f);
-		}
+		#endif
 		FRow4& operator[](const li32 index) { return v[index]; };
 		FRow4 const& operator[](const li32 index) const { return v[index]; };
 	};
@@ -479,12 +472,26 @@ namespace graphics
 		size_t ices_size;
 	public:
 		GLuint vao; // Vertex Array Object
-		void LoadFile(void* ACV_FILE);
+		void LoadFile(void* acv_file);
 		void Unload();
 		size_t IcesSize() { return ices_size; };
 	private:
 		GLuint vbo; // Vertex Buffer Object
 		GLuint ebo; // Element Buffer Object
+	};
+
+	#define MESHSET_MAX_COUNT 32
+	class MeshSet
+	{
+	public:
+		size_t ices_size;
+		lui32 count;
+		GLuint vao[MESHSET_MAX_COUNT]; // Vertex Array Object
+		void LoadFile(void* acv_file);
+		void Unload();
+	private:
+		GLuint vbo[MESHSET_MAX_COUNT]; // Vertex Buffer Object
+		GLuint ebo[MESHSET_MAX_COUNT]; // Element Buffer Object
 	};
 
 	class MeshDeform
@@ -620,24 +627,27 @@ enum ShaderStyle
 	SS_CHARA,
 };
 
-void DrawMesh(lid ID, graphics::Mesh& MESH, graphics::Texture TEXTURE,
+void DrawMesh(graphics::Mesh& MESH, graphics::Texture TEXTURE,
 	ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
 void DrawParticles(graphics::Mesh& MESH, graphics::Texture TEXTURE,
 	graphics::Matrix4x4* MATRIX, lui32 COUNT);
 
-void DrawBlendMesh(lid ID, graphics::MeshBlend& MODEL, lf32 BLENDSTATE,
+void DrawBlendMesh(graphics::MeshBlend& MODEL, lf32 BLENDSTATE,
 	graphics::Texture TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
-void DrawMeshDeform(lid ID, graphics::MeshDeform& MODEL,
+void DrawMeshSet(graphics::MeshSet& meshset, lui32 meshindex,
+	graphics::Texture texture, ShaderStyle shader, graphics::Matrix4x4 matrix);
+
+void DrawMeshDeform(graphics::MeshDeform& MODEL,
 	graphics::Texture TEXTURE, ShaderStyle SHADER, lui32 MATRIX_COUNT,
 	graphics::Matrix4x4 MATRIX_A, graphics::Matrix4x4 MATRIX_B,
 	graphics::Matrix4x4 MATRIX_C, graphics::Matrix4x4 MATRIX_D);
 
-void DrawCompositeMesh(lid ID, graphics::CompositeMesh& MESH,
+void DrawCompositeMesh(graphics::CompositeMesh& MESH,
 	graphics::Texture TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
-void DrawTerrainMesh(lid ID, graphics::TerrainMesh MESH,
+void DrawTerrainMesh(graphics::TerrainMesh MESH,
 	graphics::Texture TEXTURE_A, graphics::Texture TEXTURE_B,
 	graphics::Texture TEXTURE_C, graphics::Texture TEXTURE_D,
 	graphics::Texture TEXTURE_E, graphics::Texture TEXTURE_F,

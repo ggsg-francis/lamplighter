@@ -135,12 +135,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)\0BUILD_RELEASE\</OutDir>
     <IntDir>IntermediateGame\</IntDir>
-    <TargetName>tsoa</TargetName>
+    <TargetName>alchemist_nightmare</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NMP|x64'">
     <OutDir>$(SolutionDir)\0BUILD_RELEASE\</OutDir>
     <IntDir>IntermediateGame\</IntDir>
-    <TargetName>tsoa_LAN</TargetName>
+    <TargetName>alchemist_nightmare_LAN</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
