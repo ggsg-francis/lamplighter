@@ -1,17 +1,15 @@
 #include "input.h"
 #include "memory.hpp"
-#ifdef __cplusplus
-extern "C" {
-	#endif
-	#include <SDL2\SDL.h>
-	#ifdef __cplusplus
-}
-#endif
+#include <SDL2\SDL.h>
 #ifdef DEF_NMP
 #include "network.h"
 #endif // DEF_NMP
 
 #include "cfg.h"
+
+// Forward declaration of GUI function: GUI needs special treatment
+// in that it needs to be notified of keysyms and scancodes
+void GUIDirectKeyCallback(li32 sym, li32 scancode);
 
 #define JOY_AXIS_MAX ((li16)0b0111111111111111)
 #define JOY_AXIS_MIN ((li16)0b1000000000000000)
@@ -19,105 +17,10 @@ extern "C" {
 #define JOY_AXIS_THRESH_MIN ((li16)0b1111100000000000)
 #define JOY_AXIS_MAX_F 32768.f
 
+#define SCANCODE_COUNT 512
+
 namespace input
 {
-	namespace ki
-	{
-		char* scancodeNames[]
-		{
-			"Error",
-			"Escape",
-			"1",
-			"2",
-			"3",
-			"4",
-			"5",
-			"6",
-			"7",
-			"8",
-			"9",
-			"0",
-			"-",
-			"=",
-			"Backspace",
-			"Tab",
-			"Q",
-			"W",
-			"E",
-			"R",
-			"T",
-			"Y",
-			"U",
-			"I",
-			"O",
-			"P",
-			"[",
-			"]",
-			"Enter",
-			"Left Control",
-			"A",
-			"S",
-			"D",
-			"F",
-			"G",
-			"H",
-			"J",
-			"K",
-			"L",
-			";",
-			"'",
-			"`",
-			"Left Shift",
-			"'\'",
-			"Z",
-			"X",
-			"C",
-			"V",
-			"B",
-			"N",
-			"M",
-			",",
-			".",
-			"/",
-			"Right Shift",
-			"Print Screen",
-			"Left Alt",
-			"Space",
-			"Caps Lock",
-			"F1",
-			"F2",
-			"F3",
-			"F4",
-			"F5",
-			"F6",
-			"F7",
-			"F8",
-			"F9",
-			"F10",
-			"Num Lock",
-			"Scroll Lock",
-			"Numpad 7",
-			"Numpad 8",
-			"Numpad 9",
-			"Numpad -",
-			"Numpad 4",
-			"Numpad 5",
-			"Numpad 6",
-			"Numpad +",
-			"Numpad 1",
-			"Numpad 2",
-			"Numpad 3",
-			"Numpad 0",
-			"Numpad Del",
-			"Alt-SysRq",
-			"F11 or F12 or PF1 or FN", // 55
-			"Unlabeled Key",
-			"F11",
-			"F12",
-			"Unknown", // Everything at or past this point is not standard
-		};
-	}
-
 	enum enumJoyButton : lui8 {
 		JOY_FACE_A,
 		JOY_FACE_B,
@@ -141,77 +44,146 @@ namespace input
 		JOY_AXIS_COUNT,
 	};
 
-	key::Key2 ScancodeTransfer[512]{ key::NONE }; // uses lui8 to save space
-	key::Key2 JoyButtonTransfer[JOY_BUTTON_COUNT]{ key::NONE };
-	//key::Key2 JoyAxisTransfer[9]{ key::NONE };
+	static const char* inputNames[]{
+		"None",
+		//-------------------------------- KEYBOARD PLAYER INPUT
+		"Forwards",
+		"Backwards",
+		"Left",
+		"Right",
+		"Use",
+		"Use Alternate",
+		"Run",
+		"Crouch",
+		"Jump",
+		"Activate",
+		"Action A",
+		"Action B",
+		"Action C",
+		"Drop Item",
+		"Inventory Cycle L",
+		"Inventory Cycle R",
+		//-------------------------------- CONTROLLER PLAYER INPUT
+		"(P2) Forwards",
+		"(P2) Backwards",
+		"(P2) Left",
+		"(P2) Right",
+		"(P2) Use",
+		"(P2) Use Alternate",
+		"(P2) Run",
+		"(P2) Crouch",
+		"(P2) Jump",
+		"(P2) Activate",
+		"(P2) Action A",
+		"(P2) Action B",
+		"(P2) Action C",
+		"(P2) Drop Item",
+		"(P2) Inventory Cycle L",
+		"(P2) Inventory Cycle R",
+		//-------------------------------- UTILITY
+		"QUIT",
+		"FUNCTION_1",
+		"FUNCTION_2",
+		"FUNCTION_3",
+		"FUNCTION_4",
+		"FUNCTION_5",
+		"FUNCTION_6",
+		"FUNCTION_7",
+		"FUNCTION_8",
+		"FUNCTION_9",
+		"FUNCTION_10",
+		"FUNCTION_11",
+		"FUNCTION_12",
+	};
 
-	void Init()
-	{
-		if (!config.bEditMode) {
-			ScancodeTransfer[SDL_SCANCODE_ESCAPE] = key::QUIT;
-			ScancodeTransfer[SDL_SCANCODE_W] = key::DIR_F;
-			ScancodeTransfer[SDL_SCANCODE_S] = key::DIR_B;
-			ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
-			ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
-			ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
-			ScancodeTransfer[SDL_SCANCODE_LCTRL] = key::CROUCH;
-			ScancodeTransfer[SDL_SCANCODE_LALT] = key::CROUCH;
-			ScancodeTransfer[SDL_SCANCODE_C] = key::CROUCH;
-			ScancodeTransfer[SDL_SCANCODE_SPACE] = key::JUMP;
-			ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
-			ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
-			ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;
-			ScancodeTransfer[SDL_SCANCODE_3] = key::ACTION_C;
-			ScancodeTransfer[SDL_SCANCODE_F] = key::DROP_HELD;
-			ScancodeTransfer[SDL_SCANCODE_Z] = key::INV_CYCLE_L;
-			ScancodeTransfer[SDL_SCANCODE_X] = key::INV_CYCLE_R;
-			ScancodeTransfer[SDL_SCANCODE_F1] = key::FUNCTION_1;
-			ScancodeTransfer[SDL_SCANCODE_F2] = key::FUNCTION_2;
-			ScancodeTransfer[SDL_SCANCODE_F3] = key::FUNCTION_3;
-			ScancodeTransfer[SDL_SCANCODE_F4] = key::FUNCTION_4;
-			ScancodeTransfer[SDL_SCANCODE_F5] = key::FUNCTION_5;
-			ScancodeTransfer[SDL_SCANCODE_F6] = key::FUNCTION_6;
-			ScancodeTransfer[SDL_SCANCODE_F7] = key::FUNCTION_7;
-			ScancodeTransfer[SDL_SCANCODE_F8] = key::FUNCTION_8;
-			ScancodeTransfer[SDL_SCANCODE_F9] = key::FUNCTION_9;
-			ScancodeTransfer[SDL_SCANCODE_F10] = key::FUNCTION_10;
-			ScancodeTransfer[SDL_SCANCODE_F11] = key::FUNCTION_11;
-			ScancodeTransfer[SDL_SCANCODE_F12] = key::FUNCTION_12;
+	key::InputBit ScancodeTransfer[SCANCODE_COUNT]{ key::NONE }; // uses lui8 to save space
+	key::InputBit JoyButtonTransfer[JOY_BUTTON_COUNT]{ key::NONE };
+	//key::Key2 JoyAxisTransfer[JOY_AXIS_COUNT]{ key::NONE };
 
-			JoyButtonTransfer[JOY_BUMPER_L] = key::C_RUN;
-			JoyButtonTransfer[JOY_BUMPER_R] = key::C_JUMP;
-			JoyButtonTransfer[JOY_FACE_A] = key::C_ACTIVATE;
-			JoyButtonTransfer[JOY_FACE_B] = key::C_USE_ALT;
-			JoyButtonTransfer[JOY_STICK_R] = key::C_CROUCH;
+	void Init() {
+		ResetKeyBindings();
+		LoadFile(); // Attempt to load previous settings
+	}
+	char* GetScancodeName(lui32 scancode) {
+		return (char*)SDL_GetScancodeName((SDL_Scancode)scancode);
+	}
+	char* GetInputName(key::InputBit input) {
+		return (char*)inputNames[input];
+	}
+	void ResetKeyBindings() {
+		// Reset
+		for (int i = 0; i < SCANCODE_COUNT; ++i)
+			ScancodeTransfer[i] = key::NONE;
+		for (int i = 0; i < JOY_BUTTON_COUNT; ++i)
+			JoyButtonTransfer[i] = key::NONE;
+		// Set default values
+		ScancodeTransfer[SDL_SCANCODE_ESCAPE] = key::QUIT;
+		ScancodeTransfer[SDL_SCANCODE_W] = key::DIR_F;
+		ScancodeTransfer[SDL_SCANCODE_S] = key::DIR_B;
+		ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
+		ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
+		ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
+		ScancodeTransfer[SDL_SCANCODE_LCTRL] = key::CROUCH;
+		ScancodeTransfer[SDL_SCANCODE_LALT] = key::CROUCH;
+		ScancodeTransfer[SDL_SCANCODE_C] = key::CROUCH;
+		ScancodeTransfer[SDL_SCANCODE_SPACE] = key::JUMP;
+		ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
+		ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
+		ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;
+		ScancodeTransfer[SDL_SCANCODE_3] = key::ACTION_C;
+		ScancodeTransfer[SDL_SCANCODE_F] = key::DROP_HELD;
+		ScancodeTransfer[SDL_SCANCODE_Z] = key::INV_CYCLE_L;
+		ScancodeTransfer[SDL_SCANCODE_X] = key::INV_CYCLE_R;
+		ScancodeTransfer[SDL_SCANCODE_F1] = key::FUNCTION_1;
+		ScancodeTransfer[SDL_SCANCODE_F2] = key::FUNCTION_2;
+		ScancodeTransfer[SDL_SCANCODE_F3] = key::FUNCTION_3;
+		ScancodeTransfer[SDL_SCANCODE_F4] = key::FUNCTION_4;
+		ScancodeTransfer[SDL_SCANCODE_F5] = key::FUNCTION_5;
+		ScancodeTransfer[SDL_SCANCODE_F6] = key::FUNCTION_6;
+		ScancodeTransfer[SDL_SCANCODE_F7] = key::FUNCTION_7;
+		ScancodeTransfer[SDL_SCANCODE_F8] = key::FUNCTION_8;
+		ScancodeTransfer[SDL_SCANCODE_F9] = key::FUNCTION_9;
+		ScancodeTransfer[SDL_SCANCODE_F10] = key::FUNCTION_10;
+		ScancodeTransfer[SDL_SCANCODE_F11] = key::FUNCTION_11;
+		ScancodeTransfer[SDL_SCANCODE_F12] = key::FUNCTION_12;
+
+		JoyButtonTransfer[JOY_BUMPER_L] = key::C_RUN;
+		JoyButtonTransfer[JOY_BUMPER_R] = key::C_JUMP;
+		JoyButtonTransfer[JOY_FACE_A] = key::C_ACTIVATE;
+		JoyButtonTransfer[JOY_FACE_B] = key::C_USE_ALT;
+		JoyButtonTransfer[JOY_STICK_R] = key::C_CROUCH;
+	}
+	void BindKeyToInput(lui32 scancode, key::InputBit input) {
+		// can't rebind escape key
+		if (scancode != SDL_SCANCODE_ESCAPE) {
+			// Unset all other scancodes from this input
+			for (int i = 0; i < SCANCODE_COUNT; ++i) {
+				if (ScancodeTransfer[i] == input) {
+					ScancodeTransfer[i] = key::NONE;
+				}
+			}
+			// Set this scancode
+			ScancodeTransfer[scancode] = input;
 		}
-		else {
-			ScancodeTransfer[SDL_SCANCODE_ESCAPE] = key::QUIT;
-			ScancodeTransfer[SDL_SCANCODE_W] = key::DIR_F;
-			ScancodeTransfer[SDL_SCANCODE_S] = key::DIR_B;
-			ScancodeTransfer[SDL_SCANCODE_D] = key::DIR_R;
-			ScancodeTransfer[SDL_SCANCODE_A] = key::DIR_L;
-			ScancodeTransfer[SDL_SCANCODE_LSHIFT] = key::RUN;
-			ScancodeTransfer[SDL_SCANCODE_LALT] = key::CROUCH;
-			ScancodeTransfer[SDL_SCANCODE_SPACE] = key::JUMP;
-			ScancodeTransfer[SDL_SCANCODE_E] = key::ACTIVATE;
-			ScancodeTransfer[SDL_SCANCODE_1] = key::ACTION_A;
-			ScancodeTransfer[SDL_SCANCODE_2] = key::ACTION_B;
-			ScancodeTransfer[SDL_SCANCODE_3] = key::ACTION_C;
-			ScancodeTransfer[SDL_SCANCODE_R] = key::DROP_HELD;
-			ScancodeTransfer[SDL_SCANCODE_Z] = key::INV_CYCLE_L;
-			ScancodeTransfer[SDL_SCANCODE_X] = key::INV_CYCLE_R;
-			ScancodeTransfer[SDL_SCANCODE_F1] = key::FUNCTION_1;
-			ScancodeTransfer[SDL_SCANCODE_F2] = key::FUNCTION_2;
-			ScancodeTransfer[SDL_SCANCODE_F3] = key::FUNCTION_3;
-			ScancodeTransfer[SDL_SCANCODE_F4] = key::FUNCTION_4;
-			ScancodeTransfer[SDL_SCANCODE_F5] = key::FUNCTION_5;
-			ScancodeTransfer[SDL_SCANCODE_F6] = key::FUNCTION_6;
-			ScancodeTransfer[SDL_SCANCODE_F7] = key::FUNCTION_7;
-			ScancodeTransfer[SDL_SCANCODE_F8] = key::FUNCTION_8;
-			ScancodeTransfer[SDL_SCANCODE_F9] = key::FUNCTION_9;
-			ScancodeTransfer[SDL_SCANCODE_F10] = key::FUNCTION_10;
-			ScancodeTransfer[SDL_SCANCODE_F11] = key::FUNCTION_11;
-			ScancodeTransfer[SDL_SCANCODE_F12] = key::FUNCTION_12;
+	}
+	void SaveFile() {
+		FILE* file = fopen(INPUT_FILENAME, "wb");
+		if (file) {
+			lui64 version = 0u;
+			fwrite(&version, 8, 1, file);
+			fwrite(ScancodeTransfer, SCANCODE_COUNT, 1, file);
+			fwrite(JoyButtonTransfer, JOY_BUTTON_COUNT, 1, file);
+			fclose(file);
+		}
+	}
+	void LoadFile() {
+		FILE* file = fopen(INPUT_FILENAME, "rb");
+		if (file) {
+			lui64 version = 0u;
+			fread(&version, 8, 1, file);
+			fread(ScancodeTransfer, SCANCODE_COUNT, 1, file);
+			fread(JoyButtonTransfer, JOY_BUTTON_COUNT, 1, file);
+			fclose(file);
 		}
 	}
 
@@ -230,6 +202,8 @@ namespace input
 		case SDL_KEYDOWN:
 			if (e.key.repeat == 0 && ScancodeTransfer[e.key.keysym.scancode] != key::NONE)
 				Set(ScancodeTransfer[e.key.keysym.scancode]);
+			// Notify GUI of this input
+			GUIDirectKeyCallback(e.key.keysym.sym, e.key.keysym.scancode);
 			break;
 		case SDL_KEYUP:
 			if (e.key.repeat == 0 && ScancodeTransfer[e.key.keysym.scancode] != key::NONE)
@@ -333,27 +307,27 @@ namespace input
 		return mem::bvget<lui64>(input_buffer[index].keyBitsHit, (lui64)1u << (lui64)i);
 	}
 	#endif
-	bool GetHeld(key::Key2 i) {
+	bool GetHeld(key::InputBit i) {
 		return mem::bvget<lui64>(BUF_LOCALGET.keyBitsHeld, (lui64)1u << (lui64)i);
 	}
-	bool GetHit(key::Key2 i) {
+	bool GetHit(key::InputBit i) {
 		return mem::bvget<lui64>(BUF_LOCALGET.keyBitsHit, (lui64)1u << (lui64)i);
 	}
 	bool GetAnyHit() {
 		return mem::bvget<lui64>(BUF_LOCALGET.keyBitsHit, (lui64)0b1111111111111111111111111111111111111111111111111111111111111111);
 	}
-	void Set(key::Key2 i) {
+	void Set(key::InputBit i) {
 		mem::bvset<lui64>(BUF_LOCALSET.keyBitsHeld, (lui64)1u << (lui64)i);
 		mem::bvset<lui64>(BUF_LOCALSET.keyBitsHit, (lui64)1u << (lui64)i);
 	}
-	void Unset(key::Key2 i) {
+	void Unset(key::InputBit i) {
 		mem::bvunset<lui64>(BUF_LOCALSET.keyBitsHeld, (lui64)1u << (lui64)i);
 	}
-	void SetTo(key::Key2 i, bool b) {
+	void SetTo(key::InputBit i, bool b) {
 		mem::bvsetto<lui64>(BUF_LOCALSET.keyBitsHeld, (lui64)1u << (lui64)i, b);
 		mem::bvsetto<lui64>(BUF_LOCALSET.keyBitsHit, (lui64)1u << (lui64)i, b);
 	}
-	void SetHit(key::Key2 i) {
+	void SetHit(key::InputBit i) {
 		mem::bvset<lui64>(BUF_LOCALSET.keyBitsHit, (lui64)1u << (lui64)i);
 	}
 }

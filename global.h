@@ -14,8 +14,8 @@
 #define DEF_V_NMP 0
 #endif
 // Release version
-#define VERSION_MAJOR 23u // Major version should be incremented any time save compatibility is broken
-#define VERSION_MINOR 3 // Minor version should be incremented for every new release
+#define VERSION_MAJOR 24u // Major version should be incremented any time save compatibility is broken
+#define VERSION_MINOR 1u // Minor version should be incremented for every new release
 // This version number basically says which game this is
 #define VERSION_PROJECT (\
 DEF_PROJECT |\
@@ -31,8 +31,6 @@ DEF_PROJECT |\
 (DEF_SPAWN_ON_INIT << 17u) |\
 (DEF_SPAWN_NPC << 18u)\
 )
-
-#define DEF_USE_CS // Use cute sound
 
 #ifdef DEF_NMP
 #define NUM_PLAYERS 4 // danger zone
@@ -71,12 +69,14 @@ DEF_PROJECT |\
 #define SCREEN_POSTPROCESS_DOWNSAMPLE_DIVISION 4
 
 #define MD_MATRIX_COUNT 4u
+#define MESHSET_MAX_COUNT 64
 
 #define ARCHIVE_FILENAME "_ARCHIVE"
 #define ARCHIVE_DATA_FILENAME "_ARCHIVE_DATA"
 #define ARCHIVE_C_FILENAME "../archive_data.h"
 #define WORLD_FILENAME "_WORLD"
 #define ARCHIVE_MAX_LOADED_DATA 0b00000010000000000000000000000000
+#define INPUT_FILENAME "_INPUT"
 
 // Buffer / ID definitions
 #define BUF_SIZE 512

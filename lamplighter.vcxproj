@@ -279,6 +279,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="3rdparty\stb_vorbis.c" />
     <ClCompile Include="animation.cpp" />
     <ClCompile Include="archive_read_write.cpp" />
     <ClCompile Include="core_save_load.cpp" />
@@ -312,6 +313,7 @@
     <ClInclude Include="3rdparty\cute_c2.h" />
     <ClInclude Include="3rdparty\cute_sound.h" />
     <ClInclude Include="3rdparty\miniaudio.h" />
+    <ClInclude Include="3rdparty\stb_vorbis.h" />
     <ClInclude Include="animation.h" />
     <ClInclude Include="archive_read_write.h" />
     <ClInclude Include="core_save_load.h" />

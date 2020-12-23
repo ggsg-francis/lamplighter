@@ -2,6 +2,7 @@
 #define ARCHIVE_H
 
 #include "graphics.hpp"
+#include "maths.hpp"
 
 //#ifndef DEF_ARCHIVER
 
@@ -251,6 +252,12 @@ namespace acv
 		lui32 type;
 	};
 
+	struct AnimationRecord {
+		m::Vector3 p[MESHSET_MAX_COUNT];
+		m::Quaternion r[MESHSET_MAX_COUNT];
+		lui32 frameCount;
+	};
+
 	//items (also make inaccessable)
 	extern ItemRecord* items[ITEM_RECORD_COUNT];
 	extern ItemType item_types[ITEM_RECORD_COUNT];
@@ -270,6 +277,8 @@ namespace acv
 
 	extern ActivatorRecord activators[ACTIVATOR_RECORD_COUNT];
 	extern lui32 activator_index;
+
+	extern AnimationRecord animation;
 }
 
 #endif

@@ -46,30 +46,12 @@ struct ECActor : public ECCommon
 	Inventory inventory;
 	lui32 inv_active_slot = 0u;
 
-	Transform3D t_body, t_head;
-	m::Vector3 fpCurrentL, fpCurrentR;
-	m::Vector3 fpCurrentL_vel, fpCurrentR_vel;
-	m::Vector3 fpCurrentL_targ, fpCurrentR_targ;
-	AnimPlayerVec3 ap_fpCurrentL, ap_fpCurrentR;
-	
-	lf32 aniStandHeight;
-	lf32 aniStandHeight_vel;
-	lf32 aniStandHeight_targ;
-	lf32 aniHeadHeight;
-	lf32 aniHeadHeight_vel;
-	lf32 aniHeadHeight_targ;
-	AnimPlayerVec3 ap_StandHeight;
-	
-	lf32 aniSlideResponse = 0.f;
+	lf32 aniAnimstate;
+	AnimPlayer aniAnimPlayer;
 
-	m::Vector3 handPosR;
-	m::Vector3 handPosR_vel;
-	m::Vector3 handPosR_targ;
-	AnimPlayerVec3 ap_HandPosR;
-	m::Vector3 handPosL;
-	m::Vector3 handPosL_vel;
-	m::Vector3 handPosL_targ; 
-	AnimPlayerVec3 ap_HandPosL;
+	lf32 aniStandHeight; // temp
+
+	Transform3D t_body, t_head;
 
 	path::Path ai_path;
 	lui64 ai_timer = 0u;

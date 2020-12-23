@@ -167,11 +167,8 @@ void SaveState()
 					fwrite(&actptr->animationBV, SIZE_8, 1, file);
 					fwrite(&actptr->t_body, sizeof(Transform3D), 1, file);
 					fwrite(&actptr->t_head, sizeof(Transform3D), 1, file);
-					fwrite(&actptr->fpCurrentL, sizeof(m::Vector3), 1, file);
-					fwrite(&actptr->fpCurrentR, sizeof(m::Vector3), 1, file);
 					fwrite(&actptr->aniStandHeight, SIZE_32, 1, file);
 					fwrite(&actptr->aniCrouch, SIZE_8, 1, file);
-					fwrite(&actptr->aniSlideResponse, SIZE_32, 1, file);
 					fwrite(&actptr->aniRun, SIZE_8, 1, file);
 					fwrite(&actptr->aniHandHoldTarget, SIZE_64, 1, file);
 					fwrite(&actptr->ai_target_ent, SIZE_64, 1, file);
@@ -344,11 +341,8 @@ void LoadStateFileV001()
 					fread(&actptr->animationBV, SIZE_8, 1, file);
 					fread(&actptr->t_body, sizeof(Transform3D), 1, file);
 					fread(&actptr->t_head, sizeof(Transform3D), 1, file);
-					fread(&actptr->fpCurrentL, sizeof(m::Vector3), 1, file);
-					fread(&actptr->fpCurrentR, sizeof(m::Vector3), 1, file);
 					fread(&actptr->aniStandHeight, SIZE_32, 1, file);
 					fread(&actptr->aniCrouch, SIZE_8, 1, file);
-					fread(&actptr->aniSlideResponse, SIZE_32, 1, file);
 					fread(&actptr->aniRun, SIZE_8, 1, file);
 					fread(&actptr->aniHandHoldTarget, SIZE_64, 1, file);
 					fread(&actptr->ai_target_ent, SIZE_64, 1, file);

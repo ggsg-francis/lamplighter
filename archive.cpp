@@ -34,6 +34,8 @@ namespace acv
 	ActivatorRecord activators[ACTIVATOR_RECORD_COUNT];
 	lui32 activator_index = 0u;
 
+	AnimationRecord animation;
+
 	// Assets
 
 	mem::Lump<AssetType, ASSET_NONE, FN_COUNT, ARCHIVE_MAX_LOADED_DATA>* assetLump;

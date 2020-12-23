@@ -203,20 +203,12 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
 		shadow += GetShadowBilinear(projCoords + vec3(offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, offsetamtdiag, 0.f), tsize, texelSize);
 		shadow += GetShadowBilinear(projCoords + vec3(-offsetamtdiag, -offsetamtdiag, 0.f), tsize, texelSize);
-		if (shadow < 3.5f && shadow > 0.5f)
-		{
-			shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			shadow /= 9;
-		}
-		else
-		{
-			shadow += GetShadowBilinear(projCoords, tsize, texelSize);
-			shadow /= 5;
-		}
+		shadow += GetShadowBilinear(projCoords + vec3(offsetamt, 0.f, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(0.f, offsetamt, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(-offsetamt, 0.f, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords + vec3(0.f, -offsetamt, 0.f), tsize, texelSize);
+		shadow += GetShadowBilinear(projCoords, tsize, texelSize);
+		shadow /= 9.f;
 
 		// Blend into clip distance
 		shadow += 1 - clamp((12.f - length(Pos - pcam)) / 6.f, 0, 1);
@@ -224,7 +216,8 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
 	else shadow = 1.f;
 	//else shadow = 0.f; // For debugging
 
-	return shadow;
+	//return shadow;
+	return clamp(shadow, 0.f, 1.f); // This clamp should not be necessary
 }
 )"
 
@@ -1279,7 +1272,8 @@ void main() {
 
 	vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
 
-	float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
+	//float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
+	float shadow = ShadowCalculation(LightSpacePos);
 
 	FragColor.rgb *= LC * (shadow * 0.4f + 0.6f);
 
@@ -1293,10 +1287,11 @@ void main() {
 	float fog_mix_half = clamp((length((Pos.xz - pcam.xz) * fFogDens) - fog_start) * 0.5f, 0.f, 1.f);
 	FragColor.rgb = mix(FragColor.rgb, cFog, mix(fog_mix, fog_mix_half, Col.g));
 
-
+	/*
 	FragColor.rgb = cSun * (clamp(ndl * shadow, 0.f, 1.f));
 	FragColor.rgb += cAmb * (1 - (clamp(ndl * shadow, 0.f, 1.f)));
 	FragColor.rgb *= texture(texture_diffuse1, TexCoords).rgb;
+	*/
 }
 )"
 
@@ -1345,10 +1340,10 @@ void main() {
 	vec3 skycol = vec3(0.0,0.0,0.0);
 	vec3 litcol = vec3(1.5f,1.5f,1.5f);
 	
-	float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
+	//float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
 	//float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened
 	//float shadow = clamp(round(ShadowCalculation(LightSpacePos)), 0.f, 1.f); // Rounded
-	//float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
+	float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
 	
 	FragColor.rgb *= LC * (shadow * 0.4f + 0.6f);
 
@@ -1364,6 +1359,8 @@ void main() {
 
 	FragColor.a = txtr.a;
 
+	
+	/*
 	// toon
 	FragColor.rgb = cSun * (ceil(ndl * shadow));
 	FragColor.rgb += cAmb * (1 - (ceil(ndl * shadow)));
@@ -1372,6 +1369,7 @@ void main() {
 	//FragColor.rgb += cAmb * (1 - (clamp((ndl * 2.f) * shadow, 0.f, 1.f)));
 
 	FragColor.rgb *= c_a * txtr.r + c_b * txtr.g + c_c * txtr.b;
+	*/
 }
 )"
 
@@ -1428,10 +1426,10 @@ void main() {
 		vec3 litcol = texture(ts, vec2(ft, 29.5f / 32.f)).rgb * 4.f;
 
 
-		float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
+		//float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
 		//float shadow = clamp(ShadowCalculation(LightSpacePos) * 3.f - 1.5f, 0.f, 1.f); // Sharpened
 		//float shadow = clamp(round(ShadowCalculation(LightSpacePos) - 0.25), 0.f, 1.f); // Rounded
-		//float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
+		float shadow = ShadowCalculation(LightSpacePos); // Not Sharpened
 
 		//FragColor.rgb = vec3(shadow_heightmap.g); // test
 
@@ -1536,7 +1534,8 @@ void main() {
 
 	vec4 heightmap = texture(thm, vec2(-Pos.z + 0.5f, Pos.x + 0.5f) / 2048.f);
 
-	float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
+	//float shadow = clamp(ShadowCalculation(LightSpacePos) * 2.f - 0.5f, 0.f, 1.f); // Sharpened
+	float shadow = ShadowCalculation(LightSpacePos);
 
 	FragColor.rgb *= LC * (shadow * 0.4f + 0.6f);
 

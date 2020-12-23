@@ -73,6 +73,11 @@ void(*fpDraw[ENTITY_TYPE_COUNT])(LtrID, void*);
 
 char* EntityName(lui32 index) {
 	LtrID id = eb->GetID(index);
+	#ifdef _DEBUG
+	EntityType t = GetEntityType(index);
+	if (!GetEntityExists(id))
+		int breakkk = 0;
+	#endif
 	return fpName[GetEntityType(index)](ENT_VOID(id));
 }
 void EntityTick(lui32 index, lf32 dt) {

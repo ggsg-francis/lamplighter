@@ -52,7 +52,7 @@ extern "C" {
 		vec3 nor_a; // Normal A
 		vec3 nor_b; // Normal B
 		vec2 uvc; // UV Coords (TexCoords)
-		vec4 col; // Vertex Colour
+		vec4 col; // Vertex Colour (TODO: unusable due to OBJ limitations anyway)
 	} VertexBlend;
 
 	// Vertex structure used for a rigged mesh

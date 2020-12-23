@@ -515,7 +515,6 @@ bool MainInit()
 	#endif
 
 	acv::Init();
-	#ifdef DEF_USE_CS
 	#ifdef WIN32
 	{ // (these variables not needed elsewhere)
 		SDL_SysWMinfo wmInfo;
@@ -524,9 +523,6 @@ bool MainInit()
 		HWND hwnd = wmInfo.info.win.window;
 		aud::Init(hwnd);
 	}
-	#else
-	aud::Init(nullptr);
-	#endif
 	#else
 	aud::Init(nullptr);
 	#endif
@@ -542,15 +538,16 @@ enum LoopMode {
 	MODE_MAIN_MENU,
 	MODE_GAME,
 	MODE_EDITOR,
+	MODE_CONFIG,
 };
 
 #include "gui.h"
-void Callback1(void* data) {
+void Callback1(void* data, void* buttondata) {
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Avertissement",
 		"No options", sdl_window);
 }
 // looks like they should just be the same function
-void CbMMPlay(void* data) {
+void Cb_Play(void* data, void* buttondata) {
 	#ifdef _DEBUG
 	config.bSplitScreen = false;
 	//graphics::SetSplitScreen(false);
@@ -558,7 +555,7 @@ void CbMMPlay(void* data) {
 	#endif
 	*((bool*)data) = true;
 }
-void CbMMPlaySS(void* data) {
+void Cb_PlaySS(void* data, void* buttondata) {
 	#ifdef _DEBUG
 	config.bSplitScreen = true;
 	//graphics::SetSplitScreen(true);
@@ -566,11 +563,11 @@ void CbMMPlaySS(void* data) {
 	#endif
 	*((bool*)data) = true;
 }
-void CbMMDelSave(void* data) {
+void Cb_DelSave(void* data, void* buttondata) {
 	remove("save/save.bin");
 	aud::PlaySnd(aud::FILE_HEY_SPECTRAL);
 }
-void CbMMExit(void* data) {
+void Cb_SetBool(void* data, void* buttondata) {
 	*((bool*)data) = true;
 }
 LoopMode LoopMainMenu() {
@@ -586,22 +583,23 @@ LoopMode LoopMainMenu() {
 
 	bool play = false;
 	bool exit = false;
+	bool goconfig = false;
 
 	int buttonW = 74;
 	int buttonPY = 32;
-	GUIAddButton(&CbMMPlay, &play, "Play", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
+	GUIAddButton(eGUI_BUTTON, &Cb_Play, &play, "Play", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
 	buttonPY -= 32;
 	#ifdef _DEBUG
 	if (controllerFound) {
-		GUIAddButton(&CbMMPlaySS, &play, "Play Splitscreen", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
+		GUIAddButton(eGUI_BUTTON, &Cb_PlaySS, &play, "Play Splitscreen", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
 		buttonPY -= 32;
 	}
 	#endif
-	GUIAddButton(&CbMMDelSave, nullptr, "Delete Save", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
+	GUIAddButton(eGUI_BUTTON, &Cb_DelSave, nullptr, "Delete Save", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
 	buttonPY -= 32;
-	GUIAddButton(&Callback1, nullptr, "Options", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
+	GUIAddButton(eGUI_BUTTON, &Cb_SetBool, &goconfig, "Options (WIP)", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
 	buttonPY -= 32;
-	GUIAddButton(&CbMMExit, &exit, "Quit", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
+	GUIAddButton(eGUI_BUTTON, &Cb_SetBool, &exit, "Quit", acv::t_gui_box, -buttonW, buttonW, buttonPY, buttonPY + 24);
 
 	GUIUpdatNeighbors();
 
@@ -638,8 +636,9 @@ Font scavenged from Aesomatica's tileset for Dwarf Fortress, and modified by me 
 
 		TickInput(&sdl_event);
 
-		if (exit) goto end;
+		if (exit || input::GetHit(input::key::QUIT)) goto end;
 		if (play) goto endtogame;
+		if (goconfig) goto endtoconfig;
 		
 		// Draw bg
 		graphics::DrawGUITexture(&acv::GetT(acv::t_guide), 0, 0, config.iWinX, config.iWinY, 1.f);
@@ -655,6 +654,10 @@ Font scavenged from Aesomatica's tileset for Dwarf Fortress, and modified by me 
 		SDL_GL_SwapWindow(sdl_window);
 	}
 
+endtoconfig:
+	GUIClear();
+	credits.End();
+	return MODE_CONFIG;
 endtogame:
 	GUIClear();
 	credits.End();
@@ -663,6 +666,89 @@ end:
 	GUIClear();
 	credits.End();
 	return MODE_EXIT;
+}
+
+void Cb_SetInput(void* data, void* buttondata) {
+	input::key::InputBit bit = *(input::key::InputBit*)data;
+	lui32 scancode = *(lui32*)buttondata;
+	input::BindKeyToInput(scancode, bit);
+}
+void Cb_ReSetInput(void* data, void* buttondata) {
+	input::ResetKeyBindings();
+}
+void Cb_SaveInput(void* data, void* buttondata) {
+	input::SaveFile();
+}
+LoopMode LoopConfig() {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+	graphics::SetGUIFrameSize(config.iWinX, config.iWinY);
+	graphics::SetFrontFace();
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	lf64 current_frame_time = 0.f;
+	lf64 next_frame_time = 0.f;
+
+	bool gotomenu = false;
+
+	// Im really stupid
+	input::key::InputBit bit2[input::key::KEY_COUNT];
+
+	int bnewx = -((li32)config.iWinX / 2) + 12;
+	int bnewy = 128;
+	GUIAddButton(eGUI_BUTTON, &Cb_SetBool, &gotomenu, "Return to Menu", acv::t_gui_box, bnewx, bnewx + 148, bnewy, bnewy + 24);
+	bnewx += 148 + 8;
+	GUIAddButton(eGUI_BUTTON, &Cb_SaveInput, nullptr, "Save Changes", acv::t_gui_box, bnewx, bnewx + 148, bnewy, bnewy + 24);
+	bnewx += 148 + 8;
+	GUIAddButton(eGUI_BUTTON, &Cb_ReSetInput, nullptr, "Reset to Default", acv::t_gui_box, bnewx, bnewx + 148, bnewy, bnewy + 24);
+	for (int i = 0; i < input::key::KEY_COUNT; ++i) {
+		if (i % 4 == 0) {
+			bnewx = -((li32)config.iWinX / 2) + 12;
+			bnewy -= 24 + 8;
+		}
+		else
+			bnewx += 182 + 8;
+		bit2[i] = (input::key::InputBit)i;
+		char test[128];
+		snprintf(test, 128, "[%s]", input::GetInputName(bit2[i]));
+		GUIAddButton(eGUI_BUTTON_GETKEY, &Cb_SetInput, &bit2[i], test, acv::t_gui_box, bnewx, bnewx + 182, bnewy, bnewy + 24);
+	}
+
+	GUIUpdatNeighbors();
+
+	while (true) {
+		#ifdef DEF_SMOOTH_FRAMERATE
+		// Wait until the exact right time to run a new frame
+		while (current_frame_time <= next_frame_time)
+			current_frame_time = (lf64)SDL_GetTicks() / 1000.;
+		next_frame_time = current_frame_time + FRAME_TIME;
+		#else
+		// Just run the new frame now
+		current_frame_time = (lf64)SDL_GetTicks() / 1000.;
+		next_frame_time = current_frame_time + FRAME_TIME;
+		Time::Update(current_frame_time);
+		#endif
+
+		// Run the frame
+		aud::Update(FRAME_TIME);
+
+		TickInput(&sdl_event);
+
+		if (gotomenu || input::GetHit(input::key::QUIT)) break;
+
+		// Draw bg
+		graphics::DrawGUITexture(&acv::GetT(acv::t_terrain_02), 0, 0, config.iWinX, config.iWinY, 1.f);
+
+		GUITick();
+		GUIDraw();
+
+		// Swap buffers
+		SDL_GL_SwapWindow(sdl_window);
+	}
+
+	GUIClear();
+	return MODE_MAIN_MENU;
 }
 
 LoopMode LoopGame() {
@@ -919,6 +1005,9 @@ loop:
 	case MODE_EDITOR:
 		core::InitEditMode();
 		loop_mode = LoopEditor();
+		break;
+	case MODE_CONFIG:
+		loop_mode = LoopConfig();
 		break;
 	}
 	// Go back and re-enter a new loop

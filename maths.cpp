@@ -66,12 +66,37 @@ namespace m
 	//-------------------------------- QUATERNION OPERATOR
 
 	Quaternion Quaternion::operator*(const Quaternion& q) {
-		return Quaternion
-		(
+		return Quaternion(
 			w * q.x + x * q.w + y * q.z - z * q.y, // XX
 			w * q.y - x * q.z + y * q.w + z * q.x, // YY
 			w * q.z + x * q.y - y * q.x + z * q.w, // ZZ
 			w * q.w - x * q.x - y * q.y - z * q.z  // WW
+		);
+	}
+	Quaternion Quaternion::operator*(lf32 f) {
+		return Quaternion(
+			w * f + x * f + y * f - z * f, // XX
+			w * f - x * f + y * f + z * f, // YY
+			w * f + x * f - y * f + z * f, // ZZ
+			w * f - x * f - y * f - z * f  // WW
+		);
+	}
+
+	Quaternion operator*(const lf32 f, const Quaternion& q) {
+		return Quaternion(
+			q.w * f + q.x * f + q.y * f - q.z * f, // XX
+			q.w * f - q.x * f + q.y * f + q.z * f, // YY
+			q.w * f + q.x * f - q.y * f + q.z * f, // ZZ
+			q.w * f - q.x * f - q.y * f - q.z * f  // WW
+		);
+	}
+	Quaternion operator+(const Quaternion & a, const Quaternion & b)
+	{
+		return Quaternion(
+			a.w + b.x + a.x + b.w + a.y + b.z - a.z + b.y, // XX
+			a.w + b.y - a.x + b.z + a.y + b.w + a.z + b.x, // YY
+			a.w + b.z + a.x + b.y - a.y + b.x + a.z + b.w, // ZZ
+			a.w + b.w - a.x + b.x - a.y + b.y - a.z + b.z  // WW
 		);
 	}
 
@@ -108,6 +133,37 @@ namespace m
 	}
 	Vector3 Lerp(Vector3 a, Vector3 b, lf32 t) {
 		return a * (1 - t) + b * t;
+	}
+
+	// Mostly taken from glm
+	Quaternion SLerp(Quaternion quat_a, Quaternion quat_b, lf32 t) {
+		Quaternion z = quat_b;
+
+		lf32 cosTheta = Dot(quat_a, quat_b);
+
+		// If cosTheta < 0, the interpolation will take the long way around the sphere.
+		// To fix this, one quat must be negated.
+		if (cosTheta < 0.f) {
+			z = quat_b * -1.f;
+			cosTheta = -cosTheta;
+		}
+
+		// Perform a linear interpolation when cosTheta is close to 1 to avoid side effect of sin(angle) becoming a zero denominator
+		if (cosTheta > 1.f - std::numeric_limits<lf32>::epsilon()) {
+			// Linear interpolation
+			return Quaternion(
+				Lerp(quat_a.w, z.w, t),
+				Lerp(quat_a.x, z.x, t),
+				Lerp(quat_a.y, z.y, t),
+				Lerp(quat_a.z, z.z, t));
+		}
+		else
+		{
+			// Essential Mathematics, page 467
+			lf32 angle = acos(cosTheta);
+			//return (sin((1.f - t) * angle) * quat_a + sin(t * angle) * z) / sin(angle);
+			return Quaternion(); // TODO: unfinished
+		}
 	}
 
 	//-------------------------------- SPRING DAMPER

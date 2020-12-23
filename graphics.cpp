@@ -153,7 +153,7 @@ namespace graphics
 		8,	/*0*/	8,	/*1*/	8,	/*2*/	8,	/*3*/	8,	/*4*/	8,	/*5*/	8,	/*6*/	8,	/*7*/
 		8,	/*8*/	8,	/*9*/	6,	/* */	10,	/* */	10,	/* */	10,	/* */	10,	/* */	10,	/* */
 		10,	/* */	10,	/*A*/	10,	/*B*/	10,	/*C*/	10,	/*D*/	10,	/*E*/	10,	/*F*/	10,	/*G*/
-		10,	/*H*/	3,	/*I*/	5,	/*J*/	10,	/*K*/	10,	/*L*/	13,	/*M*/	10,	/*N*/	10,	/*O*/
+		10,	/*H*/	5,	/*I*/	5,	/*J*/	10,	/*K*/	10,	/*L*/	13,	/*M*/	10,	/*N*/	10,	/*O*/
 		10,	/* */	10,	/*Q*/	10,	/*R*/	10,	/*S*/	9,	/*T*/	10,	/*U*/	10,	/*V*/	13,	/*W*/
 		10,	/*X*/	10,	/*Y*/	10,	/*Z*/	10,	/* */	10,	/* */	10,	/* */	10,	/* */	10,	/* */
 		8,	/* */	8,	/*a*/	8,	/*b*/	8,	/*c*/	8,	/*d*/	8,	/*e*/	8,	/*f*/	8,	/*g*/
@@ -1267,7 +1267,11 @@ namespace graphics
 
 		FILE* in = (FILE*)file;
 
+		#if DEF_MESHSET_BLEND
+		VertexBlend* vces[MESHSET_MAX_COUNT]; // Vertices
+		#else
 		Vertex* vces[MESHSET_MAX_COUNT]; // Vertices
+		#endif
 		lui32 vces_size;
 		lui32* ices; // Indices
 		//lui32 ices_size;
@@ -1285,7 +1289,11 @@ namespace graphics
 					fread(&ices_size, 4, 1, in);
 					fread(&vces_size, 4, 1, in);
 
+					#if DEF_MESHSET_BLEND
+					vces[count] = (VertexBlend*)malloc(sizeof(VertexBlend) * vces_size); // Allocate buffer to hold our vertices
+					#else
 					vces[count] = (Vertex*)malloc(sizeof(Vertex) * vces_size); // Allocate buffer to hold our vertices
+					#endif
 					ices = (lui32*)malloc(sizeof(lui32) * ices_size); // Allocate buffer to hold our indicess
 
 					// read other stuff
@@ -1298,14 +1306,23 @@ namespace graphics
 					}
 				}
 				else {
+					#if DEF_MESHSET_BLEND
+					vces[count] = (VertexBlend*)malloc(sizeof(VertexBlend) * vces_size); // Allocate buffer to hold our vertices
+					#else
 					vces[count] = (Vertex*)malloc(sizeof(Vertex) * vces_size); // Allocate buffer to hold our vertices
+					#endif
 					// Copy duplicated values (decompression)
 					memcpy(&vces[count][0], &vces[0][0], sizeof(Vertex) * vces_size);
 				}
 				// Read every time
 				for (int i = 0; i < vces_size; i++) {
+					#if DEF_MESHSET_BLEND
+					fread(&vces[count][i].pos_a, sizeof(vec3), 1, in);
+					fread(&vces[count][i].nor_a, sizeof(vec3), 1, in);
+					#else
 					fread(&vces[count][i].pos, sizeof(vec3), 1, in);
 					fread(&vces[count][i].nor, sizeof(vec3), 1, in);
+					#endif
 				}
 				++count;
 			}
@@ -1315,6 +1332,18 @@ namespace graphics
 			}
 		}
 
+		//-------------------------------- SET BLEND VALUES
+
+		#if DEF_MESHSET_BLEND
+		for (int i = 0; i < count; ++i) {
+			int i_next = (i + 1) % count;
+			for (int j = 0; j < vces_size; ++j) {
+				vces[i][j].pos_b = vces[i_next][j].pos_a;
+				vces[i][j].nor_b = vces[i_next][j].nor_a;
+			}
+		}
+		#endif
+
 		//-------------------------------- INITIALIZE OPENGL BUFFERS
 
 		for (int i = 0; i < count; ++i) {
@@ -1323,10 +1352,28 @@ namespace graphics
 
 			glBindVertexArray(vao[i]); // Bind this vertex array
 			glBindBuffer(GL_ARRAY_BUFFER, vbo[i]); // Create vertex buffer in opengl
+			#if DEF_MESHSET_BLEND
+			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(VertexBlend), &vces[i][0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			#else
 			glBufferData(GL_ARRAY_BUFFER, vces_size * sizeof(Vertex), &vces[i][0], GL_STATIC_DRAW); // Pass vertex struct to opengl
+			#endif
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[i]); // Create index buffer in opengl
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ices_size * sizeof(lui32), &ices[0], GL_STATIC_DRAW); // Pass index struct to opengl
 
+			#if DEF_MESHSET_BLEND
+			glEnableVertexAttribArray(vbi_pos_a); // Set Vertex positions
+			glVertexAttribPointer(vbi_pos_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_a);
+			glEnableVertexAttribArray(vbi_pos_b);
+			glVertexAttribPointer(vbi_pos_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_pos_b);
+			glEnableVertexAttribArray(vbi_nor_a); // Set Vertex normals
+			glVertexAttribPointer(vbi_nor_a, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_nor_a);
+			glEnableVertexAttribArray(vbi_nor_b);
+			glVertexAttribPointer(vbi_nor_b, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_nor_b);
+			glEnableVertexAttribArray(vbi_uvc); // Set Vertex texture coords
+			glVertexAttribPointer(vbi_uvc, 2, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_uvc);
+			glEnableVertexAttribArray(vbi_col); // Set Vertex colour
+			glVertexAttribPointer(vbi_col, 3, GL_FLOAT, GL_FALSE, sizeof(VertexBlend), (void*)vb_col);
+			#else
 			glEnableVertexAttribArray(VI_POS); // Set Vertex positions
 			glVertexAttribPointer(VI_POS, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_POS);
 			glEnableVertexAttribArray(VI_NOR); // Set Vertex normals
@@ -1335,6 +1382,7 @@ namespace graphics
 			glVertexAttribPointer(VI_UVC, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_UVC);
 			glEnableVertexAttribArray(VI_COL); // Set Vertex colour
 			glVertexAttribPointer(VI_COL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)VO_COL);
+			#endif
 		}
 
 		glBindVertexArray(0); // Bind default vertex array
@@ -2646,9 +2694,19 @@ void DrawBlendMesh(graphics::MeshBlend& mdl, lf32 bs, graphics::Texture tex, Sha
 	DrawMeshGL(mdl.vao, mdl.IcesSize(), tex.glID);
 }
 
-void DrawMeshSet(graphics::MeshSet& meshset, lui32 meshindex,
+void DrawMeshSet(graphics::MeshSet& meshset, lf32 anim_value,
 	graphics::Texture texture, ShaderStyle shader, graphics::Matrix4x4 matrix) {
 	graphics::Shader* shd = nullptr;
+	#if DEF_MESHSET_BLEND
+	switch (shader) {
+	case SS_NORMAL:
+		shd = &graphics::GetShader(graphics::S_SOLID_BLEND);
+		break;
+	case SS_CHARA:
+		shd = &graphics::GetShader(graphics::S_SOLID_BLEND_CHARA);
+		break;
+	};
+	#else
 	switch (shader) {
 	case SS_NORMAL:
 		shd = &graphics::GetShader(graphics::S_SOLID);
@@ -2657,6 +2715,7 @@ void DrawMeshSet(graphics::MeshSet& meshset, lui32 meshindex,
 		shd = &graphics::GetShader(graphics::S_SOLID_CHARA);
 		break;
 	};
+	#endif
 
 	// Enable the shader
 	shd->Use();
@@ -2668,9 +2727,19 @@ void DrawMeshSet(graphics::MeshSet& meshset, lui32 meshindex,
 	shd->setMat4(shd->matView, *(graphics::Matrix4x4*)&gmatv);
 	shd->setMat4(shd->matModel, *(graphics::Matrix4x4*)&matrix);
 
+	#if DEF_MESHSET_BLEND
 	// Render the mesh
-	meshindex = meshindex % meshset.count; // Loop animation if we must
-	DrawMeshGL(meshset.vao[meshindex], meshset.ices_size, texture.glID);
+	// normalize anim value
+	anim_value = fmodf(anim_value, (lf32)meshset.count); // Loop animation if we must
+	//lf32 av2 = anim_value * (lf32)meshset.count;
+	li32 avframe = floorf(anim_value); // calculate which mesh frame
+	lf32 avmod = fmodf(anim_value, 1.f); // calculate blend state
+	// Set blend state
+	shd->SetFloat(shd->fBlendState, avmod);
+	DrawMeshGL(meshset.vao[avframe], meshset.ices_size, texture.glID);
+	#else
+	DrawMeshGL(meshset.vao[(li32)floorf(anim_value) % meshset.count], meshset.ices_size, texture.glID);
+	#endif
 }
 
 void DrawMeshDeform(graphics::MeshDeform& mdl, graphics::Texture tex,

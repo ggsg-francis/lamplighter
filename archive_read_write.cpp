@@ -190,11 +190,61 @@ namespace serializer
 	}
 
 	#ifdef DEF_ARCHIVER
+	void InterpretAnimation() {
+		FILE* tempfile = fopen("res_src/ani_character_base/0.txt", "r");
+		if (tempfile) {
+			bool exit = false;
+			bool loopc = true;
+			lf32 farray[1024];
+			lui32 farrayi = 0u;
+			char str[128];
+			int stri = 0;
+			char c;
+		gets:
+			// Loop through characters
+			while (loopc) {
+				c = fgetc(tempfile);
+				if (c == ',') { // If character is a comma (number break)
+					str[stri] = 0u;
+					stri = 0;
+					break;
+				}
+				else if (c == ';') { // If character is ';' (end of file)
+					exit = true;
+					break;
+				}
+				else { // If character is part of the number string
+					str[stri] = c;
+					++stri;
+				}
+			}
+			// Interpret number string
+			farray[farrayi] = atof(str);
+			++farrayi;
+			// If not end of file, find next float
+			if (!exit) goto gets;
+			// We done
+			fclose(tempfile);
+
+			{ // Save animation frames to archive
+				int i = 0;
+				int j = 0;
+				for (; i < farrayi; i += 7, ++j) {
+					acv::animation.p[j] = m::Vector3(farray[i], farray[i + 1], farray[i + 2]);
+					acv::animation.r[j] = m::Quaternion(farray[i + 3], farray[i + 4], farray[i + 5], farray[i + 6]);
+				}
+				acv::animation.frameCount = j;
+			}
+		}
+	}
+
 	void convert_files_src(char* fn)
 	{
 		printf("  ||||||||                      ||||||||\n||||    ||||                  ||||    ||||\n||||    ||||  ||||      ||||  ||||    ||||\n||||    ||||  ||||  ||  ||||  ||||    ||||\n  ||||||||      ||||||||||      ||||||||\n");
 
 		FILE* fileARCHIVE = fopen(ARCHIVE_DATA_FILENAME, "wb");
+
+		InterpretAnimation();
 
 		FILE* file = fopen(fn, "r"); // Open file
 		
@@ -340,7 +390,7 @@ namespace serializer
 					}
 					else if (type == ASSET_MESHSET_FILE) {
 						std::cout << "CONV MESH SET        [" << cdest << "] ";
-						graphics::ConvertMeshSet(csrca, fileARCHIVE); // Create source file
+						graphics::ConvertMeshSet(csrca, csrcb, fileARCHIVE); // Create source file
 						acv::assets[index].type = ASSET_MESHSET_FILE;
 					}
 					else if (type == ASSET_MESHDEFORM_FILE) {
@@ -837,6 +887,10 @@ namespace serializer
 				fread(&acv::assets[i].file_size, sizeof(lui64), 1, file);
 				fread(&acv::assets[i].type, sizeof(lui8), 1, file);
 			}
+			
+			//-------------------------------- Animation part
+
+			fread(&acv::animation, sizeof(acv::AnimationRecord), 1, file);
 
 			//-------------------------------- Prop part
 
@@ -856,12 +910,9 @@ namespace serializer
 			//-------------------------------- Item part
 
 			fread(&acv::item_index, sizeof(lui32), 1, file); // Read item count
-			for (lui32 i = 0; i < acv::item_index; i++)
-			{
+			for (lui32 i = 0; i < acv::item_index; i++) {
 				fread(&acv::item_types[i], sizeof(lui8), 1, file);
-
-				switch (acv::item_types[i])
-				{
+				switch (acv::item_types[i]) {
 				default: // base (ITEM_ROOT)
 					acv::items[i] = new acv::ItemRecord();
 					fread(acv::items[i], sizeof(acv::ItemRecord), 1, file);
@@ -918,6 +969,10 @@ namespace serializer
 				fwrite(&acv::assets[i].type, sizeof(lui8), 1, file);
 			}
 
+			//-------------------------------- Animation part
+
+			fwrite(&acv::animation, sizeof(acv::AnimationRecord), 1, file);
+
 			//-------------------------------- Prop part
 
 			count = acv::prop_index;
@@ -940,10 +995,8 @@ namespace serializer
 
 			count = acv::item_index;
 			fwrite(&count, sizeof(lui32), 1, file);
-			for (lui32 i = 0; i < acv::item_index; i++)
-			{
-				switch (acv::item_types[i])
-				{
+			for (lui32 i = 0; i < acv::item_index; i++) {
+				switch (acv::item_types[i]) {
 				default: // base (ITEM_ROOT)
 					fwrite(&acv::item_types[i], sizeof(lui8), 1, file);
 					fwrite(acv::items[i], sizeof(acv::ItemRecord), 1, file);

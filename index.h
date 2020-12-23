@@ -75,6 +75,8 @@ void IndexClearItemInstances();
 #define GETITEMINST(a) ((HeldItem*)GetItemInstance(a.Index()))
 
 #define IDCHECK(a) (a.GUID() != ID2_NULL.GUID())
+
+// Compares two LtrID objects
 #define IDCOMPARE(a, b) (a.GUID() == b.GUID())
 
 //-------------------------------- PROJECTILES

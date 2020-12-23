@@ -176,9 +176,14 @@ namespace m
 		Quaternion(lf32 X = 0.f, lf32 Y = 0.f, lf32 Z = 0.f, lf32 W = 1.f) : x{ X }, y{ Y }, z{ Z }, w{ W } {};
 		Quaternion(glm::quat Q) : x{ Q.x }, y{ Q.y }, z{ Q.z }, w{ Q.w } {};
 		//-------------------------------- OPERATORS
-		Quaternion operator*(const Quaternion& QUATERNION);
+		Quaternion operator*(const Quaternion& q);
+		Quaternion operator*(lf32 f);
 		// Stub
 	};
+	// Probably incorrect implementation
+	Quaternion operator*(const lf32 f, const Quaternion& q);
+	// Probably incorrect implementation
+	Quaternion operator+(const Quaternion& a, const Quaternion& b);
 
 	//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 	//------------- UTILITY FUNCTIONS --------------------------------
@@ -208,6 +213,8 @@ namespace m
 	Vector2 Lerp(Vector2 vector_a, Vector2 vector_b, lf32 t);
 	// Linear interpolate Vector3
 	Vector3 Lerp(Vector3 vector_a, Vector3 vector_b, lf32 t);
+	// Spherical Linear interpolate Quaternion
+	Quaternion SLerp(Quaternion quat_a, Quaternion quat_b, lf32 t);
 
 	// Interpolate towards a value, using a spring
 	void SpringDamper(lf32& out_value, lf32& out_velocity, lf32 target_value, lf32 mass, lf32 spring, lf32 damping);

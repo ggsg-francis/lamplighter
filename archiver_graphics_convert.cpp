@@ -440,7 +440,7 @@ namespace graphics
 			std::cout << "Could not generate Model Blend, number of vertices not consistent!" << std::endl;
 		}
 	}
-	void ConvertMeshSet(char* folder_src, void* file_write)
+	void ConvertMeshSet(char* folder_src, char* name_src, void* file_write)
 	{
 		FILE* out = (FILE*)file_write;
 
@@ -452,7 +452,7 @@ namespace graphics
 		while (true) {
 			// Generate filename
 			char name[128];
-			snprintf(name, 128, "%s/f%i.obj", folder_src, index);
+			snprintf(name, 128, "%s/%s%i.obj", folder_src, name_src, index);
 			FILE* ftest = fopen(name, "rb");
 			if (ftest) {
 				fclose(ftest);

@@ -30,8 +30,7 @@ namespace m
 
 namespace CHARCODE_ASCII
 {
-	enum ASCII : lui8
-	{
+	enum ASCII : lui8 {
 		NUL, // Null
 		SOH, // Start of Heading
 		STX, // Start of Text
@@ -71,8 +70,7 @@ namespace CHARCODE_ASCII
 namespace CHARCODE
 {
 	// ASCII Standard, but with unneeded characters swapped for rendering based purposes
-	enum LTRCODE : lui8
-	{
+	enum LTRCODE : lui8 {
 		NUL, // Null
 		LB, // Line Break
 		HS, // Highlight Start
@@ -94,24 +92,20 @@ namespace graphics
 	void SetGUIFrameSize(lui32 x, lui32 y);
 
 	// TODO: MOVE TO MATHS!!!
-	struct Matrix3x3
-	{
+	struct Matrix3x3 {
 		lf32 m[3][3];
 	};
 	// TODO: MOVE TO MATHS!!!
-	struct FRow4
-	{
+	struct FRow4 {
 		lf32 e[4]; // Elements
-		FRow4(lf32 a, lf32 b, lf32 c, lf32 d)
-		{
+		FRow4(lf32 a, lf32 b, lf32 c, lf32 d) {
 			e[0] = a; e[1] = b; e[2] = c; e[3] = d;
 		};
 		lf32& operator[](const li32 index) { return e[index]; };
 		lf32 const& operator[](const li32 index) const { return e[index]; };
 	};
 	// TODO: MOVE TO MATHS!!!
-	struct Matrix4x4
-	{
+	struct Matrix4x4 {
 		#if DEF_SWR
 		FRow4 v[4]{ FRow4(1.f, 0.f, 0.f, 0.f), FRow4(0.f, 1.f, 0.f, 0.f), FRow4(0.f, 0.f, 1.f, 0.f), FRow4(0.f, 0.f, 0.f, 1.f) };
 		#else
@@ -154,8 +148,7 @@ namespace graphics
 	m::Vector3 MatrixGetUp(Matrix4x4& SRC_MATRIX);
 	m::Vector3 MatrixOrientVector(Matrix4x4& SRC_MATRIX, m::Vector3 vector);
 
-	struct colour
-	{
+	struct colour {
 		lui8 r = 0u;
 		lui8 g = 0u;
 		lui8 b = 0u;
@@ -185,19 +178,16 @@ namespace graphics
 	void SetRenderSolid();
 	void SetRenderWire();
 
-	enum BlendMode : lui8
-	{
+	enum BlendMode : lui8 {
 		eSOLID,
 		eTRANSPARENT,
 		eADDITIVE,
 	};
 
-	class Shader
-	{
+	class Shader {
 	public:
 		GLuint ID;
-		enum PIndex
-		{
+		enum PIndex {
 			matModel,
 			uiMatrixCount, // Deform shader
 			matModelA, // Deform shader
@@ -240,8 +230,7 @@ namespace graphics
 	private:
 		// This stuff all takes up memory, so it will get duplicated with every shader
 		// TODO: move it all into a single 'graphics struct'
-		const char* names[LOCATION_COUNT]
-		{
+		const char* names[LOCATION_COUNT] {
 			"matm",
 			"mc",
 			"matma",
@@ -282,8 +271,7 @@ namespace graphics
 		};
 	public:
 		// To ensure that there is no conflic with texture locations
-		enum TIndex : GLint
-		{
+		enum TIndex : GLint {
 			TXTR_DIFFUSE0,
 			TXTR_UNUSED_1,
 			TXTR_UNUSED_2,
@@ -300,8 +288,7 @@ namespace graphics
 			TXTR_TERRAIN8,
 		};
 	private:
-		const GLenum temp[32u]
-		{
+		const GLenum temp[32u] {
 			GL_TEXTURE0,
 			GL_TEXTURE1,
 			GL_TEXTURE2,
@@ -361,8 +348,7 @@ namespace graphics
 		void CheckCompileErrors(GLuint shader, std::string type);
 	};
 
-	enum eShader
-	{
+	enum eShader {
 		S_SOLID, // Used for drawing static meshes
 		S_SOLID_CHARA, // Used for drawing static meshes
 		S_SOLID_BLEND, // Used for drawing blended meshes
@@ -381,16 +367,14 @@ namespace graphics
 	};
 	Shader& GetShader(eShader SHADER_ID);
 
-	enum TextureFilterMode : lui8
-	{
+	enum TextureFilterMode : lui8 {
 		eNEAREST,
 		eNEAREST_MIPMAP,
 		eLINEAR,
 		eLINEAR_MIPMAP,
 		eFOLIAGE,
 	};
-	enum TextureEdgeMode : lui8
-	{
+	enum TextureEdgeMode : lui8 {
 		eREPEAT,
 		eREPEAT_MIRROR,
 		eCLAMP,
@@ -398,15 +382,13 @@ namespace graphics
 		eCLAMP_X_REPEAT_Y,
 	};
 
-	struct TextureBuffer
-	{
+	struct TextureBuffer {
 		lui16 width;
 		lui16 height;
 		colour* buffer;
 	};
 
-	struct Texture
-	{
+	struct Texture {
 		GLuint glID;
 		lui16 width;
 		lui16 height;
@@ -445,8 +427,7 @@ namespace graphics
 
 	// Vertices and indices are kept in RAM so it can be used to compose a compositemesh
 	// this isn't ideal
-	class Mesh
-	{
+	class Mesh {
 	public:
 		GLuint vao; // Vertex Array Object
 		void LoadFile(void* ACV_FILE, bool CLEARMEM);
@@ -466,8 +447,7 @@ namespace graphics
 		size_t IcesSize() { return ices_size; };
 	};
 
-	class MeshBlend
-	{
+	class MeshBlend {
 	private:
 		size_t ices_size;
 	public:
@@ -480,9 +460,7 @@ namespace graphics
 		GLuint ebo; // Element Buffer Object
 	};
 
-	#define MESHSET_MAX_COUNT 32
-	class MeshSet
-	{
+	class MeshSet {
 	public:
 		size_t ices_size;
 		lui32 count;
@@ -494,8 +472,7 @@ namespace graphics
 		GLuint ebo[MESHSET_MAX_COUNT]; // Element Buffer Object
 	};
 
-	class MeshDeform
-	{
+	class MeshDeform {
 	private:
 		size_t ices_size;
 	public:
@@ -509,8 +486,7 @@ namespace graphics
 	};
 
 	// Multiple meshes combine powers to become one megamesh
-	class CompositeMesh
-	{
+	class CompositeMesh {
 	public:
 		enum MeshOrientation
 		{
@@ -534,8 +510,7 @@ namespace graphics
 	};
 
 	// Like a composite mesh but uses a different vertex type, specifically represents terrain
-	class TerrainMesh
-	{
+	class TerrainMesh {
 	public:
 		void Draw();
 		void GenerateFromHMap(lui8(&heightmap)[WORLD_SIZE][WORLD_SIZE], lui8(&matmap)[WORLD_SIZE][WORLD_SIZE]);
@@ -562,8 +537,7 @@ namespace graphics
 		size_t GetIndexCount() { return ices_size; };
 	};
 
-	class GUIBitmap
-	{
+	class GUIBitmap {
 	public:
 		GLuint tid;
 		unsigned int VBO, VAO, EBO;
@@ -576,8 +550,7 @@ namespace graphics
 
 	#define INPUT_LEN_TEMP 256
 
-	class GUIBox
-	{
+	class GUIBox {
 	private:
 		bool initialized = false;
 	protected:
@@ -594,8 +567,7 @@ namespace graphics
 		eTEXTALIGN_LEFT,
 		eTEXTALIGN_MID,
 	};
-	class GUIText
-	{
+	class GUIText {
 	private:
 		bool initialized = false;
 	protected:
@@ -621,8 +593,7 @@ namespace graphics
 	void DrawGUIText(char* string, Texture* texture, li32 xa, li32 xb, li32 y);
 }
 
-enum ShaderStyle
-{
+enum ShaderStyle {
 	SS_NORMAL,
 	SS_CHARA,
 };
@@ -636,7 +607,7 @@ void DrawParticles(graphics::Mesh& MESH, graphics::Texture TEXTURE,
 void DrawBlendMesh(graphics::MeshBlend& MODEL, lf32 BLENDSTATE,
 	graphics::Texture TEXTURE, ShaderStyle SHADER, graphics::Matrix4x4 MATRIX);
 
-void DrawMeshSet(graphics::MeshSet& meshset, lui32 meshindex,
+void DrawMeshSet(graphics::MeshSet& meshset, lf32 anim_value,
 	graphics::Texture texture, ShaderStyle shader, graphics::Matrix4x4 matrix);
 
 void DrawMeshDeform(graphics::MeshDeform& MODEL,

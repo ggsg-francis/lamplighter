@@ -37,6 +37,8 @@ struct HeldItem
 
 	ID16 id_item_template = ID_NULL;
 	Transform3D t_item;
+	m::Vector3 t_fw;
+	m::Vector3 t_up;
 
 	//-------------------------------- SHARED THINGS
 

@@ -125,18 +125,31 @@ void HeldMelTick(LtrID id, lf32 dt, LtrID owner_id, ECActor* owner)
 	// translate
 	self->t_item.SetPosition(m::Vector3(owner->t.position.x, owner->t.altitude, owner->t.position.y));
 	self->t_item.SetRotation(0.f);
-	self->t_item.Rotate(owner->viewYaw.Rad(), m::Vector3(0, 1, 0));
+	self->t_item.Rotate(owner->t.yaw.Rad(), m::Vector3(0, 1, 0));
 
-	self->t_item.TranslateLocal(self->loc); // set pose
-	self->t_item.Rotate(glm::radians(self->yaw), m::Vector3(0.f, 1.f, 0.f));
-	self->t_item.Rotate(glm::radians(self->pitch), m::Vector3(1.f, 0.f, 0.f));
+	m::Vector3 posfloor, posceil;
+	posfloor = acv::animation.p[(li32)floorf(owner->aniAnimstate + 1.f)];
+	posceil = acv::animation.p[(li32)ceilf(owner->aniAnimstate + 1.f)];
+
+	self->t_item.TranslateLocal(m::Lerp(posfloor, posceil, fmodf(owner->aniAnimstate + 1.f, 1.f)));
+
+	m::Vector3 fwf = m::RotateVector(m::RotateVector(m::Vector3(0, 0, 1), acv::animation.r[(li32)floorf(owner->aniAnimstate + 1.f)]), self->t_item.GetRotation());
+	m::Vector3 upf = m::RotateVector(m::RotateVector(m::Vector3(0, 1, 0), acv::animation.r[(li32)floorf(owner->aniAnimstate + 1.f)]), self->t_item.GetRotation());
+	m::Vector3 fwc = m::RotateVector(m::RotateVector(m::Vector3(0, 0, 1), acv::animation.r[(li32)ceilf(owner->aniAnimstate + 1.f)]), self->t_item.GetRotation());
+	m::Vector3 upc = m::RotateVector(m::RotateVector(m::Vector3(0, 1, 0), acv::animation.r[(li32)ceilf(owner->aniAnimstate + 1.f)]), self->t_item.GetRotation());
+
+	self->t_fw = m::Normalize(m::Lerp(fwf, fwc, fmodf(owner->aniAnimstate + 1.f, 1.f)));
+	self->t_up = m::Normalize(m::Lerp(upf, upc, fmodf(owner->aniAnimstate + 1.f, 1.f)));
 }
 void HeldMelDraw(LtrID id)
 {
 	HeldItem* self = GETITEMINST(id);
+	graphics::Matrix4x4 mat;
+	graphics::MatrixTransform(mat, self->t_item.GetPosition(), self->t_fw * -1.f, self->t_up);
+
 	DrawMesh(acv::GetM(acv::items[self->id_item_template]->id_mesh),
 		acv::GetT(acv::items[self->id_item_template]->id_tex),
-		SS_NORMAL, self->t_item.getMatrix());
+		SS_NORMAL, mat);
 }
 void HeldMelOnEquip(LtrID id, ECActor* owner)
 {
@@ -275,7 +288,7 @@ void HeldGunTick(LtrID id, lf32 dt, LtrID owner_id, ECActor* owner)
 	{
 		self->ang_aim_offset_temp = 0.f;
 		self->ang_aim_pitch = owner->viewPitch.Deg();
-		self->ang_aim_pitch += owner->aniSlideResponse * 30.f;
+		//self->ang_aim_pitch += owner->aniSlideResponse * 30.f;
 		if (owner->aniRun) self->ang_aim_pitch += 15.f;
 	}
 

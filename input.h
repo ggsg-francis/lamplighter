@@ -5,10 +5,10 @@
 
 struct InputBuffer
 {
-	// new test keys
+	// Binary state inputs
 	lui64 keyBitsHeld = 0u;
 	lui64 keyBitsHit = 0u;
-
+	// Non-binary inputs ;3
 	lf32 mouse_x = 0.f;
 	lf32 mouse_y = 0.f;
 	lf32 mouse_last_x = 0.f;
@@ -21,48 +21,10 @@ struct InputBuffer
 
 namespace input
 {
-	namespace scancode
-	{
-		enum ScanCode : lui32
-		{
-			Q = 0X10,
-			W = 0X11,
-			E = 0X12,
-			R = 0X13,
-			T = 0X14,
-			Y = 0X15,
-			U = 0X16,
-			I = 0X17,
-			O = 0X18,
-			P = 0X19,
-			A = 0X1E,
-			S = 0X1F,
-			D = 0X20,
-			F = 0X21,
-			G = 0X22,
-			H = 0X23,
-			J = 0X24,
-			K = 0X25,
-			L = 0X26,
-			Z = 0X2C,
-			X = 0X2D,
-			C = 0X2E,
-			V = 0X2F,
-			B = 0X30,
-			N = 0X31,
-			M = 0X32,
-			DEL = 0x53,
-		};
-	}
-
-	namespace key
-	{
-		enum Key2 : lui8
-		{
+	namespace key {
+		enum InputBit : lui8 {
 			NONE, // Empty input
-
 			//-------------------------------- KEYBOARD PLAYER INPUT
-
 			DIR_F,
 			DIR_B,
 			DIR_L,
@@ -79,9 +41,7 @@ namespace input
 			DROP_HELD,
 			INV_CYCLE_L, // Select previous inventory slot
 			INV_CYCLE_R, // Select next inventory slot
-
 			//-------------------------------- CONTROLLER PLAYER INPUT
-
 			C_FW, // Are these directionals even needed?
 			C_BK,
 			C_LT,
@@ -98,9 +58,7 @@ namespace input
 			C_DROP_HELD,
 			C_INV_CYCLE_L, // Select previous inventory slot
 			C_INV_CYCLE_R, // Select next inventory slot
-
-			//-------------------------------- UTILITY HIT
-
+			//-------------------------------- UTILITY
 			QUIT,
 			FUNCTION_1,
 			FUNCTION_2,
@@ -114,7 +72,7 @@ namespace input
 			FUNCTION_10,
 			FUNCTION_11,
 			FUNCTION_12,
-
+			// How many keys
 			KEY_COUNT,
 			// How many bitvectors are needed to cover all inputs
 			// A rewrite will be needed when this is > 1
@@ -133,6 +91,12 @@ namespace input
 	#endif
 
 	void Init();
+	char* GetScancodeName(lui32 scancode);
+	char* GetInputName(key::InputBit input);
+	void ResetKeyBindings();
+	void BindKeyToInput(lui32 scancode, key::InputBit input);
+	void SaveFile();
+	void LoadFile();
 
 	void UpdateInput(void* input);
 
@@ -142,17 +106,17 @@ namespace input
 	void ClearAll();
 
 	#ifdef DEF_NMP
-	bool GetHeld(lui32 INDEX, key::Key2 KEY);
-	bool GetHit(lui32 INDEX, key::Key2 KEY);
+	bool GetHeld(lui32 index, key::Key2 input);
+	bool GetHit(lui32 index, key::Key2 input);
 	#endif
-	bool GetHeld(key::Key2 KEY);
-	bool GetHit(key::Key2 KEY);
+	bool GetHeld(key::InputBit input);
+	bool GetHit(key::InputBit input);
 	bool GetAnyHit();
 
-	void Set(key::Key2 KEY);
-	void Unset(key::Key2 KEY);
-	void SetTo(key::Key2 KEY, bool VALUE);
-	void SetHit(key::Key2 KEY);
+	void Set(key::InputBit input);
+	void Unset(key::InputBit input);
+	void SetTo(key::InputBit input, bool value);
+	void SetHit(key::InputBit input);
 }
 
 #endif

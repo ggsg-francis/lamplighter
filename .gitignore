@@ -3,6 +3,7 @@
 IntermediateArchiver/
 IntermediateGame/
 obj/
+doc/
 .vs/
 .metadata/
 *.suo

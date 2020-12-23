@@ -386,35 +386,30 @@ namespace core
 
 	// Order is always: This -> X -> Y -> Diagonal
 
-	void GetCgNE(btcoord x, btcoord y, CellCoord* cc)
-	{
+	static const void GetCgNE(btcoord x, btcoord y, CellCoord* cc) {
 		cc[eCELL_X].x = x + 1u; cc[eCELL_X].y = y; // E (X)
 		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y + 1u; // N (Y)
 		cc[eCELL_XY].x = x + 1u; cc[eCELL_XY].y = y + 1u; // NE
 	};
-	void GetCgNW(btcoord x, btcoord y, CellCoord* cc)
-	{
+	static const void GetCgNW(btcoord x, btcoord y, CellCoord* cc) {
 		cc[eCELL_X].x = x - 1u; cc[eCELL_X].y = y; // W (X)
 		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y + 1u; // N (Y)
 		cc[eCELL_XY].x = x - 1u; cc[eCELL_XY].y = y + 1u; // NW
 	};
-	void GetCgSE(btcoord x, btcoord y, CellCoord* cc)
-	{
+	static const void GetCgSE(btcoord x, btcoord y, CellCoord* cc) {
 		cc[eCELL_X].x = x + 1u; cc[eCELL_X].y = y; // E (X)
 		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y - 1u; // S (Y)
 		cc[eCELL_XY].x = x + 1u; cc[eCELL_XY].y = y - 1u; // SE
 	};
-	void GetCgSW(btcoord x, btcoord y, CellCoord* cc)
-	{
+	static const void GetCgSW(btcoord x, btcoord y, CellCoord* cc) {
 		cc[eCELL_X].x = x - 1u; cc[eCELL_X].y = y; // W (X)
 		cc[eCELL_Y].x = x; cc[eCELL_Y].y = y - 1u; // S (Y)
 		cc[eCELL_XY].x = x - 1u; cc[eCELL_XY].y = y - 1u; // SW
 	};
 
-	void(*GetCellNeighbors[])(btcoord, btcoord, CellCoord*) = { GetCgSW, GetCgNW, GetCgSE, GetCgNE };
+	static const void(*GetCellNeighbors[])(btcoord, btcoord, CellCoord*) = { GetCgSW, GetCgNW, GetCgSE, GetCgNE };
 
-	void GetCellGroup(m::Vector2 vec, CellGroup& cg)
-	{
+	void GetCellGroup(m::Vector2 vec, CellGroup& cg) {
 		lui8 dir = 0u; // Represents direction of offset
 
 		cg.c[eCELL_I].x = (btcoord)roundf(vec.x); // X cell coordinate
@@ -426,8 +421,7 @@ namespace core
 		GetCellNeighbors[dir](cg.c[eCELL_I].x, cg.c[eCELL_I].y, cg.c); // Get cell group from direction
 	}
 
-	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& cs)
-	{
+	void GetCellSpaceInfo(m::Vector2 vec, CellSpace& cs) {
 		if (vec.x < 1.f) vec.x = 1.f;
 		if (vec.y < 1.f) vec.y = 1.f;
 		if (vec.x > WORLD_SIZE_MAXINT - 1.f) vec.x = WORLD_SIZE_MAXINT - 1.f;
